@@ -1,0 +1,72 @@
+---
+description: Hook patterns and thin binding rules
+globs: ["**/hooks/*.ts"]
+---
+
+# Hook Conventions
+
+- **All hooks in `src/hooks/`** - NEVER in `components/` or `screens/`
+- Hooks are for **orchestration between multiple stores**
+- Simple state access should use stores directly (no hook needed)
+- Business logic belongs in stores, not hooks
+
+## When to Use Hooks vs Stores
+
+| Use Case | Solution |
+|----------|----------|
+| Access single store state | Use store directly: `useConnectionStore()` |
+| Coordinate multiple stores | Create orchestration hook |
+| Set up subscriptions between stores | Create orchestration hook |
+
+## Good Pattern: Orchestration Hook
+
+```typescript
+// hooks/useDiscoveryFlow.ts - GOOD: coordinates multiple stores
+export function useDiscoveryFlow() {
+  const discoveryStore = useDiscoveryStore();
+  const voltraStore = useVoltraStore();
+  const recordingStore = useRecordingStore();
+  
+  // Orchestrate telemetry subscription between stores
+  useEffect(() => {
+    return voltraStore._telemetryController.subscribe((event) => {
+      if (event.type === 'frame') {
+        recordingStore.processFrame(event.frame);
+      }
+    });
+  }, [voltraStore, recordingStore]);
+  
+  return { /* combined state from multiple stores */ };
+}
+```
+
+## Bad Pattern: Logic in Hook
+
+```typescript
+// BAD: business logic in hook (should be in store)
+export function useRelayStatus() {
+  const [status, setStatus] = useState('checking');
+  
+  const checkStatus = useCallback(async () => {
+    try {
+      const response = await fetch(url);
+      setStatus(response.ok ? 'connected' : 'error');
+    } catch { setStatus('disconnected'); }
+  }, []);
+  
+  // ... this logic belongs in connection-store
+}
+```
+
+## What Hooks Should Do
+
+- Coordinate data/events between multiple stores
+- Set up cross-store subscriptions
+- Return combined state for complex workflows
+
+## What Hooks Should NOT Do
+
+- Contain business logic (move to stores)
+- Wrap single store access (use store directly)
+- Show alerts or UI feedback (let screens handle)
+- Make complex state transitions (move to stores)

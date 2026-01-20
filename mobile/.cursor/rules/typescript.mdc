@@ -1,0 +1,100 @@
+---
+description: TypeScript conventions and import patterns
+globs: ["**/*.ts", "**/*.tsx"]
+---
+
+# TypeScript Conventions
+
+## Props Interfaces
+
+Always define explicit props interfaces. Export for compound components.
+
+```typescript
+export interface DeviceListProps {
+  devices: Device[];
+  onSelect: (device: Device) => void;
+  disabled?: boolean;
+}
+
+export function DeviceList({ devices, onSelect, disabled }: DeviceListProps) {
+  // ...
+}
+```
+
+## Avoid `any`
+
+- Use proper types or `unknown` with type guards
+- Define types for all function parameters and returns
+
+## File Naming Rules
+
+- **NO logic/rendering in `index.ts(x)` files** - barrel exports only
+- Name files explicitly: `WorkoutScreen.tsx` not `Workout/index.tsx`
+- Use TitleCase (PascalCase) for component files: `DeviceList.tsx`
+
+```typescript
+// index.ts - GOOD: barrel exports only
+export { Card } from './Card';
+export { Surface } from './Surface';
+export type { CardProps, SurfaceProps } from './types';
+
+// index.tsx - BAD: contains component logic
+export function MyComponent() { ... }  // NEVER do this
+```
+
+## Import Patterns
+
+### Always Use `@/` Path Alias
+
+Use `@/` alias for ALL imports. Never use relative imports that go up directories.
+
+```typescript
+// GOOD: Always use @/ for cross-module imports
+import { useConnectionStore } from '@/stores';
+import { TelemetryController } from '@/domain/voltra/controllers/telemetry-controller';
+import { DiscoveredDevice } from '@/domain/bluetooth/models/device';
+import { delay } from '@/domain/shared';
+
+// BAD: Relative imports crossing module boundaries
+import { useConnectionStore } from '../../../stores';
+import { TelemetryController } from '../controllers/telemetry-controller';
+```
+
+### Allowed Relative Imports
+
+Relative imports (`./`) are ONLY allowed for:
+
+1. **Same-directory siblings** within a submodule:
+```typescript
+// In domain/voltra/models/telemetry/state.ts
+import type { TelemetryFrame } from './frame';  // OK: same directory
+import type { RepData } from './rep';           // OK: same directory
+```
+
+2. **JSON data files** (path aliases don't work for JSON):
+```typescript
+// In domain/voltra/protocol/commands.ts
+import weightsData from './data/weights.json';  // OK: JSON data
+```
+
+3. **Barrel exports** (index.ts re-exporting from submodules):
+```typescript
+// In domain/voltra/index.ts
+export { VoltraDevice } from './models/device';  // OK: barrel export
+```
+
+### Import from Barrels
+
+Prefer importing from barrel exports, not individual files.
+
+```typescript
+// GOOD: Import from barrel
+import { Card, Surface, Stack } from '@/components/ui';
+import { TelemetryController, VoltraDevice } from '@/domain/voltra';
+
+// ACCEPTABLE: Direct import when needed
+import { TelemetryController } from '@/domain/voltra/controllers/telemetry-controller';
+
+// BAD: Reaching into internal module structure
+import { Card } from '@/components/ui/layout/Card';
+```

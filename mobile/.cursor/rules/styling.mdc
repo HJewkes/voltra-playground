@@ -1,0 +1,107 @@
+---
+description: Theme tokens and styling conventions
+globs: ["**/components/**/*.tsx", "**/theme/**/*.ts"]
+---
+
+# Styling Conventions
+
+## Theme Colors
+
+Semantic colors use object form with `.DEFAULT`, `.light`, `.dark` variants:
+
+```typescript
+// theme/colors.ts structure
+colors: {
+  // Palettes (numbered scales)
+  primary: { 50: '...', 100: '...', ..., 900: '...' },
+  neutral: { 50: '...', ..., 900: '...' },
+  surface: { lightest: '...', light: '...', card: '...', ... },
+  text: { primary: '...', secondary: '...', tertiary: '...', muted: '...' },
+  content: { primary: '...', secondary: '...', tertiary: '...', muted: '...' },
+  
+  // Semantic colors (object form)
+  success: { DEFAULT: '#22c55e', light: '#4ade80', dark: '#166534' },
+  warning: { DEFAULT: '#eab308', light: '#facc15', dark: '#854d0e' },
+  danger:  { DEFAULT: '#ef4444', light: '#f87171', dark: '#991b1b' },
+  error:   { DEFAULT: '#ef4444', light: '#f87171', dark: '#991b1b' },
+  info:    { DEFAULT: '#3b82f6', light: '#60a5fa', dark: '#1e40af' },
+}
+```
+
+### Semantic Color Usage
+
+```typescript
+// GOOD: Use .DEFAULT for primary value, .light/.dark for variants
+colors.success.DEFAULT     // '#22c55e'
+colors.success.light       // '#4ade80'
+colors.danger.light        // '#f87171'
+
+// GOOD: With opacity
+colors.success.DEFAULT + '20'  // '#22c55e20' (12.5% opacity)
+
+// BAD: Don't use flat access (won't compile)
+colors.success             // Error: This is an object, not a string
+colors.successLight        // Error: Doesn't exist
+```
+
+### Color Selection Guide
+
+| Use Case | Color |
+|----------|-------|
+| Success states, positive deltas | `colors.success.DEFAULT` |
+| Warnings, moderate concerns | `colors.warning.DEFAULT` |
+| Errors, negative deltas | `colors.danger.DEFAULT` or `colors.danger.light` |
+| Informational highlights | `colors.info.DEFAULT` |
+| Primary actions/accents | `colors.primary[500]` or `colors.primary[600]` |
+| Muted text | `colors.text.muted` or `colors.content.muted` |
+
+## UI Primitives (`ui/`)
+
+- Use theme tokens exclusively
+- Accept `variant`/`size` props, never raw style values
+- One component per file
+
+```typescript
+// ui/feedback/Banner.tsx - GOOD
+interface BannerProps {
+  variant: 'primary' | 'success' | 'warning' | 'danger';
+  title: string;
+  subtitle?: string;
+}
+```
+
+## UI Primitives Reference
+
+| Category | Components | Purpose |
+|----------|------------|---------|
+| `layout/` | Card, Surface, Stack, Divider, Section | Structural containers and spacing |
+| `feedback/` | Banner, EmptyState, LoadingState, ErrorBanner, ProgressBar | User feedback and status |
+| `inputs/` | ActionButton, OptionSelector, WeightPicker | User input controls |
+| `display/` | StatDisplay, StatsRow, Badge, IconBox, ListItem, InfoRow | Data presentation |
+| `navigation/` | LinkCard | Navigation elements |
+| `overlays/` | BottomSheet | Modal and overlay components |
+
+### Primitive Usage Examples
+
+```typescript
+// Banner - colored status banner
+<Banner variant="success" icon="flash" title="Connected" subtitle="Ready" />
+
+// StatsRow - row of stats with dividers
+<StatsRow stats={[
+  { value: 12, label: 'Workouts' },
+  { value: '2.4k', label: 'Reps' },
+]} />
+
+// Badge - colored pill label
+<Badge label="3 RIR" variant="success" />
+
+// IconBox - icon in colored container
+<IconBox icon="bluetooth" iconColor={colors.primary[500]} size="lg" />
+```
+
+## Domain Components (`device/`, `session/`, `analytics/`, `planning/`)
+
+- Compose UI primitives
+- No inline `style={{ color: ... }}` patterns
+- **No business logic** - receive data and callbacks via props

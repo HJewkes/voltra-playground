@@ -254,6 +254,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 elif action == "write":
                     hex_data = msg["data"]
                     data_bytes = bytes.fromhex(hex_data)
+                    # Log first few bytes to identify command type
+                    print(f"[Relay] Write: {hex_data[:32]}... ({len(data_bytes)} bytes)")
                     await relay.write(data_bytes)
                     result = {"status": "ok"}
                 

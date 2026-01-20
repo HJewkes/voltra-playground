@@ -1,0 +1,534 @@
+---
+description: Domain module patterns for business logic organization
+globs: ["**/domain/**/*.ts"]
+---
+
+# Domain Architecture
+
+Business logic lives in `domain/` modules, organized by concept.
+
+## Domain Module Structure
+
+```
+domain/
+├── bluetooth/                 # GENERIC BLE infrastructure (device-agnostic)
+│   ├── adapters/              # BLE adapter implementations
+│   │   ├── types.ts           # BLEAdapter interface, config types
+│   │   ├── native.ts          # Native react-native-ble-plx adapter (configurable)
+│   │   ├── proxy.ts           # WiFi relay proxy adapter
+│   │   └── index.ts           # createBLEAdapter factory
+│   ├── models/
+│   │   ├── connection.ts      # Generic BLE connection state (4-state)
+│   │   ├── device.ts          # Generic discovered device model
+│   │   └── environment.ts     # BLE environment detection
+│   ├── controllers/
+│   │   └── scanner-controller.ts  # Generic scanner with optional device filter
+│   └── index.ts
+├── exercise/                  # Pure exercise definitions (metadata only)
+│   ├── types.ts               # Exercise interface, MuscleGroup enum
+│   ├── catalog.ts             # EXERCISE_CATALOG, getExercise, getAllExercises
+│   ├── mappings.ts            # EXERCISE_MUSCLE_GROUPS, getExerciseName
+│   └── index.ts
+├── planning/                  # Unified planning system
+│   ├── types.ts               # TrainingGoal enum, PlanningContext, PlanResult
+│   ├── planner.ts             # planExercise() - unified entry point
+│   ├── strategies/            # Planning strategies
+│   │   ├── standard.ts        # Intra-workout adaptation (weight/rest adjustments)
+│   │   ├── discovery.ts       # Weight discovery workflow
+│   │   ├── progression.ts     # Session-over-session progression
+│   │   └── index.ts
+│   └── index.ts
+├── vbt/                       # VBT constants and reference data
+│   ├── constants.ts           # VELOCITY_AT_PERCENT_1RM, TRAINING_ZONES, REP_RANGES
+│   ├── profile.ts             # Load-velocity profiles, 1RM estimation
+│   └── index.ts
+├── voltra/                    # VOLTRA-SPECIFIC (device-specific logic)
+│   ├── models/
+│   │   ├── device.ts          # Voltra device model
+│   │   ├── connection.ts      # Voltra connection state (includes 'authenticating')
+│   │   ├── device-filter.ts   # VOLTRA_DEVICE_PREFIX, filterVoltraDevices
+│   │   └── telemetry/         # Telemetry submodule
+│   │       ├── frame.ts       # TelemetryFrame interface
+│   │       ├── state.ts       # TelemetryState (raw frames only)
+│   │       └── index.ts
+│   ├── adapters/              # Hardware → WorkoutSample conversion
+│   │   └── sample-adapter.ts  # TelemetryFrame → WorkoutSample
+│   ├── controllers/
+│   │   ├── device-controller.ts
+│   │   ├── voltra-connection-controller.ts  # Voltra auth/init sequence
+│   │   ├── telemetry-controller.ts  # Raw frame events only
+│   │   └── recording-controller.ts  # Recording lifecycle
+│   ├── protocol/              # BLE protocol data (UUIDs, commands)
+│   │   ├── constants.ts       # BLE UUIDs, timing, auth, commands
+│   │   ├── commands.ts        # Weight, chains, eccentric command builders
+│   │   ├── telemetry-decoder.ts
+│   │   └── data/protocol.json
+│   └── index.ts
+├── workout/                   # Hardware-AGNOSTIC workout models + aggregators
+│   ├── models/
+│   │   ├── types.ts           # MovementPhase enum
+│   │   ├── sample.ts          # WorkoutSample - normalized data point
+│   │   ├── phase.ts           # Phase, PhaseMetrics
+│   │   ├── rep.ts             # Rep, RepMetrics, StoredRep
+│   │   ├── set.ts             # Set, SetMetrics (with sub-models)
+│   │   ├── stats.ts           # WorkoutStats, computeWorkoutStats
+│   │   └── index.ts
+│   ├── detectors/             # State machines for event detection
+│   │   ├── rep-detector.ts    # RepDetector - detects rep boundaries
+│   │   └── index.ts
+│   ├── aggregators/           # All metric computation
+│   │   ├── phase-aggregator.ts
+│   │   ├── rep-aggregator.ts
+│   │   ├── set-aggregator.ts  # Fatigue index, RIR/RPE estimation
+│   │   └── index.ts
+│   ├── utils/                 # UI helper functions
+│   │   └── effort-labels.ts   # getEffortLabel, getRPEColor, etc.
+│   └── index.ts
+└── shared/
+    ├── utils.ts               # delay, hex conversion, etc.
+    └── index.ts
+```
+
+## Domain Separation: Bluetooth vs Voltra
+
+The BLE infrastructure is split into two layers:
+
+### domain/bluetooth (Generic BLE)
+
+Reusable BLE infrastructure that could work with any BLE device:
+
+- **Adapters** accept configuration (serviceUUID, charUUIDs, device prefix)
+- **ScannerController** accepts optional device filter function
+- **Models** are generic (DiscoveredDevice, BLEConnectionState)
+- **NO** Voltra-specific imports or constants
+
+```typescript
+// Bluetooth adapters are configured, not hardcoded
+const adapter = new NativeBLEAdapter({
+  ble: {
+    serviceUUID: BLE.SERVICE_UUID,      // Passed in by consumer
+    notifyCharUUID: BLE.NOTIFY_CHAR_UUID,
+    writeCharUUID: BLE.WRITE_CHAR_UUID,
+    deviceNamePrefix: BLE.DEVICE_NAME_PREFIX,
+  },
+});
+```
+
+### domain/voltra (Voltra-Specific)
+
+Hardware-specific BLE protocol, telemetry decoding, and recording control.
+
+**IN this domain:**
+- Voltra connection state (includes 'authenticating' step)
+- Device filtering (`filterVoltraDevices`, `VOLTRA_DEVICE_PREFIX`)
+- Authentication and initialization sequences
+- Protocol constants (BLE UUIDs, commands, timing)
+- Connect to device (via VoltraConnectionController)
+- Send commands (weight, chains, eccentric, recording start/stop)
+- Decode BLE notifications to TelemetryFrames
+- Emit raw frame events
+- Provide SampleAdapter to convert TelemetryFrame → WorkoutSample
+
+**NOT in this domain (moved to recording-store + workout domain):**
+- Rep detection (now in `domain/workout/detectors/RepDetector`)
+- Analytics computation (now in `recording-store` using workout aggregators)
+
+### Data Flow
+
+```
+BLE Notification → Decoder → TelemetryFrame → voltra-store (raw frames)
+                                                    │
+                              SampleAdapter ←───────┘
+                                   │
+                           recording-store
+                                   │
+                            WorkoutSample
+                                   │
+                             RepDetector
+                                   │
+                            Aggregators
+                                   │
+                         Rep → SetMetrics
+```
+
+## domain/workout Module
+
+Hardware-agnostic workout data models, rep detection, and computation logic.
+
+### Detectors (domain/workout/detectors/)
+
+State machines for detecting workout events from sample streams:
+
+| Detector | Purpose |
+|----------|---------|
+| `RepDetector` | Detects rep boundaries from WorkoutSamples |
+
+```typescript
+const detector = new RepDetector();
+
+for (const sample of samples) {
+  const boundary = detector.processSample(sample);
+  if (boundary) {
+    // Rep completed - aggregate phases
+    const rep = aggregateRepFromBoundary(boundary);
+  }
+}
+```
+
+### Models (domain/workout/models/)
+
+| Model | Purpose |
+|-------|---------|
+| `WorkoutSample` | Single measurement point (normalized 0-1 position, m/s velocity) |
+| `Phase` | Collection of samples for one movement phase |
+| `Rep` | Collection of phases forming one repetition |
+| `Set` | Collection of reps with aggregated metrics |
+
+### SetMetrics Sub-Models (Tiered Computation)
+
+SetMetrics uses nested sub-models with clear data flow:
+
+```
+Rep[] → VelocityMetrics → FatigueAnalysis → EffortEstimate
+        (measurements)    (patterns)        (RIR/RPE)
+```
+
+| Sub-model | Purpose | Fields |
+|-----------|---------|--------|
+| `VelocityMetrics` | Raw measurements | baselines, deltas, per-rep arrays |
+| `FatigueAnalysis` | Pattern detection | fatigueIndex, eccentricControlScore |
+| `EffortEstimate` | RIR/RPE output | rir, rpe, confidence |
+
+### Aggregators (domain/workout/aggregators/)
+
+Pure functions that compute metrics at each level:
+
+| Aggregator | Input → Output |
+|------------|----------------|
+| `aggregatePhase()` | `WorkoutSample[]` → `Phase` |
+| `aggregateRep()` | `Phase[]` → `Rep` |
+| `aggregateSet()` | `Rep[]` → `Set` (with tiered sub-metrics) |
+
+### Key Principles
+
+- **No hardware knowledge** - Models only know about exercise data, not devices
+- **All computation centralized** - Metric calculations live in aggregators
+- **Pure functions** - Aggregators are stateless, easy to test
+- **Tiered metrics** - Clear separation of measurements → analysis → prediction
+
+### Adding New Metrics
+
+1. Decide which tier it belongs to (velocity/fatigue/effort)
+2. Add field to appropriate sub-model interface in `set.ts`
+3. Add computation to the relevant function in `set-aggregator.ts`
+4. Done - no hardware code changes needed
+
+## Model Patterns
+
+Models represent business data and entities. Choose the right pattern based on use case.
+
+### Pattern 1: Interface + Functions (Value Objects)
+
+Use for **immutable data**, **DTOs**, and **computed results** that may be stored in Zustand or serialized.
+
+```typescript
+// domain/voltra/models/telemetry/frame.ts
+export interface TelemetryFrame {
+  sequence: number;
+  phase: MovementPhase;
+  position: number;
+  force: number;
+  velocity: number;
+  timestamp: number;
+}
+
+// Factory function
+export function createFrame(sequence: number, phase: MovementPhase, ...): TelemetryFrame {
+  return { sequence, phase, position, force, velocity, timestamp: Date.now() };
+}
+
+// Pure functions operating on the data
+export function isActivePhase(frame: TelemetryFrame): boolean {
+  return frame.phase === MovementPhase.CONCENTRIC || 
+         frame.phase === MovementPhase.ECCENTRIC;
+}
+```
+
+**When to use Interface + Functions:**
+- Value objects (TelemetryFrame, RepData, WorkoutStats)
+- Data from BLE notifications or APIs
+- Computed/derived results
+- Data stored in Zustand state
+- Data serialized to AsyncStorage
+
+**Benefits:**
+- Works with object spread `{...frame}`
+- Serializes with `JSON.stringify()` automatically
+- Tree-shakeable (unused functions removed)
+- Pure functions are easy to test
+
+### Pattern 2: Class (Entities with Identity)
+
+Use for **entities with identity** that have **complex state transitions** and need **encapsulation**.
+
+```typescript
+// domain/voltra/models/device.ts
+export class VoltraDevice {
+  private _settings: VoltraDeviceSettings;
+  private _connectionState: VoltraConnectionState;
+  
+  constructor(deviceId: string, deviceName?: string) { ... }
+  
+  // Getters expose state (return copies for immutability)
+  get settings(): VoltraDeviceSettings { return {...this._settings}; }
+  get isConnected(): boolean { return this._connectionState === 'connected'; }
+  
+  // Methods for state transitions
+  updateSettings(settings: Partial<VoltraDeviceSettings>): void { ... }
+  setConnectionState(state: VoltraConnectionState): void { ... }
+  
+  // Serialization for debugging/persistence
+  toState(): VoltraDeviceState { ... }
+}
+```
+
+**When to use Classes:**
+- Entities with identity (VoltraDevice - persists across app lifecycle)
+- Complex state machines with validation
+- When encapsulation is needed (private implementation details)
+- Internal implementation of controllers (not stored in Zustand directly)
+
+**Important:** Don't store class instances in Zustand state. Extract plain values instead.
+
+### Pattern Selection Guide
+
+| Data Type | Pattern | Examples |
+|-----------|---------|----------|
+| Immutable value | Interface + Functions | TelemetryFrame, RepData |
+| Computed result | Interface + Functions | WorkoutStats, LiveAnalytics |
+| DTO from external system | Interface + Functions | BLE notifications, API responses |
+| Entity with identity | Class | VoltraDevice, ConnectionStateModel |
+| State machine | Class | Internal to controllers |
+
+**General Model Rules (both patterns):**
+- No async operations in models
+- No React or Zustand dependencies
+- State transitions are explicit (methods or functions)
+- Support serialization (toState/toJSON or plain objects)
+
+## Controller Pattern
+
+Controllers coordinate models with external systems (BLE adapter, timers).
+
+```typescript
+// domain/voltra/controllers/device-controller.ts
+export class VoltraDeviceController {
+  constructor(
+    private device: VoltraDevice,
+    private adapter: BLEAdapter,
+  ) {}
+  
+  async setWeight(lbs: number): Promise<void> {
+    const cmd = WeightCommands.get(lbs);
+    if (!cmd) throw new InvalidWeightError(lbs);
+    await this.adapter.write(cmd);
+    this.device.updateSettings({ weight: lbs });
+  }
+}
+```
+
+**Controller Rules:**
+- Controllers handle async operations (BLE writes, timers, fetch)
+- Controllers may emit events for state changes
+- One controller per domain concern
+- File naming: use `-controller.ts` suffix (e.g., `device-controller.ts`)
+
+## Domain Import Conventions
+
+Always use `@/` path alias for cross-module imports within domain code.
+
+```typescript
+// GOOD: Use @/ for imports from other domain modules
+import { MovementPhase } from '@/domain/voltra/protocol/constants';
+import { DiscoveredDevice } from '@/domain/bluetooth/models/device';
+import { delay } from '@/domain/shared';
+
+// GOOD: Relative imports within same submodule
+import type { TelemetryFrame } from './frame';  // same directory sibling
+
+// GOOD: Relative imports for JSON data (required)
+import weightsData from './data/weights.json';
+
+// BAD: Relative imports crossing module boundaries
+import { MovementPhase } from '../../protocol/constants';
+import { DiscoveredDevice } from '../models/device';
+```
+
+See `typescript.mdc` for complete import pattern rules.
+
+## Protocol Data Rule
+
+All protocol byte sequences and offsets live in `protocol.json`.
+
+```typescript
+// constants.ts loads from JSON and exports typed objects
+import protocolData from './data/protocol.json';
+
+export const MessageTypes = {
+  TELEMETRY_STREAM: hexToBytes(protocolData.telemetry.message_types.stream),
+  // ...
+};
+```
+
+- App-level timing constants stay in `constants.ts` (not protocol data)
+- TypeScript enums reference JSON values but are defined in code
+
+## Domain Testing
+
+```typescript
+// domain/voltra/__tests__/device-controller.test.ts
+describe('VoltraDeviceController', () => {
+  it('should update device settings after successful write', async () => {
+    const mockAdapter = { write: jest.fn() };
+    const device = new VoltraDevice('test-id');
+    const controller = new VoltraDeviceController(device, mockAdapter);
+    
+    await controller.setWeight(50);
+    
+    expect(mockAdapter.write).toHaveBeenCalled();
+    expect(device.settings.weight).toBe(50);
+  });
+});
+```
+
+- Test models and controllers with plain Jest
+- No React Testing Library needed for business logic
+- Mock external dependencies (BLEAdapter, etc.)
+
+## domain/exercise Module
+
+Pure exercise definitions - metadata only, no session state.
+
+### Structure
+
+```
+domain/exercise/
+├── types.ts      # Exercise interface, MuscleGroup enum
+├── catalog.ts    # EXERCISE_CATALOG, getExercise, getAllExercises, createExercise
+├── mappings.ts   # EXERCISE_MUSCLE_GROUPS, EXERCISE_TYPES, getExerciseName
+└── index.ts
+```
+
+Exercise sessions and plans are in `domain/workout/models/`.
+
+## domain/planning Module
+
+Unified planning system for exercise sessions.
+
+### Structure
+
+```
+domain/planning/
+├── types.ts           # TrainingGoal enum, PlanningContext, PlanResult, constants
+├── planner.ts         # planExercise() - unified entry point
+├── strategies/
+│   ├── standard.ts    # Intra-workout adaptation
+│   ├── discovery.ts   # Weight discovery workflow
+│   ├── progression.ts # Session-over-session progression
+│   └── index.ts
+└── index.ts
+```
+
+### Key Types
+
+```typescript
+// TrainingGoal is an ENUM - use enum values, not strings
+enum TrainingGoal {
+  STRENGTH = 'strength',
+  HYPERTROPHY = 'hypertrophy',
+  ENDURANCE = 'endurance',
+}
+
+// PlanningContext - input to planExercise()
+interface PlanningContext {
+  exerciseId: string;
+  goal: TrainingGoal;
+  sessionMetrics?: SessionMetrics;
+  historicalMetrics?: HistoricalMetrics;
+  completedSets: Set[];
+  overrides?: PlanningOverrides;
+}
+
+// PlanResult - output from planExercise()
+interface PlanResult {
+  nextSet: PlannedSet | null;
+  remainingSets: PlannedSet[];
+  restSeconds: number;
+  adjustments: PlanAdjustment[];
+  message?: string;
+}
+```
+
+### Unified Planning Flow
+
+The planner handles all scenarios through a single interface:
+
+1. **Initial planning** - `completedSets = []`, returns full plan
+2. **Mid-workout adaptation** - has `completedSets`, adjusts remaining plan
+3. **Weight discovery** - no history, builds profile from sets
+
+```typescript
+// All scenarios use the same function
+const result = planExercise({
+  exerciseId: 'bench_press',
+  goal: TrainingGoal.HYPERTROPHY,
+  completedSets: session.completedSets,
+  sessionMetrics: currentMetrics,
+});
+```
+
+## domain/workout Module
+
+Exercise sessions, plans, and execution live here (not in exercise/).
+
+### Session & Plan Types
+
+```typescript
+// PlannedSet - single planned set with all execution info
+interface PlannedSet {
+  setNumber: number;      // 1-based display number
+  weight: number;         // Target weight in lbs
+  targetReps: number;     // Target rep count
+  repRange?: [number, number];  // Optional range for double progression
+  rirTarget: number;      // Target RIR (reps in reserve)
+  isWarmup: boolean;      // Warmup vs working set
+  targetTempo?: TempoTarget;
+  targetROM?: number;
+}
+
+// ExercisePlan - sequence of planned sets
+interface ExercisePlan {
+  exerciseId: string;
+  sets: PlannedSet[];
+  defaultRestSeconds: number;
+  goal?: TrainingGoal;
+  generatedAt: number;
+  generatedBy: PlanSource;
+}
+```
+
+### Key Patterns
+
+- **Plan = explicit set sequence** - Planners generate concrete `PlannedSet[]`, not rules
+- **Session state is derived** - `currentSetIndex = completedSets.length`
+- **Termination is unified** - Same function for discovery and standard
+
+### Termination Rules
+
+All sessions check: failure (0 reps), velocity grinding (<0.3 m/s), plan exhausted.
+Standard adds: junk volume (50%+ rep drop).
+Discovery adds: profile complete.
+
+```typescript
+function checkTermination(session, lastSet, isDiscovery): TerminationResult;
+```

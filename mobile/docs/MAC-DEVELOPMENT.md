@@ -80,7 +80,7 @@ The app automatically detects the environment:
 | iOS Simulator | None (shows warning) | ✅ Yes |
 | Expo Go | None (shows warning) | ✅ Yes |
 
-The detection logic is in `src/hooks/useBLEEnvironment.ts`.
+The detection logic is in `src/domain/bluetooth/models/environment.ts` and exposed via `connection-store`.
 
 ### Configuration
 
@@ -227,13 +227,19 @@ relay/
 └── requirements.txt  # Python dependencies (bleak, fastapi, etc.)
 
 mobile/src/
-├── ble/
-│   ├── index.ts      # BLE adapter factory
-│   ├── native.ts     # Native BLE (react-native-ble-plx)
-│   ├── proxy.ts      # WebSocket proxy to relay
-│   └── types.ts      # Shared interfaces
+├── domain/
+│   └── bluetooth/
+│       ├── adapters/
+│       │   ├── index.ts      # createBLEAdapter factory
+│       │   ├── native.ts     # Native BLE (react-native-ble-plx)
+│       │   ├── proxy.ts      # WebSocket proxy to relay
+│       │   └── types.ts      # Shared interfaces
+│       └── models/
+│           └── environment.ts  # BLE environment detection
+├── stores/
+│   └── connection-store.ts   # Device connection, exposes bleEnvironment
 └── config/
-    └── index.ts      # Relay URL configuration
+    └── index.ts              # Relay URL configuration
 ```
 
 ## Comparison: Web vs iOS Development

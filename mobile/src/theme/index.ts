@@ -9,7 +9,7 @@
 
 // Re-export everything from individual modules
 export { colors } from './colors';
-export { shadows, neumorphic } from './shadows';
+export { shadows, neumorphic, getElevationStyles, type Elevation } from './shadows';
 export { styles, icons, spacing, borderRadius, fontSize } from './styles';
 export { 
   getRPEColor, 

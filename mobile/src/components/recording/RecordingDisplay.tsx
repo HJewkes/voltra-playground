@@ -1,0 +1,302 @@
+/**
+ * RecordingDisplay
+ *
+ * Main display area during active recording sessions.
+ * Shows different content based on RecordingUIState:
+ * - idle: Ready state with instructions
+ * - countdown: 3-2-1 countdown before recording
+ * - recording: Rep counter with velocity metrics
+ * - resting: Rest countdown with skip button
+ *
+ * Uses Rep from domain/workout for phase-specific velocity metrics.
+ */
+
+import React from 'react';
+import { View, Text, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useStore } from 'zustand';
+import { colors } from '@/theme';
+import type { RecordingUIState, RecordingStoreApi } from '@/stores';
+import type { Rep } from '@/domain/workout';
+
+// =============================================================================
+// Types
+// =============================================================================
+
+export interface RecordingDisplayViewProps {
+  /** Current UI state */
+  uiState: RecordingUIState;
+  /** Main instruction text */
+  instruction: string;
+  /** Secondary instruction */
+  subInstruction?: string;
+  /** Target reps for current set */
+  targetReps?: number;
+  /** Rest countdown timer (seconds) */
+  restCountdown?: number;
+  /** Start countdown (3-2-1) */
+  startCountdown?: number;
+  /** Current rep count */
+  repCount: number;
+  /** Last completed rep */
+  lastRep: Rep | null;
+  /** Called to skip rest */
+  onSkipRest?: () => void;
+}
+
+// =============================================================================
+// Helper: Background color per state
+// =============================================================================
+
+function getStateColor(uiState: RecordingUIState): string {
+  switch (uiState) {
+    case 'recording':
+      return colors.success.DEFAULT;
+    case 'resting':
+      return colors.primary[600];
+    case 'countdown':
+      return colors.warning.DEFAULT;
+    default:
+      return colors.primary[500];
+  }
+}
+
+// =============================================================================
+// Sub-displays
+// =============================================================================
+
+/**
+ * IdleDisplay - ready state with instructions.
+ */
+function IdleDisplay({
+  instruction,
+  subInstruction,
+}: {
+  instruction: string;
+  subInstruction?: string;
+}) {
+  return (
+    <View className="items-center">
+      <Text className="text-white text-5xl font-bold text-center">{instruction}</Text>
+      {subInstruction && (
+        <Text className="text-white/70 text-xl mt-5 text-center">{subInstruction}</Text>
+      )}
+    </View>
+  );
+}
+
+/**
+ * RestingDisplay - rest countdown with skip button.
+ */
+function RestingDisplay({
+  countdown,
+  subInstruction,
+  onSkip,
+}: {
+  countdown: number;
+  subInstruction?: string;
+  onSkip?: () => void;
+}) {
+  return (
+    <View className="items-center">
+      <Text className="text-white/70 text-xl mb-3">REST</Text>
+      <Text className="text-white text-9xl font-bold">{countdown}</Text>
+      {subInstruction && (
+        <Text className="text-white/70 text-lg mt-5">{subInstruction}</Text>
+      )}
+      {onSkip && (
+        <TouchableOpacity
+          className="mt-8 rounded-2xl px-8 py-4"
+          style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
+          onPress={onSkip}
+          activeOpacity={0.7}
+        >
+          <Text className="text-white font-bold text-base">Skip Rest</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
+
+/**
+ * CountdownDisplay - 3-2-1 countdown.
+ */
+function CountdownDisplay({
+  countdown,
+  subInstruction,
+}: {
+  countdown: number;
+  subInstruction?: string;
+}) {
+  return (
+    <View className="items-center">
+      <Text className="text-white/70 text-xl mb-3">GET READY</Text>
+      <Text className="text-white font-bold" style={{ fontSize: 120 }}>
+        {countdown}
+      </Text>
+      {subInstruction && (
+        <Text className="text-white/70 text-lg mt-5">{subInstruction}</Text>
+      )}
+    </View>
+  );
+}
+
+/**
+ * ActiveRecordingDisplay - rep counter with velocity.
+ */
+function ActiveRecordingDisplay({
+  repCount,
+  targetReps,
+  lastRep,
+}: {
+  repCount: number;
+  targetReps?: number;
+  lastRep: Rep | null;
+}) {
+  return (
+    <View className="items-center">
+      <Text className="text-white/70 text-xl mb-2">REPS</Text>
+      <Text className="text-white text-9xl font-bold">{repCount}</Text>
+      {targetReps !== undefined && (
+        <Text className="text-white text-3xl mt-2">/ {targetReps}</Text>
+      )}
+      {lastRep && (
+        <View
+          className="mt-8 rounded-2xl px-8 py-4"
+          style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
+        >
+          <Text className="text-white text-xl font-bold">
+            {lastRep.metrics.concentricPeakVelocity.toFixed(2)} m/s
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
+// =============================================================================
+// View Component (Presentational)
+// =============================================================================
+
+/**
+ * RecordingDisplayView - presentational component for recording state display.
+ *
+ * @example
+ * ```tsx
+ * <RecordingDisplayView
+ *   uiState="recording"
+ *   instruction="Start lifting"
+ *   repCount={5}
+ *   lastRep={lastRep}
+ *   targetReps={10}
+ * />
+ * ```
+ */
+export function RecordingDisplayView({
+  uiState,
+  instruction,
+  subInstruction,
+  targetReps,
+  restCountdown = 0,
+  startCountdown = 0,
+  repCount,
+  lastRep,
+  onSkipRest,
+}: RecordingDisplayViewProps) {
+  return (
+    <View
+      className="flex-1 rounded-3xl p-8 items-center justify-center"
+      style={{ backgroundColor: getStateColor(uiState) }}
+    >
+      {uiState === 'idle' && (
+        <IdleDisplay instruction={instruction} subInstruction={subInstruction} />
+      )}
+      {uiState === 'resting' && (
+        <RestingDisplay
+          countdown={restCountdown}
+          subInstruction={subInstruction}
+          onSkip={onSkipRest}
+        />
+      )}
+      {uiState === 'countdown' && (
+        <CountdownDisplay countdown={startCountdown} subInstruction={subInstruction} />
+      )}
+      {uiState === 'recording' && (
+        <ActiveRecordingDisplay
+          repCount={repCount}
+          targetReps={targetReps}
+          lastRep={lastRep}
+        />
+      )}
+    </View>
+  );
+}
+
+// =============================================================================
+// Connected Component
+// =============================================================================
+
+export interface RecordingDisplayProps {
+  /** Recording store to subscribe to */
+  store: RecordingStoreApi;
+  /** Main instruction text */
+  instruction?: string;
+  /** Secondary instruction */
+  subInstruction?: string;
+  /** Target reps for current set */
+  targetReps?: number;
+  /** Rest countdown timer (seconds) - managed by caller */
+  restCountdown?: number;
+  /** Start countdown (3-2-1) - managed by caller */
+  startCountdown?: number;
+  /** Called to skip rest */
+  onSkipRest?: () => void;
+}
+
+/**
+ * RecordingDisplay - connected component that subscribes to recording store.
+ *
+ * @example
+ * ```tsx
+ * <RecordingDisplay
+ *   store={recordingStore}
+ *   instruction="Lift with control"
+ *   targetReps={10}
+ * />
+ * ```
+ */
+export function RecordingDisplay({
+  store,
+  instruction = 'Ready',
+  subInstruction,
+  targetReps,
+  restCountdown,
+  startCountdown,
+  onSkipRest,
+}: RecordingDisplayProps) {
+  const uiState = useStore(store, (s) => s.uiState);
+  const repCount = useStore(store, (s) => s.repCount);
+  const lastRep = useStore(store, (s) => s.lastRep);
+
+  return (
+    <RecordingDisplayView
+      uiState={uiState}
+      instruction={instruction}
+      subInstruction={subInstruction}
+      targetReps={targetReps}
+      restCountdown={restCountdown}
+      startCountdown={startCountdown}
+      repCount={repCount}
+      lastRep={lastRep}
+      onSkipRest={onSkipRest}
+    />
+  );
+}
+
+// =============================================================================
+// Legacy Export (for backward compatibility with DiscoveryScreen)
+// =============================================================================
+
+// Re-export view as the legacy interface expected by DiscoveryScreen
+// This allows gradual migration - DiscoveryScreen can continue passing all props
+export { RecordingDisplayView as RecordingDisplayLegacy };

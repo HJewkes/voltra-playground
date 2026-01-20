@@ -1,0 +1,52 @@
+---
+description: Testing guidelines for stores and domain logic
+globs: ["**/*.test.ts", "**/*.spec.ts"]
+---
+
+# Testing Guidelines
+
+## What to Test
+
+| Target | Approach |
+|--------|----------|
+| Stores | Unit test all business logic in Zustand stores |
+| Domain logic | Test classes in `data/`, `planning/`, `ble/` |
+| UI primitives | Snapshot tests (optional) |
+
+## What NOT to Test
+
+- **Screens** - they're just orchestration
+- **Hooks** - they're thin bindings to stores
+- **Component rendering logic** - test the stores instead
+
+## Store Testing Pattern
+
+```typescript
+// stores/__tests__/connection-store.test.ts
+describe('connection-store', () => {
+  beforeEach(() => {
+    // Reset store state
+    useConnectionStore.setState(initialState);
+  });
+
+  it('should update relay status on successful check', async () => {
+    const store = useConnectionStore.getState();
+    await store.checkRelayStatus();
+    expect(store.relayStatus).toBe('connected');
+  });
+
+  it('should handle connection errors', async () => {
+    fetchMock.mockRejectedValueOnce(new Error('Network error'));
+    const store = useConnectionStore.getState();
+    await store.checkRelayStatus();
+    expect(store.relayStatus).toBe('disconnected');
+  });
+});
+```
+
+## Key Principles
+
+- Use `useStore.getState()` to access store directly in tests
+- Mock external dependencies (fetch, BLE, etc.)
+- Test state transitions and side effects
+- Focus on behavior, not implementation details

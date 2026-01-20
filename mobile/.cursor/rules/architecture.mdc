@@ -1,0 +1,185 @@
+---
+description: Core architecture layers and directory structure for the Voltra mobile app
+alwaysApply: true
+---
+
+# Architecture Layers
+
+```
+app/(tabs)/        → Route files (re-export screens)
+components/        → All UI (screens, domain, primitives)
+hooks/             → React bindings to stores (NO hooks in components/)
+stores/            → Thin reactive wrappers over domain controllers (Zustand)
+domain/            → Business logic, models, controllers, analytics, training
+data/              → Persistence, repositories
+```
+
+## Directory Structure
+
+```
+domain/
+├── bluetooth/     # BLE connection, scanning, environment, adapters
+│   ├── adapters/  # BLEAdapter implementations (native, proxy)
+│   ├── models/
+│   └── controllers/
+├── exercise/      # Pure exercise definitions (metadata only)
+│   ├── types.ts   # Exercise interface, MuscleGroup enum
+│   ├── catalog.ts # EXERCISE_CATALOG, getExercise, getAllExercises
+│   └── mappings.ts # EXERCISE_MUSCLE_GROUPS, getExerciseName
+├── history/       # Computed data from set history (velocity baselines, PRs, trends)
+│   ├── models/    # VelocityBaseline, PersonalRecord, TrendAnalysis
+│   └── services/  # computeVelocityBaseline, computePersonalRecords
+├── planning/      # Unified planning system (replaces training/)
+│   ├── types.ts   # TrainingGoal enum, PlanningContext, PlanResult
+│   ├── planner.ts # planExercise() - unified entry point
+│   └── strategies/ # standard.ts, discovery.ts, progression.ts
+├── vbt/           # VBT constants, load-velocity profiles, 1RM estimation
+│   ├── constants.ts # VELOCITY_AT_PERCENT_1RM, TRAINING_ZONES
+│   └── profile.ts  # buildLoadVelocityProfile, generateWorkingWeightRecommendation
+├── voltra/        # Voltra device, telemetry, protocol
+│   ├── models/
+│   ├── controllers/
+│   ├── adapters/  # SampleAdapter (TelemetryFrame → WorkoutSample)
+│   └── protocol/
+├── workout/       # Hardware-agnostic workout models and analytics
+│   ├── models/    # Rep, Set, SetMetrics, WorkoutSample, ExerciseSession, ExercisePlan
+│   ├── detectors/ # RepDetector
+│   ├── aggregators/
+│   ├── metrics/   # SessionMetrics, baseline, strength/fatigue/readiness estimates
+│   ├── planners/  # standard-planner, discovery-planner
+│   └── session/   # Termination logic
+└── shared/        # Utilities, shared types
+
+data/
+├── exercise-session/  # Exercise sessions (unified storage)
+│   ├── schema.ts           # StoredExerciseSession
+│   ├── repository.ts       # ExerciseSessionRepository
+│   ├── converters.ts       # Domain ↔ Storage
+│   └── index.ts
+├── set/           # (deprecated) Recorded sets - use exercise-session
+├── discovery/     # (deprecated) Weight discovery - use exercise-session
+├── preferences/   # Device and connection preferences
+│   ├── preferences-schema.ts
+│   ├── preferences-storage.ts
+│   └── index.ts
+└── adapters/      # Low-level storage abstraction (AsyncStorage)
+
+components/
+├── ui/            # App-agnostic primitives (Card, Button, Banner, etc.)
+│   ├── layout/    # Card, Surface, Stack, Divider, Section
+│   ├── feedback/  # Banner, EmptyState, LoadingState, ErrorBanner
+│   ├── inputs/    # ActionButton, OptionSelector
+│   ├── display/   # StatDisplay, StatsRow, Badge, IconBox, ListItem
+│   ├── navigation/# LinkCard
+│   └── overlays/  # BottomSheet
+├── device/        # Voltra connection, BLE, scanning
+├── recording/     # Intra-set recording (RecordingDisplay, LiveMetrics)
+├── exercise/      # Exercise session UI (SetTargetCard, SessionProgress)
+├── analytics/     # Charts, history, summaries
+├── planning/      # Exercise selection, goals, weight setup
+└── screens/       # Flat files: ExerciseScreen.tsx, ExercisePickerScreen.tsx, etc.
+```
+
+## Responsibility Separation
+
+| Layer | Responsibility | Examples |
+|-------|---------------|----------|
+| `domain/` | Business logic, models, controllers | VoltraDevice, TelemetryController, RepDetector |
+| `domain/history/` | Computed data from set history | computeVelocityBaseline, computePersonalRecords |
+| `stores/` | Thin reactive wrappers, state sync | voltra-store, recording-store, connection-store |
+| `hooks/` | Cross-store orchestration | useDiscoveryFlow |
+| `components/` | UI rendering only | All .tsx files |
+| `data/` | Entity-based persistence | set-repository, discovery-storage |
+
+## Domain-First Design
+
+Business logic lives in `domain/` modules, not stores:
+
+1. **Models** define state and validation (no async, no React)
+2. **Controllers** coordinate models with external systems (BLE, timers)
+3. **Services** compute derived data (velocity baselines, personal records)
+4. **Stores** expose domain state to React with granular updates
+5. **Components** render UI from store state
+
+## Data Layer Patterns
+
+### Entity-Based Organization
+
+Data is organized by entity, not by type:
+
+```
+# GOOD: Entity-based
+data/set/
+├── set-schema.ts      # Types (StoredSet, etc.)
+├── set-adapters.ts    # Domain ↔ Storage conversion
+├── set-repository.ts  # CRUD operations
+└── index.ts
+
+# BAD: Type-based (old pattern)
+data/models/     # All types mixed
+data/repositories/ # All repos mixed
+```
+
+### Schema Files
+
+Schema files define the storage format only (no functions):
+
+```typescript
+// data/set/set-schema.ts - Types only
+export interface StoredSet { ... }
+export interface StoredSetAnalytics { ... }
+```
+
+### Adapters
+
+Adapters convert between domain models and storage schemas:
+
+```typescript
+// data/set/set-adapters.ts
+export function toStoredSet(set: Set): StoredSet { ... }
+export function fromStoredSet(stored: StoredSet): Set { ... }
+```
+
+### Repositories
+
+Repositories are CRUD-only. No business logic:
+
+```typescript
+// GOOD: Pure data access
+interface SetRepository {
+  getById(id: string): Promise<StoredSet | null>;
+  getAll(): Promise<StoredSet[]>;
+  save(set: StoredSet): Promise<void>;
+  delete(id: string): Promise<void>;
+  getByExercise(exerciseId: string): Promise<StoredSet[]>;
+}
+
+// BAD: Business logic in repository
+getAggregateStats(): Promise<Stats>;  // Move to domain/history
+getTopPerformers(): Promise<Set[]>;   // Move to domain/history
+```
+
+### Simplified Storage
+
+For simple entities, use storage functions instead of full repositories:
+
+```typescript
+// data/preferences/preferences-storage.ts
+export async function getLastDevice(): Promise<Device | null>;
+export async function saveLastDevice(device: Device): Promise<void>;
+export async function clearLastDevice(): Promise<void>;
+```
+
+### Computed Data
+
+Computed/derived types belong in domain, not data:
+
+```typescript
+// domain/history/models/
+VelocityBaseline  // Computed from stored sets
+PersonalRecord    // Computed from stored sets
+
+// domain/history/services/
+computeVelocityBaseline(sets) → VelocityBaseline
+computePersonalRecords(sets) → PersonalRecord[]
+```

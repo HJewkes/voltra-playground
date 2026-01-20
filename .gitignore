@@ -1,4 +1,17 @@
 # =============================================================================
+# Private / Research Files
+# =============================================================================
+
+# Research documentation (private)
+/docs/
+
+# Console log captures
+/captures/
+
+# Old Python SDK (deprecated)
+/src/
+
+# =============================================================================
 # Mobile (React Native / Expo)
 # =============================================================================
 
@@ -11,10 +24,8 @@ mobile/dist/
 mobile/web-build/
 
 # Native builds
-mobile/android/.gradle/
-mobile/android/app/build/
-mobile/ios/Pods/
-mobile/ios/build/
+mobile/android/
+mobile/ios/
 *.jks
 *.keystore
 

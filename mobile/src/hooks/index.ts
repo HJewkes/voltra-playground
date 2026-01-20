@@ -1,9 +1,6 @@
 /**
  * React Hooks for Voltra
  * 
- * Note: Most state management has moved to Zustand stores in @/stores.
- * Add custom hooks here as needed.
+ * Orchestration hooks that coordinate between stores.
+ * Simple state access should use stores directly.
  */
-
-export { useBLEEnvironment, getBLEEnvironment } from './useBLEEnvironment';
-export type { BLEEnvironment, BLEEnvironmentInfo } from './useBLEEnvironment';

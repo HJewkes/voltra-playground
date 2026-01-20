@@ -1,0 +1,60 @@
+---
+description: Screen conventions and orchestration rules
+globs: ["**/components/screens/*.tsx"]
+---
+
+# Screen Conventions
+
+Screens are **pure orchestration** - they compose components and connect to hooks/stores.
+
+## Rules
+
+- Call hooks, pass data to components
+- No local `useState` for domain state (UI state like modals is OK)
+- No dedicated sub-components (use domain components or primitives)
+- Named explicitly: `SettingsScreen.tsx` not `Settings/index.tsx`
+- Keep under 150 lines
+
+```typescript
+// screens/SettingsScreen.tsx - GOOD: pure orchestration
+export function SettingsScreen() {
+  const { discoveredDevices, isScanning, scan, relayStatus, isConnected } = useConnectionStore();
+  
+  return (
+    <ScrollView>
+      {isConnected && <ConnectionBanner />}
+      {!isConnected && <DeviceList devices={discoveredDevices} onScan={scan} />}
+      {isWeb && <RelayStatus status={relayStatus} />}
+    </ScrollView>
+  );
+}
+```
+
+## User Feedback (Alert.alert)
+
+`Alert.alert` is a UI concern - keep it in **screens only**.
+
+```typescript
+// hooks/useWorkoutControls.ts - GOOD: returns boolean
+function startWorkout() {
+  if (weight === 0) return false;  // Let screen handle UI feedback
+  return true;
+}
+
+// screens/WorkoutScreen.tsx - GOOD: screen handles alert
+const handleStart = () => {
+  if (!startWorkout()) {
+    Alert.alert('Set Weight', 'Please set a weight before starting');
+  }
+};
+
+// BAD: Alert in hook or component
+function startWorkout() {
+  if (weight === 0) {
+    Alert.alert('Error', 'Set weight first');  // Don't do this
+    return;
+  }
+}
+```
+
+Components should return booleans or call callbacks, not show alerts.

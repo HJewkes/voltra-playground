@@ -1,0 +1,59 @@
+---
+description: Component organization and domain categories
+globs: ["**/components/**/*.tsx"]
+---
+
+# Component Organization
+
+## Domain Categories
+
+| Category | Purpose | When to Use |
+|----------|---------|-------------|
+| `device/` | BLE connection, scanning, device state | Anything related to connecting/managing Voltra hardware |
+| `session/` | Active workout, live telemetry | Components shown during an active workout or recording |
+| `analytics/` | Data visualization, history | Charts, workout history, post-workout summaries |
+| `planning/` | Pre-workout setup | Exercise selection, goal picking, weight configuration |
+
+### Component Examples
+
+| Category | Components |
+|----------|------------|
+| `device/` | DeviceList, ScanButton, DeviceListItem, ConnectionBanner, RelayStatus |
+| `session/` | LiveStatsDisplay, WorkoutControls, PhaseIndicator, RestTimer |
+| `analytics/` | ForceCurveChart, VelocityTrendChart, WorkoutListItem, SetSummaryModal |
+| `planning/` | WeightSetupCard, GoalPicker, ExerciseSelector, DiscoveryProgress |
+
+## One Component Per File
+
+**Rule: Each `.tsx` file should export exactly one component.**
+
+Exceptions (when inline is OK):
+- Purely presentational sub-components < 20 lines
+- Internal helpers that aren't reusable outside the parent
+- The sub-component is only used by the parent component
+
+```typescript
+// device/DeviceList.tsx - BAD: multiple exportable components
+export function DeviceList() { ... }
+export function DeviceListItem() { ... }  // Should be its own file
+
+// device/DeviceList.tsx - GOOD: one export, small inline helper
+export function DeviceList() { ... }
+
+// OK inline: purely presentational, <20 lines, only used here
+function EmptyMessage() {
+  return <Text>No devices found</Text>;
+}
+```
+
+## Component Size Guidelines
+
+- UI primitives: < 100 lines
+- Domain components: < 200 lines
+- If larger, split into smaller focused components
+
+## Component Promotion Rules
+
+- If a component could be reused → domain category (`device/`, `session/`, etc.)
+- If it's just composing primitives → inline in screen
+- Only truly flow-specific things stay in `screens/`

@@ -52,13 +52,18 @@ export interface StorageAdapter {
  * Storage key prefixes for different data types.
  */
 export const STORAGE_KEYS = {
-  // Workouts
+  // Workouts (legacy - being replaced by exercise sessions)
   WORKOUTS_INDEX: 'voltra:workouts:index',
   WORKOUT_PREFIX: 'voltra:workouts:',
   
-  // Discovery sessions
+  // Discovery sessions (legacy - being replaced by exercise sessions)
   DISCOVERY_INDEX: 'voltra:discovery:index',
   DISCOVERY_PREFIX: 'voltra:discovery:',
+  
+  // Exercise sessions (unified storage for all sessions)
+  EXERCISE_SESSIONS_INDEX: 'voltra:exercise-sessions:index',
+  EXERCISE_SESSION_PREFIX: 'voltra:exercise-sessions:',
+  EXERCISE_SESSION_CURRENT: 'voltra:exercise-sessions:current',
   
   // Progression state
   PROGRESSION_STATE: 'voltra:progression:state',

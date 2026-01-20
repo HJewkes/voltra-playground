@@ -1,0 +1,263 @@
+---
+description: Zustand patterns and store conventions
+globs: ["**/stores/*.ts"]
+---
+
+# Store Conventions
+
+**Zustand stores are thin reactive wrappers over domain controllers.**
+
+## Store Architecture
+
+| Store | Responsibility | Factory |
+|-------|----------------|---------|
+| `voltra-store` | Device control, raw telemetry | `createVoltraStore()` |
+| `recording-store` | Rep detection, analytics | `createRecordingStore()` |
+| `connection-store` | Multi-device connection orchestration, BLE environment | `useConnectionStore` (singleton) |
+| `history-store` | Workout history persistence | `useHistoryStore` (singleton) |
+
+### voltra-store + recording-store Pattern
+
+These two stores work together:
+
+```
+voltra-store (device)           recording-store (analytics)
+├── deviceId, weight            ├── reps, lastRep
+├── connectionState             ├── setMetrics
+├── currentFrame, recentFrames  ├── velocityLoss, rpe, rir
+├── _telemetryController        └── processFrame()
+└── startRecording()
+```
+
+Components subscribe to frame events and forward to recording-store:
+
+```typescript
+// In component or hook
+const telemetryController = useStore(voltraStore, s => s._telemetryController);
+const processFrame = useStore(recordingStore, s => s.processFrame);
+
+useEffect(() => {
+  return telemetryController.subscribe((event) => {
+    if (event.type === 'frame') {
+      processFrame(event.frame);
+    }
+  });
+}, [telemetryController, processFrame]);
+```
+
+## Store Pattern
+
+Stores delegate to domain controllers and sync state with granular updates.
+
+```typescript
+// stores/voltra-store.ts - Thin wrapper pattern
+export function createVoltraStore(adapter: BLEAdapter, deviceId: string) {
+  const device = new VoltraDevice(deviceId);
+  const controller = new VoltraDeviceController(device, adapter);
+  
+  return createStore<VoltraState>()((set, get) => ({
+    // Initial state - device control + raw telemetry only
+    weight: 0,
+    chains: 0,
+    connectionState: 'disconnected',
+    currentFrame: null,
+    recentFrames: [],
+    
+    // Thin action wrappers with GRANULAR updates
+    setWeight: async (lbs) => {
+      await controller.setWeight(lbs);
+      set({ weight: lbs }); // Only update weight field
+    },
+    
+    setChains: async (lbs) => {
+      await controller.setChains(lbs);
+      set({ chains: lbs }); // Only update chains field
+    },
+  }));
+}
+```
+
+```typescript
+// stores/recording-store.ts - Analytics during recording
+export function createRecordingStore() {
+  const repDetector = new RepDetector();
+  
+  return createStore<RecordingState>()((set, get) => ({
+    // Analytics state
+    reps: [],
+    lastRep: null,
+    setMetrics: createEmptySetMetrics(),
+    velocityLoss: 0,
+    rpe: 5,
+    rir: 6,
+    
+    // Process frames from voltra-store
+    processFrame: (frame) => {
+      const sample = toWorkoutSample(frame);
+      const boundary = repDetector.processSample(sample);
+      
+      if (boundary) {
+        const rep = aggregateRepFromBoundary(boundary);
+        const newReps = [...get().reps, rep];
+        const metrics = aggregateSet(newReps);
+        
+        set({
+          reps: newReps,
+          lastRep: rep,
+          setMetrics: metrics,
+          velocityLoss: Math.abs(metrics.velocity.concentricDelta),
+          rpe: metrics.effort.rpe,
+          rir: metrics.effort.rir,
+        });
+      }
+    },
+  }));
+}
+```
+
+## Store Update Rule (Critical for Performance)
+
+**Always use granular `set()` calls that only update fields that changed.**
+
+```typescript
+// GOOD: Granular update preserves Zustand selectivity
+set({ weight: newWeight });
+
+// BAD: Replacing entire state defeats selective subscriptions
+set(device.toState());
+set({ ...get(), weight: newWeight });
+```
+
+This ensures `useStore(store, s => s.weight)` only re-renders when `weight` changes.
+
+## Selectors for Derived State (Critical)
+
+**DO NOT use JavaScript getters that call `get()` inside stores.** Zustand cannot track these for re-renders.
+
+```typescript
+// BAD: Getters with get() don't trigger re-renders
+get isConnected() {
+  return get().primaryDeviceId && get().devices.has(get().primaryDeviceId);
+}
+
+// GOOD: Export selector functions outside the store
+export const selectIsConnected = (state: ConnectionStoreState) => 
+  !!(state.primaryDeviceId && state.devices.has(state.primaryDeviceId));
+
+// Usage in component
+const isConnected = useConnectionStore(selectIsConnected);
+```
+
+### Selector Patterns
+
+```typescript
+// Single value selector
+const relayStatus = useConnectionStore(state => state.relayStatus);
+
+// Computed selector (exported)
+const isConnected = useConnectionStore(selectIsConnected);
+
+// Multiple values with useShallow (prevents unnecessary re-renders)
+import { useShallow } from 'zustand/react/shallow';
+
+const { relayStatus, primaryDeviceId } = useConnectionStore(
+  useShallow(state => ({
+    relayStatus: state.relayStatus,
+    primaryDeviceId: state.primaryDeviceId,
+  }))
+);
+
+// OR compute derived state locally in component
+const { primaryDeviceId, devices, relayStatus, bleEnvironment } = useConnectionStore();
+const isConnected = primaryDeviceId && devices.has(primaryDeviceId);
+const relayNotReady = bleEnvironment.isWeb && relayStatus !== 'connected';
+```
+
+### When to Use Each Pattern
+
+| Pattern | Use When |
+|---------|----------|
+| Inline selector `state => state.foo` | Single primitive value |
+| Exported selector `selectFoo` | Computed value used in multiple places |
+| `useShallow` | Multiple values, no computation |
+| Local computation | Derived state specific to one component |
+
+## State Management Guidelines
+
+| Use Case | Solution |
+|----------|----------|
+| Component-specific UI state (modals, inputs) | `useState` |
+| Domain state | Zustand store (backed by domain controller) |
+| Cross-component state | Zustand store |
+| Business logic | Domain controllers (not store actions) |
+| Complex state machines | Domain models/controllers |
+| Derived/computed state | Selectors or local computation |
+
+## Rules
+
+- Components receive data and callbacks via props
+- No `useCallback` with business logic in components
+- Testable logic lives in domain controllers, not stores
+- Stores are the React-facing interface to domain logic
+
+## Store Testing Pattern
+
+```typescript
+// Test the domain controller directly (preferred)
+describe('VoltraDeviceController', () => {
+  it('should update device settings', async () => {
+    const mockAdapter = { write: jest.fn() };
+    const device = new VoltraDevice('test-id');
+    const controller = new VoltraDeviceController(device, mockAdapter);
+    
+    await controller.setWeight(50);
+    expect(device.settings.weight).toBe(50);
+  });
+});
+
+// Test store integration if needed
+describe('voltra-store', () => {
+  it('should sync state after controller action', async () => {
+    const store = createVoltraStore(mockAdapter, 'test-id');
+    await store.getState().setWeight(50);
+    expect(store.getState().weight).toBe(50);
+  });
+});
+```
+
+## exercise-session-store Pattern
+
+Unified engine for discovery and standard exercise sessions.
+
+| Store | Responsibility | Factory |
+|-------|----------------|---------|
+| `exercise-session-store` | Multi-set orchestration, termination | `createExerciseSessionStore()` |
+
+### Store Relationship
+
+```
+exercise-session-store (session)       recording-store (per-set)
+├── session, uiState                   ├── reps, lastRep
+├── restCountdown, startCountdown      ├── setMetrics
+├── terminationReason                  └── processFrame()
+├── startSession(), stopSession()
+└── skipRest(), adjustWeight()
+```
+
+### Two-Layer UI State
+
+- `ExerciseSessionUIState`: session-level (idle, preparing, ready, countdown, recording, processing, resting, results)
+- `RecordingUIState`: intra-set (idle, countdown, recording, resting)
+
+Recording-store is created/reset per set. Exercise-session-store orchestrates the full session.
+
+### Flow Patterns
+
+First set: user presses START → countdown → recording
+Subsequent sets: rest timer → countdown → recording (automatic, no START)
+
+Weight adjustment allowed during rest period.
+
+### Persistence
+
+Exercise-session-store persists to `ExerciseSessionRepository` after each set completion and on session end.

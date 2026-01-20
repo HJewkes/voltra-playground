@@ -11,11 +11,11 @@ import { colors } from './colors';
  * Lower RPE = easier (green), higher RPE = harder (red).
  */
 export function getRPEColor(rpe: number): string {
-  if (rpe < 6) return colors.success;
-  if (rpe < 7.5) return colors.successLight;
-  if (rpe < 8.5) return colors.warning;
+  if (rpe < 6) return colors.success.DEFAULT;
+  if (rpe < 7.5) return colors.success.light;
+  if (rpe < 8.5) return colors.warning.DEFAULT;
   if (rpe < 9.5) return colors.primary[500];
-  return colors.danger;
+  return colors.danger.DEFAULT;
 }
 
 /**
@@ -23,10 +23,10 @@ export function getRPEColor(rpe: number): string {
  * Lower loss = better (green), higher loss = fatigued (red).
  */
 export function getVelocityColor(velocityLoss: number): string {
-  if (velocityLoss < 10) return colors.success;
-  if (velocityLoss < 20) return colors.warning;
+  if (velocityLoss < 10) return colors.success.DEFAULT;
+  if (velocityLoss < 20) return colors.warning.DEFAULT;
   if (velocityLoss < 30) return colors.primary[500];
-  return colors.danger;
+  return colors.danger.DEFAULT;
 }
 
 /**
@@ -34,8 +34,8 @@ export function getVelocityColor(velocityLoss: number): string {
  */
 export function getConfidenceColor(confidence: 'low' | 'medium' | 'high'): string {
   switch (confidence) {
-    case 'high': return colors.success;
-    case 'medium': return colors.warning;
+    case 'high': return colors.success.DEFAULT;
+    case 'medium': return colors.warning.DEFAULT;
     case 'low': return colors.text.tertiary;
   }
 }
@@ -44,7 +44,7 @@ export function getConfidenceColor(confidence: 'low' | 'medium' | 'high'): strin
  * Get color based on connection state.
  */
 export function getConnectionColor(isConnected: boolean): string {
-  return isConnected ? colors.success : colors.text.muted;
+  return isConnected ? colors.success.DEFAULT : colors.text.muted;
 }
 
 /**
@@ -52,8 +52,8 @@ export function getConnectionColor(isConnected: boolean): string {
  */
 export function getPhaseColor(phase: 'concentric' | 'eccentric' | 'isometric'): string {
   switch (phase) {
-    case 'concentric': return colors.success;
-    case 'eccentric': return colors.warning;
-    case 'isometric': return colors.info;
+    case 'concentric': return colors.success.DEFAULT;
+    case 'eccentric': return colors.warning.DEFAULT;
+    case 'isometric': return colors.info.DEFAULT;
   }
 }

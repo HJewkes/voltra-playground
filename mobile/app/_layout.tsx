@@ -9,7 +9,7 @@ import 'react-native-reanimated';
 // Import global CSS for NativeWind
 import '../global.css';
 
-import { useSessionStore, useHistoryStore } from '@/stores';
+import { useConnectionStore } from '@/stores';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -51,16 +51,18 @@ function RootLayoutNav() {
   // Initialize stores on app start
   useEffect(() => {
     // Restore last BLE connection
-    useSessionStore.getState().restoreLastConnection();
+    useConnectionStore.getState().restoreLastConnection();
     
     // Set up app state listener for auto-reconnect on foreground
-    const cleanup = useSessionStore.getState()._setupAppStateListener();
+    const appStateCleanup = useConnectionStore.getState()._setupAppStateListener();
     
-    // Load initial history data
-    useHistoryStore.getState().loadRecentWorkouts();
-    useHistoryStore.getState().loadAggregateStats();
+    // Start auto-scan (also checks relay status on web)
+    const autoScanCleanup = useConnectionStore.getState().startAutoScan();
     
-    return cleanup;
+    return () => {
+      appStateCleanup();
+      autoScanCleanup();
+    };
   }, []);
 
   return (

@@ -1,9 +1,20 @@
 /**
  * Voltra Store
- * 
- * Factory function that creates a complete Zustand store for one Voltra device.
- * Includes integrated telemetry parsing and live analytics.
- * 
+ *
+ * Factory function that creates a Zustand store for one Voltra device.
+ * Thin reactive wrapper over domain controllers.
+ *
+ * Responsibilities:
+ * - Device identity and settings
+ * - Connection state management
+ * - Recording lifecycle (start/stop)
+ * - Raw telemetry frame tracking
+ *
+ * NOT responsible for (moved to recording-store):
+ * - Rep detection and counting
+ * - Rep/set aggregation
+ * - Analytics computation (SetMetrics, RPE, RIR)
+ *
  * Usage:
  *   const voltra = createVoltraStore(adapter, deviceId, deviceName);
  *   const weight = useStore(voltra, s => s.weight);
@@ -11,86 +22,87 @@
 
 import { createStore, StoreApi } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { 
-  TelemetryParser, 
-  TelemetryFrame, 
-  RepData, 
-  WorkoutStats,
-  ParseResult,
-} from '@/protocol/telemetry';
-import { Workout, WeightCommands, Timing } from '@/protocol';
-import { DualCommand, ChainsCommands, EccentricCommands } from '@/protocol/commands';
-import { 
-  computeVelocityLoss, 
-  estimateRIR, 
-  estimateRPE,
-  WorkoutAnalyzer,
-} from '@/analytics';
-import type { BLEAdapter } from '@/ble/types';
+import type { BLEAdapter } from '@/domain/bluetooth/adapters';
+
+// Domain imports - Voltra (hardware-specific)
+import {
+  VoltraDevice,
+  VoltraDeviceController,
+  TelemetryController,
+  RecordingController,
+  toWorkoutSample,
+  toWorkoutSamples,
+  type TelemetryFrame,
+  type TelemetryEvent,
+  type RecordingEvent,
+} from '@/domain/voltra';
+
+// Domain imports - Workout (hardware-agnostic)
+import type { WorkoutSample } from '@/domain/workout';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export type ConnectionState = 'disconnected' | 'connecting' | 'authenticating' | 'connected';
-export type WorkoutState = 'idle' | 'preparing' | 'ready' | 'active' | 'stopping';
+export type ConnectionState =
+  | 'disconnected'
+  | 'connecting'
+  | 'authenticating'
+  | 'connected';
+export type RecordingState = 'idle' | 'preparing' | 'ready' | 'active' | 'stopping';
 
 export interface VoltraState {
   // Identity
   deviceId: string;
   deviceName: string | null;
-  
+
   // Connection
   connectionState: ConnectionState;
   isReconnecting: boolean;
   error: string | null;
-  
-  // Device Settings (single source of truth)
+
+  // Device Settings
   weight: number;
   chains: number;
   eccentric: number;
-  
-  // Workout State
-  workoutState: WorkoutState;
-  workoutStartTime: number | null;
-  
-  // Telemetry (integrated - replaces useTelemetry hook)
-  repCount: number;
-  reps: RepData[];
-  lastRep: RepData | null;
+
+  // Recording State (active telemetry streaming)
+  recordingState: RecordingState;
+  recordingStartTime: number | null;
+
+  // Raw Telemetry (internal - use samples for UI)
   currentFrame: TelemetryFrame | null;
-  currentRepFrames: TelemetryFrame[];  // Frames for rep in progress
-  recentFrames: TelemetryFrame[];      // Rolling window for charts
+  recentFrames: TelemetryFrame[];
   
-  // Live Analytics (computed from telemetry)
-  liveVelocityLoss: number;
-  liveRPE: number;
-  liveRIR: number;
-  
+  // Workout Samples (hardware-agnostic, for UI display)
+  currentSample: WorkoutSample | null;
+  recentSamples: WorkoutSample[];
+
   // Actions - Device Control
   setWeight: (lbs: number) => Promise<void>;
   setChains: (lbs: number) => Promise<void>;
   setEccentric: (pct: number) => Promise<void>;
-  
-  // Actions - Workout Control
-  startWorkout: () => Promise<void>;
-  stopWorkout: () => Promise<WorkoutStats>;
-  resetWorkout: () => void;
-  
-  // Getters
-  getWorkoutStats: () => WorkoutStats;
-  
+
+  // Actions - Recording Control
+  prepareWorkout: () => Promise<void>;  // PREPARE + SETUP (device ready, motor off)
+  engageMotor: () => Promise<void>;     // GO (motor engaged, start recording)
+  disengageMotor: () => Promise<void>;  // STOP but stay in workout mode
+  endSet: () => Promise<number>;        // Disengage + return duration
+  startRecording: () => Promise<void>;  // Legacy: prepare + engage combined
+  stopRecording: () => Promise<number>; // Full stop (exit workout mode)
+  resetRecording: () => void;
+
   // Connection management (for SessionStore to use)
   setConnectionState: (state: ConnectionState) => void;
   setError: (error: string | null) => void;
   setReconnecting: (value: boolean) => void;
-  
-  // Internal
+
+  // Internal - exposed for SessionStore
   _adapter: BLEAdapter | null;
-  _parser: TelemetryParser;
-  _analyzer: WorkoutAnalyzer;
+  _setAdapter: (adapter: BLEAdapter | null) => void;
   _processNotification: (data: Uint8Array) => void;
-  _updateLiveAnalytics: () => void;
+  _telemetryController: TelemetryController;
+  _dispose: () => void;
 }
 
 // =============================================================================
@@ -104,258 +116,208 @@ export interface VoltraState {
 export function createVoltraStore(
   adapter: BLEAdapter | null,
   deviceId: string,
-  deviceName?: string | null
+  deviceName?: string | null,
 ): VoltraStoreApi {
-  // Each device gets its own parser and analyzer
-  const parser = new TelemetryParser(true);
-  const analyzer = new WorkoutAnalyzer();
-  
-  return createStore<VoltraState>()(
-    devtools(
-      (set, get) => ({
-        // Identity
-        deviceId,
-        deviceName: deviceName ?? null,
-        
-        // Connection
-        connectionState: adapter ? 'connected' : 'disconnected',
-        isReconnecting: false,
-        error: null,
-        
-        // Settings
-        weight: 0,
-        chains: 0,
-        eccentric: 0,
-        
-        // Workout
-        workoutState: 'idle',
-        workoutStartTime: null,
-        
-        // Telemetry
-        repCount: 0,
-        reps: [],
-        lastRep: null,
-        currentFrame: null,
-        currentRepFrames: [],
-        recentFrames: [],
-        
-        // Live analytics
-        liveVelocityLoss: 0,
-        liveRPE: 5,
-        liveRIR: 6,
-        
-        // Internal
-        _adapter: adapter,
-        _parser: parser,
-        _analyzer: analyzer,
-        
-        // Connection management
-        setConnectionState: (state) => set({ connectionState: state }),
-        setError: (error) => set({ error }),
-        setReconnecting: (value) => set({ isReconnecting: value }),
-        
-        // Device control
-        setWeight: async (lbs) => {
-          const { _adapter } = get();
-          if (!_adapter) {
-            set({ error: 'Not connected' });
-            return;
-          }
-          
-          const cmd = WeightCommands.get(lbs);
-          if (!cmd) {
-            set({ error: `Invalid weight: ${lbs}` });
-            return;
-          }
-          
-          try {
-            await _adapter.write(cmd);
-            parser.setWeight(lbs);
-            set({ weight: lbs, error: null });
-          } catch (e) {
-            set({ error: `Failed to set weight: ${e}` });
-          }
-        },
-        
-        setChains: async (lbs) => {
-          const { _adapter } = get();
-          if (!_adapter) {
-            set({ error: 'Not connected' });
-            return;
-          }
-          
-          const cmds = ChainsCommands.get(lbs);
-          if (!cmds) {
-            set({ error: `Invalid chains value: ${lbs}` });
-            return;
-          }
-          
-          try {
-            await _adapter.write(cmds.step1);
-            await delay(Timing.DUAL_COMMAND_DELAY_MS);
-            await _adapter.write(cmds.step2);
-            set({ chains: lbs, error: null });
-          } catch (e) {
-            set({ error: `Failed to set chains: ${e}` });
-          }
-        },
-        
-        setEccentric: async (pct) => {
-          const { _adapter } = get();
-          if (!_adapter) {
-            set({ error: 'Not connected' });
-            return;
-          }
-          
-          const cmds = EccentricCommands.get(pct);
-          if (!cmds) {
-            set({ error: `Invalid eccentric value: ${pct}` });
-            return;
-          }
-          
-          try {
-            await _adapter.write(cmds.step1);
-            await delay(Timing.DUAL_COMMAND_DELAY_MS);
-            await _adapter.write(cmds.step2);
-            set({ eccentric: pct, error: null });
-          } catch (e) {
-            set({ error: `Failed to set eccentric: ${e}` });
-          }
-        },
-        
-        // Workout control
-        startWorkout: async () => {
-          const { _adapter, weight } = get();
-          if (!_adapter) {
-            set({ error: 'Not connected' });
-            return;
-          }
-          
-          set({ workoutState: 'preparing', error: null });
-          
-          try {
-            // Reset telemetry state
-            parser.reset();
-            parser.setWeight(weight);
-            
-            // Send workout commands
-            await _adapter.write(Workout.PREPARE);
-            await delay(200); // PREP_DELAY_MS
-            await _adapter.write(Workout.SETUP);
-            await delay(Timing.INIT_COMMAND_DELAY_MS);
-            await _adapter.write(Workout.GO);
-            
-            set({
-              workoutState: 'active',
-              workoutStartTime: Date.now(),
-              repCount: 0,
-              reps: [],
-              lastRep: null,
-              currentRepFrames: [],
-              recentFrames: [],
-              liveVelocityLoss: 0,
-              liveRPE: 5,
-              liveRIR: 6,
-            });
-          } catch (e) {
-            set({ workoutState: 'idle', error: `Failed to start workout: ${e}` });
-          }
-        },
-        
-        stopWorkout: async () => {
-          const { _adapter } = get();
-          if (!_adapter) {
-            set({ error: 'Not connected' });
-            return parser.getWorkoutStats();
-          }
-          
-          set({ workoutState: 'stopping' });
-          
-          try {
-            await _adapter.write(Workout.STOP);
-          } catch (e) {
-            console.warn('Error stopping workout:', e);
-          }
-          
-          const stats = parser.getWorkoutStats();
-          set({ workoutState: 'idle', workoutStartTime: null });
-          
-          return stats;
-        },
-        
-        resetWorkout: () => {
-          parser.reset();
-          set({
-            workoutState: 'idle',
-            workoutStartTime: null,
-            repCount: 0,
-            reps: [],
-            lastRep: null,
-            currentFrame: null,
-            currentRepFrames: [],
-            recentFrames: [],
-            liveVelocityLoss: 0,
-            liveRPE: 5,
-            liveRIR: 6,
-          });
-        },
-        
-        getWorkoutStats: () => parser.getWorkoutStats(),
-        
-        // Telemetry processing
-        _processNotification: (data: Uint8Array) => {
-          const result = parser.parse(data);
-          if (!result) return;
-          
-          if (result.type === 'frame') {
-            const frame = result.frame;
-            const recentFrames = [...get().recentFrames, frame].slice(-100);
-            const currentRepFrames = [...get().currentRepFrames, frame];
-            
-            set({
-              currentFrame: frame,
-              recentFrames,
-              currentRepFrames,
-            });
-          } else if (result.type === 'rep') {
-            const { repData } = result;
-            const reps = [...get().reps, repData];
-            
-            set({
-              repCount: repData.repNumber,
-              reps,
-              lastRep: repData,
-              currentRepFrames: [], // Reset for next rep
-            });
-            
-            // Update live analytics after each rep
-            get()._updateLiveAnalytics();
-          }
-        },
-        
-        _updateLiveAnalytics: () => {
-          const { reps } = get();
-          if (reps.length < 2) return;
-          
-          const velocities = reps.map(r => r.maxVelocity);
-          const velocityLoss = computeVelocityLoss(reps);
-          const rpe = estimateRPE(velocityLoss);
-          const rir = estimateRIR(velocityLoss);
-          
-          set({ liveVelocityLoss: velocityLoss, liveRPE: rpe, liveRIR: rir });
-        },
-      }),
-      { name: `voltra-${deviceId}` }
-    )
+  // Create domain objects
+  const device = new VoltraDevice(deviceId, deviceName ?? undefined);
+  const telemetryController = new TelemetryController();
+  const deviceController = new VoltraDeviceController(device, adapter);
+  const recordingController = new RecordingController(
+    device,
+    adapter,
+    telemetryController,
   );
-}
 
-// =============================================================================
-// Helpers
-// =============================================================================
+  // Subscriptions to clean up
+  const subscriptions: (() => void)[] = [];
 
-function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  const store = createStore<VoltraState>()(
+    devtools(
+      (set, _get) => {
+        // Subscribe to telemetry events (now only frames)
+        const telemetrySub = telemetryController.subscribe(
+          (event: TelemetryEvent) => {
+            switch (event.type) {
+              case 'frame':
+                // Update raw frame state and converted samples
+                const recentFrames = telemetryController.recentFrames;
+                set({
+                  currentFrame: event.frame,
+                  recentFrames,
+                  currentSample: toWorkoutSample(event.frame),
+                  recentSamples: toWorkoutSamples(recentFrames),
+                });
+                break;
+
+              // recordingStarted and recordingEnded are handled by RecordingController
+            }
+          },
+        );
+        subscriptions.push(telemetrySub);
+
+        // Subscribe to recording events
+        const recordingSub = recordingController.subscribe(
+          (event: RecordingEvent) => {
+            switch (event.type) {
+              case 'stateChanged':
+                set({ recordingState: event.state as RecordingState });
+                break;
+
+              case 'started':
+                set({
+                  recordingStartTime: Date.now(),
+                  currentFrame: null,
+                  recentFrames: [],
+                  currentSample: null,
+                  recentSamples: [],
+                });
+                break;
+
+              case 'stopped':
+                set({ recordingStartTime: null });
+                break;
+
+              case 'error':
+                set({ error: event.error });
+                break;
+            }
+          },
+        );
+        subscriptions.push(recordingSub);
+
+        return {
+          // Identity
+          deviceId,
+          deviceName: deviceName ?? null,
+
+          // Connection
+          connectionState: adapter ? 'connected' : 'disconnected',
+          isReconnecting: false,
+          error: null,
+
+          // Settings
+          weight: 0,
+          chains: 0,
+          eccentric: 0,
+
+          // Recording
+          recordingState: 'idle',
+          recordingStartTime: null,
+
+          // Raw Telemetry
+          currentFrame: null,
+          recentFrames: [],
+          
+          // Workout Samples
+          currentSample: null,
+          recentSamples: [],
+
+          // Internal
+          _adapter: adapter,
+          _telemetryController: telemetryController,
+
+          // Connection management
+          setConnectionState: (state) => set({ connectionState: state }),
+          setError: (error) => set({ error }),
+          setReconnecting: (value) => set({ isReconnecting: value }),
+
+          _setAdapter: (newAdapter) => {
+            deviceController.setAdapter(newAdapter);
+            recordingController.setAdapter(newAdapter);
+            set({ _adapter: newAdapter });
+          },
+
+          // Device control - delegate to controller
+          setWeight: async (lbs) => {
+            try {
+              await deviceController.setWeight(lbs);
+              telemetryController.setWeight(lbs);
+              set({ weight: lbs, error: null });
+            } catch (e: unknown) {
+              const message = e instanceof Error ? e.message : String(e);
+              set({ error: message });
+            }
+          },
+
+          setChains: async (lbs) => {
+            try {
+              await deviceController.setChains(lbs);
+              set({ chains: lbs, error: null });
+            } catch (e: unknown) {
+              const message = e instanceof Error ? e.message : String(e);
+              set({ error: message });
+            }
+          },
+
+          setEccentric: async (pct) => {
+            try {
+              await deviceController.setEccentric(pct);
+              set({ eccentric: pct, error: null });
+            } catch (e: unknown) {
+              const message = e instanceof Error ? e.message : String(e);
+              set({ error: message });
+            }
+          },
+
+          // Recording control - delegate to controller
+          prepareWorkout: async () => {
+            // PREPARE + SETUP: puts device in workout mode but motor not engaged
+            await recordingController.prepare();
+          },
+          
+          engageMotor: async () => {
+            // GO: engage motor, start recording
+            await recordingController.engage();
+          },
+          
+          disengageMotor: async () => {
+            // STOP: disengage motor but stay in workout mode
+            await recordingController.disengage();
+          },
+          
+          endSet: async () => {
+            // End the current set, disengage motor, return duration
+            return await recordingController.endSet();
+          },
+          
+          startRecording: async () => {
+            // Legacy: combines prepare + engage
+            await recordingController.start();
+          },
+
+          stopRecording: async () => {
+            // Full stop - exits workout mode
+            return await recordingController.stop();
+          },
+
+          resetRecording: () => {
+            recordingController.reset();
+            set({
+              currentFrame: null,
+              recentFrames: [],
+              currentSample: null,
+              recentSamples: [],
+            });
+          },
+
+          // Process BLE notification - delegate to controller
+          _processNotification: (data: Uint8Array) => {
+            telemetryController.processNotification(data);
+          },
+
+          // Cleanup
+          _dispose: () => {
+            subscriptions.forEach((unsub) => unsub());
+            telemetryController.dispose();
+            recordingController.dispose();
+          },
+        };
+      },
+      { name: `voltra-${deviceId}` },
+    ),
+  );
+
+  return store;
 }
 
 // =============================================================================

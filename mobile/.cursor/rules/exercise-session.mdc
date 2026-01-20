@@ -1,0 +1,146 @@
+---
+description: Exercise session patterns for multi-set workout execution
+globs: ["**/domain/exercise/**/*.ts", "**/stores/exercise-session-store.ts", "**/components/exercise/**/*.tsx"]
+---
+
+# Exercise Session Patterns
+
+## Core Concepts
+
+- **ExercisePlan**: Concrete sequence of PlannedSet targets, not abstract rules
+- **ExerciseSession**: Plan + completedSets + restEndsAt (state derived from length)
+- **Unified Engine**: Discovery and standard sessions share lifecycle, differ in termination
+
+## State Derivation
+
+```typescript
+// GOOD: Derive state from data
+const currentSetIndex = session.completedSets.length;
+const currentPlannedSet = session.plan.sets[currentSetIndex];
+const isComplete = completedSets.length >= plan.sets.length;
+
+// BAD: Duplicate state
+interface ExerciseSession {
+  currentSetIndex: number;  // Don't store this
+  isComplete: boolean;      // Don't store this
+}
+```
+
+## Termination Rules
+
+All sessions check: failure (0 reps), velocity grinding (<0.3 m/s), plan exhausted.
+Standard adds: junk volume (50%+ rep drop).
+Discovery adds: profile complete.
+
+```typescript
+// Unified termination function
+function checkTermination(session, lastSet, isDiscovery): TerminationResult;
+```
+
+## Auto-Stop Recording
+
+Recording stops automatically based on:
+
+1. Target reps reached → vibrate → stop
+2. Idle timeout (10x expected rep duration) → stop
+3. Failure (idle timeout with 0 reps) → stop → terminate session
+
+No Done/Failed buttons needed - system detects completion.
+
+## UI State Layers
+
+```
+ExerciseSessionUIState (session-level)    RecordingUIState (intra-set)
+───────────────────────────────────────   ─────────────────────────────
+preparing, ready, countdown, recording    idle, countdown, recording, resting
+processing, resting, results
+```
+
+Exercise-session-store manages transitions between sets.
+Recording-store manages rep detection within a set.
+
+## Flow Patterns
+
+First set: user presses START → countdown → recording
+Subsequent sets: rest timer → countdown → recording (automatic, no START)
+
+Weight adjustment allowed during rest period.
+
+## Plan Generation
+
+```typescript
+// Standard plan: warmups + working sets
+const plan = createStandardPlan({
+  exerciseId: 'bench_press',
+  workingWeight: 185,
+  workingSets: 3,
+  workingReps: 10,
+});
+// Results in: warmup 95x10, warmup 140x5, working 185x10 x3
+
+// Discovery plan: fixed weight increments
+const plan = createDiscoveryPlan({
+  exerciseId: 'bench_press',
+  goal: 'hypertrophy',
+  userEstimate: 200, // optional
+});
+// Results in: 60, 90, 120, 150, 180, 210, 240, 270 (5 reps each)
+```
+
+## Storage
+
+`ExerciseSessionRepository` stores:
+- Full `ExercisePlan` for plan vs actual comparison
+- `StoredSessionSet[]` with metrics
+
+NOT stored (derived on demand):
+- `velocityProfile` - computed from completedSets
+- `recommendation` - computed from profile + goal
+
+## Key Interfaces
+
+```typescript
+interface PlannedSet {
+  targetWeight: number;
+  targetReps: number;
+  targetRPE?: number;
+  targetTempo?: TempoTarget;
+  targetROM?: number;
+}
+
+interface ExercisePlan {
+  exerciseId: string;
+  sets: PlannedSet[];
+  defaultRestSeconds: number;
+  goal?: TrainingGoal;
+  generatedAt: number;
+  generatedBy: PlanSource;
+}
+
+interface ExerciseSession {
+  id: string;
+  exercise: Exercise;
+  plan: ExercisePlan;
+  completedSets: Set[];
+  restEndsAt: number | null;
+  startedAt: number;
+}
+
+type ExerciseSessionUIState =
+  | 'idle'
+  | 'preparing'
+  | 'ready'
+  | 'countdown'
+  | 'recording'
+  | 'processing'
+  | 'resting'
+  | 'results';
+
+type TerminationReason =
+  | 'failure'
+  | 'velocity_grinding'
+  | 'junk_volume'
+  | 'plan_exhausted'
+  | 'profile_complete'
+  | 'user_stopped';
+```

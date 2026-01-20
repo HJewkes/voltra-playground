@@ -85,10 +85,11 @@ voltras/
 ├── mobile/                  # React Native app (Expo)
 │   ├── app/                 # Expo Router screens
 │   ├── src/
-│   │   ├── ble/             # BLE abstraction (native + proxy)
+│   │   ├── domain/          # Business logic (see below)
 │   │   ├── stores/          # Zustand state management
-│   │   ├── protocol/        # Voltra device protocol
-│   │   └── ...
+│   │   ├── components/      # React components
+│   │   ├── data/            # Persistence layer
+│   │   └── theme/           # Colors, spacing, typography
 │   └── docs/
 │       ├── iOS-DEVELOPMENT.md
 │       └── MAC-DEVELOPMENT.md
@@ -99,6 +100,19 @@ voltras/
 ```
 
 ## Architecture
+
+### Domain Modules
+
+```
+domain/
+├── bluetooth/     # Generic BLE infrastructure
+├── exercise/      # Exercise definitions (metadata only)
+├── planning/      # Unified planning system (TrainingGoal enum lives here)
+├── vbt/           # VBT constants, load-velocity profiles
+├── voltra/        # Voltra device protocol and telemetry
+├── workout/       # Sessions, plans, rep detection, metrics
+└── history/       # Velocity baselines, PRs, trends
+```
 
 ### BLE Abstraction Layer
 

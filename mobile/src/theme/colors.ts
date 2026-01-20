@@ -19,6 +19,20 @@ export const colors = {
     900: '#7c2d12',
   },
   
+  // Neutral gray palette
+  neutral: {
+    50: '#fafafa',
+    100: '#f4f4f5',
+    200: '#e4e4e7',
+    300: '#d4d4d8',
+    400: '#a1a1aa',
+    500: '#71717a',
+    600: '#52525b',
+    700: '#3f3f46',
+    800: '#27272a',
+    900: '#18181b',
+  },
+  
   // Surface colors for dark theme
   surface: {
     lightest: '#3d3d3d',  // Highlight edge
@@ -39,20 +53,43 @@ export const colors = {
     muted: '#52525b',
   },
   
-  // Semantic colors
-  success: '#22c55e',
-  successLight: '#4ade80',
-  successDark: '#166534',
+  // Content colors (alias for text)
+  content: {
+    primary: '#ffffff',
+    secondary: '#a1a1aa',
+    tertiary: '#71717a',
+    muted: '#52525b',
+  },
   
-  warning: '#eab308',
-  warningLight: '#facc15',
-  warningDark: '#854d0e',
+  // Semantic colors (object form with variants)
+  // Use .DEFAULT for direct color value, .light/.dark for variants
+  success: {
+    DEFAULT: '#22c55e',
+    light: '#4ade80',
+    dark: '#166534',
+  },
   
-  danger: '#ef4444',
-  dangerLight: '#f87171',
-  dangerDark: '#991b1b',
+  warning: {
+    DEFAULT: '#eab308',
+    light: '#facc15',
+    dark: '#854d0e',
+  },
   
-  info: '#3b82f6',
-  infoLight: '#60a5fa',
-  infoDark: '#1e40af',
+  danger: {
+    DEFAULT: '#ef4444',
+    light: '#f87171',
+    dark: '#991b1b',
+  },
+  
+  error: {
+    DEFAULT: '#ef4444',
+    light: '#f87171',
+    dark: '#991b1b',
+  },
+  
+  info: {
+    DEFAULT: '#3b82f6',
+    light: '#60a5fa',
+    dark: '#1e40af',
+  },
 } as const;
