@@ -38,6 +38,17 @@ export type ConnectionStateCallback = (state: ConnectionState) => void;
  * - NativeBLEAdapter: Uses react-native-ble-plx for direct device communication
  * - ProxyBLEAdapter: Uses WebSocket to relay through Python backend (for dev)
  */
+/**
+ * Options for BLE connection.
+ */
+export interface ConnectOptions {
+  /**
+   * Data to write immediately after raw connection, before service discovery.
+   * Used for authentication that must happen within a tight time window.
+   */
+  immediateWrite?: Uint8Array;
+}
+
 export interface BLEAdapter {
   /**
    * Scan for Voltra devices.
@@ -49,8 +60,9 @@ export interface BLEAdapter {
   /**
    * Connect to a device.
    * @param deviceId Device identifier from scan results
+   * @param options Optional connection options
    */
-  connect(deviceId: string): Promise<void>;
+  connect(deviceId: string, options?: ConnectOptions): Promise<void>;
   
   /**
    * Disconnect from the current device.

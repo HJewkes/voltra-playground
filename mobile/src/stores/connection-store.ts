@@ -277,13 +277,13 @@ export const useConnectionStore = create<ConnectionStoreState>()(
         }));
         
         try {
-          // Connect adapter
-          await adapter.connect(device.id);
-          
+          // Connect adapter with immediate auth write
+          // The Voltra device requires authentication within a tight time window
+          // after connection, so we pass it as an immediate write option
           voltraStore.getState().setConnectionState('authenticating');
+          await adapter.connect(device.id, { immediateWrite: Auth.DEVICE_ID });
           
-          // Authenticate
-          await adapter.write(Auth.DEVICE_ID);
+          // Wait for device to process authentication
           await delay(Timing.AUTH_TIMEOUT_MS);
           
           // Send init sequence

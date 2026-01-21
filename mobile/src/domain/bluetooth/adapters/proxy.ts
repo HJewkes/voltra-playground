@@ -17,6 +17,7 @@ import type {
   ConnectionState,
   NotificationCallback,
   ConnectionStateCallback,
+  ConnectOptions,
 } from './types';
 import { bytesToHex, hexToBytes } from '@/domain/shared/utils';
 import { RELAY_WS_URL } from '@/config';
@@ -349,12 +350,12 @@ export class ProxyBLEAdapter implements BLEAdapter {
     return devices;
   }
   
-  async connect(deviceId: string, deviceName?: string): Promise<void> {
+  async connect(deviceId: string, options?: ConnectOptions): Promise<void> {
     this.setConnectionState('connecting');
     try {
       const result = await this.sendRequest<{ status: string; device: { id: string; name: string } }>(
         'connect', 
-        { device_id: deviceId, device_name: deviceName }
+        { device_id: deviceId }
       );
       if (result.device) {
         this.connectedDevice = {
@@ -365,6 +366,12 @@ export class ProxyBLEAdapter implements BLEAdapter {
         this.lastConnectedDeviceId = result.device.id;
         this.lastConnectedDeviceName = result.device.name;
       }
+      
+      // Handle immediate write if provided (for auth)
+      if (options?.immediateWrite) {
+        await this.write(options.immediateWrite);
+      }
+      
       this.setConnectionState('connected');
     } catch (error) {
       this.setConnectionState('disconnected');

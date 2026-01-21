@@ -16,7 +16,9 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "UIBackgroundModes": ["bluetooth-central"],
+        "UIBackgroundModes": [
+          "bluetooth-central"
+        ],
         "NSBluetoothAlwaysUsageDescription": "Voltra needs Bluetooth to connect to your training device and track your workouts.",
         "NSBluetoothPeripheralUsageDescription": "Voltra needs Bluetooth to connect to your training device."
       },
@@ -34,8 +36,14 @@
         "android.permission.BLUETOOTH_ADMIN",
         "android.permission.BLUETOOTH_CONNECT",
         "android.permission.BLUETOOTH_SCAN",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN",
+        "android.permission.BLUETOOTH_CONNECT",
+        "android.permission.BLUETOOTH_SCAN",
         "android.permission.ACCESS_FINE_LOCATION"
-      ]
+      ],
+      "package": "com.anonymous.voltra"
     },
     "web": {
       "bundler": "metro",

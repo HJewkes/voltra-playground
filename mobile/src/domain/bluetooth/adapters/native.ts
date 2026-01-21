@@ -13,14 +13,65 @@ import {
   Device as BleDevice,
   State,
 } from 'react-native-ble-plx';
-import { AppState, AppStateStatus } from 'react-native';
+import { AppState, AppStateStatus, Platform, PermissionsAndroid } from 'react-native';
 import type {
   BLEAdapter,
   Device,
   ConnectionState,
   NotificationCallback,
   ConnectionStateCallback,
+  ConnectOptions,
 } from './types';
+
+/**
+ * Request Android Bluetooth permissions at runtime.
+ * Android 12+ requires BLUETOOTH_SCAN and BLUETOOTH_CONNECT.
+ * Android 11 and below require ACCESS_FINE_LOCATION for BLE scanning.
+ */
+async function requestAndroidBLEPermissions(): Promise<boolean> {
+  if (Platform.OS !== 'android') {
+    return true;
+  }
+
+  const apiLevel = Platform.Version;
+  console.log('[NativeBLE] Android API level:', apiLevel);
+
+  try {
+    if (typeof apiLevel === 'number' && apiLevel >= 31) {
+      // Android 12+ (API 31+)
+      const results = await PermissionsAndroid.requestMultiple([
+        PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+        PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+      ]);
+
+      const allGranted = Object.values(results).every(
+        (result) => result === PermissionsAndroid.RESULTS.GRANTED
+      );
+
+      if (!allGranted) {
+        console.warn('[NativeBLE] Not all permissions granted:', results);
+      }
+
+      return allGranted;
+    } else {
+      // Android 11 and below
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        {
+          title: 'Bluetooth Permission',
+          message: 'Voltra needs access to your location to scan for Bluetooth devices.',
+          buttonPositive: 'OK',
+        }
+      );
+
+      return granted === PermissionsAndroid.RESULTS.GRANTED;
+    }
+  } catch (error) {
+    console.error('[NativeBLE] Permission request error:', error);
+    return false;
+  }
+}
 
 // Base64 encoding/decoding for BLE data
 function base64ToBytes(base64: string): Uint8Array {
@@ -97,6 +148,10 @@ export class NativeBLEAdapter implements BLEAdapter {
   private isReconnecting: boolean = false;
   private reconnectAttempts: number = 0;
   private appStateSubscription: { remove: () => void } | null = null;
+  
+  // Disconnect handling - prevents crash when subscriptions error during disconnect
+  private isDisconnecting: boolean = false;
+  private disconnectSubscription: { remove: () => void } | null = null;
   
   // Callbacks for reconnect events
   private onReconnectStart?: () => void;
@@ -239,6 +294,13 @@ export class NativeBLEAdapter implements BLEAdapter {
       console.log('[NativeBLE] Device name prefix:', this.bleConfig.deviceNamePrefix);
     }
     
+    // Request Android permissions first
+    const hasPermissions = await requestAndroidBLEPermissions();
+    if (!hasPermissions) {
+      throw new Error('Bluetooth permissions not granted. Please enable in Settings.');
+    }
+    console.log('[NativeBLE] Permissions granted');
+    
     await this.waitForPoweredOn();
     console.log('[NativeBLE] Bluetooth is powered on');
     
@@ -290,43 +352,80 @@ export class NativeBLEAdapter implements BLEAdapter {
     });
   }
   
-  async connect(deviceId: string): Promise<void> {
+  async connect(deviceId: string, options?: ConnectOptions): Promise<void> {
+    // Request Android permissions first
+    const hasPermissions = await requestAndroidBLEPermissions();
+    if (!hasPermissions) {
+      throw new Error('Bluetooth permissions not granted. Please enable in Settings.');
+    }
+    
     await this.waitForPoweredOn();
     
     this.setConnectionState('connecting');
     
     try {
-      // Connect to device
+      // Connect to device - don't request MTU yet, we need to authenticate first
       const device = await this.manager.connectToDevice(deviceId, {
-        requestMTU: 512,
-        autoConnect: true, // Helps with background reconnection
+        autoConnect: false, // Use direct connection for faster connect on Android
       });
-      
-      // Discover services and characteristics
-      await device.discoverAllServicesAndCharacteristics();
       
       this.device = device;
       this.lastConnectedDeviceId = deviceId;
       this.lastConnectedDeviceName = device.name;
       
-      // Set up disconnect listener
-      device.onDisconnected((error, disconnectedDevice) => {
+      // Discover services and characteristics FIRST (needed for immediate write)
+      await device.discoverAllServicesAndCharacteristics();
+      
+      // If immediate write is provided, send it NOW before anything else
+      // This is critical for devices that require fast authentication
+      if (options?.immediateWrite) {
+        console.log('[NativeBLE] Sending immediate auth write...');
+        const base64 = bytesToBase64(options.immediateWrite);
+        await device.writeCharacteristicWithResponseForService(
+          this.bleConfig.serviceUUID,
+          this.bleConfig.writeCharUUID,
+          base64
+        );
+        console.log('[NativeBLE] Immediate auth write sent');
+      }
+      
+      // Now request MTU (optional, may fail on some devices)
+      try {
+        await device.requestMTU(512);
+      } catch (mtuError) {
+        console.log('[NativeBLE] MTU request failed (non-fatal):', mtuError);
+      }
+      
+      // Set up disconnect listener BEFORE setting up characteristic monitors
+      // This ensures we can clean up subscriptions before the error propagates
+      this.disconnectSubscription = device.onDisconnected((error, disconnectedDevice) => {
         console.log('[NativeBLE] Device disconnected', error ? `(error: ${error.message})` : '');
+        
+        // Mark as disconnecting to prevent monitor errors from crashing
+        this.isDisconnecting = true;
+        
+        // Clean up subscriptions IMMEDIATELY to prevent RxJava crash
+        this.cleanupSubscriptions();
+        
         this.setConnectionState('disconnected');
         this.device = null;
-        
-        // Clean up subscriptions
-        this.cleanupSubscriptions();
+        this.isDisconnecting = false;
         
         // Don't clear lastConnectedDeviceId - we want to try reconnecting
       });
       
       // Subscribe to notifications on notify characteristic
+      // Error callback must handle disconnect gracefully to avoid Android crash
       this.notifySubscription = device.monitorCharacteristicForService(
         this.bleConfig.serviceUUID,
         this.bleConfig.notifyCharUUID,
         (error, characteristic) => {
           if (error) {
+            // Ignore errors if we're disconnecting - this prevents the Android crash
+            if (this.isDisconnecting || !this.device) {
+              console.log('[NativeBLE] Notification error during disconnect (ignored):', error.message);
+              return;
+            }
             console.error('[NativeBLE] Notification error:', error);
             return;
           }
@@ -338,11 +437,17 @@ export class NativeBLEAdapter implements BLEAdapter {
       );
       
       // Also subscribe to write characteristic (it also sends notifications)
+      // Error callback must handle disconnect gracefully to avoid Android crash
       this.writeSubscription = device.monitorCharacteristicForService(
         this.bleConfig.serviceUUID,
         this.bleConfig.writeCharUUID,
         (error, characteristic) => {
           if (error) {
+            // Ignore errors if we're disconnecting - this prevents the Android crash
+            if (this.isDisconnecting || !this.device) {
+              console.log('[NativeBLE] Write char error during disconnect (ignored):', error.message);
+              return;
+            }
             console.error('[NativeBLE] Write char notification error:', error);
             return;
           }
@@ -362,13 +467,35 @@ export class NativeBLEAdapter implements BLEAdapter {
   }
   
   private cleanupSubscriptions(): void {
+    // Clean up characteristic monitor subscriptions
+    // Must be done synchronously to prevent RxJava crash on Android
     if (this.notifySubscription) {
-      this.notifySubscription.remove();
+      try {
+        this.notifySubscription.remove();
+      } catch (e) {
+        console.log('[NativeBLE] Error removing notify subscription:', e);
+      }
       this.notifySubscription = null;
     }
     if (this.writeSubscription) {
-      this.writeSubscription.remove();
+      try {
+        this.writeSubscription.remove();
+      } catch (e) {
+        console.log('[NativeBLE] Error removing write subscription:', e);
+      }
       this.writeSubscription = null;
+    }
+  }
+  
+  private cleanupAllSubscriptions(): void {
+    this.cleanupSubscriptions();
+    if (this.disconnectSubscription) {
+      try {
+        this.disconnectSubscription.remove();
+      } catch (e) {
+        console.log('[NativeBLE] Error removing disconnect subscription:', e);
+      }
+      this.disconnectSubscription = null;
     }
   }
   
@@ -385,8 +512,12 @@ export class NativeBLEAdapter implements BLEAdapter {
   async disconnect(): Promise<void> {
     this.setConnectionState('disconnecting');
     
-    // Clean up subscriptions
-    this.cleanupSubscriptions();
+    // Mark as disconnecting to prevent monitor errors from crashing
+    this.isDisconnecting = true;
+    
+    // Clean up all subscriptions BEFORE canceling connection
+    // This prevents the RxJava crash on Android
+    this.cleanupAllSubscriptions();
     
     if (this.device) {
       try {
@@ -400,6 +531,7 @@ export class NativeBLEAdapter implements BLEAdapter {
     // Clear last device so we don't auto-reconnect after intentional disconnect
     this.lastConnectedDeviceId = null;
     this.lastConnectedDeviceName = null;
+    this.isDisconnecting = false;
     
     this.setConnectionState('disconnected');
   }
@@ -508,8 +640,9 @@ export class NativeBLEAdapter implements BLEAdapter {
    * Destroy the BLE manager (call when app is closing).
    */
   destroy(): void {
+    this.isDisconnecting = true;
     this.appStateSubscription?.remove();
-    this.cleanupSubscriptions();
+    this.cleanupAllSubscriptions();
     this.manager.destroy();
   }
 }
