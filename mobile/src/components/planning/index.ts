@@ -1,6 +1,6 @@
 /**
  * Planning Components
- * 
+ *
  * Exercise selection, goal picking, weight setup, and discovery flow components.
  */
 

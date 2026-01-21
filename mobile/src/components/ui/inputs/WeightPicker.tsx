@@ -1,12 +1,12 @@
 /**
  * WeightPicker
- * 
+ *
  * A +/- stepper control for selecting weight values.
  * Large, touch-friendly buttons with prominent display.
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
+import { View, Text, TouchableOpacity, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/theme';
 
@@ -29,7 +29,7 @@ export interface WeightPickerProps {
 
 /**
  * WeightPicker component - +/- stepper for weight selection.
- * 
+ *
  * @example
  * ```tsx
  * <WeightPicker
@@ -52,21 +52,18 @@ export function WeightPicker({
   const handleDecrement = () => {
     onChange(Math.max(min, value - step));
   };
-  
+
   const handleIncrement = () => {
     onChange(Math.min(max, value + step));
   };
-  
+
   return (
-    <View 
-      className="flex-row items-center justify-center"
-      style={style}
-    >
+    <View className="flex-row items-center justify-center" style={style}>
       <TouchableOpacity
         onPress={handleDecrement}
         disabled={value <= min}
-        className="w-14 h-14 rounded-full items-center justify-center border border-surface-100"
-        style={{ 
+        className="h-14 w-14 items-center justify-center rounded-full border border-surface-100"
+        style={{
           backgroundColor: colors.surface.dark,
           opacity: value <= min ? 0.5 : 1,
         }}
@@ -74,22 +71,19 @@ export function WeightPicker({
       >
         <Ionicons name="remove" size={28} color={colors.text.secondary} />
       </TouchableOpacity>
-      
+
       <View className="mx-10 items-center">
-        <Text 
-          className="text-6xl font-bold" 
-          style={{ color: colors.primary[500] }}
-        >
+        <Text className="text-6xl font-bold" style={{ color: colors.primary[500] }}>
           {value}
         </Text>
-        <Text className="text-content-tertiary text-lg">{unit}</Text>
+        <Text className="text-lg text-content-tertiary">{unit}</Text>
       </View>
-      
+
       <TouchableOpacity
         onPress={handleIncrement}
         disabled={value >= max}
-        className="w-14 h-14 rounded-full items-center justify-center border border-surface-100"
-        style={{ 
+        className="h-14 w-14 items-center justify-center rounded-full border border-surface-100"
+        style={{
           backgroundColor: colors.surface.dark,
           opacity: value >= max ? 0.5 : 1,
         }}

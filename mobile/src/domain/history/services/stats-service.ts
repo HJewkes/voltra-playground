@@ -1,6 +1,6 @@
 /**
  * Stats Service
- * 
+ *
  * Computes aggregate statistics from set history.
  */
 
@@ -21,12 +21,12 @@ export interface AggregateStats {
 export function computeAggregateStats(sets: Set[]): AggregateStats {
   let totalReps = 0;
   let totalVolume = 0;
-  
+
   for (const set of sets) {
     totalReps += set.reps.length;
     totalVolume += set.weight * set.reps.length;
   }
-  
+
   return {
     totalSets: sets.length,
     totalReps,

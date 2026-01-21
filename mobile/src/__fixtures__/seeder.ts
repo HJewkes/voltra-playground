@@ -59,9 +59,7 @@ export async function seedDatabase(options: SeedOptions = {}): Promise<SeedResul
 
   const sessionRepo = getSessionRepository();
   const recordingRepo = getRecordingRepository();
-  const exercises = exerciseIds
-    ? exerciseIds.map(id => ({ id, name: id }))
-    : DEFAULT_EXERCISES;
+  const exercises = exerciseIds ? exerciseIds.map((id) => ({ id, name: id })) : DEFAULT_EXERCISES;
 
   let sessionsCreated = 0;
   let recordingsCreated = 0;
@@ -69,13 +67,13 @@ export async function seedDatabase(options: SeedOptions = {}): Promise<SeedResul
   for (let i = 0; i < sessionsCount; i++) {
     // Pick a random exercise
     const exercise = exercises[i % exercises.length];
-    
+
     // Spread sessions across the time range
     const daysAgo = Math.floor((i / sessionsCount) * daysBack);
-    
+
     // Alternate between discovery and training
     const isDiscovery = i % 5 === 0;
-    
+
     // Vary weight and reps
     const baseWeight = 80 + Math.floor(Math.random() * 40);
     const targetReps = isDiscovery ? 5 : 8 + Math.floor(Math.random() * 4);
@@ -103,7 +101,7 @@ export async function seedDatabase(options: SeedOptions = {}): Promise<SeedResul
         const recording = generateRecording({
           exerciseId: exercise.id,
           exerciseName: exercise.name,
-          weight: 80 + (i * 20),
+          weight: 80 + i * 20,
           repCount: 6 + i * 2,
           daysAgo: i * 3,
         });
@@ -123,13 +121,13 @@ export async function seedDatabase(options: SeedOptions = {}): Promise<SeedResul
 export async function clearSeedData(): Promise<void> {
   const sessionRepo = getSessionRepository();
   const recordingRepo = getRecordingRepository();
-  
+
   // Clear sessions
   const sessions = await sessionRepo.getRecent(1000);
   for (const session of sessions) {
     await sessionRepo.delete(session.id);
   }
-  
+
   // Clear recordings
   const recordings = await recordingRepo.getRecent(1000);
   for (const recording of recordings) {

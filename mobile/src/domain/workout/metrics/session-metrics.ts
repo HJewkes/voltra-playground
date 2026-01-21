@@ -161,10 +161,7 @@ export function computeStrengthEstimate(
 /**
  * Compute readiness estimate from warmup sets vs baseline.
  */
-function computeReadinessFromWarmups(
-  sets: Set[],
-  baseline: VelocityBaseline
-): ReadinessEstimate {
+function computeReadinessFromWarmups(sets: Set[], baseline: VelocityBaseline): ReadinessEstimate {
   // Use the last warmup set (typically the heaviest)
   // Warmups are usually the first few sets before working weight
   if (sets.length === 0) {
@@ -306,8 +303,7 @@ function computeFatigueFromSets(sets: Set[]): FatigueEstimate {
   // Calculate velocity recovery
   const firstVelocity = firstSet.metrics.velocity.concentricBaseline;
   const lastVelocity = lastSet.metrics.velocity.concentricBaseline;
-  const velocityRecoveryPercent =
-    firstVelocity > 0 ? (lastVelocity / firstVelocity) * 100 : 100;
+  const velocityRecoveryPercent = firstVelocity > 0 ? (lastVelocity / firstVelocity) * 100 : 100;
 
   // Calculate rep drop (only for same-weight sets)
   let repDropPercent = 0;
@@ -336,15 +332,11 @@ function computeFatigueFromSets(sets: Set[]): FatigueEstimate {
 /**
  * Compute fatigue estimate comparing current set to first set.
  */
-export function computeFatigueEstimate(
-  currentSet: Set,
-  firstSet: Set
-): FatigueEstimate {
+export function computeFatigueEstimate(currentSet: Set, firstSet: Set): FatigueEstimate {
   const firstVelocity = firstSet.metrics.velocity.concentricBaseline;
   const currentVelocity = currentSet.metrics.velocity.concentricBaseline;
 
-  const velocityRecoveryPercent =
-    firstVelocity > 0 ? (currentVelocity / firstVelocity) * 100 : 100;
+  const velocityRecoveryPercent = firstVelocity > 0 ? (currentVelocity / firstVelocity) * 100 : 100;
 
   let repDropPercent = 0;
   if (firstSet.weight === currentSet.weight) {

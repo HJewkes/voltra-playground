@@ -1,6 +1,6 @@
 /**
  * Velocity Baseline Models
- * 
+ *
  * Types for velocity-load profiles computed from historical data.
  */
 
@@ -11,10 +11,10 @@
 export interface VelocityDataPoint {
   /** Weight in lbs */
   weight: number;
-  
+
   /** First-rep concentric mean velocity */
   velocity: number;
-  
+
   /** When this data was recorded */
   timestamp: number;
 }
@@ -26,10 +26,10 @@ export interface VelocityDataPoint {
 export interface VelocityBaseline {
   /** Exercise identifier */
   exerciseId: string;
-  
+
   /** Historical velocity data points */
   dataPoints: VelocityDataPoint[];
-  
+
   /** When the baseline was last computed */
   lastUpdated: number;
 }

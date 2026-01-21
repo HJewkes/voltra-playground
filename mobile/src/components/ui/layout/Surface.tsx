@@ -1,13 +1,13 @@
 /**
  * Surface
- * 
+ *
  * The foundational primitive for elevation-aware containers.
  * Applies background color, shadow, border radius, and optional border
  * based on the elevation level.
  */
 
-import React, { ReactNode } from 'react';
-import { View, StyleSheet, StyleProp, ViewStyle } from 'react-native';
+import React, { type ReactNode } from 'react';
+import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { getElevationStyles, type Elevation } from '@/theme';
 import { colors, borderRadius } from '@/theme';
 
@@ -28,13 +28,13 @@ export interface SurfaceProps {
 
 /**
  * Surface component - the base building block for elevated containers.
- * 
+ *
  * @example
  * ```tsx
  * <Surface elevation={1}>
  *   <Text>Card content</Text>
  * </Surface>
- * 
+ *
  * <Surface elevation="inset" radius="md">
  *   <Text>Recessed content</Text>
  * </Surface>
@@ -50,7 +50,7 @@ export function Surface({
 }: SurfaceProps) {
   const elevationStyles = getElevationStyles(elevation);
   const radiusValue = borderRadius[radius];
-  
+
   const combinedStyle: ViewStyle = {
     ...elevationStyles,
     borderRadius: radiusValue,
@@ -59,12 +59,9 @@ export function Surface({
       borderColor: colors.surface.light,
     }),
   };
-  
+
   return (
-    <View 
-      style={[combinedStyle, style]} 
-      className={className}
-    >
+    <View style={[combinedStyle, style]} className={className}>
       {children}
     </View>
   );

@@ -1,11 +1,11 @@
 /**
  * StatusIndicator
- * 
+ *
  * A colored status dot with optional label.
  */
 
 import React from 'react';
-import { View, Text, StyleProp, ViewStyle } from 'react-native';
+import { View, Text, type StyleProp, type ViewStyle } from 'react-native';
 import { colors } from '@/theme';
 
 export type StatusType = 'success' | 'warning' | 'error' | 'info' | 'neutral';
@@ -37,37 +37,29 @@ const sizeMap = {
 
 /**
  * StatusIndicator component - colored dot with label.
- * 
+ *
  * @example
  * ```tsx
  * <StatusIndicator status="success" label="Connected" />
  * <StatusIndicator status="error" size="lg" />
  * ```
  */
-export function StatusIndicator({ 
-  status, 
-  label, 
-  size = 'md',
-  style,
-}: StatusIndicatorProps) {
+export function StatusIndicator({ status, label, size = 'md', style }: StatusIndicatorProps) {
   const dotSize = sizeMap[size];
   const color = statusColors[status];
-  
+
   return (
     <View className="flex-row items-center" style={style}>
-      <View 
+      <View
         className="rounded-full"
-        style={{ 
-          width: dotSize, 
-          height: dotSize, 
+        style={{
+          width: dotSize,
+          height: dotSize,
           backgroundColor: color,
         }}
       />
       {label && (
-        <Text 
-          className="ml-2 text-sm"
-          style={{ color: colors.text.secondary }}
-        >
+        <Text className="ml-2 text-sm" style={{ color: colors.text.secondary }}>
           {label}
         </Text>
       )}

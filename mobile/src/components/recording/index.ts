@@ -1,8 +1,8 @@
 /**
  * Recording Components
- * 
+ *
  * Components for active recording sessions (live metrics, phase display, controls).
- * 
+ *
  * Components follow a view + connected pattern:
  * - View components are presentational and take domain objects as props
  * - Connected components subscribe to recording-store for convenience

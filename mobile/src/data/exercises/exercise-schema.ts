@@ -34,7 +34,7 @@ export interface StoredExercise {
   rangeOfMotionNotes?: string;
 
   // Storage metadata
-  
+
   /** Whether this is a custom user-created exercise */
   isCustom: boolean;
 

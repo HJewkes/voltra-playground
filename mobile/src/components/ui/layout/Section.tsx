@@ -1,12 +1,12 @@
 /**
  * Section
- * 
+ *
  * Groups content with an optional title and divider.
  * Useful for organizing settings, forms, and list groups.
  */
 
-import React, { ReactNode } from 'react';
-import { View, Text, StyleProp, ViewStyle } from 'react-native';
+import React, { type ReactNode } from 'react';
+import { View, Text, type StyleProp, type ViewStyle } from 'react-native';
 import { colors, spacing } from '@/theme';
 import { Divider } from './Divider';
 
@@ -33,14 +33,14 @@ const SPACING_MAP = {
 
 /**
  * Section component - groups content with title and optional divider.
- * 
+ *
  * @example
  * ```tsx
  * <Section title="Account" subtitle="Manage your account settings">
  *   <InfoRow label="Email" value="user@example.com" />
  *   <InfoRow label="Name" value="John Doe" />
  * </Section>
- * 
+ *
  * <Section title="Danger Zone" divider>
  *   <ActionButton variant="danger" title="Delete Account" />
  * </Section>
@@ -55,11 +55,11 @@ export function Section({
   style,
 }: SectionProps) {
   const space = SPACING_MAP[spacingProp];
-  
+
   return (
     <View style={[{ marginBottom: space }, style]}>
       {divider && <Divider spacing="md" variant="subtle" />}
-      
+
       {(title || subtitle) && (
         <View style={{ marginBottom: space }}>
           {title && (
@@ -86,7 +86,7 @@ export function Section({
           )}
         </View>
       )}
-      
+
       {children}
     </View>
   );

@@ -9,7 +9,7 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
+import { Text, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useConnectionStore } from '@/stores';
 import { getSessionRepository } from '@/data/provider';
@@ -41,14 +41,11 @@ export function ExerciseSessionFlow() {
   }, []);
 
   // Handle starting a session
-  const handleStartSession = useCallback(
-    (exercise: Exercise, plan: ExercisePlan) => {
-      setSessionExercise(exercise);
-      setSessionPlan(plan);
-      setFlowState('session');
-    },
-    []
-  );
+  const handleStartSession = useCallback((exercise: Exercise, plan: ExercisePlan) => {
+    setSessionExercise(exercise);
+    setSessionPlan(plan);
+    setFlowState('session');
+  }, []);
 
   // Handle session complete
   const handleSessionComplete = useCallback(() => {
@@ -64,28 +61,22 @@ export function ExerciseSessionFlow() {
 
   // Require device connection
   if (!voltraStore) {
-    return (
-      <ConnectPrompt subtitle="Connect to your Voltra to start a workout" />
-    );
+    return <ConnectPrompt subtitle="Connect to your Voltra to start a workout" />;
   }
 
   // Loading state
   if (flowState === 'loading') {
     return (
-      <SafeAreaView className="flex-1 bg-background items-center justify-center">
+      <SafeAreaView className="bg-background flex-1 items-center justify-center">
         <ActivityIndicator size="large" color={colors.primary[500]} />
-        <Text className="text-content-muted mt-4">Loading...</Text>
+        <Text className="mt-4 text-content-muted">Loading...</Text>
       </SafeAreaView>
     );
   }
 
   // Picker state
   if (flowState === 'picker') {
-    return (
-      <ExercisePickerScreen
-        onStartSession={handleStartSession}
-      />
-    );
+    return <ExercisePickerScreen onStartSession={handleStartSession} />;
   }
 
   // Session state

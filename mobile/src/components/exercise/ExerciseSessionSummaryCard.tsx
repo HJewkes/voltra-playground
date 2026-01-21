@@ -6,12 +6,11 @@
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
+import { View, Text, TouchableOpacity, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/theme';
 import { Card, Surface, Stack } from '@/components/ui';
-import type { ExerciseSession, SetComparison, TerminationReason } from '@/domain/workout';
-import { getAllSetComparisons } from '@/domain/workout';
+import type { ExerciseSession, TerminationReason } from '@/domain/workout';
 
 export interface ExerciseSessionSummaryCardProps {
   /** The completed session */
@@ -64,17 +63,7 @@ export function ExerciseSessionSummaryCard({
   style,
 }: ExerciseSessionSummaryCardProps) {
   const totalReps = session.completedSets.reduce((sum, s) => sum + s.reps.length, 0);
-  const totalVolume = session.completedSets.reduce(
-    (sum, s) => sum + s.weight * s.reps.length,
-    0
-  );
-  const avgVelocity =
-    session.completedSets.length > 0
-      ? session.completedSets.reduce(
-          (sum, s) => sum + s.metrics.velocity.concentricBaseline,
-          0
-        ) / session.completedSets.length
-      : 0;
+  const totalVolume = session.completedSets.reduce((sum, s) => sum + s.weight * s.reps.length, 0);
 
   const termDisplay = getTerminationDisplay(terminationReason);
 
@@ -82,7 +71,7 @@ export function ExerciseSessionSummaryCard({
     <View style={style} className="flex-1">
       {/* Status banner */}
       <View
-        className="rounded-3xl p-6 mb-4 items-center"
+        className="mb-4 items-center rounded-3xl p-6"
         style={{
           backgroundColor: termDisplay.color + '15',
           borderWidth: 1,
@@ -90,12 +79,12 @@ export function ExerciseSessionSummaryCard({
         }}
       >
         <View
-          className="w-20 h-20 rounded-full items-center justify-center mb-4"
+          className="mb-4 h-20 w-20 items-center justify-center rounded-full"
           style={{ backgroundColor: termDisplay.color }}
         >
           <Ionicons name={termDisplay.icon} size={48} color="white" />
         </View>
-        <Text className="font-bold text-2xl mb-2" style={{ color: termDisplay.color }}>
+        <Text className="mb-2 text-2xl font-bold" style={{ color: termDisplay.color }}>
           {termDisplay.label}
         </Text>
         {terminationMessage && (
@@ -105,35 +94,29 @@ export function ExerciseSessionSummaryCard({
 
       {/* Summary stats */}
       <Card elevation={1} padding="lg">
-        <Text className="text-content-muted font-medium text-sm mb-4">
-          {session.exercise.name}
-        </Text>
+        <Text className="mb-4 text-sm font-medium text-content-muted">{session.exercise.name}</Text>
 
         <Surface elevation="inset" radius="lg" border={false}>
           <Stack direction="row" justify="space-between" style={{ padding: 16 }}>
-            <View className="items-center flex-1">
-              <Text className="text-content-muted text-sm">Sets</Text>
-              <Text className="text-content-primary font-bold text-2xl mt-1">
+            <View className="flex-1 items-center">
+              <Text className="text-sm text-content-muted">Sets</Text>
+              <Text className="mt-1 text-2xl font-bold text-content-primary">
                 {session.completedSets.length}
               </Text>
-              <Text className="text-content-muted text-xs">
-                of {session.plan.sets.length}
-              </Text>
+              <Text className="text-xs text-content-muted">of {session.plan.sets.length}</Text>
             </View>
             <View className="w-px bg-surface-100" />
-            <View className="items-center flex-1">
-              <Text className="text-content-muted text-sm">Reps</Text>
-              <Text className="text-content-primary font-bold text-2xl mt-1">
-                {totalReps}
-              </Text>
+            <View className="flex-1 items-center">
+              <Text className="text-sm text-content-muted">Reps</Text>
+              <Text className="mt-1 text-2xl font-bold text-content-primary">{totalReps}</Text>
             </View>
             <View className="w-px bg-surface-100" />
-            <View className="items-center flex-1">
-              <Text className="text-content-muted text-sm">Volume</Text>
-              <Text className="text-content-primary font-bold text-2xl mt-1">
+            <View className="flex-1 items-center">
+              <Text className="text-sm text-content-muted">Volume</Text>
+              <Text className="mt-1 text-2xl font-bold text-content-primary">
                 {(totalVolume / 1000).toFixed(1)}k
               </Text>
-              <Text className="text-content-muted text-xs">lbs</Text>
+              <Text className="text-xs text-content-muted">lbs</Text>
             </View>
           </Stack>
         </Surface>
@@ -141,7 +124,7 @@ export function ExerciseSessionSummaryCard({
 
       {/* Set breakdown */}
       <Card elevation={1} padding="lg">
-        <Text className="text-xs font-bold text-content-muted uppercase tracking-wider mb-3">
+        <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-content-muted">
           Set Breakdown
         </Text>
         {session.completedSets.map((set, i) => {
@@ -151,19 +134,19 @@ export function ExerciseSessionSummaryCard({
           return (
             <View
               key={i}
-              className={`flex-row justify-between items-center py-3 ${
+              className={`flex-row items-center justify-between py-3 ${
                 i < session.completedSets.length - 1 ? 'border-b border-surface-100' : ''
               }`}
             >
               <View className="flex-row items-center">
                 <View
-                  className="w-9 h-9 rounded-full items-center justify-center mr-4"
+                  className="mr-4 h-9 w-9 items-center justify-center rounded-full"
                   style={{ backgroundColor: colors.surface.dark }}
                 >
-                  <Text className="text-content-secondary font-bold">{i + 1}</Text>
+                  <Text className="font-bold text-content-secondary">{i + 1}</Text>
                 </View>
                 <View>
-                  <Text className="text-content-primary font-medium">
+                  <Text className="font-medium text-content-primary">
                     {set.weight} lbs × {set.reps.length}
                     {planned && (
                       <Text
@@ -177,7 +160,7 @@ export function ExerciseSessionSummaryCard({
                       </Text>
                     )}
                   </Text>
-                  <Text className="text-content-muted text-xs">
+                  <Text className="text-xs text-content-muted">
                     {set.metrics.velocity.concentricBaseline.toFixed(2)} m/s • RPE{' '}
                     {set.metrics.effort.rpe}
                   </Text>
@@ -192,23 +175,23 @@ export function ExerciseSessionSummaryCard({
       <Stack gap="sm" style={{ marginTop: 16, marginBottom: 32 }}>
         {onNewSession && (
           <TouchableOpacity
-            className="rounded-2xl p-5 items-center"
+            className="items-center rounded-2xl p-5"
             style={{ backgroundColor: colors.primary[600] }}
             onPress={onNewSession}
             activeOpacity={0.8}
           >
-            <Text className="text-white font-bold text-lg">New Session</Text>
+            <Text className="text-lg font-bold text-white">New Session</Text>
           </TouchableOpacity>
         )}
 
         {onDone && (
           <TouchableOpacity
-            className="rounded-2xl p-5 items-center"
+            className="items-center rounded-2xl p-5"
             style={{ backgroundColor: colors.surface.card }}
             onPress={onDone}
             activeOpacity={0.7}
           >
-            <Text className="text-content-secondary font-bold">Done</Text>
+            <Text className="font-bold text-content-secondary">Done</Text>
           </TouchableOpacity>
         )}
       </Stack>

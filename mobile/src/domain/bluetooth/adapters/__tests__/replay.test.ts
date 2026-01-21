@@ -13,7 +13,7 @@ import type { SampleRecording } from '@/data/recordings';
 // Test Setup
 // =============================================================================
 
-function createTestRecording(sampleCount = 10): SampleRecording {
+function createTestRecording(_sampleCount = 10): SampleRecording {
   return generateRecording({
     exerciseId: 'test_exercise',
     exerciseName: 'Test Exercise',
@@ -48,7 +48,7 @@ describe('ReplayBLEAdapter', () => {
 
     it('connect() transitions to connected', async () => {
       const connectPromise = adapter.connect('replay-device');
-      
+
       // Advance past the simulated delay
       await vi.runAllTimersAsync();
       await connectPromise;
@@ -62,7 +62,7 @@ describe('ReplayBLEAdapter', () => {
       const connectPromise = adapter.connect('replay-device');
       await vi.runAllTimersAsync();
       await connectPromise;
-      
+
       // Then disconnect
       const disconnectPromise = adapter.disconnect();
       await vi.runAllTimersAsync();
@@ -129,7 +129,7 @@ describe('ReplayBLEAdapter', () => {
 
     it('stop() resets to beginning', () => {
       adapter.play();
-      
+
       // Advance some samples
       vi.advanceTimersByTime(500);
       adapter.stop();
@@ -140,7 +140,7 @@ describe('ReplayBLEAdapter', () => {
 
     it('seek() updates current index', () => {
       const targetIndex = Math.floor(recording.samples.length / 2);
-      
+
       adapter.seek(targetIndex);
 
       expect(adapter.getProgress().current).toBe(targetIndex);
@@ -179,7 +179,7 @@ describe('ReplayBLEAdapter', () => {
       adapter.onNotification(notificationCallback);
 
       adapter.play();
-      
+
       // Should emit first sample immediately
       expect(notificationCallback).toHaveBeenCalledTimes(1);
       expect(notificationCallback).toHaveBeenCalledWith(expect.any(Uint8Array));
@@ -203,7 +203,7 @@ describe('ReplayBLEAdapter', () => {
 
       // Play at 2x speed
       adapter.play(2.0);
-      
+
       // First sample emitted immediately
       expect(notificationCallback).toHaveBeenCalledTimes(1);
 
@@ -265,7 +265,7 @@ describe('ReplayBLEAdapter', () => {
   describe('play() edge cases', () => {
     it('does nothing if already playing', () => {
       adapter.play();
-      const progress1 = adapter.getProgress().current;
+      const _progress1 = adapter.getProgress().current;
 
       adapter.play(); // Second call should be ignored
 
@@ -275,14 +275,14 @@ describe('ReplayBLEAdapter', () => {
     it('loops back to start if at end', () => {
       // Seek to end
       adapter.seek(recording.samples.length - 1);
-      
+
       // Advance past the last sample
       adapter.play();
       vi.advanceTimersByTime(500);
-      
+
       // Now play should loop back
       adapter.play();
-      
+
       // Should be playing from start
       expect(adapter.getIsPlaying()).toBe(true);
     });

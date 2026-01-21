@@ -1,6 +1,6 @@
 /**
  * Bluetooth Domain
- * 
+ *
  * Generic BLE connection management, device scanning, and environment detection.
  * This domain provides reusable BLE infrastructure that can be configured
  * for any BLE device.
@@ -13,10 +13,10 @@ export * from './models/environment';
 
 // Controllers
 export { ScannerController } from './controllers/scanner-controller';
-export type { 
-  RelayStatus, 
-  ScannerState, 
-  ScannerEvent, 
+export type {
+  RelayStatus,
+  ScannerState,
+  ScannerEvent,
   ScannerEventListener,
   ScannerConfig,
   DeviceFilter,

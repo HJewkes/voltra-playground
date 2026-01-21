@@ -36,11 +36,7 @@ export default function TabLayout() {
         options={{
           title: 'Dashboard',
           tabBarIcon: ({ color, focused, size }) => (
-            <Ionicons 
-              name={focused ? 'home' : 'home-outline'} 
-              size={size} 
-              color={color} 
-            />
+            <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />
           ),
         }}
       />
@@ -49,11 +45,7 @@ export default function TabLayout() {
         options={{
           title: 'Exercise',
           tabBarIcon: ({ color, focused, size }) => (
-            <Ionicons 
-              name={focused ? 'fitness' : 'fitness-outline'} 
-              size={size} 
-              color={color} 
-            />
+            <Ionicons name={focused ? 'fitness' : 'fitness-outline'} size={size} color={color} />
           ),
         }}
       />
@@ -62,11 +54,7 @@ export default function TabLayout() {
         options={{
           title: 'History',
           tabBarIcon: ({ color, focused, size }) => (
-            <Ionicons 
-              name={focused ? 'time' : 'time-outline'} 
-              size={size} 
-              color={color} 
-            />
+            <Ionicons name={focused ? 'time' : 'time-outline'} size={size} color={color} />
           ),
         }}
       />
@@ -75,11 +63,7 @@ export default function TabLayout() {
         options={{
           title: 'Settings',
           tabBarIcon: ({ color, focused, size }) => (
-            <Ionicons 
-              name={focused ? 'cog' : 'cog-outline'} 
-              size={size} 
-              color={color} 
-            />
+            <Ionicons name={focused ? 'cog' : 'cog-outline'} size={size} color={color} />
           ),
         }}
       />

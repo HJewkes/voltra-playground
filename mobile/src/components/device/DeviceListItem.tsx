@@ -1,6 +1,6 @@
 /**
  * DeviceListItem
- * 
+ *
  * Single device row in the device list.
  * Shows device name, ID, and connection state.
  */
@@ -25,7 +25,7 @@ export interface DeviceListItemProps {
 
 /**
  * DeviceListItem component - single device in the list.
- * 
+ *
  * @example
  * ```tsx
  * <DeviceListItem

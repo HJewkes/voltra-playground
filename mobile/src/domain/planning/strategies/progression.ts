@@ -1,9 +1,9 @@
 /**
  * Progression Planning Strategy
- * 
+ *
  * Workout-to-workout progression logic extracted from ProgressionEngine.
  * Handles linear, double, and autoregulated progression schemes.
- * 
+ *
  * Responsibilities:
  * - Determine weight/rep changes for next workout
  * - Detect deload needs
@@ -24,13 +24,13 @@ export interface ProgressionContext {
   goal: TrainingGoal;
   level: TrainingLevel;
   scheme: ProgressionScheme;
-  
+
   /** Current session metrics */
   sessionMetrics: SessionMetrics;
-  
+
   /** Historical data */
   historicalMetrics: HistoricalMetrics;
-  
+
   /** Session performance */
   weight: number;
   totalReps: number;
@@ -104,18 +104,15 @@ export const DEFAULT_DELOAD: DeloadWeek = {
 /**
  * Get progression recommendation for next workout.
  */
-export function getProgressionRecommendation(
-  context: ProgressionContext
-): ProgressionDecision {
+export function getProgressionRecommendation(context: ProgressionContext): ProgressionDecision {
   // Check for consecutive failures first
-  const failures = context.historicalMetrics.sessionCount > 0 
-    ? countConsecutiveFailures(context) 
-    : 0;
-    
+  const failures =
+    context.historicalMetrics.sessionCount > 0 ? countConsecutiveFailures(context) : 0;
+
   if (failures >= CONSECUTIVE_FAILURES_FOR_DELOAD) {
     return makeDeloadDecision(context, 'consecutive_failures');
   }
-  
+
   // Route to appropriate progression logic
   switch (context.scheme) {
     case 'linear':
@@ -137,11 +134,11 @@ export function linearProgression(context: ProgressionContext): ProgressionDecis
   const [minReps] = context.repRange;
   const repsPerSet = context.totalReps / Math.max(1, context.setsCompleted);
   const increment = PROGRESSION_INCREMENTS[context.exerciseType];
-  
+
   if (repsPerSet >= minReps) {
     // Hit target - add weight
     const newWeight = context.weight + increment;
-    
+
     return {
       action: 'increase',
       weightChange: increment,
@@ -150,7 +147,7 @@ export function linearProgression(context: ProgressionContext): ProgressionDecis
       message: `Next time: Add ${increment} lbs → ${newWeight} lbs`,
     };
   }
-  
+
   // Missed target - maintain
   return {
     action: 'maintain',
@@ -170,11 +167,11 @@ export function doubleProgression(context: ProgressionContext): ProgressionDecis
   const repsPerSet = context.totalReps / Math.max(1, context.setsCompleted);
   const rir = context.avgRir;
   const increment = PROGRESSION_INCREMENTS[context.exerciseType];
-  
+
   if (repsPerSet >= maxReps && rir >= 2) {
     // Ready to increase weight
     const newWeight = context.weight + increment;
-    
+
     return {
       action: 'increase',
       weightChange: increment,
@@ -183,7 +180,7 @@ export function doubleProgression(context: ProgressionContext): ProgressionDecis
       message: `Next time: Add ${increment} lbs → ${newWeight} lbs`,
     };
   }
-  
+
   if (repsPerSet >= maxReps && rir < 2) {
     // Hit top of range but was hard - consolidate
     return {
@@ -194,7 +191,7 @@ export function doubleProgression(context: ProgressionContext): ProgressionDecis
       message: 'Next time: Same weight, focus on consistency',
     };
   }
-  
+
   if (repsPerSet >= minReps) {
     // In range but not at top - keep building
     return {
@@ -205,7 +202,7 @@ export function doubleProgression(context: ProgressionContext): ProgressionDecis
       message: 'Next time: Same weight, keep building',
     };
   }
-  
+
   // Missed minimum
   return {
     action: 'maintain',
@@ -224,15 +221,15 @@ export function autoregulatedProgression(context: ProgressionContext): Progressi
   const vl = context.avgVelocityLoss;
   const [targetVlMin, targetVlMax] = VELOCITY_LOSS_TARGETS[context.goal];
   const increment = PROGRESSION_INCREMENTS[context.exerciseType];
-  
+
   // Check velocity trend
   const trend = context.historicalMetrics.trend;
-  
+
   // Decision logic
   if (vl < targetVlMin - 5) {
     // Way under target - increase weight
     const newWeight = context.weight + increment;
-    
+
     return {
       action: 'increase',
       weightChange: increment,
@@ -241,11 +238,11 @@ export function autoregulatedProgression(context: ProgressionContext): Progressi
       message: `Next time: Add ${increment} lbs → ${newWeight} lbs`,
     };
   }
-  
+
   if (trend === 'improving' && context.avgRir >= 2) {
     // Getting easier over time
     const newWeight = context.weight + increment;
-    
+
     return {
       action: 'increase',
       weightChange: increment,
@@ -254,11 +251,11 @@ export function autoregulatedProgression(context: ProgressionContext): Progressi
       message: `Next time: Add ${increment} lbs → ${newWeight} lbs`,
     };
   }
-  
+
   if (vl > targetVlMax + 10) {
     // Way over target - decrease weight
     const newWeight = context.weight - increment;
-    
+
     return {
       action: 'decrease',
       weightChange: -increment,
@@ -267,7 +264,7 @@ export function autoregulatedProgression(context: ProgressionContext): Progressi
       message: `Next time: Drop to ${newWeight} lbs to rebuild`,
     };
   }
-  
+
   // In range - maintain
   return {
     action: 'maintain',
@@ -291,10 +288,9 @@ export function checkDeloadNeeded(
   recentSessions: Array<{ avgVelocityLoss: number; hitMinimumReps: boolean }>
 ): DeloadTrigger | null {
   // Time-based check
-  const weeksBetweenDeloads = level === 'intermediate' 
-    ? WEEKS_BETWEEN_DELOADS_INTERMEDIATE 
-    : WEEKS_BETWEEN_DELOADS_ADVANCED;
-  
+  const weeksBetweenDeloads =
+    level === 'intermediate' ? WEEKS_BETWEEN_DELOADS_INTERMEDIATE : WEEKS_BETWEEN_DELOADS_ADVANCED;
+
   if (weeksSinceDeload >= weeksBetweenDeloads) {
     return {
       triggerType: 'time',
@@ -303,15 +299,15 @@ export function checkDeloadNeeded(
       detectedAt: Date.now(),
     };
   }
-  
+
   // Performance-based check (need at least 3 sessions)
   if (recentSessions.length >= 3) {
     const recent = recentSessions.slice(-3);
-    
+
     // Check velocity trend (increasing = getting harder)
-    const vls = recent.map(s => s.avgVelocityLoss);
+    const vls = recent.map((s) => s.avgVelocityLoss);
     const vlsIncreasing = vls.every((v, i) => i === 0 || v > vls[i - 1]);
-    
+
     if (vlsIncreasing) {
       return {
         triggerType: 'performance',
@@ -320,9 +316,9 @@ export function checkDeloadNeeded(
         detectedAt: Date.now(),
       };
     }
-    
+
     // Check if consistently missing targets
-    if (recent.every(s => !s.hitMinimumReps)) {
+    if (recent.every((s) => !s.hitMinimumReps)) {
       return {
         triggerType: 'performance',
         description: 'Consistently missing rep targets',
@@ -331,7 +327,7 @@ export function checkDeloadNeeded(
       };
     }
   }
-  
+
   return null;
 }
 
@@ -364,24 +360,28 @@ export function getExerciseTrend(
   if (sessions.length < 2) {
     return null;
   }
-  
+
   const recent = sessions.slice(-lookback);
-  
+
   // Calculate trends
-  const weights = recent.map(s => s.weight);
-  const repsPerSet = recent.map(s => s.totalReps / s.setsCompleted);
-  const vls = recent.map(s => s.avgVelocityLoss);
-  
-  const weightTrend: 'increasing' | 'decreasing' | 'stable' = 
-    weights[weights.length - 1] > weights[0] ? 'increasing' :
-    weights[weights.length - 1] < weights[0] ? 'decreasing' : 'stable';
-  
-  const repChange = repsPerSet[0] > 0
-    ? ((repsPerSet[repsPerSet.length - 1] - repsPerSet[0]) / repsPerSet[0]) * 100
-    : 0;
-  
+  const weights = recent.map((s) => s.weight);
+  const repsPerSet = recent.map((s) => s.totalReps / s.setsCompleted);
+  const vls = recent.map((s) => s.avgVelocityLoss);
+
+  const weightTrend: 'increasing' | 'decreasing' | 'stable' =
+    weights[weights.length - 1] > weights[0]
+      ? 'increasing'
+      : weights[weights.length - 1] < weights[0]
+        ? 'decreasing'
+        : 'stable';
+
+  const repChange =
+    repsPerSet[0] > 0
+      ? ((repsPerSet[repsPerSet.length - 1] - repsPerSet[0]) / repsPerSet[0]) * 100
+      : 0;
+
   const vlChange = vls[vls.length - 1] - vls[0];
-  
+
   return {
     sessionsAnalyzed: recent.length,
     weightTrend,
@@ -396,19 +396,16 @@ export function getExerciseTrend(
 // Helpers
 // =============================================================================
 
-function countConsecutiveFailures(context: ProgressionContext): number {
+function countConsecutiveFailures(_context: ProgressionContext): number {
   // This would typically check the historical metrics
   // For now, return 0 as we'd need session history to track this
   return 0;
 }
 
-function makeDeloadDecision(
-  context: ProgressionContext,
-  triggerType: string
-): ProgressionDecision {
+function makeDeloadDecision(context: ProgressionContext, triggerType: string): ProgressionDecision {
   const increment = PROGRESSION_INCREMENTS[context.exerciseType];
   const newWeight = context.weight - increment;
-  
+
   return {
     action: 'decrease',
     weightChange: -increment,

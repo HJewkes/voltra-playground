@@ -28,7 +28,6 @@ import {
   type ExerciseSession,
   type PlannedSet,
   type TerminationReason,
-  type TerminationResult,
   createExerciseSession,
   getSessionCurrentSetIndex,
   getCurrentPlannedSet,
@@ -39,7 +38,6 @@ import {
   clearRest,
   checkTermination,
   createUserStoppedTermination,
-  getTerminationMessage,
 } from '@/domain/workout';
 
 // VBT domain for profile building
@@ -234,9 +232,7 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
             const stored = await repository.getCurrent();
             if (stored) {
               // Import converter - avoid circular imports by importing inline
-              const { fromStoredExerciseSession } = await import(
-                '@/data/exercise-session'
-              );
+              const { fromStoredExerciseSession } = await import('@/data/exercise-session');
               const session = fromStoredExerciseSession(stored);
               set({
                 session,
@@ -305,7 +301,7 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
 
           try {
             const plannedSet = getCurrentPlannedSet(session);
-            
+
             // 1. Set the weight first
             if (plannedSet) {
               console.log('[ExerciseSessionStore] Setting weight to', plannedSet.weight, 'lbs');
@@ -314,12 +310,12 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
             } else {
               console.warn('[ExerciseSessionStore] No planned set found');
             }
-            
+
             // 2. Put device in workout mode (PREPARE + SETUP, motor NOT engaged)
             console.log('[ExerciseSessionStore] Preparing workout mode');
             await voltraStore.getState().prepareWorkout();
             console.log('[ExerciseSessionStore] Device ready (motor not engaged)');
-            
+
             set({ uiState: 'ready' });
           } catch (err) {
             console.error('[ExerciseSessionStore] Failed to prepare:', err);
@@ -523,7 +519,7 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
 
   function startRestTimer(
     get: () => ExerciseSessionState,
-    set: (state: Partial<ExerciseSessionState>) => void
+    _set: (state: Partial<ExerciseSessionState>) => void
   ) {
     clearTimers();
     restTimerId = setInterval(() => {
@@ -533,7 +529,7 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
 
   function startCountdownTimer(
     get: () => ExerciseSessionState,
-    set: (state: Partial<ExerciseSessionState>) => void
+    _set: (state: Partial<ExerciseSessionState>) => void
   ) {
     clearTimers();
     countdownTimerId = setInterval(() => {
@@ -557,7 +553,11 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
         if (currentPlannedSet) {
           const currentWeight = voltraStore.getState().weight;
           if (currentWeight !== currentPlannedSet.weight) {
-            console.log('[ExerciseSessionStore] Updating weight to', currentPlannedSet.weight, 'lbs');
+            console.log(
+              '[ExerciseSessionStore] Updating weight to',
+              currentPlannedSet.weight,
+              'lbs'
+            );
             await voltraStore.getState().setWeight(currentPlannedSet.weight);
           }
         }
@@ -571,10 +571,7 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
     }
 
     // Start recording in recording-store (analytics)
-    recordingStore.getState().startRecording(
-      session.exercise.id,
-      session.exercise.name
-    );
+    recordingStore.getState().startRecording(session.exercise.id, session.exercise.name);
   }
 
   async function persistSession(
@@ -588,10 +585,10 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
     try {
       // Get raw samples from recording store for the last set (if debug enabled)
       const rawSamples = recordingStore?.getState().allSamples;
-      
+
       const stored = toStoredExerciseSession(
-        session, 
-        status, 
+        session,
+        status,
         terminationReason,
         rawSamples && rawSamples.length > 0 ? rawSamples : undefined
       );
@@ -610,7 +607,7 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
           const weight = currentPlannedSet?.weight ?? session.plan.sets[0]?.weight ?? 0;
           const firstTimestamp = rawSamples[0].timestamp;
           const lastTimestamp = rawSamples[rawSamples.length - 1].timestamp;
-          
+
           const recording: SampleRecording = {
             id: `rec-${session.id}-${Date.now()}`,
             sessionId: session.id,
@@ -623,7 +620,7 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
             samples: rawSamples,
             metadata: {},
           };
-          
+
           await recordingRepo.save(recording);
           console.log('[ExerciseSessionStore] Saved recording:', recording.id);
         } catch (recErr) {
@@ -643,7 +640,7 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
     if (!session) return;
 
     // Build data points from completed sets
-    const dataPoints: LoadVelocityDataPoint[] = session.completedSets.map(s => ({
+    const dataPoints: LoadVelocityDataPoint[] = session.completedSets.map((s) => ({
       weight: s.weight,
       velocity: s.metrics.velocity.concentricBaseline,
       timestamp: s.timestamp.start,
@@ -654,9 +651,7 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
 
     // Generate recommendation if we have a goal
     const goal = session.plan.goal;
-    const recommendation = goal
-      ? generateWorkingWeightRecommendation(profile, goal)
-      : null;
+    const recommendation = goal ? generateWorkingWeightRecommendation(profile, goal) : null;
 
     set({ velocityProfile: profile, recommendation });
   }

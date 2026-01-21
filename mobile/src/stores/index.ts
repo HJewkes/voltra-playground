@@ -15,11 +15,7 @@ export type {
 
 // Recording store (factory for per-recording analytics)
 export { createRecordingStore } from './recording-store';
-export type {
-  RecordingState,
-  RecordingStoreApi,
-  RecordingUIState,
-} from './recording-store';
+export type { RecordingState, RecordingStoreApi, RecordingUIState } from './recording-store';
 
 // Exercise session store (factory for multi-set orchestration)
 export { createExerciseSessionStore } from './exercise-session-store';

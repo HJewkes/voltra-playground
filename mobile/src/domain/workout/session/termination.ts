@@ -124,10 +124,7 @@ function checkFailure(lastSet: Set): TerminationResult {
 /**
  * Check for velocity grinding (near max effort).
  */
-function checkVelocityGrinding(
-  lastSet: Set,
-  config: TerminationConfig
-): TerminationResult {
+function checkVelocityGrinding(lastSet: Set, config: TerminationConfig): TerminationResult {
   const meanVelocity = lastSet.metrics.velocity.concentricBaseline;
 
   if (meanVelocity < config.velocityGrindingThreshold) {
@@ -158,10 +155,7 @@ function checkPlanExhausted(session: ExerciseSession): TerminationResult {
  * Check for junk volume (significant rep drop from first working set).
  * Only applies to standard sessions.
  */
-function checkJunkVolume(
-  session: ExerciseSession,
-  config: TerminationConfig
-): TerminationResult {
+function checkJunkVolume(session: ExerciseSession, config: TerminationConfig): TerminationResult {
   // Need at least 2 sets to compare
   if (session.completedSets.length < 2) {
     return { shouldTerminate: false };
@@ -169,9 +163,7 @@ function checkJunkVolume(
 
   // Find first working set (highest weight = first working set typically)
   // In practice, warmups have lower weights
-  const sortedByWeight = [...session.completedSets].sort(
-    (a, b) => b.weight - a.weight
-  );
+  const sortedByWeight = [...session.completedSets].sort((a, b) => b.weight - a.weight);
   const firstWorkingSet = sortedByWeight[0];
   const lastSet = session.completedSets[session.completedSets.length - 1];
 

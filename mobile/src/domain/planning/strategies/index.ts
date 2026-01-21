@@ -1,6 +1,6 @@
 /**
  * Planning Strategies
- * 
+ *
  * Strategy implementations for different planning scenarios:
  * - Standard: intra-workout adaptation (weight, rest, stop decisions)
  * - Discovery: weight discovery for new exercises

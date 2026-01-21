@@ -1,6 +1,6 @@
 /**
  * History Domain Services
- * 
+ *
  * Services for computing derived data from set history.
  */
 

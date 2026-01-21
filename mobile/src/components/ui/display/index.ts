@@ -1,6 +1,6 @@
 /**
  * Display Components
- * 
+ *
  * Components for displaying data and status.
  */
 

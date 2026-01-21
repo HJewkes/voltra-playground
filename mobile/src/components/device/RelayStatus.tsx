@@ -1,6 +1,6 @@
 /**
  * RelayStatus
- * 
+ *
  * Shows BLE relay status (web only).
  */
 
@@ -15,28 +15,27 @@ export interface RelayStatusProps {
   status: RelayStatusType;
 }
 
-const statusMap: Record<RelayStatusType, { type: 'success' | 'warning' | 'error'; label: string }> = {
-  connected: { type: 'success', label: 'Running' },
-  checking: { type: 'warning', label: 'Checking...' },
-  disconnected: { type: 'error', label: 'Not running' },
-  error: { type: 'error', label: 'Error' },
-};
+const statusMap: Record<RelayStatusType, { type: 'success' | 'warning' | 'error'; label: string }> =
+  {
+    connected: { type: 'success', label: 'Running' },
+    checking: { type: 'warning', label: 'Checking...' },
+    disconnected: { type: 'error', label: 'Not running' },
+    error: { type: 'error', label: 'Error' },
+  };
 
 /**
  * RelayStatus - displays relay connection status.
  */
 export function RelayStatus({ status }: RelayStatusProps) {
   const { type, label } = statusMap[status];
-  
+
   return (
     <Surface elevation="inset" radius="lg" border={false} style={{ marginBottom: 16 }}>
-      <View className="p-4 flex-row items-center">
+      <View className="flex-row items-center p-4">
         <StatusIndicator status={type} size="sm" />
-        <Text className="flex-1 text-content-tertiary text-sm ml-3">
-          BLE Relay: {label}
-        </Text>
+        <Text className="ml-3 flex-1 text-sm text-content-tertiary">BLE Relay: {label}</Text>
         {status === 'disconnected' && (
-          <Text className="text-xs font-mono" style={{ color: colors.text.muted }}>
+          <Text className="font-mono text-xs" style={{ color: colors.text.muted }}>
             make relay
           </Text>
         )}

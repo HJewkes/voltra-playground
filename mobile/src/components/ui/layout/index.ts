@@ -1,6 +1,6 @@
 /**
  * Layout Components
- * 
+ *
  * Structural components for layout and containment.
  */
 

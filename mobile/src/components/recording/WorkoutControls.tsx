@@ -1,6 +1,6 @@
 /**
  * WorkoutControls
- * 
+ *
  * Start/stop workout button.
  */
 
@@ -19,11 +19,7 @@ export interface WorkoutControlsProps {
 /**
  * WorkoutControls - start/stop workout button.
  */
-export function WorkoutControls({
-  isActive,
-  onStart,
-  onStop,
-}: WorkoutControlsProps) {
+export function WorkoutControls({ isActive, onStart, onStop }: WorkoutControlsProps) {
   return (
     <ActionButton
       label={isActive ? 'Stop Workout' : 'Start Workout'}

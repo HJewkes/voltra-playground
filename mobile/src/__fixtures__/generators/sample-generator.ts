@@ -97,19 +97,12 @@ export function generateSampleStream(options: GenerateStreamOptions): WorkoutSam
   const baseForce = weight * 1.5;
 
   for (let rep = 0; rep < repCount; rep++) {
-    const velocity = startingVelocity - (rep * fatigueRate);
-    
+    const velocity = startingVelocity - rep * fatigueRate;
+
     // Brief idle at start
     const idleSamples = Math.floor((restBetweenReps / 1000) * sampleRate);
     for (let i = 0; i < idleSamples; i++) {
-      samples.push(createSample(
-        sequence++,
-        currentTime,
-        MovementPhase.IDLE,
-        0,
-        0,
-        0,
-      ));
+      samples.push(createSample(sequence++, currentTime, MovementPhase.IDLE, 0, 0, 0));
       currentTime += 1000 / sampleRate;
     }
 
@@ -124,28 +117,25 @@ export function generateSampleStream(options: GenerateStreamOptions): WorkoutSam
       // Force is highest at start
       const force = baseForce * (1 - progress * 0.3);
 
-      samples.push(createSample(
-        sequence++,
-        currentTime,
-        MovementPhase.CONCENTRIC,
-        position,
-        velocityCurve,
-        force,
-      ));
+      samples.push(
+        createSample(
+          sequence++,
+          currentTime,
+          MovementPhase.CONCENTRIC,
+          position,
+          velocityCurve,
+          force
+        )
+      );
       currentTime += 1000 / sampleRate;
     }
 
     // Brief hold at top
     const holdSamples = 2;
     for (let i = 0; i < holdSamples; i++) {
-      samples.push(createSample(
-        sequence++,
-        currentTime,
-        MovementPhase.HOLD,
-        1,
-        0,
-        baseForce * 0.5,
-      ));
+      samples.push(
+        createSample(sequence++, currentTime, MovementPhase.HOLD, 1, 0, baseForce * 0.5)
+      );
       currentTime += 1000 / sampleRate;
     }
 
@@ -160,27 +150,22 @@ export function generateSampleStream(options: GenerateStreamOptions): WorkoutSam
       // Force during eccentric
       const force = baseForce * 0.8 * (1 - progress * 0.2);
 
-      samples.push(createSample(
-        sequence++,
-        currentTime,
-        MovementPhase.ECCENTRIC,
-        position,
-        eccentricVelocity,
-        force,
-      ));
+      samples.push(
+        createSample(
+          sequence++,
+          currentTime,
+          MovementPhase.ECCENTRIC,
+          position,
+          eccentricVelocity,
+          force
+        )
+      );
       currentTime += 1000 / sampleRate;
     }
   }
 
   // Final idle
-  samples.push(createSample(
-    sequence++,
-    currentTime,
-    MovementPhase.IDLE,
-    0,
-    0,
-    0,
-  ));
+  samples.push(createSample(sequence++, currentTime, MovementPhase.IDLE, 0, 0, 0));
 
   return samples;
 }

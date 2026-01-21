@@ -1,22 +1,14 @@
 /**
  * SettingsScreen
- * 
+ *
  * Device connection and app settings.
  * Pure orchestration - composes device/ components and UI primitives.
  */
 
 import React, { useCallback } from 'react';
 import { View, Text, ScrollView } from 'react-native';
-import { 
-  Surface,
-  InfoRow,
-  ErrorBanner,
-} from '@/components/ui';
-import { 
-  ConnectionBanner,
-  DeviceList,
-  RelayStatus,
-} from '@/components/device';
+import { Surface, InfoRow, ErrorBanner } from '@/components/ui';
+import { ConnectionBanner, DeviceList, RelayStatus } from '@/components/device';
 import { DevToolsSection } from '@/components/settings';
 import { useConnectionStore } from '@/stores';
 import type { Device } from '@/domain/bluetooth/adapters';
@@ -43,16 +35,16 @@ export function SettingsScreen() {
     clearError,
     getPrimaryDevice,
   } = useConnectionStore();
-  
+
   // Compute derived state locally (Zustand getters don't trigger re-renders reliably)
   const isWeb = bleEnvironment.isWeb;
   const isConnected = !!(primaryDeviceId && devices.has(primaryDeviceId));
   const connectedDeviceName = getPrimaryDevice()?.getState().deviceName ?? null;
   const relayNotReady = isWeb && relayStatus !== 'connected';
-  
+
   // Environment
   const { bleSupported, warningMessage, environment } = bleEnvironment;
-  
+
   // Wrap actions for the DeviceList component
   const handleScan = useCallback(() => scan(), [scan]);
   const handleConnect = useCallback((device: Device) => connectDevice(device), [connectDevice]);
@@ -61,7 +53,7 @@ export function SettingsScreen() {
       disconnectAll();
     }
   }, [primaryDeviceId, disconnectAll]);
-  
+
   return (
     <ScrollView className="flex-1 bg-surface-400">
       <View className="p-4">
@@ -72,7 +64,7 @@ export function SettingsScreen() {
             onDisconnect={handleDisconnect}
           />
         )}
-        
+
         {/* Device Scanner */}
         {!isConnected && (
           <DeviceList
@@ -88,22 +80,18 @@ export function SettingsScreen() {
             onDeviceSelect={handleConnect}
           />
         )}
-        
+
         {/* Error Banner */}
         {error && (
-          <ErrorBanner 
-            message={error} 
-            onDismiss={clearError}
-            style={{ marginVertical: 16 }}
-          />
+          <ErrorBanner message={error} onDismiss={clearError} style={{ marginVertical: 16 }} />
         )}
-        
+
         {/* Relay Status (Web only) */}
         {isWeb && <RelayStatus status={relayStatus} />}
-        
+
         {/* Dev Tools (DEV only) */}
         {__DEV__ && <DevToolsSection />}
-        
+
         {/* App Info - inlined using primitives */}
         <AppInfoSection isWeb={isWeb} />
       </View>
@@ -124,8 +112,8 @@ function AppInfoSection({ isWeb }: { isWeb: boolean }) {
           <InfoRow label="BLE Mode" value={isWeb ? 'Proxy (Web)' : 'Native'} />
         </View>
       </Surface>
-      
-      <Text className="text-content-muted text-xs text-center px-4 mb-6">
+
+      <Text className="mb-6 px-4 text-center text-xs text-content-muted">
         Unofficial Voltra SDK. Not affiliated with Beyond Power.
       </Text>
     </>

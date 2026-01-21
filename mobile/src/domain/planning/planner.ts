@@ -1,28 +1,28 @@
 /**
  * Unified Exercise Planner
- * 
+ *
  * Single entry point for all planning decisions:
  * - Initial plan generation (no completed sets)
  * - Intra-workout adaptation (has completed sets)
  * - Weight discovery (no history, building profile)
- * 
+ *
  * Uses the same PlanningContext interface for all scenarios,
  * routing to appropriate strategies based on context.
  */
 
 import type { PlannedSet } from '@/domain/workout/models/plan';
-import type { SessionMetrics, StrengthEstimate, ReadinessEstimate, FatigueEstimate } from '@/domain/workout/metrics/types';
-import { createEmptySessionMetrics, createEmptyFatigueEstimate, createDefaultReadinessEstimate, createEmptyStrengthEstimate } from '@/domain/workout/metrics/types';
+// FatigueEstimate removed - not currently used
+import {
+  createEmptySessionMetrics,
+  createEmptyFatigueEstimate,
+  createDefaultReadinessEstimate,
+  createEmptyStrengthEstimate,
+} from '@/domain/workout/metrics/types';
 
-import type { 
-  PlanningContext, 
-  PlanResult, 
-  PlanAdjustment,
-  DiscoverySetResult,
-} from './types';
-import { 
-  REST_DEFAULTS, 
-  RIR_DEFAULTS, 
+import type { PlanningContext, PlanResult, PlanAdjustment } from './types';
+import {
+  REST_DEFAULTS,
+  RIR_DEFAULTS,
   VELOCITY_LOSS_TARGETS,
   getWarmupSets,
   DEFAULT_WARMUP_SCHEME,
@@ -51,12 +51,12 @@ import {
 
 /**
  * Unified planning function.
- * 
+ *
  * Handles all planning scenarios:
  * - Initial planning: completedSets is empty, generates first plan
  * - Mid-workout: has completedSets, adapts based on performance
  * - Discovery: isDiscovery is true, guides through weight finding
- * 
+ *
  * @param context - Complete planning context
  * @returns Plan result with next set recommendation
  */
@@ -65,11 +65,11 @@ export function planExercise(context: PlanningContext): PlanResult {
   if (context.isDiscovery) {
     return handleDiscovery(context);
   }
-  
+
   if (context.completedSets.length === 0) {
     return handleInitialPlan(context);
   }
-  
+
   return handleAdaptation(context);
 }
 
@@ -82,8 +82,8 @@ export function planExercise(context: PlanningContext): PlanResult {
  * No sets completed yet - create full plan from scratch or history.
  */
 function handleInitialPlan(context: PlanningContext): PlanResult {
-  const { exerciseId, goal, exerciseType, historicalMetrics, overrides } = context;
-  
+  const { goal, exerciseType, historicalMetrics, overrides } = context;
+
   // Determine working weight
   let workingWeight: number;
   if (overrides?.weight) {
@@ -94,13 +94,13 @@ function handleInitialPlan(context: PlanningContext): PlanResult {
     // No history - need discovery
     return createDiscoveryNeededResult(context);
   }
-  
+
   // Determine rep range
   const repRange: [number, number] = overrides?.repRange ?? getDefaultRepRange(goal);
-  
+
   // Determine number of sets
   const numSets = overrides?.numSets ?? 3;
-  
+
   // Create warmup sets if not skipping
   const warmupSets: PlannedSet[] = [];
   if (!overrides?.skipWarmups) {
@@ -115,7 +115,7 @@ function handleInitialPlan(context: PlanningContext): PlanResult {
       });
     });
   }
-  
+
   // Create working sets
   const workingSets: PlannedSet[] = [];
   const startSetNumber = warmupSets.length + 1;
@@ -129,10 +129,10 @@ function handleInitialPlan(context: PlanningContext): PlanResult {
       isWarmup: false,
     });
   }
-  
+
   const allSets = [...warmupSets, ...workingSets];
   const [nextSet, ...remainingSets] = allSets;
-  
+
   return {
     nextSet: nextSet ?? null,
     remainingSets,
@@ -159,23 +159,17 @@ function handleInitialPlan(context: PlanningContext): PlanResult {
  * Uses SessionMetrics to make weight, rest, and stop decisions.
  */
 function handleAdaptation(context: PlanningContext): PlanResult {
-  const { 
-    goal, 
-    exerciseType, 
-    sessionMetrics, 
-    completedSets, 
-    originalPlanSetCount,
-  } = context;
-  
+  const { goal, exerciseType, sessionMetrics, completedSets, originalPlanSetCount } = context;
+
   // Compute current metrics if not provided
   const metrics = sessionMetrics ?? createEmptySessionMetrics();
-  
+
   // Get last set performance
   const lastSet = completedSets[completedSets.length - 1];
   if (!lastSet) {
     return handleInitialPlan(context);
   }
-  
+
   // Build config for standard strategy
   const config: StandardStrategyConfig = {
     goal,
@@ -187,14 +181,14 @@ function handleAdaptation(context: PlanningContext): PlanResult {
     velocityLossTarget: VELOCITY_LOSS_TARGETS[goal],
     baseRestSeconds: REST_DEFAULTS[goal],
   };
-  
+
   // Convert to SetPerformance for strategy functions
   // Access metrics from the Set's metrics property
   const velocityLoss = lastSet.metrics?.fatigue?.fatigueIndex ?? 0;
   const estimatedRir = lastSet.metrics?.effort?.rir ?? 2;
   const firstRepVelocity = lastSet.reps[0]?.metrics?.concentricMeanVelocity ?? 0;
   const avgVelocity = lastSet.metrics?.velocity?.concentricBaseline ?? 0;
-  
+
   const lastSetPerformance: SetPerformance = {
     setNumber: completedSets.length,
     reps: lastSet.reps.length,
@@ -205,13 +199,13 @@ function handleAdaptation(context: PlanningContext): PlanResult {
     avgVelocity: avgVelocity,
     grindingDetected: velocityLoss > 40,
   };
-  
+
   const adjustments: PlanAdjustment[] = [];
-  
+
   // Check if should stop
   const plannedSets = originalPlanSetCount ?? 3;
   const stopDecision = shouldStop(metrics, completedSets.length, plannedSets, config);
-  
+
   if (stopDecision.shouldStop) {
     return {
       nextSet: null,
@@ -230,55 +224,52 @@ function handleAdaptation(context: PlanningContext): PlanResult {
       stopReason: stopDecision.reason ?? undefined,
     };
   }
-  
+
   // Calculate adjustments
   const weightResult = calculateWeightAdjustment(
     metrics,
     lastSetPerformance.velocityLossPercent,
     config
   );
-  
+
   const restResult = calculateRestAdjustment(
     metrics,
     lastSetPerformance.velocityLossPercent,
     config
   );
-  
+
   // Determine next weight
   let nextWeight = lastSet.weight;
   if (weightResult.shouldAdjust) {
     nextWeight = Math.max(5, Math.round((lastSet.weight + weightResult.adjustment) / 5) * 5);
-    adjustments.push(createAdjustment(
-      'weight',
-      weightResult.reason,
-      'medium',
-      lastSet.weight,
-      nextWeight
-    ));
+    adjustments.push(
+      createAdjustment('weight', weightResult.reason, 'medium', lastSet.weight, nextWeight)
+    );
   }
-  
+
   // Determine rest period
   let restSeconds = config.baseRestSeconds ?? REST_DEFAULTS[goal];
   if (restResult.shouldExtend) {
     restSeconds += restResult.extraRest;
-    adjustments.push(createAdjustment(
-      'rest',
-      restResult.reason,
-      'medium',
-      config.baseRestSeconds,
-      restSeconds
-    ));
+    adjustments.push(
+      createAdjustment('rest', restResult.reason, 'medium', config.baseRestSeconds, restSeconds)
+    );
   }
-  
+
   // Check for extra set eligibility
   const setsRemaining = plannedSets - completedSets.length;
   let optionalExtraSet = false;
-  
+
   if (setsRemaining <= 0) {
-    const extraSetEligibility = canAddSet(metrics, lastSetPerformance, completedSets.length, config);
+    const extraSetEligibility = canAddSet(
+      metrics,
+      lastSetPerformance,
+      completedSets.length,
+      config
+    );
     optionalExtraSet = extraSetEligibility.canAddSet;
   }
-  
+
   // Create next set
   const repRange = getDefaultRepRange(goal);
   const nextSet: PlannedSet = {
@@ -289,7 +280,7 @@ function handleAdaptation(context: PlanningContext): PlanResult {
     rirTarget: RIR_DEFAULTS[exerciseType],
     isWarmup: false,
   };
-  
+
   // Create remaining sets
   const remainingSets: PlannedSet[] = [];
   for (let i = 1; i < setsRemaining; i++) {
@@ -302,7 +293,7 @@ function handleAdaptation(context: PlanningContext): PlanResult {
       isWarmup: false,
     });
   }
-  
+
   return {
     nextSet: setsRemaining > 0 || optionalExtraSet ? nextSet : null,
     remainingSets,
@@ -329,14 +320,14 @@ function handleAdaptation(context: PlanningContext): PlanResult {
  */
 function handleDiscovery(context: PlanningContext): PlanResult {
   const { exerciseId, exerciseType, goal, discoveryPhase, discoveryHistory } = context;
-  
+
   // Create or continue discovery state
   let state: DiscoveryState;
-  
+
   if (!discoveryPhase || discoveryPhase === 'not_started') {
     state = createDiscoveryState(exerciseId, exerciseType, goal);
-    const { step, updatedState } = getFirstDiscoveryStep(state);
-    
+    const { step } = getFirstDiscoveryStep(state);
+
     return {
       nextSet: null,
       remainingSets: [],
@@ -354,7 +345,7 @@ function handleDiscovery(context: PlanningContext): PlanResult {
       discoveryStep: step,
     };
   }
-  
+
   // Continue discovery with last result
   state = {
     exerciseId,
@@ -362,10 +353,14 @@ function handleDiscovery(context: PlanningContext): PlanResult {
     goal,
     phase: discoveryPhase,
     sets: discoveryHistory ?? [],
-    currentWeight: discoveryHistory?.length ? discoveryHistory[discoveryHistory.length - 1].weight : 0,
-    lastVelocity: discoveryHistory?.length ? discoveryHistory[discoveryHistory.length - 1].meanVelocity : 0,
+    currentWeight: discoveryHistory?.length
+      ? discoveryHistory[discoveryHistory.length - 1].weight
+      : 0,
+    lastVelocity: discoveryHistory?.length
+      ? discoveryHistory[discoveryHistory.length - 1].meanVelocity
+      : 0,
   };
-  
+
   const lastResult = discoveryHistory?.[discoveryHistory.length - 1];
   if (!lastResult) {
     // No result yet - return first step
@@ -387,14 +382,14 @@ function handleDiscovery(context: PlanningContext): PlanResult {
       discoveryStep: step,
     };
   }
-  
+
   // Get next step based on last result
   const result = getNextDiscoveryStep(state, lastResult);
-  
+
   if ('recommendation' in result) {
     // Discovery complete - return recommendation as initial plan
     const rec = result.recommendation;
-    
+
     // Create working sets from recommendation
     const repRange = rec.repRange;
     const workingSets: PlannedSet[] = [];
@@ -408,7 +403,7 @@ function handleDiscovery(context: PlanningContext): PlanResult {
         isWarmup: false,
       });
     }
-    
+
     return {
       nextSet: workingSets[0],
       remainingSets: workingSets.slice(1),
@@ -429,7 +424,7 @@ function handleDiscovery(context: PlanningContext): PlanResult {
       shouldStop: false,
     };
   }
-  
+
   // Return next discovery step
   return {
     nextSet: null,
@@ -486,19 +481,19 @@ function createAdaptationMessage(
   optionalExtraSet: boolean
 ): string {
   if (optionalExtraSet) {
-    return 'Target reached - optional extra set if you\'re feeling strong';
+    return "Target reached - optional extra set if you're feeling strong";
   }
-  
+
   if (nextWeight > lastWeight) {
     return `Bump up to ${nextWeight} lbs - ${setsRemaining} sets remaining`;
   } else if (nextWeight < lastWeight) {
     return `Drop to ${nextWeight} lbs - working hard, ${setsRemaining} sets remaining`;
   }
-  
+
   return `Same weight (${nextWeight} lbs) - ${setsRemaining} sets remaining`;
 }
 
-function createDiscoveryNeededResult(context: PlanningContext): PlanResult {
+function createDiscoveryNeededResult(_context: PlanningContext): PlanResult {
   return {
     nextSet: null,
     remainingSets: [],

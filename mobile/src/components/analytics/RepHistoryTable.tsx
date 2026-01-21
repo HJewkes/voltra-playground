@@ -17,7 +17,7 @@ export interface RepHistoryTableProps {
 
 /**
  * RepHistoryTable component - rep-by-rep breakdown.
- * 
+ *
  * @example
  * ```tsx
  * <RepHistoryTable reps={workoutReps} />
@@ -25,47 +25,49 @@ export interface RepHistoryTableProps {
  */
 export function RepHistoryTable({ reps }: RepHistoryTableProps) {
   if (reps.length === 0) return null;
-  
+
   return (
     <View>
       {/* Header */}
-      <View className="flex-row pb-3 border-b border-surface-100 mb-2">
-        <Text className="text-content-muted text-xs font-medium w-10">#</Text>
-        <Text className="text-content-muted text-xs font-medium flex-1">Tempo</Text>
-        <Text className="text-content-muted text-xs font-medium w-16 text-right">Vel</Text>
-        <Text className="text-content-muted text-xs font-medium w-16 text-right">Force</Text>
+      <View className="mb-2 flex-row border-b border-surface-100 pb-3">
+        <Text className="w-10 text-xs font-medium text-content-muted">#</Text>
+        <Text className="flex-1 text-xs font-medium text-content-muted">Tempo</Text>
+        <Text className="w-16 text-right text-xs font-medium text-content-muted">Vel</Text>
+        <Text className="w-16 text-right text-xs font-medium text-content-muted">Force</Text>
       </View>
-      
+
       {/* Rep rows */}
       {reps.map((rep, index) => {
         const isLatest = index === reps.length - 1;
         const { metrics } = rep;
         const tempo = `${metrics.eccentricDuration.toFixed(1)}-${metrics.topPauseTime.toFixed(1)}-${metrics.concentricDuration.toFixed(1)}-${metrics.bottomPauseTime.toFixed(1)}`;
-        
+
         return (
-          <View 
+          <View
             key={rep.repNumber}
             className={`flex-row items-center py-3 ${
               index < reps.length - 1 ? 'border-b border-surface-100/50' : ''
             }`}
-            style={isLatest ? { 
-              backgroundColor: colors.primary[600] + '15', 
-              marginHorizontal: -12, 
-              paddingHorizontal: 12,
-              borderRadius: 12,
-            } : undefined}
+            style={
+              isLatest
+                ? {
+                    backgroundColor: colors.primary[600] + '15',
+                    marginHorizontal: -12,
+                    paddingHorizontal: 12,
+                    borderRadius: 12,
+                  }
+                : undefined
+            }
           >
-            <Text 
+            <Text
               className="w-10 font-bold"
               style={{ color: isLatest ? colors.primary[500] : colors.text.secondary }}
             >
               {rep.repNumber}
             </Text>
             <View className="flex-1">
-              <Text className="text-content-primary text-sm font-mono">
-                {tempo}
-              </Text>
-              <View className="flex-row gap-2 mt-1">
+              <Text className="font-mono text-sm text-content-primary">{tempo}</Text>
+              <View className="mt-1 flex-row gap-2">
                 <Text className="text-xs" style={{ color: colors.info.DEFAULT }}>
                   E:{metrics.eccentricDuration.toFixed(1)}
                 </Text>
@@ -79,7 +81,7 @@ export function RepHistoryTable({ reps }: RepHistoryTableProps) {
                 </Text>
               </View>
             </View>
-            <Text 
+            <Text
               className="w-16 text-right font-bold"
               style={{ color: isLatest ? colors.primary[500] : colors.text.primary }}
             >

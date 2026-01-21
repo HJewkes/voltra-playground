@@ -1,6 +1,6 @@
 /**
  * Bluetooth Device Model
- * 
+ *
  * Represents a discovered BLE device from scanning.
  */
 

@@ -6,7 +6,10 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { InMemoryAdapter } from '@/data/adapters/in-memory-adapter';
-import { createExerciseSessionRepository, type ExerciseSessionRepository } from '../exercise-session-repository';
+import {
+  createExerciseSessionRepository,
+  type ExerciseSessionRepository,
+} from '../exercise-session-repository';
 import type { StoredExerciseSession } from '../exercise-session-schema';
 import { TrainingGoal } from '@/domain/planning';
 
@@ -83,7 +86,7 @@ describe('ExerciseSessionRepository', () => {
       await repo.save({ ...session, status: 'abandoned' });
 
       const recent = await repo.getRecent(10);
-      const matches = recent.filter(s => s.id === 'session-update');
+      const matches = recent.filter((s) => s.id === 'session-update');
       expect(matches.length).toBe(1);
     });
   });
@@ -146,7 +149,7 @@ describe('ExerciseSessionRepository', () => {
       expect(retrieved).toBeNull();
 
       const recent = await repo.getRecent(10);
-      const found = recent.find(s => s.id === 'delete-test');
+      const found = recent.find((s) => s.id === 'delete-test');
       expect(found).toBeUndefined();
     });
 
@@ -217,7 +220,7 @@ describe('ExerciseSessionRepository', () => {
 
       const rowSessions = await repo.getByExercise('cable_row');
       expect(rowSessions.length).toBe(2);
-      expect(rowSessions.every(s => s.exerciseId === 'cable_row')).toBe(true);
+      expect(rowSessions.every((s) => s.exerciseId === 'cable_row')).toBe(true);
     });
   });
 });

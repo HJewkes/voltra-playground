@@ -13,7 +13,7 @@
 
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+// Ionicons removed - not currently used
 import { useStore } from 'zustand';
 import { colors } from '@/theme';
 import type { RecordingUIState, RecordingStoreApi } from '@/stores';
@@ -77,9 +77,9 @@ function IdleDisplay({
 }) {
   return (
     <View className="items-center">
-      <Text className="text-white text-5xl font-bold text-center">{instruction}</Text>
+      <Text className="text-center text-5xl font-bold text-white">{instruction}</Text>
       {subInstruction && (
-        <Text className="text-white/70 text-xl mt-5 text-center">{subInstruction}</Text>
+        <Text className="mt-5 text-center text-xl text-white/70">{subInstruction}</Text>
       )}
     </View>
   );
@@ -99,11 +99,9 @@ function RestingDisplay({
 }) {
   return (
     <View className="items-center">
-      <Text className="text-white/70 text-xl mb-3">REST</Text>
-      <Text className="text-white text-9xl font-bold">{countdown}</Text>
-      {subInstruction && (
-        <Text className="text-white/70 text-lg mt-5">{subInstruction}</Text>
-      )}
+      <Text className="mb-3 text-xl text-white/70">REST</Text>
+      <Text className="text-9xl font-bold text-white">{countdown}</Text>
+      {subInstruction && <Text className="mt-5 text-lg text-white/70">{subInstruction}</Text>}
       {onSkip && (
         <TouchableOpacity
           className="mt-8 rounded-2xl px-8 py-4"
@@ -111,7 +109,7 @@ function RestingDisplay({
           onPress={onSkip}
           activeOpacity={0.7}
         >
-          <Text className="text-white font-bold text-base">Skip Rest</Text>
+          <Text className="text-base font-bold text-white">Skip Rest</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -130,13 +128,11 @@ function CountdownDisplay({
 }) {
   return (
     <View className="items-center">
-      <Text className="text-white/70 text-xl mb-3">GET READY</Text>
-      <Text className="text-white font-bold" style={{ fontSize: 120 }}>
+      <Text className="mb-3 text-xl text-white/70">GET READY</Text>
+      <Text className="font-bold text-white" style={{ fontSize: 120 }}>
         {countdown}
       </Text>
-      {subInstruction && (
-        <Text className="text-white/70 text-lg mt-5">{subInstruction}</Text>
-      )}
+      {subInstruction && <Text className="mt-5 text-lg text-white/70">{subInstruction}</Text>}
     </View>
   );
 }
@@ -155,17 +151,15 @@ function ActiveRecordingDisplay({
 }) {
   return (
     <View className="items-center">
-      <Text className="text-white/70 text-xl mb-2">REPS</Text>
-      <Text className="text-white text-9xl font-bold">{repCount}</Text>
-      {targetReps !== undefined && (
-        <Text className="text-white text-3xl mt-2">/ {targetReps}</Text>
-      )}
+      <Text className="mb-2 text-xl text-white/70">REPS</Text>
+      <Text className="text-9xl font-bold text-white">{repCount}</Text>
+      {targetReps !== undefined && <Text className="mt-2 text-3xl text-white">/ {targetReps}</Text>}
       {lastRep && (
         <View
           className="mt-8 rounded-2xl px-8 py-4"
           style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
         >
-          <Text className="text-white text-xl font-bold">
+          <Text className="text-xl font-bold text-white">
             {lastRep.metrics.concentricPeakVelocity.toFixed(2)} m/s
           </Text>
         </View>
@@ -205,7 +199,7 @@ export function RecordingDisplayView({
 }: RecordingDisplayViewProps) {
   return (
     <View
-      className="flex-1 rounded-3xl p-8 items-center justify-center"
+      className="flex-1 items-center justify-center rounded-3xl p-8"
       style={{ backgroundColor: getStateColor(uiState) }}
     >
       {uiState === 'idle' && (
@@ -222,11 +216,7 @@ export function RecordingDisplayView({
         <CountdownDisplay countdown={startCountdown} subInstruction={subInstruction} />
       )}
       {uiState === 'recording' && (
-        <ActiveRecordingDisplay
-          repCount={repCount}
-          targetReps={targetReps}
-          lastRep={lastRep}
-        />
+        <ActiveRecordingDisplay repCount={repCount} targetReps={targetReps} lastRep={lastRep} />
       )}
     </View>
   );

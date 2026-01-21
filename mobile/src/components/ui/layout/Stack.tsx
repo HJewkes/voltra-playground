@@ -1,12 +1,12 @@
 /**
  * Stack
- * 
+ *
  * Flex container with consistent spacing.
  * Simplifies common flexbox patterns with gap support.
  */
 
-import React, { ReactNode } from 'react';
-import { View, StyleProp, ViewStyle, FlexAlignType } from 'react-native';
+import React, { type ReactNode } from 'react';
+import { View, type StyleProp, type ViewStyle, type FlexAlignType } from 'react-native';
 import { spacing } from '@/theme';
 
 export interface StackProps {
@@ -17,7 +17,13 @@ export interface StackProps {
   /** Align items (cross-axis) */
   align?: FlexAlignType;
   /** Justify content (main-axis) */
-  justify?: 'flex-start' | 'flex-end' | 'center' | 'space-between' | 'space-around' | 'space-evenly';
+  justify?:
+    | 'flex-start'
+    | 'flex-end'
+    | 'center'
+    | 'space-between'
+    | 'space-around'
+    | 'space-evenly';
   /** Whether children should flex equally */
   flex?: boolean;
   /** Children to render */
@@ -29,22 +35,22 @@ export interface StackProps {
 }
 
 const gapMap = {
-  xs: spacing.xs,   // 4
-  sm: spacing.sm,   // 8
-  md: spacing.md,   // 16
-  lg: spacing.lg,   // 24
+  xs: spacing.xs, // 4
+  sm: spacing.sm, // 8
+  md: spacing.md, // 16
+  lg: spacing.lg, // 24
 } as const;
 
 /**
  * Stack component - flexbox container with consistent spacing.
- * 
+ *
  * @example
  * ```tsx
  * <Stack direction="row" gap="md">
  *   <Card>Item 1</Card>
  *   <Card>Item 2</Card>
  * </Stack>
- * 
+ *
  * <Stack gap="sm" align="center">
  *   <Text>Vertically stacked</Text>
  *   <Text>with small gap</Text>
@@ -68,7 +74,7 @@ export function Stack({
     ...(justify && { justifyContent: justify }),
     ...(flex && { flex: 1 }),
   };
-  
+
   return (
     <View style={[stackStyle, style]} className={className}>
       {children}

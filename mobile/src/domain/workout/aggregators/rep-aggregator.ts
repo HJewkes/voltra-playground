@@ -13,7 +13,7 @@ export function aggregateRep(
   concentric: Phase,
   eccentric: Phase,
   holdAtTop: Phase | null,
-  holdAtBottom: Phase | null,
+  holdAtBottom: Phase | null
 ): Rep {
   const metrics = computeRepMetrics(concentric, eccentric, holdAtTop, holdAtBottom);
   return createRep(repNumber, concentric, eccentric, holdAtTop, holdAtBottom, metrics);
@@ -23,7 +23,7 @@ export function computeRepMetrics(
   concentric: Phase,
   eccentric: Phase,
   holdAtTop: Phase | null,
-  holdAtBottom: Phase | null,
+  holdAtBottom: Phase | null
 ): RepMetrics {
   const concentricDuration = concentric.metrics.duration;
   const eccentricDuration = eccentric.metrics.duration;

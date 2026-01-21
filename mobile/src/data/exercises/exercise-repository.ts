@@ -79,7 +79,7 @@ export class ExerciseRepositoryImpl implements ExerciseRepository {
     const index = await this.getIndex();
     if (index.length === 0) return [];
 
-    const keys = index.map(id => this.getKey(id));
+    const keys = index.map((id) => this.getKey(id));
     const results = await this.adapter.getMultiple<StoredExercise>(keys);
 
     const exercises: StoredExercise[] = [];
@@ -99,7 +99,7 @@ export class ExerciseRepositoryImpl implements ExerciseRepository {
 
     // Remove from index
     const index = await this.getIndex();
-    const newIndex = index.filter(i => i !== id);
+    const newIndex = index.filter((i) => i !== id);
     await this.saveIndex(newIndex);
   }
 
@@ -117,8 +117,6 @@ export class ExerciseRepositoryImpl implements ExerciseRepository {
 /**
  * Create a repository instance with the given adapter.
  */
-export function createExerciseRepository(
-  adapter: StorageAdapter
-): ExerciseRepository {
+export function createExerciseRepository(adapter: StorageAdapter): ExerciseRepository {
   return new ExerciseRepositoryImpl(adapter);
 }

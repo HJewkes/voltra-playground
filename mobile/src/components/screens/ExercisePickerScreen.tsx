@@ -21,12 +21,8 @@ import { colors } from '@/theme';
 
 // Domain imports
 import { TrainingGoal } from '@/domain/planning';
-import { type Exercise, getAllExercises, getExercise } from '@/domain/exercise';
-import {
-  type ExercisePlan,
-  createStandardPlan,
-  createDiscoveryPlan,
-} from '@/domain/workout';
+import { type Exercise, getExercise } from '@/domain/exercise';
+import { type ExercisePlan, createStandardPlan, createDiscoveryPlan } from '@/domain/workout';
 
 // Component imports
 import { Card, Stack, ActionButton } from '@/components/ui';
@@ -52,10 +48,7 @@ export interface ExercisePickerScreenProps {
 /**
  * ExercisePickerScreen - configure and start a new exercise session.
  */
-export function ExercisePickerScreen({
-  onStartSession,
-  onBack,
-}: ExercisePickerScreenProps) {
+export function ExercisePickerScreen({ onStartSession, onBack }: ExercisePickerScreenProps) {
   // Mode selection
   const [mode, setMode] = useState<SessionMode>('standard');
 
@@ -73,9 +66,7 @@ export function ExercisePickerScreen({
   const [estimatedMax, setEstimatedMax] = useState('');
 
   // Get selected exercise
-  const selectedExercise = selectedExerciseId
-    ? getExercise(selectedExerciseId)
-    : null;
+  const selectedExercise = selectedExerciseId ? getExercise(selectedExerciseId) : null;
 
   // Validation
   const canStart =
@@ -123,13 +114,13 @@ export function ExercisePickerScreen({
   ]);
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <SafeAreaView className="bg-background flex-1" edges={['top']}>
       {/* Header */}
-      <View className="px-4 py-3 flex-row items-center border-b border-surface-100">
+      <View className="flex-row items-center border-b border-surface-100 px-4 py-3">
         {onBack && (
           <TouchableOpacity
             onPress={onBack}
-            className="mr-3 w-10 h-10 rounded-full items-center justify-center"
+            className="mr-3 h-10 w-10 items-center justify-center rounded-full"
             style={{ backgroundColor: colors.surface.dark }}
           >
             <Ionicons name="arrow-back" size={22} color={colors.content.primary} />
@@ -144,12 +135,11 @@ export function ExercisePickerScreen({
       >
         <ScrollView className="flex-1 p-4" keyboardShouldPersistTaps="handled">
           {/* Mode tabs */}
-          <View className="flex-row mb-6">
+          <View className="mb-6 flex-row">
             <TouchableOpacity
-              className="flex-1 py-3 rounded-l-xl items-center"
+              className="flex-1 items-center rounded-l-xl py-3"
               style={{
-                backgroundColor:
-                  mode === 'standard' ? colors.primary[500] : colors.surface.card,
+                backgroundColor: mode === 'standard' ? colors.primary[500] : colors.surface.card,
               }}
               onPress={() => setMode('standard')}
             >
@@ -163,10 +153,9 @@ export function ExercisePickerScreen({
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              className="flex-1 py-3 rounded-r-xl items-center"
+              className="flex-1 items-center rounded-r-xl py-3"
               style={{
-                backgroundColor:
-                  mode === 'discovery' ? colors.primary[500] : colors.surface.card,
+                backgroundColor: mode === 'discovery' ? colors.primary[500] : colors.surface.card,
               }}
               onPress={() => setMode('discovery')}
             >
@@ -183,46 +172,38 @@ export function ExercisePickerScreen({
 
           {/* Exercise selection */}
           <Card elevation={1} padding="lg">
-            <Text className="text-xs font-bold text-content-muted uppercase tracking-wider mb-3">
+            <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-content-muted">
               Exercise
             </Text>
             <TouchableOpacity
-              className="rounded-xl p-4 flex-row items-center justify-between"
+              className="flex-row items-center justify-between rounded-xl p-4"
               style={{ backgroundColor: colors.surface.dark }}
               onPress={() => setShowExerciseSelector(true)}
             >
               <Text
                 className="font-semibold"
                 style={{
-                  color: selectedExercise
-                    ? colors.content.primary
-                    : colors.content.muted,
+                  color: selectedExercise ? colors.content.primary : colors.content.muted,
                 }}
               >
                 {selectedExercise?.name ?? 'Select Exercise'}
               </Text>
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={colors.content.muted}
-              />
+              <Ionicons name="chevron-forward" size={20} color={colors.content.muted} />
             </TouchableOpacity>
           </Card>
 
           {/* Standard mode settings */}
           {mode === 'standard' && (
             <Card elevation={1} padding="lg">
-              <Text className="text-xs font-bold text-content-muted uppercase tracking-wider mb-3">
+              <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-content-muted">
                 Working Set Configuration
               </Text>
 
               {/* Working weight */}
               <View className="mb-4">
-                <Text className="text-content-secondary text-sm mb-2">
-                  Working Weight (lbs)
-                </Text>
+                <Text className="mb-2 text-sm text-content-secondary">Working Weight (lbs)</Text>
                 <TextInput
-                  className="rounded-xl p-4 font-bold text-lg"
+                  className="rounded-xl p-4 text-lg font-bold"
                   style={{
                     backgroundColor: colors.surface.dark,
                     color: colors.content.primary,
@@ -238,9 +219,9 @@ export function ExercisePickerScreen({
               {/* Sets and Reps */}
               <Stack direction="row" gap="md">
                 <View className="flex-1">
-                  <Text className="text-content-secondary text-sm mb-2">Sets</Text>
+                  <Text className="mb-2 text-sm text-content-secondary">Sets</Text>
                   <TextInput
-                    className="rounded-xl p-4 font-bold text-lg text-center"
+                    className="rounded-xl p-4 text-center text-lg font-bold"
                     style={{
                       backgroundColor: colors.surface.dark,
                       color: colors.content.primary,
@@ -251,9 +232,9 @@ export function ExercisePickerScreen({
                   />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-content-secondary text-sm mb-2">Reps</Text>
+                  <Text className="mb-2 text-sm text-content-secondary">Reps</Text>
                   <TextInput
-                    className="rounded-xl p-4 font-bold text-lg text-center"
+                    className="rounded-xl p-4 text-center text-lg font-bold"
                     style={{
                       backgroundColor: colors.surface.dark,
                       color: colors.content.primary,
@@ -271,22 +252,22 @@ export function ExercisePickerScreen({
           {mode === 'discovery' && (
             <>
               <Card elevation={1} padding="lg">
-                <Text className="text-xs font-bold text-content-muted uppercase tracking-wider mb-3">
+                <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-content-muted">
                   Training Goal
                 </Text>
                 <GoalPicker selected={goal} onSelect={setGoal} />
               </Card>
 
               <Card elevation={1} padding="lg">
-                <Text className="text-xs font-bold text-content-muted uppercase tracking-wider mb-3">
+                <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-content-muted">
                   Estimated Max (Optional)
                 </Text>
-                <Text className="text-content-muted text-sm mb-3">
-                  If you have an idea of your max, enter it here. This helps us start at
-                  the right weight and save time.
+                <Text className="mb-3 text-sm text-content-muted">
+                  If you have an idea of your max, enter it here. This helps us start at the right
+                  weight and save time.
                 </Text>
                 <TextInput
-                  className="rounded-xl p-4 font-bold text-lg"
+                  className="rounded-xl p-4 text-lg font-bold"
                   style={{
                     backgroundColor: colors.surface.dark,
                     color: colors.content.primary,
@@ -320,15 +301,14 @@ export function ExercisePickerScreen({
               />
               <View className="flex-1">
                 {mode === 'standard' ? (
-                  <Text className="text-content-secondary text-sm">
-                    Standard sessions include automatic warmup sets at 50% and 75% of your
-                    working weight, followed by your configured working sets.
+                  <Text className="text-sm text-content-secondary">
+                    Standard sessions include automatic warmup sets at 50% and 75% of your working
+                    weight, followed by your configured working sets.
                   </Text>
                 ) : (
-                  <Text className="text-content-secondary text-sm">
-                    Discovery mode will guide you through increasing weights to find your
-                    optimal working weight. The session will automatically stop when you
-                    reach your limit.
+                  <Text className="text-sm text-content-secondary">
+                    Discovery mode will guide you through increasing weights to find your optimal
+                    working weight. The session will automatically stop when you reach your limit.
                   </Text>
                 )}
               </View>
@@ -363,4 +343,3 @@ export function ExercisePickerScreen({
 // =============================================================================
 // Helpers
 // =============================================================================
-

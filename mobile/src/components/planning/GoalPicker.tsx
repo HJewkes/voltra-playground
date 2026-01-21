@@ -1,11 +1,11 @@
 /**
  * GoalPicker
- * 
+ *
  * A selection component for training goals (strength/hypertrophy/endurance).
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
+import { Text, TouchableOpacity, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { TrainingGoal } from '@/domain/planning';
 import { colors } from '@/theme';
@@ -28,7 +28,7 @@ const GOALS: { goal: TrainingGoal; label: string; icon: 'flash' | 'body' | 'fitn
 
 /**
  * GoalPicker component - training goal selection.
- * 
+ *
  * @example
  * ```tsx
  * <GoalPicker
@@ -42,29 +42,29 @@ export function GoalPicker({ selected, onSelect, style }: GoalPickerProps) {
     <Stack direction="row" gap="sm" style={style}>
       {GOALS.map(({ goal, label, icon }) => {
         const isSelected = selected === goal;
-        
+
         return (
           <TouchableOpacity
             key={goal}
-            className="flex-1 rounded-2xl p-4 items-center"
+            className="flex-1 items-center rounded-2xl p-4"
             style={[
               { backgroundColor: colors.surface.dark },
-              isSelected && { 
+              isSelected && {
                 backgroundColor: colors.primary[600] + '20',
                 borderWidth: 2,
                 borderColor: colors.primary[500],
-              }
+              },
             ]}
             onPress={() => onSelect(goal)}
             activeOpacity={0.7}
           >
-            <Ionicons 
-              name={icon as any} 
-              size={28} 
-              color={isSelected ? colors.primary[500] : colors.text.muted} 
+            <Ionicons
+              name={icon}
+              size={28}
+              color={isSelected ? colors.primary[500] : colors.text.muted}
             />
-            <Text 
-              className="text-sm mt-2 font-semibold"
+            <Text
+              className="mt-2 text-sm font-semibold"
               style={{ color: isSelected ? colors.primary[500] : colors.text.secondary }}
             >
               {label}

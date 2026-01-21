@@ -10,10 +10,7 @@
  * the recording-store, which uses workout domain's RepDetector and aggregators.
  */
 
-import {
-  decodeNotification,
-  type DecodeResult,
-} from '@/domain/voltra/protocol/telemetry-decoder';
+import { decodeNotification, type DecodeResult } from '@/domain/voltra/protocol/telemetry-decoder';
 import {
   type TelemetryFrame,
   type TelemetryState,
@@ -164,9 +161,7 @@ export class TelemetryController {
    */
   endRecording(): number {
     const endTime = Date.now();
-    const duration = this._startTime
-      ? (endTime - this._startTime) / 1000
-      : 0;
+    const duration = this._startTime ? (endTime - this._startTime) / 1000 : 0;
 
     this._isRecording = false;
     this.emit({ type: 'recordingEnded', duration });
@@ -217,9 +212,7 @@ export class TelemetryController {
 
   private handleFrame(frame: TelemetryFrame): void {
     // Update state with new frame
-    const recentFrames = [...this._state.recentFrames, frame].slice(
-      -RECENT_FRAMES_WINDOW,
-    );
+    const recentFrames = [...this._state.recentFrames, frame].slice(-RECENT_FRAMES_WINDOW);
 
     this._state = {
       ...this._state,

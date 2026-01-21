@@ -1,6 +1,6 @@
 /**
  * Navigation Components
- * 
+ *
  * Components for navigation and routing.
  */
 

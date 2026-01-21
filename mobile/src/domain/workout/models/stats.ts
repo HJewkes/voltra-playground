@@ -54,29 +54,21 @@ export interface WorkoutStats {
 export function computeWorkoutStats(
   reps: Rep[],
   startTime: number | null,
-  weightLbs: number | null,
+  weightLbs: number | null
 ): WorkoutStats {
   const now = Date.now();
   const start = startTime || now;
   const totalDuration = (now - start) / 1000;
 
   const avgPeakForce =
-    reps.length > 0
-      ? reps.reduce((sum, r) => sum + r.metrics.peakForce, 0) / reps.length
-      : 0;
+    reps.length > 0 ? reps.reduce((sum, r) => sum + r.metrics.peakForce, 0) / reps.length : 0;
 
-  const maxPeakForce =
-    reps.length > 0 ? Math.max(...reps.map((r) => r.metrics.peakForce)) : 0;
+  const maxPeakForce = reps.length > 0 ? Math.max(...reps.map((r) => r.metrics.peakForce)) : 0;
 
   const avgRepDuration =
-    reps.length > 0
-      ? reps.reduce((sum, r) => sum + r.metrics.totalDuration, 0) / reps.length
-      : 0;
+    reps.length > 0 ? reps.reduce((sum, r) => sum + r.metrics.totalDuration, 0) / reps.length : 0;
 
-  const timeUnderTension = reps.reduce(
-    (sum, r) => sum + r.metrics.totalDuration,
-    0,
-  );
+  const timeUnderTension = reps.reduce((sum, r) => sum + r.metrics.totalDuration, 0);
 
   return {
     reps: [...reps],

@@ -1,18 +1,18 @@
 /**
  * ListItem
- * 
+ *
  * A pressable list item with icon, title, subtitle, and trailing content.
  * Used for workout entries, device lists, settings rows, etc.
  */
 
-import React, { ReactNode } from 'react';
-import { View, Text, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
+import React, { type ReactNode } from 'react';
+import { View, Text, TouchableOpacity, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, borderRadius } from '@/theme';
 
 export interface ListItemProps {
   /** Ionicon name for the leading icon */
-  icon?: string;
+  icon?: keyof typeof Ionicons.glyphMap;
   /** Icon color */
   iconColor?: string;
   /** Icon background color */
@@ -39,7 +39,7 @@ export interface ListItemProps {
 
 /**
  * ListItem component - icon + content + trailing pattern.
- * 
+ *
  * @example
  * ```tsx
  * <ListItem
@@ -67,12 +67,12 @@ export function ListItem({
   className,
 }: ListItemProps) {
   const defaultIconBg = iconBgColor ?? `${iconColor}20`;
-  
+
   const content = (
-    <View 
+    <View
       style={[
-        { 
-          flexDirection: 'row', 
+        {
+          flexDirection: 'row',
           alignItems: 'center',
           padding: spacing.md,
           opacity: disabled ? 0.5 : 1,
@@ -87,7 +87,7 @@ export function ListItem({
     >
       {/* Leading Icon */}
       {icon && (
-        <View 
+        <View
           style={{
             width: 48,
             height: 48,
@@ -98,50 +98,32 @@ export function ListItem({
             backgroundColor: defaultIconBg,
           }}
         >
-          <Ionicons 
-            name={icon as any} 
-            size={24} 
-            color={iconColor} 
-          />
+          <Ionicons name={icon} size={24} color={iconColor} />
         </View>
       )}
-      
+
       {/* Content */}
       <View style={{ flex: 1 }}>
-        <Text 
-          className="font-semibold text-content-primary text-base"
-          numberOfLines={1}
-        >
+        <Text className="text-base font-semibold text-content-primary" numberOfLines={1}>
           {title}
         </Text>
         {subtitle && (
-          <Text 
-            className="text-content-tertiary text-sm mt-0.5"
-            numberOfLines={1}
-          >
+          <Text className="mt-0.5 text-sm text-content-tertiary" numberOfLines={1}>
             {subtitle}
           </Text>
         )}
       </View>
-      
+
       {/* Trailing Content */}
-      {trailing && (
-        <View style={{ marginLeft: spacing.sm }}>
-          {trailing}
-        </View>
-      )}
-      
+      {trailing && <View style={{ marginLeft: spacing.sm }}>{trailing}</View>}
+
       {/* Chevron for pressable items without custom trailing */}
       {onPress && !trailing && (
-        <Ionicons 
-          name="chevron-forward" 
-          size={20} 
-          color={colors.text.tertiary} 
-        />
+        <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
       )}
     </View>
   );
-  
+
   if (onPress || onLongPress) {
     return (
       <TouchableOpacity
@@ -154,6 +136,6 @@ export function ListItem({
       </TouchableOpacity>
     );
   }
-  
+
   return content;
 }

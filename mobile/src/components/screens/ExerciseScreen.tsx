@@ -25,20 +25,13 @@ import type { Exercise } from '@/domain/exercise';
 import type { ExercisePlan } from '@/domain/workout';
 
 // Store imports
-import {
-  createExerciseSessionStore,
-  createRecordingStore,
-  type ExerciseSessionStoreApi,
-  type RecordingStoreApi,
-  type VoltraStoreApi,
-} from '@/stores';
+import { createExerciseSessionStore, createRecordingStore, type VoltraStoreApi } from '@/stores';
 
 // Data imports
 import type { ExerciseSessionRepository } from '@/data/exercise-session';
 
 // Component imports
-import { RecordingDisplayView } from '@/components/recording';
-import { LiveMetrics } from '@/components/recording';
+import { RecordingDisplayView, LiveMetrics } from '@/components/recording';
 import { RecommendationCard } from '@/components/planning';
 import {
   SetTargetCard,
@@ -101,7 +94,8 @@ export function ExerciseScreen({
   // Subscribe to recording state
   const repCount = useStore(recordingStore, (s) => s.repCount);
   const lastRep = useStore(recordingStore, (s) => s.lastRep);
-  const recordingUIState = useStore(recordingStore, (s) => s.uiState);
+  const lastSet = useStore(recordingStore, (s) => s.lastSet);
+  const _recordingUIState = useStore(recordingStore, (s) => s.uiState);
 
   // Initialize session on mount
   useEffect(() => {
@@ -149,11 +143,10 @@ export function ExerciseScreen({
 
   // Handle set completion from recording store
   useEffect(() => {
-    const lastSet = recordingStore.getState().lastSet;
     if (lastSet && uiState === 'recording') {
       sessionStore.getState().onSetCompleted(lastSet);
     }
-  }, [recordingStore.getState().lastSet]);
+  }, [lastSet, uiState, sessionStore]);
 
   // Handlers
   const handleStart = () => {
@@ -183,12 +176,10 @@ export function ExerciseScreen({
           : 'idle';
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <SafeAreaView className="bg-background flex-1" edges={['top']}>
       {/* Header */}
-      <View className="px-4 py-3 border-b border-surface-100">
-        <Text className="text-xl font-bold text-content-primary">
-          {exercise.name}
-        </Text>
+      <View className="border-b border-surface-100 px-4 py-3">
+        <Text className="text-xl font-bold text-content-primary">{exercise.name}</Text>
         <Text className="text-content-muted">
           Set {currentSetIndex + 1} of {plan.sets.length}
           {isDiscovery && ' • Discovery'}
@@ -214,7 +205,7 @@ export function ExerciseScreen({
           {uiState === 'preparing' && (
             <View className="flex-1 items-center justify-center py-20">
               <ActivityIndicator size="large" color={colors.primary[500]} />
-              <Text className="text-content-muted mt-4">Setting weight...</Text>
+              <Text className="mt-4 text-content-muted">Setting weight...</Text>
             </View>
           )}
 
@@ -229,18 +220,12 @@ export function ExerciseScreen({
           )}
 
           {/* Countdown / Recording / Resting states */}
-          {(uiState === 'countdown' ||
-            uiState === 'recording' ||
-            uiState === 'resting') && (
+          {(uiState === 'countdown' || uiState === 'recording' || uiState === 'resting') && (
             <View className="flex-1">
               <RecordingDisplayView
                 uiState={displayUIState}
                 instruction={
-                  uiState === 'recording'
-                    ? 'Lift!'
-                    : uiState === 'countdown'
-                      ? 'Get Ready'
-                      : 'Rest'
+                  uiState === 'recording' ? 'Lift!' : uiState === 'countdown' ? 'Get Ready' : 'Rest'
                 }
                 subInstruction={
                   currentPlannedSet
@@ -266,7 +251,7 @@ export function ExerciseScreen({
           {uiState === 'processing' && (
             <View className="flex-1 items-center justify-center py-20">
               <ActivityIndicator size="large" color={colors.primary[500]} />
-              <Text className="text-content-muted mt-4">Processing...</Text>
+              <Text className="mt-4 text-content-muted">Processing...</Text>
             </View>
           )}
 
@@ -290,7 +275,7 @@ export function ExerciseScreen({
                     profile: recommendation.profile,
                   }}
                   exerciseId={exercise.id}
-                  goal={plan.goal as any}
+                  goal={plan.goal!}
                   onStartTraining={onNewSession}
                   onDiscoverAnother={onComplete}
                 />

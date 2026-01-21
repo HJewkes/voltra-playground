@@ -1,0 +1,23 @@
+# Build outputs
+node_modules/
+.expo/
+android/
+ios/
+dist/
+build/
+
+# Config files
+*.config.js
+*.config.ts
+babel.config.js
+metro.config.js
+tailwind.config.js
+
+# Lock files
+package-lock.json
+yarn.lock
+
+# Generated
+*.d.ts
+nativewind-env.d.ts
+expo-env.d.ts

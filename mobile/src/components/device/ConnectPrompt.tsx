@@ -1,6 +1,6 @@
 /**
  * ConnectPrompt
- * 
+ *
  * Portable connection component that can be embedded in any screen.
  * Auto-scans for devices and allows connecting without navigating away.
  */
@@ -25,54 +25,48 @@ export function ConnectPrompt({
   subtitle = 'Connect to your Voltra to continue',
   autoScan = true,
 }: ConnectPromptProps) {
-  const { 
-    discoveredDevices,
-    isScanning,
-    isRestoring,
-    scan,
-    connectDevice,
-    bleEnvironment,
-  } = useConnectionStore();
-  
+  const { discoveredDevices, isScanning, isRestoring, scan, connectDevice, bleEnvironment } =
+    useConnectionStore();
+
   // BLE environment info from store
   const { environment, bleSupported, warningMessage } = bleEnvironment;
-  
+
   const [connectingDeviceId, setConnectingDeviceId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hasScanned, setHasScanned] = useState(false);
   const scanIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  
+
   // Perform a scan
   const doScan = useCallback(async () => {
     if (isScanning) return;
-    
+
     try {
       setHasScanned(true);
       await scan(SCAN_DURATION);
       setError(null);
-    } catch (e) {
+    } catch {
       // Silent fail for auto-scans
     }
   }, [isScanning, scan]);
-  
+
   // Auto-scan on mount (only if BLE is supported)
   useEffect(() => {
     if (autoScan && !isRestoring && bleSupported) {
       const timeout = setTimeout(doScan, 300);
       return () => clearTimeout(timeout);
     }
-  }, [autoScan, isRestoring, bleSupported]);
-  
+  }, [autoScan, isRestoring, bleSupported, doScan]);
+
   // Periodic auto-scan (only if BLE is supported)
   useEffect(() => {
     if (!autoScan || !bleSupported) return;
-    
+
     scanIntervalRef.current = setInterval(() => {
       if (!isScanning) {
         doScan();
       }
     }, SCAN_INTERVAL);
-    
+
     return () => {
       if (scanIntervalRef.current) {
         clearInterval(scanIntervalRef.current);
@@ -80,14 +74,14 @@ export function ConnectPrompt({
       }
     };
   }, [autoScan, isScanning, doScan, bleSupported]);
-  
+
   const handleConnect = async (device: Device) => {
     setConnectingDeviceId(device.id);
     setError(null);
     try {
       await connectDevice(device);
-    } catch (e: any) {
-      const msg = e?.message || String(e);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
       if (msg.includes('WebSocket') || msg.includes('relay')) {
         setError('BLE relay not running. Run "make relay".');
       } else {
@@ -97,34 +91,37 @@ export function ConnectPrompt({
       setConnectingDeviceId(null);
     }
   };
-  
+
   // Restoring state
   if (isRestoring) {
     return (
-      <View className="flex-1 bg-surface-400 items-center justify-center p-6">
+      <View className="flex-1 items-center justify-center bg-surface-400 p-6">
         <ActivityIndicator size="large" color={colors.primary[500]} />
-        <Text className="text-content-secondary mt-4">Restoring connection...</Text>
+        <Text className="mt-4 text-content-secondary">Restoring connection...</Text>
       </View>
     );
   }
-  
+
   return (
-    <View className="flex-1 bg-surface-400 items-center justify-center p-6">
-      <Card elevation={1} padding="lg" marginBottom={false} style={{ maxWidth: 400, width: '100%' }}>
+    <View className="flex-1 items-center justify-center bg-surface-400 p-6">
+      <Card
+        elevation={1}
+        padding="lg"
+        marginBottom={false}
+        style={{ maxWidth: 400, width: '100%' }}
+      >
         {/* Header with scan indicator */}
-        <View className="flex-row items-center justify-between mb-4">
+        <View className="mb-4 flex-row items-center justify-between">
           <View className="flex-row items-center">
             <Ionicons name="bluetooth-outline" size={24} color={colors.text.muted} />
-            <Text className="font-bold text-content-primary text-lg ml-3">
-              Voltras
-            </Text>
+            <Text className="ml-3 text-lg font-bold text-content-primary">Voltras</Text>
           </View>
           {bleSupported && (
             <TouchableOpacity
               onPress={doScan}
               disabled={isScanning || !bleSupported}
-              className="flex-row items-center px-3 py-2 rounded-xl"
-              style={{ 
+              className="flex-row items-center rounded-xl px-3 py-2"
+              style={{
                 backgroundColor: isScanning ? colors.primary[500] + '20' : colors.surface.dark,
               }}
               activeOpacity={0.7}
@@ -132,31 +129,32 @@ export function ConnectPrompt({
               {isScanning ? (
                 <>
                   <ActivityIndicator size="small" color={colors.primary[500]} />
-                  <Text className="text-primary-500 text-sm font-medium ml-2">
-                    Scanning
-                  </Text>
+                  <Text className="ml-2 text-sm font-medium text-primary-500">Scanning</Text>
                 </>
               ) : (
                 <>
                   <Ionicons name="refresh" size={16} color={colors.text.secondary} />
-                  <Text className="text-content-secondary text-sm font-medium ml-2">
-                    Scan
-                  </Text>
+                  <Text className="ml-2 text-sm font-medium text-content-secondary">Scan</Text>
                 </>
               )}
             </TouchableOpacity>
           )}
         </View>
-        
+
         {/* BLE Environment Warning */}
         {warningMessage && (
-          <View 
-            className="p-4 rounded-xl mb-4 flex-row items-start"
+          <View
+            className="mb-4 flex-row items-start rounded-xl p-4"
             style={{ backgroundColor: colors.warning.DEFAULT + '15' }}
           >
-            <Ionicons name="warning" size={20} color={colors.warning.DEFAULT} style={{ marginTop: 2 }} />
+            <Ionicons
+              name="warning"
+              size={20}
+              color={colors.warning.DEFAULT}
+              style={{ marginTop: 2 }}
+            />
             <View className="ml-3 flex-1">
-              <Text className="font-semibold mb-1" style={{ color: colors.warning.DEFAULT }}>
+              <Text className="mb-1 font-semibold" style={{ color: colors.warning.DEFAULT }}>
                 {environment === 'simulator' ? 'Simulator Detected' : 'Expo Go Detected'}
               </Text>
               <Text className="text-xs leading-5" style={{ color: colors.text.secondary }}>
@@ -165,14 +163,10 @@ export function ConnectPrompt({
             </View>
           </View>
         )}
-        
+
         {/* Subtitle - only show if BLE is supported */}
-        {bleSupported && (
-          <Text className="text-content-tertiary text-sm mb-4">
-            {subtitle}
-          </Text>
-        )}
-        
+        {bleSupported && <Text className="mb-4 text-sm text-content-tertiary">{subtitle}</Text>}
+
         {/* Device List */}
         {discoveredDevices.length > 0 && (
           <Stack gap="xs">
@@ -207,42 +201,36 @@ export function ConnectPrompt({
             })}
           </Stack>
         )}
-        
+
         {/* Empty state - scanning */}
         {discoveredDevices.length === 0 && isScanning && (
-          <View className="py-6 items-center">
+          <View className="items-center py-6">
             <ActivityIndicator size="large" color={colors.primary[500]} />
-            <Text className="text-content-secondary mt-3">Looking for Voltras...</Text>
+            <Text className="mt-3 text-content-secondary">Looking for Voltras...</Text>
           </View>
         )}
-        
+
         {/* Empty state - no devices */}
         {discoveredDevices.length === 0 && !isScanning && hasScanned && (
-          <View className="py-6 items-center">
+          <View className="items-center py-6">
             <Ionicons name="bluetooth-outline" size={36} color={colors.text.muted} />
-            <Text className="text-content-muted text-sm mt-3 text-center">
-              No Voltras found
-            </Text>
-            <Text className="text-content-muted text-xs mt-1">
-              Will scan again automatically
-            </Text>
+            <Text className="mt-3 text-center text-sm text-content-muted">No Voltras found</Text>
+            <Text className="mt-1 text-xs text-content-muted">Will scan again automatically</Text>
           </View>
         )}
-        
+
         {/* Initial state */}
         {discoveredDevices.length === 0 && !isScanning && !hasScanned && (
-          <View className="py-6 items-center">
+          <View className="items-center py-6">
             <Ionicons name="bluetooth-outline" size={36} color={colors.text.muted} />
-            <Text className="text-content-muted text-sm mt-3">
-              Waiting to scan...
-            </Text>
+            <Text className="mt-3 text-sm text-content-muted">Waiting to scan...</Text>
           </View>
         )}
-        
+
         {/* Error Display */}
         {error && (
-          <View 
-            className="p-3 rounded-xl mt-2 flex-row items-center"
+          <View
+            className="mt-2 flex-row items-center rounded-xl p-3"
             style={{ backgroundColor: colors.danger.DEFAULT + '15' }}
           >
             <Ionicons name="alert-circle" size={18} color={colors.danger.DEFAULT} />

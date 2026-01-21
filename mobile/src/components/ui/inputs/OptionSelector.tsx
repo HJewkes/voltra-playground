@@ -1,12 +1,12 @@
 /**
  * OptionSelector
- * 
+ *
  * A row of selectable options (radio-style selection).
  * Used for training goals, modes, etc.
  */
 
-import React, { ReactNode } from 'react';
-import { View, Text, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
+import React from 'react';
+import { View, Text, TouchableOpacity, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing } from '@/theme';
 
@@ -16,7 +16,7 @@ export interface Option<T> {
   /** Display label */
   label: string;
   /** Optional Ionicon name */
-  icon?: string;
+  icon?: keyof typeof Ionicons.glyphMap;
 }
 
 export interface OptionSelectorProps<T> {
@@ -43,7 +43,7 @@ const gapMap = {
 
 /**
  * OptionSelector component - selectable options row.
- * 
+ *
  * @example
  * ```tsx
  * <OptionSelector
@@ -65,11 +65,11 @@ export function OptionSelector<T extends string | number>({
   style,
 }: OptionSelectorProps<T>) {
   const gapValue = gapMap[gap];
-  
+
   return (
-    <View 
+    <View
       style={[
-        { 
+        {
           flexDirection: direction,
           gap: gapValue,
         },
@@ -78,16 +78,14 @@ export function OptionSelector<T extends string | number>({
     >
       {options.map((option) => {
         const isSelected = option.value === selected;
-        
+
         return (
           <TouchableOpacity
             key={String(option.value)}
             onPress={() => onSelect(option.value)}
-            className="flex-1 rounded-2xl p-4 items-center"
+            className="flex-1 items-center rounded-2xl p-4"
             style={{
-              backgroundColor: isSelected 
-                ? colors.primary[600] + '30'
-                : colors.surface.dark,
+              backgroundColor: isSelected ? colors.primary[600] + '30' : colors.surface.dark,
               borderWidth: 2,
               borderColor: isSelected ? colors.primary[500] : 'transparent',
             }}
@@ -95,14 +93,14 @@ export function OptionSelector<T extends string | number>({
           >
             {option.icon && (
               <Ionicons
-                name={option.icon as any}
+                name={option.icon}
                 size={24}
                 color={isSelected ? colors.primary[500] : colors.text.muted}
                 style={{ marginBottom: spacing.xs }}
               />
             )}
             <Text
-              className="font-semibold text-sm text-center"
+              className="text-center text-sm font-semibold"
               style={{
                 color: isSelected ? colors.primary[500] : colors.text.secondary,
               }}

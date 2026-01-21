@@ -1,6 +1,6 @@
 /**
  * Common Component Styles
- * 
+ *
  * Reusable style objects for common UI patterns.
  */
 
@@ -11,7 +11,7 @@ export const styles = {
   background: {
     backgroundColor: colors.surface.background,
   },
-  
+
   // Card
   card: {
     backgroundColor: colors.surface.card,
@@ -19,7 +19,7 @@ export const styles = {
     borderWidth: 1,
     borderColor: colors.surface.light,
   },
-  
+
   // Elevated card (modals, floating)
   cardElevated: {
     backgroundColor: colors.surface.elevated,
@@ -27,7 +27,7 @@ export const styles = {
     borderWidth: 1,
     borderColor: colors.surface.light,
   },
-  
+
   // Pressed/inset surface
   cardInset: {
     backgroundColor: colors.surface.dark,
@@ -35,7 +35,7 @@ export const styles = {
     borderWidth: 1,
     borderColor: colors.surface.darkest,
   },
-  
+
   // Primary button
   buttonPrimary: {
     backgroundColor: colors.primary[600],
@@ -43,7 +43,7 @@ export const styles = {
     paddingVertical: 16,
     paddingHorizontal: 24,
   },
-  
+
   // Secondary button
   buttonSecondary: {
     backgroundColor: colors.surface.card,
@@ -53,7 +53,7 @@ export const styles = {
     borderWidth: 1,
     borderColor: colors.surface.light,
   },
-  
+
   // Icon button (circular)
   iconButton: {
     backgroundColor: colors.surface.card,
@@ -62,7 +62,7 @@ export const styles = {
     borderWidth: 1,
     borderColor: colors.surface.light,
   },
-  
+
   // Text input
   input: {
     backgroundColor: colors.surface.dark,
@@ -74,7 +74,7 @@ export const styles = {
     color: colors.text.primary,
     fontSize: 16,
   },
-  
+
   // Badge
   badge: {
     backgroundColor: colors.primary[600],
@@ -82,7 +82,7 @@ export const styles = {
     paddingVertical: 4,
     paddingHorizontal: 12,
   },
-  
+
   // Divider
   divider: {
     height: 1,
@@ -103,7 +103,7 @@ export const icons = {
   historyActive: 'time',
   settings: 'cog-outline',
   settingsActive: 'cog',
-  
+
   // Actions
   play: 'play',
   playOutline: 'play-outline',
@@ -116,7 +116,7 @@ export const icons = {
   chevronRight: 'chevron-forward',
   chevronDown: 'chevron-down',
   refresh: 'refresh',
-  
+
   // Fitness
   barbell: 'barbell-outline',
   barbellActive: 'barbell',
@@ -125,19 +125,19 @@ export const icons = {
   flame: 'flame-outline',
   pulse: 'pulse',
   speedometer: 'speedometer-outline',
-  
+
   // Connection
   bluetooth: 'bluetooth-outline',
   bluetoothActive: 'bluetooth',
   wifi: 'wifi-outline',
   sync: 'sync-outline',
-  
+
   // Status
   alert: 'alert-circle-outline',
   info: 'information-circle-outline',
   success: 'checkmark-circle-outline',
   warning: 'warning-outline',
-  
+
   // Misc
   calendar: 'calendar-outline',
   analytics: 'analytics-outline',

@@ -6,7 +6,7 @@
  */
 import type { WorkoutSample } from '@/domain/workout/models/sample';
 import type { Phase, PhaseMetrics } from '@/domain/workout/models/phase';
-import { MovementPhase } from '@/domain/workout/models/types';
+import { type MovementPhase } from '@/domain/workout/models/types';
 
 /**
  * Create a Phase from a collection of samples.

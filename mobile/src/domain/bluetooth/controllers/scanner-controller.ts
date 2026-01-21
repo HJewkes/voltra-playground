@@ -1,13 +1,13 @@
 /**
  * Scanner Controller
- * 
+ *
  * Manages BLE device scanning with auto-scan and relay status checking.
  * This is a generic controller that can be configured with a device filter.
  */
 
 import type { BLEAdapter } from '@/domain/bluetooth/adapters';
-import { DiscoveredDevice } from '@/domain/bluetooth/models/device';
-import { BLEEnvironmentInfo, requiresRelay } from '@/domain/bluetooth/models/environment';
+import { type DiscoveredDevice } from '@/domain/bluetooth/models/device';
+import { type BLEEnvironmentInfo, requiresRelay } from '@/domain/bluetooth/models/environment';
 
 /**
  * Device filter function type.
@@ -34,7 +34,7 @@ export interface ScannerState {
 /**
  * Scanner event types.
  */
-export type ScannerEvent = 
+export type ScannerEvent =
   | { type: 'scanStarted' }
   | { type: 'scanCompleted'; devices: DiscoveredDevice[] }
   | { type: 'scanFailed'; error: string }
@@ -65,21 +65,21 @@ export class ScannerController {
   private _relayStatus: RelayStatus = 'checking';
   private _lastScanTime = 0;
   private _error: string | null = null;
-  
+
   private _autoScanInterval: ReturnType<typeof setInterval> | null = null;
   private _relayCheckInterval: ReturnType<typeof setInterval> | null = null;
   private _listeners: Set<ScannerEventListener> = new Set();
-  
+
   constructor(
     private adapter: BLEAdapter,
     private environment: BLEEnvironmentInfo,
     private config: ScannerConfig,
-    private deviceFilter?: DeviceFilter,
+    private deviceFilter?: DeviceFilter
   ) {
     // Set initial relay status based on environment
     this._relayStatus = requiresRelay(this.environment) ? 'checking' : 'connected';
   }
-  
+
   /**
    * Get current scanner state.
    */
@@ -92,7 +92,7 @@ export class ScannerController {
       error: this._error,
     };
   }
-  
+
   /**
    * Subscribe to scanner events.
    */
@@ -100,11 +100,11 @@ export class ScannerController {
     this._listeners.add(listener);
     return () => this._listeners.delete(listener);
   }
-  
+
   private emit(event: ScannerEvent): void {
-    this._listeners.forEach(listener => listener(event));
+    this._listeners.forEach((listener) => listener(event));
   }
-  
+
   /**
    * Scan for devices.
    */
@@ -113,34 +113,34 @@ export class ScannerController {
     if (this._isScanning) {
       return this._discoveredDevices;
     }
-    
+
     // Don't scan if relay not ready on web
     if (requiresRelay(this.environment) && this._relayStatus !== 'connected') {
       this._error = 'BLE relay not running. Start with "make relay".';
       return [];
     }
-    
+
     this._isScanning = true;
     this._error = null;
     this.emit({ type: 'scanStarted' });
-    
+
     try {
       const devices = await this.adapter.scan(this.config.scanDurationMs / 1000);
       // Apply device filter if provided, otherwise return all devices
-      const filteredDevices = this.deviceFilter 
+      const filteredDevices = this.deviceFilter
         ? this.deviceFilter(devices as DiscoveredDevice[])
-        : devices as DiscoveredDevice[];
-      
+        : (devices as DiscoveredDevice[]);
+
       this._discoveredDevices = filteredDevices;
       this._lastScanTime = Date.now();
       this._isScanning = false;
-      
+
       this.emit({ type: 'scanCompleted', devices: filteredDevices });
       return filteredDevices;
-    } catch (e: any) {
+    } catch (e: unknown) {
       this._isScanning = false;
-      const errorMsg = e?.message || String(e);
-      
+      const errorMsg = e instanceof Error ? e.message : String(e);
+
       // Categorize errors
       if (errorMsg.includes('WebSocket') || errorMsg.includes('Failed to connect')) {
         this._relayStatus = 'disconnected';
@@ -153,12 +153,12 @@ export class ScannerController {
       } else {
         this._error = `Scan failed: ${errorMsg}`;
       }
-      
+
       this.emit({ type: 'scanFailed', error: this._error });
       return [];
     }
   }
-  
+
   /**
    * Check relay status (web only).
    */
@@ -167,20 +167,14 @@ export class ScannerController {
       this._relayStatus = 'connected';
       return 'connected';
     }
-    
+
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(
-        () => controller.abort(), 
-        this.config.relayCheckTimeoutMs
-      );
-      
-      const response = await fetch(
-        `${this.config.relayHttpUrl}/`, 
-        { signal: controller.signal }
-      );
+      const timeout = setTimeout(() => controller.abort(), this.config.relayCheckTimeoutMs);
+
+      const response = await fetch(`${this.config.relayHttpUrl}/`, { signal: controller.signal });
       clearTimeout(timeout);
-      
+
       const newStatus: RelayStatus = response.ok ? 'connected' : 'error';
       if (newStatus !== this._relayStatus) {
         this._relayStatus = newStatus;
@@ -195,7 +189,7 @@ export class ScannerController {
       return 'disconnected';
     }
   }
-  
+
   /**
    * Start auto-scanning.
    * Returns cleanup function.
@@ -203,31 +197,34 @@ export class ScannerController {
   startAutoScan(isConnected: () => boolean): () => void {
     // Clear existing intervals
     this.stopAutoScan();
-    
+
     // Check relay status immediately and periodically
     this.checkRelayStatus();
     this._relayCheckInterval = setInterval(
-      () => this.checkRelayStatus(), 
+      () => this.checkRelayStatus(),
       this.config.relayCheckIntervalMs
     );
-    
+
     // Initial scan after short delay
     setTimeout(() => {
-      if ((this._relayStatus === 'connected' || !requiresRelay(this.environment)) && !isConnected()) {
+      if (
+        (this._relayStatus === 'connected' || !requiresRelay(this.environment)) &&
+        !isConnected()
+      ) {
         this.scan();
       }
     }, 500);
-    
+
     // Periodic auto-scan when not connected
     this._autoScanInterval = setInterval(() => {
       if (!this._isScanning && !isConnected()) {
         this.scan();
       }
     }, this.config.scanIntervalMs);
-    
+
     return () => this.stopAutoScan();
   }
-  
+
   /**
    * Stop auto-scanning.
    */
@@ -241,14 +238,14 @@ export class ScannerController {
       this._relayCheckInterval = null;
     }
   }
-  
+
   /**
    * Clear error state.
    */
   clearError(): void {
     this._error = null;
   }
-  
+
   /**
    * Cleanup resources.
    */

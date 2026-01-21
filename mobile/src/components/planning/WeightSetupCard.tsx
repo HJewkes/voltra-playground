@@ -1,6 +1,6 @@
 /**
  * WeightSetupCard
- * 
+ *
  * Weight picker with set button for pre-workout setup.
  */
 
@@ -39,22 +39,18 @@ export function WeightSetupCard({
         step={5}
         style={{ marginBottom: 24 }}
       />
-      
+
       <TouchableOpacity
         onPress={onSetWeight}
         className="rounded-2xl py-4"
         style={{ backgroundColor: colors.primary[600] }}
         activeOpacity={0.8}
       >
-        <Text className="text-white text-center font-bold text-lg">
-          Set Weight
-        </Text>
+        <Text className="text-center text-lg font-bold text-white">Set Weight</Text>
       </TouchableOpacity>
-      
+
       {deviceWeight > 0 && (
-        <Text className="text-center text-content-tertiary mt-3">
-          Current: {deviceWeight} lbs
-        </Text>
+        <Text className="mt-3 text-center text-content-tertiary">Current: {deviceWeight} lbs</Text>
       )}
     </Card>
   );

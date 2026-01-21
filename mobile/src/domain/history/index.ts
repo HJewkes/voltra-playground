@@ -1,6 +1,6 @@
 /**
  * History Domain Module
- * 
+ *
  * Computed data and analytics from set history.
  * Provides models and services for velocity baselines, personal records, and trends.
  */

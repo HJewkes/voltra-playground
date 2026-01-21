@@ -1,6 +1,6 @@
 /**
  * Effort Labels and UI Helpers
- * 
+ *
  * Functions for generating human-readable effort descriptions
  * and UI formatting for RPE/RIR values.
  */
@@ -52,7 +52,7 @@ export function getRPEColor(rpe: number): string {
 
 /**
  * Get a motivational message based on current RPE and rep count.
- * 
+ *
  * Used to provide real-time feedback during workouts.
  * Shows simple, encouraging messages that reflect current effort level.
  */

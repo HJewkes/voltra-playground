@@ -10,9 +10,8 @@
  * - velocityProfile and recommendation are NOT stored (derived on demand)
  */
 
-import type { ExercisePlan, PlannedSet, PlanSource, WorkoutSample } from '@/domain/workout';
+import type { PlannedSet, PlanSource, WorkoutSample , StoredRep } from '@/domain/workout';
 import type { TrainingGoal } from '@/domain/planning';
-import type { StoredRep } from '@/domain/workout';
 
 /**
  * Termination reason for why a session ended.

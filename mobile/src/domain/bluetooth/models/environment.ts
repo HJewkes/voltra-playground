@@ -1,6 +1,6 @@
 /**
  * Bluetooth Environment Model
- * 
+ *
  * Detects the current environment and BLE capabilities.
  */
 
@@ -11,11 +11,11 @@ import Constants, { ExecutionEnvironment } from 'expo-constants';
 /**
  * BLE environment types.
  */
-export type BLEEnvironment = 
-  | 'native'      // Real device with dev build - BLE works
-  | 'simulator'   // iOS Simulator or Android Emulator - no BLE
-  | 'expo-go'     // Expo Go app - no native BLE module
-  | 'web';        // Web browser - uses relay
+export type BLEEnvironment =
+  | 'native' // Real device with dev build - BLE works
+  | 'simulator' // iOS Simulator or Android Emulator - no BLE
+  | 'expo-go' // Expo Go app - no native BLE module
+  | 'web'; // Web browser - uses relay
 
 /**
  * BLE environment information.
@@ -35,18 +35,19 @@ export interface BLEEnvironmentInfo {
  * Warning messages for unsupported environments.
  */
 const WARNING_MESSAGES: Partial<Record<BLEEnvironment, string>> = {
-  'expo-go': 'Bluetooth is not available in Expo Go. Run "npx expo run:ios --device" to build with native BLE support.',
-  'simulator': 'Bluetooth is not available in the simulator. Connect a physical device to test BLE.',
+  'expo-go':
+    'Bluetooth is not available in Expo Go. Run "npx expo run:ios --device" to build with native BLE support.',
+  simulator: 'Bluetooth is not available in the simulator. Connect a physical device to test BLE.',
 };
 
 /**
  * Detect the current BLE environment.
- * 
+ *
  * This is a pure function with no React dependencies.
  */
 export function detectBLEEnvironment(): BLEEnvironmentInfo {
   const isWeb = Platform.OS === 'web';
-  
+
   // Web always uses relay
   if (isWeb) {
     return {
@@ -56,7 +57,7 @@ export function detectBLEEnvironment(): BLEEnvironmentInfo {
       isWeb: true,
     };
   }
-  
+
   // Check if running in Expo Go
   const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
   if (isExpoGo) {
@@ -67,7 +68,7 @@ export function detectBLEEnvironment(): BLEEnvironmentInfo {
       isWeb: false,
     };
   }
-  
+
   // Check if running in simulator/emulator
   const isSimulator = !Device.isDevice;
   if (isSimulator) {
@@ -78,7 +79,7 @@ export function detectBLEEnvironment(): BLEEnvironmentInfo {
       isWeb: false,
     };
   }
-  
+
   // Native build on real device
   return {
     environment: 'native',

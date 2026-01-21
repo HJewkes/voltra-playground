@@ -1,19 +1,16 @@
 /**
  * Native BLE Adapter
- * 
+ *
  * Uses react-native-ble-plx for direct BLE communication on iOS/Android.
  * Includes auto-reconnect functionality for seamless app resume.
- * 
+ *
  * This adapter is generic and can be configured for any BLE device by
  * providing the appropriate service/characteristic UUIDs.
  */
 
-import {
-  BleManager,
-  Device as BleDevice,
-  State,
-} from 'react-native-ble-plx';
-import { AppState, AppStateStatus, Platform, PermissionsAndroid } from 'react-native';
+import { BleManager, type Device as BleDevice, State } from 'react-native-ble-plx';
+// eslint-disable-next-line react-native/split-platform-components
+import { AppState, type AppStateStatus, Platform, PermissionsAndroid } from 'react-native';
 import type {
   BLEAdapter,
   Device,
@@ -141,36 +138,37 @@ export class NativeBLEAdapter implements BLEAdapter {
   private autoReconnect: boolean;
   private maxReconnectAttempts: number;
   private reconnectDelayMs: number;
-  
+
   // Auto-reconnect state
   private lastConnectedDeviceId: string | null = null;
   private lastConnectedDeviceName: string | null = null;
   private isReconnecting: boolean = false;
   private reconnectAttempts: number = 0;
   private appStateSubscription: { remove: () => void } | null = null;
-  
+
   // Disconnect handling - prevents crash when subscriptions error during disconnect
   private isDisconnecting: boolean = false;
   private disconnectSubscription: { remove: () => void } | null = null;
-  
+
   // Callbacks for reconnect events
   private onReconnectStart?: () => void;
   private onReconnectSuccess?: () => void;
   private onReconnectFailed?: (error: Error) => void;
-  
+
   constructor(config: NativeAdapterConfig) {
     this.bleConfig = config.ble;
     this.autoReconnect = config.autoReconnect ?? DEFAULT_RECONNECT_CONFIG.autoReconnect;
-    this.maxReconnectAttempts = config.maxReconnectAttempts ?? DEFAULT_RECONNECT_CONFIG.maxReconnectAttempts;
+    this.maxReconnectAttempts =
+      config.maxReconnectAttempts ?? DEFAULT_RECONNECT_CONFIG.maxReconnectAttempts;
     this.reconnectDelayMs = config.reconnectDelayMs ?? DEFAULT_RECONNECT_CONFIG.reconnectDelayMs;
     this.manager = new BleManager();
-    
+
     // Set up app state listener for auto-reconnect
     if (this.autoReconnect) {
       this.setupAppStateListener();
     }
   }
-  
+
   /**
    * Set up listener for app state changes (background/foreground).
    */
@@ -180,7 +178,7 @@ export class NativeBLEAdapter implements BLEAdapter {
       this.handleAppStateChange.bind(this)
     );
   }
-  
+
   /**
    * Handle app state changes for auto-reconnect.
    */
@@ -188,7 +186,7 @@ export class NativeBLEAdapter implements BLEAdapter {
     if (nextAppState === 'active') {
       // App came to foreground
       console.log('[NativeBLE] App became active');
-      
+
       // Check if we were connected and got disconnected
       if (
         this.lastConnectedDeviceId &&
@@ -201,14 +199,16 @@ export class NativeBLEAdapter implements BLEAdapter {
         // Check if device is still connected
         const isConnected = await this.device.isConnected();
         if (!isConnected) {
-          console.log('[NativeBLE] Device disconnected while in background, attempting reconnect...');
+          console.log(
+            '[NativeBLE] Device disconnected while in background, attempting reconnect...'
+          );
           this.setConnectionState('disconnected');
           await this.attemptReconnect();
         }
       }
     }
   }
-  
+
   /**
    * Attempt to reconnect to the last known device.
    */
@@ -216,15 +216,17 @@ export class NativeBLEAdapter implements BLEAdapter {
     if (!this.lastConnectedDeviceId || this.isReconnecting) {
       return;
     }
-    
+
     this.isReconnecting = true;
     this.reconnectAttempts = 0;
     this.onReconnectStart?.();
-    
+
     while (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++;
-      console.log(`[NativeBLE] Reconnect attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}`);
-      
+      console.log(
+        `[NativeBLE] Reconnect attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}`
+      );
+
       try {
         await this.connect(this.lastConnectedDeviceId);
         console.log('[NativeBLE] Reconnect successful');
@@ -234,19 +236,19 @@ export class NativeBLEAdapter implements BLEAdapter {
         return;
       } catch (error) {
         console.warn(`[NativeBLE] Reconnect attempt ${this.reconnectAttempts} failed:`, error);
-        
+
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
-          await new Promise(resolve => setTimeout(resolve, this.reconnectDelayMs));
+          await new Promise((resolve) => setTimeout(resolve, this.reconnectDelayMs));
         }
       }
     }
-    
+
     // All attempts failed
     console.error('[NativeBLE] Auto-reconnect failed after all attempts');
     this.isReconnecting = false;
     this.onReconnectFailed?.(new Error('Auto-reconnect failed'));
   }
-  
+
   private setConnectionState(state: ConnectionState): void {
     if (this.connectionState !== state) {
       this.connectionState = state;
@@ -259,7 +261,7 @@ export class NativeBLEAdapter implements BLEAdapter {
       }
     }
   }
-  
+
   private async waitForPoweredOn(): Promise<void> {
     return new Promise((resolve, reject) => {
       const subscription = this.manager.onStateChange((state) => {
@@ -278,7 +280,7 @@ export class NativeBLEAdapter implements BLEAdapter {
           console.log('[NativeBLE] Bluetooth is off - waiting for user to enable');
         }
       }, true);
-      
+
       // Timeout after 10 seconds
       setTimeout(() => {
         subscription.remove();
@@ -286,29 +288,29 @@ export class NativeBLEAdapter implements BLEAdapter {
       }, 10000);
     });
   }
-  
+
   async scan(timeout: number): Promise<Device[]> {
     console.log('[NativeBLE] Starting scan...');
     console.log('[NativeBLE] Looking for service:', this.bleConfig.serviceUUID);
     if (this.bleConfig.deviceNamePrefix) {
       console.log('[NativeBLE] Device name prefix:', this.bleConfig.deviceNamePrefix);
     }
-    
+
     // Request Android permissions first
     const hasPermissions = await requestAndroidBLEPermissions();
     if (!hasPermissions) {
       throw new Error('Bluetooth permissions not granted. Please enable in Settings.');
     }
     console.log('[NativeBLE] Permissions granted');
-    
+
     await this.waitForPoweredOn();
     console.log('[NativeBLE] Bluetooth is powered on');
-    
+
     const devices: Device[] = [];
     const seen = new Set<string>();
     const prefix = this.bleConfig.deviceNamePrefix;
-    
-    return new Promise((resolve, reject) => {
+
+    return new Promise((resolve, _reject) => {
       // Scan for all devices (filtering is done by name prefix if configured)
       this.manager.startDeviceScan(
         null, // No service filter - scan for all devices
@@ -318,20 +320,21 @@ export class NativeBLEAdapter implements BLEAdapter {
             console.error('[NativeBLE] Scan error:', error);
             return;
           }
-          
+
           if (device) {
             // Log all devices with names for debugging
             if (device.name) {
               console.log(`[NativeBLE] Found device: ${device.name} (${device.id})`);
             }
-            
+
             // Check if device matches filter (if prefix is configured)
-            const matchesFilter = !prefix || 
-              device.name?.startsWith(prefix) ||
-              device.localName?.startsWith(prefix);
-            
+            const matchesFilter =
+              !prefix || device.name?.startsWith(prefix) || device.localName?.startsWith(prefix);
+
             if (matchesFilter && !seen.has(device.id) && (device.name || device.localName)) {
-              console.log(`[NativeBLE] ✓ Found matching device: ${device.name || device.localName}`);
+              console.log(
+                `[NativeBLE] ✓ Found matching device: ${device.name || device.localName}`
+              );
               seen.add(device.id);
               devices.push({
                 id: device.id,
@@ -342,7 +345,7 @@ export class NativeBLEAdapter implements BLEAdapter {
           }
         }
       );
-      
+
       // Stop scan after timeout
       setTimeout(() => {
         this.manager.stopDeviceScan();
@@ -351,31 +354,31 @@ export class NativeBLEAdapter implements BLEAdapter {
       }, timeout * 1000);
     });
   }
-  
+
   async connect(deviceId: string, options?: ConnectOptions): Promise<void> {
     // Request Android permissions first
     const hasPermissions = await requestAndroidBLEPermissions();
     if (!hasPermissions) {
       throw new Error('Bluetooth permissions not granted. Please enable in Settings.');
     }
-    
+
     await this.waitForPoweredOn();
-    
+
     this.setConnectionState('connecting');
-    
+
     try {
       // Connect to device - don't request MTU yet, we need to authenticate first
       const device = await this.manager.connectToDevice(deviceId, {
         autoConnect: false, // Use direct connection for faster connect on Android
       });
-      
+
       this.device = device;
       this.lastConnectedDeviceId = deviceId;
       this.lastConnectedDeviceName = device.name;
-      
+
       // Discover services and characteristics FIRST (needed for immediate write)
       await device.discoverAllServicesAndCharacteristics();
-      
+
       // If immediate write is provided, send it NOW before anything else
       // This is critical for devices that require fast authentication
       if (options?.immediateWrite) {
@@ -388,32 +391,32 @@ export class NativeBLEAdapter implements BLEAdapter {
         );
         console.log('[NativeBLE] Immediate auth write sent');
       }
-      
+
       // Now request MTU (optional, may fail on some devices)
       try {
         await device.requestMTU(512);
       } catch (mtuError) {
         console.log('[NativeBLE] MTU request failed (non-fatal):', mtuError);
       }
-      
+
       // Set up disconnect listener BEFORE setting up characteristic monitors
       // This ensures we can clean up subscriptions before the error propagates
-      this.disconnectSubscription = device.onDisconnected((error, disconnectedDevice) => {
+      this.disconnectSubscription = device.onDisconnected((error, _disconnectedDevice) => {
         console.log('[NativeBLE] Device disconnected', error ? `(error: ${error.message})` : '');
-        
+
         // Mark as disconnecting to prevent monitor errors from crashing
         this.isDisconnecting = true;
-        
+
         // Clean up subscriptions IMMEDIATELY to prevent RxJava crash
         this.cleanupSubscriptions();
-        
+
         this.setConnectionState('disconnected');
         this.device = null;
         this.isDisconnecting = false;
-        
+
         // Don't clear lastConnectedDeviceId - we want to try reconnecting
       });
-      
+
       // Subscribe to notifications on notify characteristic
       // Error callback must handle disconnect gracefully to avoid Android crash
       this.notifySubscription = device.monitorCharacteristicForService(
@@ -423,7 +426,10 @@ export class NativeBLEAdapter implements BLEAdapter {
           if (error) {
             // Ignore errors if we're disconnecting - this prevents the Android crash
             if (this.isDisconnecting || !this.device) {
-              console.log('[NativeBLE] Notification error during disconnect (ignored):', error.message);
+              console.log(
+                '[NativeBLE] Notification error during disconnect (ignored):',
+                error.message
+              );
               return;
             }
             console.error('[NativeBLE] Notification error:', error);
@@ -435,7 +441,7 @@ export class NativeBLEAdapter implements BLEAdapter {
           }
         }
       );
-      
+
       // Also subscribe to write characteristic (it also sends notifications)
       // Error callback must handle disconnect gracefully to avoid Android crash
       this.writeSubscription = device.monitorCharacteristicForService(
@@ -445,7 +451,10 @@ export class NativeBLEAdapter implements BLEAdapter {
           if (error) {
             // Ignore errors if we're disconnecting - this prevents the Android crash
             if (this.isDisconnecting || !this.device) {
-              console.log('[NativeBLE] Write char error during disconnect (ignored):', error.message);
+              console.log(
+                '[NativeBLE] Write char error during disconnect (ignored):',
+                error.message
+              );
               return;
             }
             console.error('[NativeBLE] Write char notification error:', error);
@@ -457,7 +466,7 @@ export class NativeBLEAdapter implements BLEAdapter {
           }
         }
       );
-      
+
       this.setConnectionState('connected');
     } catch (error) {
       console.error('[NativeBLE] Connect error:', error);
@@ -465,7 +474,7 @@ export class NativeBLEAdapter implements BLEAdapter {
       throw error;
     }
   }
-  
+
   private cleanupSubscriptions(): void {
     // Clean up characteristic monitor subscriptions
     // Must be done synchronously to prevent RxJava crash on Android
@@ -486,7 +495,7 @@ export class NativeBLEAdapter implements BLEAdapter {
       this.writeSubscription = null;
     }
   }
-  
+
   private cleanupAllSubscriptions(): void {
     this.cleanupSubscriptions();
     if (this.disconnectSubscription) {
@@ -498,7 +507,7 @@ export class NativeBLEAdapter implements BLEAdapter {
       this.disconnectSubscription = null;
     }
   }
-  
+
   private notifyCallbacks(data: Uint8Array): void {
     for (const callback of this.notificationCallbacks) {
       try {
@@ -508,17 +517,17 @@ export class NativeBLEAdapter implements BLEAdapter {
       }
     }
   }
-  
+
   async disconnect(): Promise<void> {
     this.setConnectionState('disconnecting');
-    
+
     // Mark as disconnecting to prevent monitor errors from crashing
     this.isDisconnecting = true;
-    
+
     // Clean up all subscriptions BEFORE canceling connection
     // This prevents the RxJava crash on Android
     this.cleanupAllSubscriptions();
-    
+
     if (this.device) {
       try {
         await this.device.cancelConnection();
@@ -527,29 +536,29 @@ export class NativeBLEAdapter implements BLEAdapter {
       }
       this.device = null;
     }
-    
+
     // Clear last device so we don't auto-reconnect after intentional disconnect
     this.lastConnectedDeviceId = null;
     this.lastConnectedDeviceName = null;
     this.isDisconnecting = false;
-    
+
     this.setConnectionState('disconnected');
   }
-  
+
   async write(data: Uint8Array): Promise<void> {
     if (!this.device) {
       throw new Error('Not connected to device');
     }
-    
+
     const base64 = bytesToBase64(data);
-    
+
     await this.device.writeCharacteristicWithResponseForService(
       this.bleConfig.serviceUUID,
       this.bleConfig.writeCharUUID,
       base64
     );
   }
-  
+
   onNotification(callback: NotificationCallback): () => void {
     this.notificationCallbacks.push(callback);
     return () => {
@@ -559,7 +568,7 @@ export class NativeBLEAdapter implements BLEAdapter {
       }
     };
   }
-  
+
   onConnectionStateChange(callback: ConnectionStateCallback): () => void {
     this.stateCallbacks.push(callback);
     return () => {
@@ -569,15 +578,15 @@ export class NativeBLEAdapter implements BLEAdapter {
       }
     };
   }
-  
+
   getConnectionState(): ConnectionState {
     return this.connectionState;
   }
-  
+
   isConnected(): boolean {
     return this.connectionState === 'connected' && this.device !== null;
   }
-  
+
   /**
    * Get info about the currently connected device.
    */
@@ -589,14 +598,14 @@ export class NativeBLEAdapter implements BLEAdapter {
       rssi: null, // Not available after connection
     };
   }
-  
+
   /**
    * Get the last connected device ID (for reconnection).
    */
   getLastConnectedDeviceId(): string | null {
     return this.lastConnectedDeviceId;
   }
-  
+
   /**
    * Set callbacks for reconnect events.
    */
@@ -609,7 +618,7 @@ export class NativeBLEAdapter implements BLEAdapter {
     this.onReconnectSuccess = callbacks.onSuccess;
     this.onReconnectFailed = callbacks.onFailed;
   }
-  
+
   /**
    * Manually trigger a reconnect attempt.
    */
@@ -620,7 +629,7 @@ export class NativeBLEAdapter implements BLEAdapter {
       throw new Error('No previous device to reconnect to');
     }
   }
-  
+
   /**
    * Set the last connected device (for restoring from storage).
    */
@@ -628,14 +637,14 @@ export class NativeBLEAdapter implements BLEAdapter {
     this.lastConnectedDeviceId = deviceId;
     this.lastConnectedDeviceName = deviceName ?? null;
   }
-  
+
   /**
    * Check if auto-reconnect is in progress.
    */
   isAutoReconnecting(): boolean {
     return this.isReconnecting;
   }
-  
+
   /**
    * Destroy the BLE manager (call when app is closing).
    */

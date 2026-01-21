@@ -1,6 +1,6 @@
 /**
  * Shared Domain Utilities
- * 
+ *
  * Common utilities used across domain modules.
  */
 
@@ -9,7 +9,7 @@
  * @param ms Duration in milliseconds
  */
 export function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -30,7 +30,7 @@ export function hexToBytes(hex: string): Uint8Array {
  */
 export function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes)
-    .map(b => b.toString(16).padStart(2, '0'))
+    .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
 }
 

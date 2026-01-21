@@ -1,6 +1,6 @@
 /**
  * Records Service
- * 
+ *
  * Computes personal records from set history.
  */
 
@@ -12,9 +12,9 @@ import type { PersonalRecord } from '../models';
  */
 export function computePersonalRecords(sets: Set[]): PersonalRecord[] {
   if (sets.length === 0) return [];
-  
+
   const records: PersonalRecord[] = [];
-  
+
   // Max weight
   let maxWeightSet = sets[0];
   for (const s of sets) {
@@ -30,7 +30,7 @@ export function computePersonalRecords(sets: Set[]): PersonalRecord[] {
     date: maxWeightSet.timestamp.start,
     setId: maxWeightSet.id,
   });
-  
+
   // Max reps (at any weight)
   let maxRepsSet = sets[0];
   for (const s of sets) {
@@ -46,7 +46,7 @@ export function computePersonalRecords(sets: Set[]): PersonalRecord[] {
     date: maxRepsSet.timestamp.start,
     setId: maxRepsSet.id,
   });
-  
+
   // Max velocity (peak concentric from any rep)
   let maxVelSet = sets[0];
   let maxVel = getMaxPeakVelocity(maxVelSet);
@@ -64,7 +64,7 @@ export function computePersonalRecords(sets: Set[]): PersonalRecord[] {
     date: maxVelSet.timestamp.start,
     setId: maxVelSet.id,
   });
-  
+
   // Max volume (weight × reps)
   let maxVolSet = sets[0];
   let maxVol = maxVolSet.weight * maxVolSet.reps.length;
@@ -83,7 +83,7 @@ export function computePersonalRecords(sets: Set[]): PersonalRecord[] {
     date: maxVolSet.timestamp.start,
     setId: maxVolSet.id,
   });
-  
+
   return records;
 }
 
@@ -92,5 +92,5 @@ export function computePersonalRecords(sets: Set[]): PersonalRecord[] {
  */
 function getMaxPeakVelocity(set: Set): number {
   if (set.reps.length === 0) return 0;
-  return Math.max(...set.reps.map(r => r.metrics.concentricPeakVelocity));
+  return Math.max(...set.reps.map((r) => r.metrics.concentricPeakVelocity));
 }

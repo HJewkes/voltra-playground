@@ -1,6 +1,6 @@
 /**
  * Voltra Domain
- * 
+ *
  * Voltra device management, telemetry processing, and workout control.
  */
 
@@ -9,7 +9,7 @@
 // =============================================================================
 
 // Device model
-export { 
+export {
   VoltraDevice,
   DEFAULT_SETTINGS,
   type VoltraDeviceSettings,
@@ -25,11 +25,7 @@ export {
 } from './models/connection';
 
 // Device filter
-export {
-  VOLTRA_DEVICE_PREFIX,
-  isVoltraDevice,
-  filterVoltraDevices,
-} from './models/device-filter';
+export { VOLTRA_DEVICE_PREFIX, isVoltraDevice, filterVoltraDevices } from './models/device-filter';
 
 // Telemetry models (from telemetry/ submodule)
 // Note: MovementPhase and PhaseNames are NOT exported - use @/domain/workout instead
@@ -55,7 +51,7 @@ export {
 // Controllers
 // =============================================================================
 
-export { 
+export {
   VoltraDeviceController,
   InvalidWeightError,
   InvalidChainsError,
@@ -70,13 +66,13 @@ export {
   type VoltraConnectionResult,
 } from './controllers/voltra-connection-controller';
 
-export { 
+export {
   TelemetryController,
   type TelemetryEvent,
   type TelemetryEventListener,
 } from './controllers/telemetry-controller';
 
-export { 
+export {
   RecordingController,
   type RecordingEvent,
   type RecordingEventListener,
@@ -87,17 +83,17 @@ export {
 // =============================================================================
 
 // Command builders
-export { 
-  WeightCommands, 
-  ChainsCommands, 
+export {
+  WeightCommands,
+  ChainsCommands,
   EccentricCommands,
   type DualCommand,
 } from './protocol/commands';
 
 // Protocol constants
-export { 
-  MessageTypes, 
-  TelemetryOffsets, 
+export {
+  MessageTypes,
+  TelemetryOffsets,
   Timing,
   Auth,
   Init,

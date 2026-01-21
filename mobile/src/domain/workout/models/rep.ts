@@ -54,7 +54,7 @@ export function createRep(
   eccentric: Phase,
   holdAtTop: Phase | null,
   holdAtBottom: Phase | null,
-  metrics: RepMetrics,
+  metrics: RepMetrics
 ): Rep {
   return {
     repNumber,

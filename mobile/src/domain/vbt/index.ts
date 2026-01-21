@@ -1,6 +1,6 @@
 /**
  * VBT (Velocity-Based Training) Domain
- * 
+ *
  * Provides reference data, constants, and profile building for VBT.
  * Used by training planning, weight discovery, and analytics.
  */

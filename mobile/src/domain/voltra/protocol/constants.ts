@@ -1,6 +1,6 @@
 /**
  * Voltra Protocol Constants
- * 
+ *
  * BLE configuration, authentication, and command constants for
  * Beyond Power Voltra resistance training devices.
  */
@@ -46,7 +46,7 @@ export const Timing = {
 
 /**
  * Device authentication identifiers.
- * 
+ *
  * 41-byte device IDs that identify the connecting app.
  * Both iPhone and iPad IDs work - the Voltra doesn't care which.
  */
@@ -74,7 +74,7 @@ export const Init = {
 
 /**
  * Workout control commands.
- * 
+ *
  * To start: set weight -> PREPARE -> SETUP -> GO
  * To stop: STOP
  */
@@ -113,11 +113,11 @@ export const MessageTypes = {
  * Values loaded from protocol.json for single source of truth.
  */
 export const TelemetryOffsets = {
-  SEQUENCE: protocolData.telemetry.offsets.sequence,    // 2 bytes, little-endian
-  PHASE: protocolData.telemetry.offsets.phase,          // 1 byte
-  POSITION: protocolData.telemetry.offsets.position,    // 2 bytes, little-endian unsigned
-  FORCE: protocolData.telemetry.offsets.force,          // 2 bytes, little-endian signed
-  VELOCITY: protocolData.telemetry.offsets.velocity,    // 2 bytes, little-endian unsigned
+  SEQUENCE: protocolData.telemetry.offsets.sequence, // 2 bytes, little-endian
+  PHASE: protocolData.telemetry.offsets.phase, // 1 byte
+  POSITION: protocolData.telemetry.offsets.position, // 2 bytes, little-endian unsigned
+  FORCE: protocolData.telemetry.offsets.force, // 2 bytes, little-endian signed
+  VELOCITY: protocolData.telemetry.offsets.velocity, // 2 bytes, little-endian unsigned
 } as const;
 
 /**
@@ -125,10 +125,10 @@ export const TelemetryOffsets = {
  * Values match protocol.json telemetry.phases.
  */
 export enum MovementPhase {
-  IDLE = 0,        // protocolData.telemetry.phases.idle
-  CONCENTRIC = 1,  // protocolData.telemetry.phases.concentric - Pulling (muscle shortening)
-  HOLD = 2,        // protocolData.telemetry.phases.hold - Top of rep / transition
-  ECCENTRIC = 3,   // protocolData.telemetry.phases.eccentric - Releasing (muscle lengthening)
+  IDLE = 0, // protocolData.telemetry.phases.idle
+  CONCENTRIC = 1, // protocolData.telemetry.phases.concentric - Pulling (muscle shortening)
+  HOLD = 2, // protocolData.telemetry.phases.hold - Top of rep / transition
+  ECCENTRIC = 3, // protocolData.telemetry.phases.eccentric - Releasing (muscle lengthening)
   UNKNOWN = -1,
 }
 

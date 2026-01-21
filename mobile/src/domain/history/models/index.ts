@@ -1,6 +1,6 @@
 /**
  * History Domain Models
- * 
+ *
  * Types for computed historical data - velocity baselines, personal records, trends.
  */
 

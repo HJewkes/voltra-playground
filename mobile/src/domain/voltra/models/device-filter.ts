@@ -1,6 +1,6 @@
 /**
  * Voltra Device Filter
- * 
+ *
  * Utilities for identifying and filtering Voltra devices from BLE scan results.
  */
 

@@ -22,7 +22,4 @@ export {
 } from './session-generator';
 
 // Recording generators
-export {
-  generateRecording,
-  type GenerateRecordingOptions,
-} from './recording-generator';
+export { generateRecording, type GenerateRecordingOptions } from './recording-generator';

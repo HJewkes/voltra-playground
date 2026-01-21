@@ -10,7 +10,7 @@
  */
 
 import type { TempoTarget } from './set';
-import { TrainingGoal } from '@/domain/planning/types';
+import { type TrainingGoal } from '@/domain/planning/types';
 
 // Re-export for convenience
 export { TrainingGoal } from '@/domain/planning/types';
@@ -29,19 +29,19 @@ export type PlanSource = 'manual' | 'standard' | 'discovery';
 export interface PlannedSet {
   /** Set number in sequence (1-based, for display) */
   setNumber: number;
-  
+
   /** Target weight in lbs */
   weight: number;
 
   /** Target number of reps */
   targetReps: number;
-  
+
   /** Target rep range [min, max] - optional, for double progression */
   repRange?: [number, number];
 
   /** Target RIR (reps in reserve) / RPE equivalent */
   rirTarget: number;
-  
+
   /** Is this a warmup set? */
   isWarmup: boolean;
 

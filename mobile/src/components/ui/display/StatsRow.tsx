@@ -1,12 +1,12 @@
 /**
  * StatsRow
- * 
+ *
  * Row of stats with automatic dividers between them.
  * Perfect for displaying multiple metrics in a horizontal layout.
  */
 
 import React from 'react';
-import { View, Text, StyleProp, ViewStyle } from 'react-native';
+import { View, Text, type StyleProp, type ViewStyle } from 'react-native';
 import { colors } from '@/theme';
 
 export interface StatItem {
@@ -49,7 +49,7 @@ const SIZES = {
 
 /**
  * StatsRow component - horizontal row of stats with dividers.
- * 
+ *
  * @example
  * ```tsx
  * <StatsRow
@@ -59,7 +59,7 @@ const SIZES = {
  *     { value: '125k', label: 'Volume (lbs)' },
  *   ]}
  * />
- * 
+ *
  * <StatsRow
  *   stats={[
  *     { value: 7.5, label: 'RPE', valueColor: colors.warning.DEFAULT },
@@ -69,14 +69,9 @@ const SIZES = {
  * />
  * ```
  */
-export function StatsRow({
-  stats,
-  size = 'md',
-  dividers = true,
-  style,
-}: StatsRowProps) {
+export function StatsRow({ stats, size = 'md', dividers = true, style }: StatsRowProps) {
   const sizeConfig = SIZES[size];
-  
+
   return (
     <View
       style={[
@@ -100,7 +95,7 @@ export function StatsRow({
               }}
             />
           )}
-          
+
           {/* Stat */}
           <View style={{ alignItems: 'center', flex: 1 }}>
             <Text

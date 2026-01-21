@@ -77,7 +77,7 @@ export class ReplayBLEAdapter implements BLEAdapter {
   async connect(_deviceId: string, _options?: ConnectOptions): Promise<void> {
     this.setConnectionState('connecting');
     // Simulate brief connection delay
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
     this.setConnectionState('connected');
   }
 
@@ -87,7 +87,7 @@ export class ReplayBLEAdapter implements BLEAdapter {
   async disconnect(): Promise<void> {
     this.stop();
     this.setConnectionState('disconnecting');
-    await new Promise(resolve => setTimeout(resolve, 50));
+    await new Promise((resolve) => setTimeout(resolve, 50));
     this.setConnectionState('disconnected');
   }
 
@@ -168,10 +168,7 @@ export class ReplayBLEAdapter implements BLEAdapter {
    * Seek to a specific sample index.
    */
   seek(sampleIndex: number): void {
-    this.currentIndex = Math.max(
-      0,
-      Math.min(sampleIndex, this.recording.samples.length - 1)
-    );
+    this.currentIndex = Math.max(0, Math.min(sampleIndex, this.recording.samples.length - 1));
   }
 
   /**

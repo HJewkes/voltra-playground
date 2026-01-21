@@ -1,6 +1,6 @@
 /**
  * DeviceList
- * 
+ *
  * Device list with scan button and various states (scanning, empty, devices).
  */
 
@@ -53,36 +53,23 @@ export function DeviceList({
   onDeviceSelect,
 }: DeviceListProps) {
   const scanDisabled = isScanning || relayNotReady || !bleSupported;
-  
+
   return (
     <Card elevation={1} padding="lg">
       {/* Header with scan button */}
-      <View className="flex-row items-center justify-between mb-4">
-        <Text className="text-lg font-bold text-content-primary">
-          Voltras
-        </Text>
+      <View className="mb-4 flex-row items-center justify-between">
+        <Text className="text-lg font-bold text-content-primary">Voltras</Text>
         {bleSupported && (
-          <ScanButton 
-            isScanning={isScanning}
-            disabled={scanDisabled}
-            onPress={onScan}
-          />
+          <ScanButton isScanning={isScanning} disabled={scanDisabled} onPress={onScan} />
         )}
       </View>
-      
+
       {/* BLE Environment Warning */}
-      {warningMessage && (
-        <BLEWarning 
-          environment={environment} 
-          message={warningMessage} 
-        />
-      )}
-      
+      {warningMessage && <BLEWarning environment={environment} message={warningMessage} />}
+
       {/* Restoring state */}
-      {isRestoring && (
-        <LoadingState message="Restoring connection..." />
-      )}
-      
+      {isRestoring && <LoadingState message="Restoring connection..." />}
+
       {/* Device List */}
       {!isRestoring && devices.length > 0 && (
         <Stack gap="sm">
@@ -97,25 +84,20 @@ export function DeviceList({
           ))}
         </Stack>
       )}
-      
+
       {/* Empty state - no devices */}
       {!isRestoring && devices.length === 0 && !isScanning && (
-        <View className="py-8 items-center">
+        <View className="items-center py-8">
           <Ionicons name="bluetooth-outline" size={40} color={colors.text.muted} />
-          <Text className="text-content-muted text-sm mt-3 text-center">
-            {relayNotReady 
-              ? 'Waiting for BLE relay...'
-              : 'No Voltras found'
-            }
+          <Text className="mt-3 text-center text-sm text-content-muted">
+            {relayNotReady ? 'Waiting for BLE relay...' : 'No Voltras found'}
           </Text>
           {!relayNotReady && (
-            <Text className="text-content-muted text-xs mt-1">
-              Will scan again automatically
-            </Text>
+            <Text className="mt-1 text-xs text-content-muted">Will scan again automatically</Text>
           )}
         </View>
       )}
-      
+
       {/* Scanning state */}
       {!isRestoring && devices.length === 0 && isScanning && (
         <LoadingState size="large" message="Looking for Voltras..." />

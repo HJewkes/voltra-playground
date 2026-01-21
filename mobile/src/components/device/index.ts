@@ -1,6 +1,6 @@
 /**
  * Device Components
- * 
+ *
  * Components for Voltra device connection, scanning, and status.
  */
 

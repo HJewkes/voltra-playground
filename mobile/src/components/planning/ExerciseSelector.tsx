@@ -1,15 +1,15 @@
 /**
  * ExerciseSelector
- * 
+ *
  * A modal for selecting exercises, grouped by muscle group.
  */
 
 import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { 
-  getKnownExercises, 
-  getExerciseName, 
+import {
+  getKnownExercises,
+  getExerciseName,
   EXERCISE_MUSCLE_GROUPS,
   MuscleGroup,
 } from '@/domain/exercise';
@@ -32,7 +32,7 @@ export interface ExerciseSelectorProps {
 function groupExercisesByMuscle(): Record<string, string[]> {
   const exercises = getKnownExercises();
   const grouped: Record<string, string[]> = {};
-  
+
   for (const ex of exercises) {
     const muscle = EXERCISE_MUSCLE_GROUPS[ex] ?? MuscleGroup.BACK;
     if (!grouped[muscle]) {
@@ -40,13 +40,13 @@ function groupExercisesByMuscle(): Record<string, string[]> {
     }
     grouped[muscle].push(ex);
   }
-  
+
   return grouped;
 }
 
 /**
  * ExerciseSelector component - grouped exercise selection modal.
- * 
+ *
  * @example
  * ```tsx
  * <ExerciseSelector
@@ -67,7 +67,7 @@ export function ExerciseSelector({
   onSelect,
 }: ExerciseSelectorProps) {
   const groupedExercises = useMemo(() => groupExercisesByMuscle(), []);
-  
+
   return (
     <Modal
       visible={visible}
@@ -77,45 +77,45 @@ export function ExerciseSelector({
     >
       <View className="flex-1" style={{ backgroundColor: colors.surface.background }}>
         {/* Header */}
-        <View 
-          className="px-5 py-5 flex-row justify-between items-center border-b"
+        <View
+          className="flex-row items-center justify-between border-b px-5 py-5"
           style={{ backgroundColor: colors.surface.elevated, borderColor: colors.surface.light }}
         >
           <Text className="text-xl font-bold text-content-primary">Select Exercise</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={onClose}
-            className="w-10 h-10 rounded-full items-center justify-center"
+            className="h-10 w-10 items-center justify-center rounded-full"
             style={{ backgroundColor: colors.surface.dark }}
           >
             <Ionicons name="close" size={22} color={colors.text.secondary} />
           </TouchableOpacity>
         </View>
-        
+
         {/* Exercise List */}
         <ScrollView className="flex-1 p-4">
           {Object.entries(groupedExercises).map(([muscle, exercises]) => (
             <View key={muscle} className="mb-6">
-              <Text className="text-xs font-bold text-content-muted uppercase tracking-wider mb-3">
+              <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-content-muted">
                 {muscle}
               </Text>
-              {exercises.map(ex => {
+              {exercises.map((ex) => {
                 const isSelected = selectedExercise === ex;
                 return (
                   <TouchableOpacity
                     key={ex}
-                    className="rounded-2xl p-4 mb-2"
+                    className="mb-2 rounded-2xl p-4"
                     style={[
                       { backgroundColor: colors.surface.card },
-                      isSelected && { 
-                        borderWidth: 2, 
+                      isSelected && {
+                        borderWidth: 2,
                         borderColor: colors.primary[500],
                         backgroundColor: colors.primary[600] + '15',
-                      }
+                      },
                     ]}
                     onPress={() => onSelect(ex)}
                     activeOpacity={0.7}
                   >
-                    <Text 
+                    <Text
                       className="font-semibold"
                       style={{ color: isSelected ? colors.primary[500] : colors.text.primary }}
                     >

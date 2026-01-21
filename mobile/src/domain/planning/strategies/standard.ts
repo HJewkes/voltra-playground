@@ -1,9 +1,9 @@
 /**
  * Standard Planning Strategy
- * 
+ *
  * Intra-workout adaptation logic extracted from AdaptiveEngine.
  * Uses SessionMetrics as input for all decisions.
- * 
+ *
  * Responsibilities:
  * - Weight adjustments based on velocity loss
  * - Rest period adjustments based on fatigue
@@ -13,7 +13,12 @@
 
 import type { SessionMetrics, FatigueEstimate } from '@/domain/workout/metrics/types';
 import type { TrainingGoal, PlanAdjustment } from '../types';
-import { VELOCITY_LOSS_TARGETS, REST_DEFAULTS, RIR_DEFAULTS, PROGRESSION_INCREMENTS } from '../types';
+import {
+  VELOCITY_LOSS_TARGETS,
+  REST_DEFAULTS,
+  RIR_DEFAULTS,
+  PROGRESSION_INCREMENTS,
+} from '../types';
 
 // =============================================================================
 // Types
@@ -72,17 +77,17 @@ export interface ExtraSetEligibility {
 const VL_TOLERANCE = 5.0;
 
 /** Expected rep drop thresholds */
-const REP_DROP_WARNING = 0.30;  // 30% drop triggers extended rest
-const REP_DROP_STOP = 0.50;    // 50% drop = junk volume
+const REP_DROP_WARNING = 0.3; // 30% drop triggers extended rest
+const REP_DROP_STOP = 0.5; // 50% drop = junk volume
 
 /** Velocity drop thresholds */
-const VELOCITY_DROP_WARNING = 0.40;  // 40% first-rep velocity drop
+const VELOCITY_DROP_WARNING = 0.4; // 40% first-rep velocity drop
 
 /** Expected rep drop by rest period (seconds) */
 export const EXPECTED_REP_DROP: Record<number, number> = {
-  60: 0.35,   // 1 min rest: ~35% drop
-  120: 0.20,  // 2 min rest: ~20% drop
-  180: 0.15,  // 3 min rest: ~15% drop
+  60: 0.35, // 1 min rest: ~35% drop
+  120: 0.2, // 2 min rest: ~20% drop
+  180: 0.15, // 3 min rest: ~15% drop
 };
 
 // =============================================================================
@@ -91,7 +96,7 @@ export const EXPECTED_REP_DROP: Record<number, number> = {
 
 /**
  * Calculate weight adjustment based on velocity loss and fatigue.
- * 
+ *
  * Uses SessionMetrics to determine if weight should be increased or decreased.
  */
 export function calculateWeightAdjustment(
@@ -99,9 +104,10 @@ export function calculateWeightAdjustment(
   lastSetVelocityLoss: number,
   config: StandardStrategyConfig
 ): WeightAdjustmentResult {
-  const [targetVlMin, targetVlMax] = config.velocityLossTarget ?? VELOCITY_LOSS_TARGETS[config.goal];
+  const [targetVlMin, targetVlMax] =
+    config.velocityLossTarget ?? VELOCITY_LOSS_TARGETS[config.goal];
   const increment = PROGRESSION_INCREMENTS[config.exerciseType];
-  
+
   // Check if fatigue is too high - don't increase (level > 0.7 = high fatigue)
   if (metrics.fatigue.level > 0.7 || metrics.fatigue.isJunkVolume) {
     return {
@@ -110,7 +116,7 @@ export function calculateWeightAdjustment(
       shouldAdjust: false,
     };
   }
-  
+
   // VL significantly under target - can increase weight
   if (lastSetVelocityLoss < targetVlMin - VL_TOLERANCE) {
     return {
@@ -119,7 +125,7 @@ export function calculateWeightAdjustment(
       shouldAdjust: true,
     };
   }
-  
+
   // VL significantly over target - should decrease weight
   if (lastSetVelocityLoss > targetVlMax + VL_TOLERANCE) {
     return {
@@ -128,7 +134,7 @@ export function calculateWeightAdjustment(
       shouldAdjust: true,
     };
   }
-  
+
   // In range - no change
   return {
     adjustment: 0,
@@ -152,7 +158,7 @@ export function calculateRestAdjustment(
   const baseRest = config.baseRestSeconds ?? REST_DEFAULTS[config.goal];
   let extraRest = 0;
   let reason = '';
-  
+
   // Velocity loss based adjustment
   if (lastSetVelocityLoss > 40) {
     extraRest = 60;
@@ -161,7 +167,7 @@ export function calculateRestAdjustment(
     extraRest = 30;
     reason = 'Moderate velocity loss - slight rest extension';
   }
-  
+
   // Fatigue-based adjustment (level > 0.7 = high fatigue)
   if (metrics.fatigue.level > 0.7) {
     // Ensure at least 3 min rest
@@ -171,7 +177,7 @@ export function calculateRestAdjustment(
       reason = 'High fatigue - ensuring adequate recovery';
     }
   }
-  
+
   // Rep drop based adjustment
   if (metrics.fatigue.repDropPercent > REP_DROP_WARNING * 100) {
     const minRest = 180;
@@ -180,7 +186,7 @@ export function calculateRestAdjustment(
       reason = `${metrics.fatigue.repDropPercent.toFixed(0)}% rep drop - extended rest`;
     }
   }
-  
+
   return {
     extraRest,
     reason,
@@ -206,10 +212,10 @@ export function shouldStop(
     return {
       shouldStop: true,
       reason: 'junk_volume',
-      message: 'Good work - additional sets won\'t help much',
+      message: "Good work - additional sets won't help much",
     };
   }
-  
+
   // Check velocity recovery
   if (metrics.fatigue.velocityRecoveryPercent < 60) {
     return {
@@ -218,7 +224,7 @@ export function shouldStop(
       message: 'Velocity dropping significantly - time to stop',
     };
   }
-  
+
   // Check if we've hit planned sets
   if (setsCompleted >= plannedSets) {
     return {
@@ -227,7 +233,7 @@ export function shouldStop(
       message: 'Great job - exercise complete!',
     };
   }
-  
+
   // Check if below minimum sets but fatigue is extreme
   if (setsCompleted >= config.minSets && metrics.fatigue.level > 0.7) {
     return {
@@ -236,7 +242,7 @@ export function shouldStop(
       message: 'Met minimum sets - stopping due to fatigue',
     };
   }
-  
+
   return {
     shouldStop: false,
     reason: null,
@@ -253,12 +259,12 @@ export function checkJunkVolume(fatigue: FatigueEstimate): boolean {
   if (fatigue.repDropPercent >= REP_DROP_STOP * 100) {
     return true;
   }
-  
+
   // Velocity drop >= 40% is junk volume
   if (fatigue.velocityRecoveryPercent <= (1 - VELOCITY_DROP_WARNING) * 100) {
     return true;
   }
-  
+
   return fatigue.isJunkVolume;
 }
 
@@ -282,7 +288,7 @@ export function canAddSet(
       reason: 'Already at maximum sets',
     };
   }
-  
+
   // RIR too low
   if (lastSet.estimatedRir < RIR_DEFAULTS[config.exerciseType]) {
     return {
@@ -290,7 +296,7 @@ export function canAddSet(
       reason: 'Too close to failure for another set',
     };
   }
-  
+
   // VL over target
   const [, targetVlMax] = config.velocityLossTarget ?? VELOCITY_LOSS_TARGETS[config.goal];
   if (lastSet.velocityLossPercent > targetVlMax) {
@@ -299,7 +305,7 @@ export function canAddSet(
       reason: 'Velocity loss already at target',
     };
   }
-  
+
   // Junk volume
   if (metrics.fatigue.isJunkVolume) {
     return {
@@ -307,7 +313,7 @@ export function canAddSet(
       reason: 'Would be junk volume',
     };
   }
-  
+
   // High fatigue
   if (metrics.fatigue.level > 0.7) {
     return {
@@ -315,7 +321,7 @@ export function canAddSet(
       reason: 'Fatigue too high',
     };
   }
-  
+
   return {
     canAddSet: true,
     reason: 'Feeling good - can add another set',
@@ -337,18 +343,15 @@ export function getExpectedPerformance(
   if (setNumber === 1 || firstSetReps <= 0) {
     return null;
   }
-  
+
   // Get expected rep drop for this rest period
-  const expectedDrop = EXPECTED_REP_DROP[restSeconds] ?? 
-    EXPECTED_REP_DROP[120]; // Default to 2 min if not found
-  
+  const expectedDrop = EXPECTED_REP_DROP[restSeconds] ?? EXPECTED_REP_DROP[120]; // Default to 2 min if not found
+
   // Compound drop across sets
   const cumulativeDrop = 1 - Math.pow(1 - expectedDrop, setNumber - 1);
-  
-  const expectedReps = Math.max(1, Math.round(
-    firstSetReps * (1 - cumulativeDrop)
-  ));
-  
+
+  const expectedReps = Math.max(1, Math.round(firstSetReps * (1 - cumulativeDrop)));
+
   return {
     expectedReps,
     expectedDropPercent: cumulativeDrop * 100,
@@ -364,24 +367,19 @@ export function isSetWithinExpectations(
   actualVelocity: number,
   expectedVelocity: number,
   tolerance: number = 0.15
-): { 
-  withinExpectations: boolean; 
-  repDeviation: number; 
+): {
+  withinExpectations: boolean;
+  repDeviation: number;
   velocityDeviation: number;
   assessment: string;
 } {
-  const repDeviation = expectedReps > 0 
-    ? (actualReps - expectedReps) / expectedReps 
-    : 0;
-  const velocityDeviation = expectedVelocity > 0
-    ? (actualVelocity - expectedVelocity) / expectedVelocity
-    : 0;
-  
-  const withinExpectations = (
-    Math.abs(repDeviation) <= tolerance &&
-    Math.abs(velocityDeviation) <= tolerance
-  );
-  
+  const repDeviation = expectedReps > 0 ? (actualReps - expectedReps) / expectedReps : 0;
+  const velocityDeviation =
+    expectedVelocity > 0 ? (actualVelocity - expectedVelocity) / expectedVelocity : 0;
+
+  const withinExpectations =
+    Math.abs(repDeviation) <= tolerance && Math.abs(velocityDeviation) <= tolerance;
+
   let assessment: string;
   if (repDeviation > tolerance) {
     assessment = 'Performing better than expected';
@@ -392,7 +390,7 @@ export function isSetWithinExpectations(
   } else {
     assessment = 'On track';
   }
-  
+
   return {
     withinExpectations,
     repDeviation: Math.round(repDeviation * 1000) / 10,

@@ -1,6 +1,6 @@
 /**
  * SetSummaryModal
- * 
+ *
  * A bottom sheet modal showing workout set summary with stats.
  */
 
@@ -32,7 +32,7 @@ export interface SetSummaryModalProps {
 
 /**
  * SetSummaryModal component - workout completion summary.
- * 
+ *
  * @example
  * ```tsx
  * <SetSummaryModal
@@ -52,40 +52,27 @@ export function SetSummaryModal({
   tempoBreakdown,
 }: SetSummaryModalProps) {
   return (
-    <BottomSheet
-      visible={visible}
-      onClose={onClose}
-      title="Set Complete!"
-    >
+    <BottomSheet visible={visible} onClose={onClose} title="Set Complete!">
       {metrics && (
         <>
           {/* Main Stats */}
           <Stack direction="row" justify="space-around" style={{ marginBottom: 24 }}>
-            <StatDisplay 
-              value={repCount} 
-              label="Reps" 
+            <StatDisplay value={repCount} label="Reps" size="lg" color={colors.primary[500]} />
+            <StatDisplay
+              value={metrics.effort.rpe}
+              label="RPE"
               size="lg"
-              color={colors.primary[500]} 
+              color={getRPEColor(metrics.effort.rpe)}
             />
-            <StatDisplay 
-              value={metrics.effort.rpe} 
-              label="RPE" 
-              size="lg"
-              color={getRPEColor(metrics.effort.rpe)} 
-            />
-            <StatDisplay 
-              value={metrics.effort.rir} 
-              label="RIR" 
-              size="lg"
-            />
+            <StatDisplay value={metrics.effort.rir} label="RIR" size="lg" />
           </Stack>
-          
+
           {/* Effort Bar */}
           <Surface elevation="inset" radius="lg" border={false} style={{ marginBottom: 16 }}>
             <View className="p-5">
-              <View className="flex-row justify-between mb-3">
-                <Text className="text-content-secondary font-bold">Effort</Text>
-                <Text className="text-content-primary font-bold">
+              <View className="mb-3 flex-row justify-between">
+                <Text className="font-bold text-content-secondary">Effort</Text>
+                <Text className="font-bold text-content-primary">
                   {getEffortLabel(metrics.effort.rpe)}
                 </Text>
               </View>
@@ -93,69 +80,67 @@ export function SetSummaryModal({
                 progress={metrics.effort.rpe * 10}
                 color={getRPEColor(metrics.effort.rpe)}
               />
-              <Text className="text-content-muted text-sm mt-3">
+              <Text className="mt-3 text-sm text-content-muted">
                 {getRIRDescription(metrics.effort.rir)}
               </Text>
             </View>
           </Surface>
-          
+
           {/* Velocity Stats */}
           <Stack direction="row" gap="sm" style={{ marginBottom: 16 }}>
             <Surface elevation="inset" radius="lg" border={false} style={{ flex: 1, padding: 16 }}>
-              <Text className="text-content-muted text-xs font-medium">Velocity Loss</Text>
-              <Text className="text-xl font-bold text-content-primary mt-1">
+              <Text className="text-xs font-medium text-content-muted">Velocity Loss</Text>
+              <Text className="mt-1 text-xl font-bold text-content-primary">
                 {metrics.velocity.concentricDelta > 0 ? '+' : ''}
                 {metrics.velocity.concentricDelta.toFixed(0)}%
               </Text>
             </Surface>
             <Surface elevation="inset" radius="lg" border={false} style={{ flex: 1, padding: 16 }}>
-              <Text className="text-content-muted text-xs font-medium">Avg Velocity</Text>
-              <Text className="text-xl font-bold text-content-primary mt-1">
+              <Text className="text-xs font-medium text-content-muted">Avg Velocity</Text>
+              <Text className="mt-1 text-xl font-bold text-content-primary">
                 {metrics.velocity.concentricBaseline.toFixed(2)}
               </Text>
             </Surface>
             <Surface elevation="inset" radius="lg" border={false} style={{ flex: 1, padding: 16 }}>
-              <Text className="text-content-muted text-xs font-medium">TUT</Text>
-              <Text className="text-xl font-bold text-content-primary mt-1">
+              <Text className="text-xs font-medium text-content-muted">TUT</Text>
+              <Text className="mt-1 text-xl font-bold text-content-primary">
                 {metrics.timeUnderTension.toFixed(0)}s
               </Text>
             </Surface>
           </Stack>
-          
+
           {/* Tempo - only show if breakdown provided */}
           {tempoBreakdown && (
             <Surface elevation="inset" radius="lg" border={false} style={{ marginBottom: 24 }}>
               <View className="p-5">
-                <View className="flex-row justify-between mb-3">
-                  <Text className="text-content-secondary font-bold">Avg Tempo</Text>
-                  <Text className="text-content-primary font-bold">
-                    {avgTempo ?? '0-0-0-0'}
-                  </Text>
+                <View className="mb-3 flex-row justify-between">
+                  <Text className="font-bold text-content-secondary">Avg Tempo</Text>
+                  <Text className="font-bold text-content-primary">{avgTempo ?? '0-0-0-0'}</Text>
                 </View>
                 <Stack direction="row" gap="xs">
                   <View className="flex-1 items-center">
                     <Text className="font-bold" style={{ color: colors.info.DEFAULT }}>
                       {tempoBreakdown.eccentric.toFixed(1)}s
                     </Text>
-                    <Text className="text-content-muted text-xs mt-1">Ecc</Text>
+                    <Text className="mt-1 text-xs text-content-muted">Ecc</Text>
                   </View>
                   <View className="flex-1 items-center">
                     <Text className="font-bold" style={{ color: colors.warning.DEFAULT }}>
                       {tempoBreakdown.pauseTop.toFixed(1)}s
                     </Text>
-                    <Text className="text-content-muted text-xs mt-1">Top</Text>
+                    <Text className="mt-1 text-xs text-content-muted">Top</Text>
                   </View>
                   <View className="flex-1 items-center">
                     <Text className="font-bold" style={{ color: colors.success.DEFAULT }}>
                       {tempoBreakdown.concentric.toFixed(1)}s
                     </Text>
-                    <Text className="text-content-muted text-xs mt-1">Con</Text>
+                    <Text className="mt-1 text-xs text-content-muted">Con</Text>
                   </View>
                   <View className="flex-1 items-center">
                     <Text className="font-bold text-content-secondary">
                       {tempoBreakdown.pauseBottom.toFixed(1)}s
                     </Text>
-                    <Text className="text-content-muted text-xs mt-1">Bot</Text>
+                    <Text className="mt-1 text-xs text-content-muted">Bot</Text>
                   </View>
                 </Stack>
               </View>
@@ -163,16 +148,14 @@ export function SetSummaryModal({
           )}
         </>
       )}
-      
+
       <TouchableOpacity
         onPress={onClose}
-        className="py-5 rounded-2xl"
+        className="rounded-2xl py-5"
         style={{ backgroundColor: colors.primary[600] }}
         activeOpacity={0.8}
       >
-        <Text className="text-white text-center font-bold text-lg">
-          Continue
-        </Text>
+        <Text className="text-center text-lg font-bold text-white">Continue</Text>
       </TouchableOpacity>
     </BottomSheet>
   );

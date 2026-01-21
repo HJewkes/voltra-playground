@@ -1,9 +1,9 @@
 /**
  * Domain Module
- * 
+ *
  * Central export for all domain modules.
  * Business logic organized by concept with models and controllers.
- * 
+ *
  * Domain Structure:
  * - bluetooth/  - BLE connection and scanning
  * - exercise/   - Exercise definitions, catalog, and mappings
@@ -12,10 +12,10 @@
  * - voltra/     - Voltra device-specific protocol and telemetry
  * - workout/    - Hardware-agnostic workout models, sessions, and aggregators
  * - shared/     - Shared utilities
- * 
+ *
  * Note: Some symbols have the same name in multiple modules:
  * - VELOCITY_LOSS_TARGETS: exists in both training and vbt (import from specific module)
- * 
+ *
  * Movement phase and phase names come from workout domain (hardware-agnostic).
  * Voltra has its own internal phase enum for protocol decoding but doesn't export it.
  */
@@ -40,7 +40,7 @@ export {
   VELOCITY_RIR_MAP,
   DISCOVERY_START_PERCENTAGES,
   PROFILE_CONFIDENCE_REQUIREMENTS,
-  
+
   // Functions
   estimatePercent1RMFromVelocity,
   getTargetVelocityForGoal,
@@ -54,7 +54,7 @@ export {
   generateWorkingWeightRecommendation,
   generateWarmupSets,
   estimate1RMFromSet,
-  
+
   // Types
   type VelocityTrend,
   type LoadVelocityDataPoint,

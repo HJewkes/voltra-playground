@@ -1,11 +1,19 @@
 /**
  * RecommendationCard
- * 
+ *
  * Displays the final weight recommendation with analysis and warmup sequence.
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert, StyleProp, ViewStyle } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { TrainingGoal, type DiscoveryRecommendation } from '@/domain/planning';
 import { getExerciseName } from '@/domain/exercise';
@@ -37,7 +45,7 @@ const GOAL_LABELS: Record<TrainingGoal, string> = {
 
 /**
  * RecommendationCard component - displays discovery results.
- * 
+ *
  * @example
  * ```tsx
  * <RecommendationCard
@@ -64,126 +72,125 @@ export function RecommendationCard({
       Alert.alert('Ready!', `Go to Workout tab. Weight: ${recommendation.workingWeight} lbs`);
     }
   };
-  
+
   return (
     <ScrollView style={style} className="flex-1">
       {/* Success banner */}
-      <View 
-        className="rounded-3xl p-6 mb-4 items-center"
-        style={{ 
+      <View
+        className="mb-4 items-center rounded-3xl p-6"
+        style={{
           backgroundColor: colors.success.DEFAULT + '15',
           borderWidth: 1,
           borderColor: colors.success.DEFAULT + '30',
         }}
       >
-        <View 
-          className="w-20 h-20 rounded-full items-center justify-center mb-4"
+        <View
+          className="mb-4 h-20 w-20 items-center justify-center rounded-full"
           style={{ backgroundColor: colors.success.DEFAULT }}
         >
           <Ionicons name="checkmark" size={48} color="white" />
         </View>
-        <Text className="font-bold text-2xl mb-2" style={{ color: colors.success.DEFAULT }}>
+        <Text className="mb-2 text-2xl font-bold" style={{ color: colors.success.DEFAULT }}>
           Discovery Complete!
         </Text>
         <Text className="text-center" style={{ color: colors.success.light }}>
           Your optimal working weight has been found.
         </Text>
       </View>
-      
+
       {/* Main recommendation */}
       <Card elevation={1} padding="lg">
-        <Text className="text-content-muted font-medium text-sm mb-2">
+        <Text className="mb-2 text-sm font-medium text-content-muted">
           {exerciseId ? getExerciseName(exerciseId) : 'Exercise'} • {GOAL_LABELS[goal]}
         </Text>
-        
-        <View className="flex-row items-baseline mb-5">
+
+        <View className="mb-5 flex-row items-baseline">
           <Text className="text-6xl font-bold" style={{ color: colors.primary[500] }}>
             {recommendation.workingWeight}
           </Text>
-          <Text className="text-2xl text-content-muted ml-2">lbs</Text>
+          <Text className="ml-2 text-2xl text-content-muted">lbs</Text>
         </View>
-        
+
         <Surface elevation="inset" radius="lg" border={false}>
           <Stack direction="row" justify="space-between" style={{ padding: 16 }}>
-            <View className="items-center flex-1">
-              <Text className="text-content-muted text-sm">Rep Range</Text>
-              <Text className="text-content-primary font-bold text-lg mt-1">
+            <View className="flex-1 items-center">
+              <Text className="text-sm text-content-muted">Rep Range</Text>
+              <Text className="mt-1 text-lg font-bold text-content-primary">
                 {recommendation.repRange[0]}-{recommendation.repRange[1]}
               </Text>
             </View>
             <View className="w-px bg-surface-100" />
-            <View className="items-center flex-1">
-              <Text className="text-content-muted text-sm">Confidence</Text>
-              <Text 
-                className="font-bold text-lg mt-1"
+            <View className="flex-1 items-center">
+              <Text className="text-sm text-content-muted">Confidence</Text>
+              <Text
+                className="mt-1 text-lg font-bold"
                 style={{ color: getConfidenceColor(recommendation.confidence) }}
               >
-                {recommendation.confidence.charAt(0).toUpperCase() + recommendation.confidence.slice(1)}
+                {recommendation.confidence.charAt(0).toUpperCase() +
+                  recommendation.confidence.slice(1)}
               </Text>
             </View>
           </Stack>
         </Surface>
       </Card>
-      
+
       {/* Analysis */}
       <Card elevation={1} padding="lg">
-        <Text className="text-xs font-bold text-content-muted uppercase tracking-wider mb-3">
+        <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-content-muted">
           Analysis
         </Text>
-        <Text className="text-content-secondary leading-6">
-          {recommendation.explanation}
-        </Text>
+        <Text className="leading-6 text-content-secondary">{recommendation.explanation}</Text>
       </Card>
-      
+
       {/* Warmup sequence */}
       {recommendation.warmupSets && recommendation.warmupSets.length > 0 && (
         <Card elevation={1} padding="lg">
-          <Text className="text-xs font-bold text-content-muted uppercase tracking-wider mb-4">
+          <Text className="mb-4 text-xs font-bold uppercase tracking-wider text-content-muted">
             Recommended Warmup
           </Text>
           {recommendation.warmupSets.map((set, i: number) => (
-            <View 
-              key={i} 
-              className={`flex-row justify-between items-center py-3 ${
+            <View
+              key={i}
+              className={`flex-row items-center justify-between py-3 ${
                 i < recommendation.warmupSets!.length - 1 ? 'border-b border-surface-100' : ''
               }`}
             >
               <View className="flex-row items-center">
-                <View 
-                  className="w-9 h-9 rounded-full items-center justify-center mr-4"
+                <View
+                  className="mr-4 h-9 w-9 items-center justify-center rounded-full"
                   style={{ backgroundColor: colors.surface.dark }}
                 >
-                  <Text className="text-content-secondary font-bold">{i + 1}</Text>
+                  <Text className="font-bold text-content-secondary">{i + 1}</Text>
                 </View>
-                <Text className="text-content-primary font-medium">
+                <Text className="font-medium text-content-primary">
                   {set.weight} lbs × {set.reps}
                 </Text>
               </View>
-              <Text className="text-content-muted text-sm">{set.restSeconds}s rest</Text>
+              <Text className="text-sm text-content-muted">{set.restSeconds}s rest</Text>
             </View>
           ))}
         </Card>
       )}
-      
+
       {/* Action buttons */}
       <Stack gap="sm" style={{ marginBottom: 32 }}>
         <TouchableOpacity
-          className="rounded-2xl p-5 items-center"
+          className="items-center rounded-2xl p-5"
           style={{ backgroundColor: colors.primary[600] }}
           onPress={handleStartTraining}
           activeOpacity={0.8}
         >
-          <Text className="text-white font-bold text-lg">Start Training</Text>
+          <Text className="text-lg font-bold text-white">Start Training</Text>
         </TouchableOpacity>
-        
+
         {onDiscoverAnother && (
           <TouchableOpacity
-            className="rounded-2xl p-5 items-center"
+            className="items-center rounded-2xl p-5"
             style={{ backgroundColor: colors.surface.card }}
             onPress={onDiscoverAnother}
             activeOpacity={0.7}
           >
-            <Text className="text-content-secondary font-bold">Discover Another Exercise</Text>
+            <Text className="font-bold text-content-secondary">Discover Another Exercise</Text>
           </TouchableOpacity>
         )}
       </Stack>

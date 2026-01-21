@@ -1,11 +1,18 @@
 /**
  * ActionButton
- * 
+ *
  * A primary action button with optional icon.
  */
 
-import React, { ReactNode } from 'react';
-import { TouchableOpacity, Text, View, StyleProp, ViewStyle, ActivityIndicator } from 'react-native';
+import React from 'react';
+import {
+  TouchableOpacity,
+  Text,
+  View,
+  type StyleProp,
+  type ViewStyle,
+  ActivityIndicator,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/theme';
 
@@ -19,7 +26,7 @@ export interface ActionButtonProps {
   /** Button variant */
   variant?: ActionButtonVariant;
   /** Optional Ionicon name */
-  icon?: string;
+  icon?: keyof typeof Ionicons.glyphMap;
   /** Whether button is disabled */
   disabled?: boolean;
   /** Whether button is loading */
@@ -45,7 +52,7 @@ const sizeStyles = {
 
 /**
  * ActionButton component - primary/danger action button.
- * 
+ *
  * @example
  * ```tsx
  * <ActionButton
@@ -69,14 +76,14 @@ export function ActionButton({
   const bgColor = variantColors[variant];
   const textColor = variant === 'secondary' ? colors.text.secondary : 'white';
   const { paddingVertical, fontSize, iconSize } = sizeStyles[size];
-  
+
   return (
     <TouchableOpacity
       onPress={onPress}
       disabled={disabled || loading}
       className="rounded-2xl"
       style={[
-        { 
+        {
           backgroundColor: bgColor,
           paddingVertical,
           opacity: disabled ? 0.5 : 1,
@@ -89,17 +96,14 @@ export function ActionButton({
         {loading ? (
           <ActivityIndicator size="small" color={textColor} style={{ marginRight: 8 }} />
         ) : icon ? (
-          <Ionicons 
-            name={icon as any} 
-            size={iconSize} 
-            color={textColor} 
+          <Ionicons
+            name={icon}
+            size={iconSize}
+            color={textColor}
             style={{ marginRight: 8 }}
           />
         ) : null}
-        <Text 
-          className="text-center font-bold"
-          style={{ color: textColor, fontSize }}
-        >
+        <Text className="text-center font-bold" style={{ color: textColor, fontSize }}>
           {label}
         </Text>
       </View>

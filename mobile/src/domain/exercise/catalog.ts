@@ -6,7 +6,7 @@
  */
 
 import type { TempoTarget } from '@/domain/workout';
-import { MuscleGroup, MovementPattern, VoltrasSetup } from './types';
+import { MuscleGroup, type MovementPattern, type VoltrasSetup } from './types';
 
 // =============================================================================
 // Exercise Interface
@@ -40,9 +40,7 @@ export interface Exercise {
 /**
  * Create an exercise with sensible defaults.
  */
-export function createExercise(
-  base: Pick<Exercise, 'id' | 'name'> & Partial<Exercise>
-): Exercise {
+export function createExercise(base: Pick<Exercise, 'id' | 'name'> & Partial<Exercise>): Exercise {
   return {
     id: base.id,
     name: base.name,

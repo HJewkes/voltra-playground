@@ -1,11 +1,11 @@
 /**
  * LoadingState
- * 
+ *
  * A loading indicator with optional message.
  */
 
 import React from 'react';
-import { View, Text, ActivityIndicator, StyleProp, ViewStyle } from 'react-native';
+import { View, Text, ActivityIndicator, type StyleProp, type ViewStyle } from 'react-native';
 import { colors } from '@/theme';
 
 export interface LoadingStateProps {
@@ -19,26 +19,18 @@ export interface LoadingStateProps {
 
 /**
  * LoadingState component - spinner with message.
- * 
+ *
  * @example
  * ```tsx
  * <LoadingState message="Scanning for devices..." />
  * <LoadingState size="large" />
  * ```
  */
-export function LoadingState({
-  message,
-  size = 'small',
-  style,
-}: LoadingStateProps) {
+export function LoadingState({ message, size = 'small', style }: LoadingStateProps) {
   return (
-    <View className="py-8 items-center" style={style}>
+    <View className="items-center py-8" style={style}>
       <ActivityIndicator size={size} color={colors.primary[500]} />
-      {message && (
-        <Text className="text-content-secondary mt-3 text-center">
-          {message}
-        </Text>
-      )}
+      {message && <Text className="mt-3 text-center text-content-secondary">{message}</Text>}
     </View>
   );
 }

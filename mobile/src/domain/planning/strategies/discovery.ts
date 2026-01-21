@@ -1,10 +1,10 @@
 /**
  * Discovery Planning Strategy
- * 
+ *
  * Logic for guiding users through weight discovery for new exercises.
  * Extracts workflow logic from WeightDiscoveryEngine, but delegates
  * profile building to domain/vbt/profile.ts.
- * 
+ *
  * Responsibilities:
  * - Determine first discovery step
  * - Guide through exploration phase
@@ -91,10 +91,10 @@ export function getFirstDiscoveryStep(
   userEstimate?: UserEstimate
 ): { step: DiscoveryStep; updatedState: DiscoveryState } {
   let startWeight: number;
-  
+
   if (userEstimate?.guessedMax) {
     // User has a rough idea of their max - start at 30%
-    startWeight = Math.round(userEstimate.guessedMax * 0.3 / 5) * 5;
+    startWeight = Math.round((userEstimate.guessedMax * 0.3) / 5) * 5;
   } else if (userEstimate?.lightWeight) {
     // User knows a "light" weight - use that
     startWeight = userEstimate.lightWeight;
@@ -102,10 +102,10 @@ export function getFirstDiscoveryStep(
     // Complete beginner - start with minimum
     startWeight = state.exerciseType === 'compound' ? 20 : 10;
   }
-  
+
   // Ensure minimum
   startWeight = Math.max(5, startWeight);
-  
+
   const step: DiscoveryStep = {
     stepNumber: 1,
     instruction: `Start with ${startWeight} lbs - do 5 reps at a comfortable pace`,
@@ -114,7 +114,7 @@ export function getFirstDiscoveryStep(
     purpose: 'Establish baseline velocity at light weight',
     velocityExpectation: 'Should feel easy - expect fast bar speed',
   };
-  
+
   return {
     step,
     updatedState: {
@@ -131,23 +131,25 @@ export function getFirstDiscoveryStep(
 export function getNextDiscoveryStep(
   state: DiscoveryState,
   result: DiscoverySetResult
-): { step: DiscoveryStep; updatedState: DiscoveryState } | { recommendation: DiscoveryRecommendation; updatedState: DiscoveryState } {
+):
+  | { step: DiscoveryStep; updatedState: DiscoveryState }
+  | { recommendation: DiscoveryRecommendation; updatedState: DiscoveryState } {
   const updatedSets = [...state.sets, result];
   const updatedState: DiscoveryState = {
     ...state,
     sets: updatedSets,
     lastVelocity: result.meanVelocity,
   };
-  
+
   // Check for failure
   if (result.failed) {
     return finalizeDiscovery(updatedState);
   }
-  
+
   // Analyze current state
   const trend = categorizeVelocity(result.meanVelocity);
   const canEstimate = updatedSets.length >= 2 && hasAdequateSpread(updatedSets);
-  
+
   // Decide next step based on phase and data
   if (state.phase === 'exploring') {
     return getExplorationStep(updatedState, trend, canEstimate);
@@ -161,19 +163,17 @@ export function getNextDiscoveryStep(
  */
 function hasAdequateSpread(sets: DiscoverySetResult[]): boolean {
   if (sets.length < 2) return false;
-  
-  const weights = sets.map(s => s.weight);
-  const velocities = sets.map(s => s.meanVelocity);
-  
+
+  const weights = sets.map((s) => s.weight);
+  const velocities = sets.map((s) => s.meanVelocity);
+
   // Need at least 20% weight spread
   const minWeight = Math.min(...weights);
-  const weightSpread = minWeight > 0 
-    ? (Math.max(...weights) - minWeight) / minWeight 
-    : 0;
-  
+  const weightSpread = minWeight > 0 ? (Math.max(...weights) - minWeight) / minWeight : 0;
+
   // Need meaningful velocity difference
   const velocitySpread = Math.max(...velocities) - Math.min(...velocities);
-  
+
   return weightSpread >= 0.2 && velocitySpread >= 0.15;
 }
 
@@ -184,26 +184,28 @@ function getExplorationStep(
   state: DiscoveryState,
   trend: VelocityTrend,
   canEstimate: boolean
-): { step: DiscoveryStep; updatedState: DiscoveryState } | { recommendation: DiscoveryRecommendation; updatedState: DiscoveryState } {
+):
+  | { step: DiscoveryStep; updatedState: DiscoveryState }
+  | { recommendation: DiscoveryRecommendation; updatedState: DiscoveryState } {
   const stepNumber = state.sets.length + 1;
-  
+
   // Determine weight increment based on velocity
   let increment: number;
   let message: string;
-  
+
   switch (trend) {
     case 'fast':
       // Way too light - big jump
       increment = state.exerciseType === 'compound' ? 20 : 10;
       message = 'That was very light - making a bigger jump';
       break;
-      
+
     case 'moderate':
       // Getting closer - moderate jump
       increment = state.exerciseType === 'compound' ? 10 : 5;
       message = "Good pace - let's go a bit heavier";
       break;
-      
+
     case 'slow':
       // Getting heavy - small jump or switch to dialing in
       if (canEstimate) {
@@ -212,7 +214,7 @@ function getExplorationStep(
       increment = 5;
       message = 'Starting to slow down - small increase';
       break;
-      
+
     case 'grinding':
       // Near limit - we have enough data
       if (state.sets.length >= 2) {
@@ -223,10 +225,10 @@ function getExplorationStep(
       message = "That was hard! Let's try a lighter weight";
       break;
   }
-  
+
   const newWeight = Math.max(5, Math.round((state.currentWeight + increment) / 5) * 5);
   const targetReps = trend === 'slow' || trend === 'grinding' ? 3 : 5;
-  
+
   const step: DiscoveryStep = {
     stepNumber,
     instruction: `Try ${newWeight} lbs - ${targetReps} reps, max intent`,
@@ -235,7 +237,7 @@ function getExplorationStep(
     purpose: message,
     velocityExpectation: getVelocityExpectation(trend),
   };
-  
+
   return {
     step,
     updatedState: {
@@ -250,14 +252,16 @@ function getExplorationStep(
  */
 function getDialingInStep(
   state: DiscoveryState
-): { step: DiscoveryStep; updatedState: DiscoveryState } | { recommendation: DiscoveryRecommendation; updatedState: DiscoveryState } {
+):
+  | { step: DiscoveryStep; updatedState: DiscoveryState }
+  | { recommendation: DiscoveryRecommendation; updatedState: DiscoveryState } {
   // Build profile with current data
-  const dataPoints = state.sets.map(s => ({
+  const dataPoints = state.sets.map((s) => ({
     weight: s.weight,
     velocity: s.meanVelocity,
   }));
   const profile = buildLoadVelocityProfile(state.exerciseId, dataPoints);
-  
+
   if (profile.confidence !== 'low') {
     // Good enough - finalize
     return {
@@ -265,16 +269,14 @@ function getDialingInStep(
       updatedState: { ...state, phase: 'complete' },
     };
   }
-  
+
   // Need one more data point near the working zone
   const targetZone = TRAINING_ZONES[state.goal];
-  const targetWeight = Math.round(profile.estimated1RM * (targetZone.optimal / 100) / 5) * 5;
-  
+  const targetWeight = Math.round((profile.estimated1RM * (targetZone.optimal / 100)) / 5) * 5;
+
   // Check if we've already tested near this weight
-  const nearTarget = state.sets.some(s => 
-    Math.abs(s.weight - targetWeight) / targetWeight < 0.1
-  );
-  
+  const nearTarget = state.sets.some((s) => Math.abs(s.weight - targetWeight) / targetWeight < 0.1);
+
   if (!nearTarget && targetWeight > 0) {
     const step: DiscoveryStep = {
       stepNumber: state.sets.length + 1,
@@ -283,7 +285,7 @@ function getDialingInStep(
       targetReps: 3,
       purpose: 'Confirming working weight zone',
     };
-    
+
     return {
       step,
       updatedState: {
@@ -292,7 +294,7 @@ function getDialingInStep(
       },
     };
   }
-  
+
   // We've tested near target - good enough
   return {
     recommendation: generateRecommendation(profile, state.goal),
@@ -303,15 +305,16 @@ function getDialingInStep(
 /**
  * Finalize discovery and generate recommendation.
  */
-function finalizeDiscovery(
-  state: DiscoveryState
-): { recommendation: DiscoveryRecommendation; updatedState: DiscoveryState } {
-  const dataPoints = state.sets.map(s => ({
+function finalizeDiscovery(state: DiscoveryState): {
+  recommendation: DiscoveryRecommendation;
+  updatedState: DiscoveryState;
+} {
+  const dataPoints = state.sets.map((s) => ({
     weight: s.weight,
     velocity: s.meanVelocity,
   }));
   const profile = buildLoadVelocityProfile(state.exerciseId, dataPoints);
-  
+
   return {
     recommendation: generateRecommendation(profile, state.goal),
     updatedState: { ...state, phase: 'complete' },
@@ -326,7 +329,7 @@ function generateRecommendation(
   goal: TrainingGoal
 ): DiscoveryRecommendation {
   const recommendation = generateWorkingWeightRecommendation(profile, goal);
-  
+
   return {
     estimated1RM: profile.estimated1RM,
     warmupSets: recommendation.warmupSets,

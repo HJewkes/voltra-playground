@@ -1,6 +1,6 @@
 /**
  * UI Components
- * 
+ *
  * Generic, reusable UI primitives organized by category.
  */
 

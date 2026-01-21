@@ -10,9 +10,8 @@ import { View, Text, Switch, Alert, FlatList, TouchableOpacity } from 'react-nat
 import { Ionicons } from '@expo/vector-icons';
 import { Surface, ActionButton, Stack } from '@/components/ui';
 import { colors } from '@/theme';
-import { 
-  getAdapter, 
-  getSessionRepository, 
+import {
+  getSessionRepository,
   getRecordingRepository,
   isDebugTelemetryEnabled,
   setDebugTelemetryEnabled,
@@ -36,7 +35,7 @@ export function DevToolsSection() {
   const [stats, setStats] = useState<StorageStats>({ sessionCount: 0, recordingCount: 0 });
   const [recordings, setRecordings] = useState<SampleRecording[]>([]);
   const [showRecordings, setShowRecordings] = useState(false);
-  
+
   const { connectToReplay } = useConnectionStore();
 
   // Load stats on mount
@@ -71,8 +70,8 @@ export function DevToolsSection() {
         'Seed Complete',
         `Created ${result.sessionsCreated} sessions and ${result.recordingsCreated} recordings.`
       );
-    } catch (err: any) {
-      Alert.alert('Seed Failed', err?.message || 'Unknown error');
+    } catch (err: unknown) {
+      Alert.alert('Seed Failed', err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setIsSeeding(false);
     }
@@ -93,8 +92,8 @@ export function DevToolsSection() {
               await clearSeedData();
               await loadStats();
               Alert.alert('Cleared', 'All data has been cleared.');
-            } catch (err: any) {
-              Alert.alert('Clear Failed', err?.message || 'Unknown error');
+            } catch (err: unknown) {
+              Alert.alert('Clear Failed', err instanceof Error ? err.message : 'Unknown error');
             } finally {
               setIsClearing(false);
             }
@@ -109,24 +108,27 @@ export function DevToolsSection() {
     setDebugTelemetryEnabled(value);
   }, []);
 
-  const handleReplaySelect = useCallback(async (recording: SampleRecording) => {
-    try {
-      setShowRecordings(false);
-      await connectToReplay(recording);
-      Alert.alert('Replay Started', `Playing: ${recording.exerciseName}`);
-    } catch (err: any) {
-      Alert.alert('Replay Failed', err?.message || 'Unknown error');
-    }
-  }, [connectToReplay]);
+  const handleReplaySelect = useCallback(
+    async (recording: SampleRecording) => {
+      try {
+        setShowRecordings(false);
+        await connectToReplay(recording);
+        Alert.alert('Replay Started', `Playing: ${recording.exerciseName}`);
+      } catch (err: unknown) {
+        Alert.alert('Replay Failed', err instanceof Error ? err.message : 'Unknown error');
+      }
+    },
+    [connectToReplay]
+  );
 
   const renderRecordingItem = ({ item }: { item: SampleRecording }) => (
     <TouchableOpacity
-      className="flex-row items-center justify-between py-3 px-4 border-b border-border"
+      className="border-border flex-row items-center justify-between border-b px-4 py-3"
       onPress={() => handleReplaySelect(item)}
     >
       <View className="flex-1">
-        <Text className="text-content-primary font-medium">{item.exerciseName}</Text>
-        <Text className="text-content-muted text-xs">
+        <Text className="font-medium text-content-primary">{item.exerciseName}</Text>
+        <Text className="text-xs text-content-muted">
           {item.sampleCount} samples • {Math.round(item.durationMs / 1000)}s • {item.weight} lbs
         </Text>
       </View>
@@ -138,24 +140,22 @@ export function DevToolsSection() {
     <Surface elevation="inset" radius="lg" border={false} style={{ marginBottom: 16 }}>
       <View className="p-4">
         {/* Header */}
-        <View className="flex-row items-center mb-4">
+        <View className="mb-4 flex-row items-center">
           <Ionicons name="construct" size={20} color={colors.warning.DEFAULT} />
-          <Text className="text-content-primary font-bold text-lg ml-2">
-            Dev Tools
-          </Text>
+          <Text className="ml-2 text-lg font-bold text-content-primary">Dev Tools</Text>
         </View>
 
         <Stack gap="md">
           {/* Storage Stats */}
-          <View className="bg-surface-300 rounded-lg p-3">
-            <Text className="text-content-muted text-xs uppercase mb-2">Storage Stats</Text>
+          <View className="rounded-lg bg-surface-300 p-3">
+            <Text className="mb-2 text-xs uppercase text-content-muted">Storage Stats</Text>
             <View className="flex-row justify-between">
               <Text className="text-content-secondary">Sessions</Text>
-              <Text className="text-content-primary font-medium">{stats.sessionCount}</Text>
+              <Text className="font-medium text-content-primary">{stats.sessionCount}</Text>
             </View>
-            <View className="flex-row justify-between mt-1">
+            <View className="mt-1 flex-row justify-between">
               <Text className="text-content-secondary">Recordings</Text>
-              <Text className="text-content-primary font-medium">{stats.recordingCount}</Text>
+              <Text className="font-medium text-content-primary">{stats.recordingCount}</Text>
             </View>
           </View>
 
@@ -163,7 +163,7 @@ export function DevToolsSection() {
           <View className="flex-row items-center justify-between py-2">
             <View className="flex-1">
               <Text className="text-content-primary">Debug Telemetry</Text>
-              <Text className="text-content-muted text-xs">Store raw samples with sessions</Text>
+              <Text className="text-xs text-content-muted">Store raw samples with sessions</Text>
             </View>
             <Switch
               value={debugEnabled}
@@ -203,23 +203,23 @@ export function DevToolsSection() {
               >
                 <View className="flex-row items-center">
                   <Ionicons name="play-circle" size={20} color={colors.primary[500]} />
-                  <Text className="text-content-primary ml-2">Replay Recording</Text>
+                  <Text className="ml-2 text-content-primary">Replay Recording</Text>
                 </View>
-                <Ionicons 
-                  name={showRecordings ? 'chevron-up' : 'chevron-down'} 
-                  size={20} 
-                  color={colors.content.muted} 
+                <Ionicons
+                  name={showRecordings ? 'chevron-up' : 'chevron-down'}
+                  size={20}
+                  color={colors.content.muted}
                 />
               </TouchableOpacity>
 
               {showRecordings && (
-                <View className="bg-surface-300 rounded-lg overflow-hidden max-h-48">
+                <View className="max-h-48 overflow-hidden rounded-lg bg-surface-300">
                   <FlatList
                     data={recordings}
                     keyExtractor={(item) => item.id}
                     renderItem={renderRecordingItem}
                     ListEmptyComponent={
-                      <Text className="text-content-muted text-center py-4">
+                      <Text className="py-4 text-center text-content-muted">
                         No recordings available
                       </Text>
                     }

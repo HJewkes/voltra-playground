@@ -50,7 +50,7 @@ export function generateRecording(options: GenerateRecordingOptions = {}): Sampl
     sessionId,
   } = options;
 
-  const recordedAt = Date.now() - (daysAgo * 24 * 60 * 60 * 1000);
+  const recordedAt = Date.now() - daysAgo * 24 * 60 * 60 * 1000;
   const startTime = recordedAt;
 
   const samples = generateSampleStream({
@@ -61,9 +61,8 @@ export function generateRecording(options: GenerateRecordingOptions = {}): Sampl
     startTime,
   });
 
-  const durationMs = samples.length > 0
-    ? samples[samples.length - 1].timestamp - samples[0].timestamp
-    : 0;
+  const durationMs =
+    samples.length > 0 ? samples[samples.length - 1].timestamp - samples[0].timestamp : 0;
 
   return {
     id: uuid(),

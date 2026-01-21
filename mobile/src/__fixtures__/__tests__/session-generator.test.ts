@@ -5,10 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import {
-  generateStoredSet,
-  generateStoredSession,
-} from '../generators/session-generator';
+import { generateStoredSet, generateStoredSession } from '../generators/session-generator';
 import { TrainingGoal } from '@/domain/planning';
 
 // =============================================================================
@@ -114,7 +111,7 @@ describe('Session Generator', () => {
       const daysAgo = 7;
       const session = generateStoredSession({ daysAgo });
 
-      const expectedTime = now - (daysAgo * 24 * 60 * 60 * 1000);
+      const expectedTime = now - daysAgo * 24 * 60 * 60 * 1000;
 
       // Allow 1 second tolerance for test execution time
       expect(session.startTime).toBeGreaterThan(expectedTime - 1000);

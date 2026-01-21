@@ -1,6 +1,6 @@
 /**
  * DashboardScreen
- * 
+ *
  * Home screen with quick actions and recent activity.
  * Pure orchestration - composes primitives and domain components.
  */
@@ -9,15 +9,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { Link } from 'expo-router';
 import { useConnectionStore } from '@/stores';
-import { 
-  Card, 
-  Stack, 
-  Banner, 
-  LinkCard, 
-  StatsRow,
-  ListItem,
-  EmptyState,
-} from '@/components/ui';
+import { Card, Stack, Banner, LinkCard, StatsRow, ListItem, EmptyState } from '@/components/ui';
 import { colors } from '@/theme';
 import { getSessionRepository } from '@/data/provider';
 import type { StoredExerciseSession } from '@/data/exercise-session';
@@ -49,10 +41,7 @@ interface RecentSessionDisplay {
  */
 function toRecentDisplay(session: StoredExerciseSession): RecentSessionDisplay {
   const totalReps = session.completedSets.reduce((sum, s) => sum + s.reps.length, 0);
-  const totalVolume = session.completedSets.reduce(
-    (sum, s) => sum + s.weight * s.reps.length,
-    0
-  );
+  const totalVolume = session.completedSets.reduce((sum, s) => sum + s.weight * s.reps.length, 0);
   return {
     id: session.id,
     exerciseName: session.exerciseName ?? 'Exercise',
@@ -69,16 +58,16 @@ function toRecentDisplay(session: StoredExerciseSession): RecentSessionDisplay {
 export function DashboardScreen() {
   const { primaryDeviceId, devices } = useConnectionStore();
   const [recentSessions, setRecentSessions] = useState<RecentSessionDisplay[]>([]);
-  
+
   const connectedDevice = primaryDeviceId ? devices.get(primaryDeviceId) : null;
   const isConnected = !!connectedDevice;
   const deviceName = connectedDevice?.getState().deviceName ?? 'Voltra';
-  
+
   useEffect(() => {
     async function loadRecentSessions() {
       try {
         const sessions = await getSessionRepository().getRecent(50);
-        const completed = sessions.filter(s => s.status === 'completed');
+        const completed = sessions.filter((s) => s.status === 'completed');
         setRecentSessions(completed.map(toRecentDisplay));
       } catch (err) {
         console.error('Failed to load recent sessions:', err);
@@ -86,18 +75,18 @@ export function DashboardScreen() {
     }
     loadRecentSessions();
   }, []);
-  
+
   // Calculate weekly stats
   const weeklyStats = useMemo(() => {
     const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    const thisWeekSessions = recentSessions.filter(s => s.date > oneWeekAgo);
+    const thisWeekSessions = recentSessions.filter((s) => s.date > oneWeekAgo);
     return {
       setCount: thisWeekSessions.reduce((sum, s) => sum + s.setCount, 0),
       totalReps: thisWeekSessions.reduce((sum, s) => sum + s.totalReps, 0),
       totalVolume: thisWeekSessions.reduce((sum, s) => sum + s.totalVolume, 0),
     };
   }, [recentSessions]);
-  
+
   const displaySessions = recentSessions.slice(0, 5);
 
   return (
@@ -111,12 +100,10 @@ export function DashboardScreen() {
           subtitle={isConnected ? 'Device ready for workout' : 'Connect your Voltra to start'}
           style={{ marginBottom: 24 }}
         />
-        
+
         {/* Quick Actions */}
-        <Text className="text-content-primary text-lg font-bold mb-4">
-          Quick Actions
-        </Text>
-        
+        <Text className="mb-4 text-lg font-bold text-content-primary">Quick Actions</Text>
+
         <Stack direction="row" gap="md" style={{ marginBottom: 24 }}>
           <LinkCard
             href="/(tabs)/workout"
@@ -135,12 +122,10 @@ export function DashboardScreen() {
             subtitle={isConnected ? deviceName : 'Set up device'}
           />
         </Stack>
-        
+
         {/* Weekly Stats */}
-        <Text className="text-content-primary text-lg font-bold mb-4">
-          This Week
-        </Text>
-        
+        <Text className="mb-4 text-lg font-bold text-content-primary">This Week</Text>
+
         <Card elevation={1} padding="lg" style={{ marginBottom: 24 }}>
           <StatsRow
             stats={[
@@ -150,7 +135,7 @@ export function DashboardScreen() {
             ]}
           />
         </Card>
-        
+
         {/* Recent Sessions */}
         {displaySessions.length > 0 ? (
           <RecentSessionsSection sessions={displaySessions} />
@@ -173,14 +158,12 @@ export function DashboardScreen() {
 function RecentSessionsSection({ sessions }: { sessions: RecentSessionDisplay[] }) {
   return (
     <>
-      <Text className="text-content-primary text-lg font-bold mb-4">
-        Recent Sessions
-      </Text>
-      
+      <Text className="mb-4 text-lg font-bold text-content-primary">Recent Sessions</Text>
+
       <Card elevation={1} padding="none" className="overflow-hidden">
         {sessions.map((session, index) => {
           const formattedDate = new Date(session.date).toLocaleDateString();
-          
+
           return (
             <Link key={session.id} href="/(tabs)/history" asChild>
               <TouchableOpacity activeOpacity={0.7}>
@@ -192,10 +175,10 @@ function RecentSessionsSection({ sessions }: { sessions: RecentSessionDisplay[] 
                   showBorder={index < sessions.length - 1}
                   trailing={
                     <View className="items-end">
-                      <Text className="font-bold text-base" style={{ color: colors.primary[500] }}>
+                      <Text className="text-base font-bold" style={{ color: colors.primary[500] }}>
                         {session.setCount} sets • {session.totalReps} reps
                       </Text>
-                      <Text className="text-content-muted text-sm">
+                      <Text className="text-sm text-content-muted">
                         {formatVolume(session.totalVolume)} lbs
                       </Text>
                     </View>

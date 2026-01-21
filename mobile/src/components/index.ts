@@ -1,6 +1,6 @@
 /**
  * Components
- * 
+ *
  * All UI components organized by category.
  */
 

@@ -1,6 +1,6 @@
 /**
  * WorkoutListItem
- * 
+ *
  * A single workout in the history list.
  */
 
@@ -29,16 +29,12 @@ function getRPEBadgeStyle(rpe: number | undefined) {
 /**
  * WorkoutListItem - displays a single workout entry.
  */
-export function WorkoutListItem({
-  workout,
-  onPress,
-  onLongPress,
-}: WorkoutListItemProps) {
+export function WorkoutListItem({ workout, onPress, onLongPress }: WorkoutListItemProps) {
   const avgRPE = Math.round(workout.metrics?.effort.rpe ?? 0);
   const repCount = workout.reps?.length ?? 0;
   const formattedDate = new Date(workout.timestamp.start).toLocaleDateString();
   const badgeStyle = getRPEBadgeStyle(avgRPE);
-  
+
   return (
     <Card elevation={1} padding="none" marginBottom={false}>
       <ListItem
@@ -50,19 +46,14 @@ export function WorkoutListItem({
         onLongPress={onLongPress}
         trailing={
           <Stack direction="row" gap="sm" align="center">
-            <View className="items-end mr-2">
-              <Text className="font-bold text-base" style={{ color: colors.primary[500] }}>
+            <View className="mr-2 items-end">
+              <Text className="text-base font-bold" style={{ color: colors.primary[500] }}>
                 {repCount} reps
               </Text>
-              <Text className="text-content-tertiary text-sm">
-                {workout.weight} lbs
-              </Text>
+              <Text className="text-sm text-content-tertiary">{workout.weight} lbs</Text>
             </View>
             {avgRPE > 0 && (
-              <View 
-                className="px-3 py-1.5 rounded-lg"
-                style={{ backgroundColor: badgeStyle.bg }}
-              >
+              <View className="rounded-lg px-3 py-1.5" style={{ backgroundColor: badgeStyle.bg }}>
                 <Text className="text-xs font-bold" style={{ color: badgeStyle.text }}>
                   RPE {avgRPE}
                 </Text>

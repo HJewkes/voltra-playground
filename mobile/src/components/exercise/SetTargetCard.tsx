@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { View, Text, StyleProp, ViewStyle } from 'react-native';
+import { View, Text, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/theme';
 import { Card, Surface, Stack } from '@/components/ui';
@@ -38,12 +38,12 @@ export function SetTargetCard({
   return (
     <Card elevation={2} padding="lg" style={style}>
       {/* Header */}
-      <View className="flex-row justify-between items-center mb-4">
-        <Text className="text-content-muted font-semibold">
+      <View className="mb-4 flex-row items-center justify-between">
+        <Text className="font-semibold text-content-muted">
           {isDiscovery ? 'Discovery Set' : 'Set'} {setNumber} of {totalSets}
         </Text>
         <View
-          className="px-3 py-1 rounded-full"
+          className="rounded-full px-3 py-1"
           style={{ backgroundColor: colors.primary[500] + '20' }}
         >
           <Text className="font-bold" style={{ color: colors.primary[500] }}>
@@ -57,26 +57,26 @@ export function SetTargetCard({
         <Text className="text-7xl font-bold" style={{ color: colors.primary[500] }}>
           {plannedSet.weight}
         </Text>
-        <Text className="text-2xl text-content-muted mt-1">lbs</Text>
+        <Text className="mt-1 text-2xl text-content-muted">lbs</Text>
       </View>
 
       {/* Target details */}
       <Surface elevation="inset" radius="lg" border={false}>
         <Stack direction="row" justify="space-between" style={{ padding: 16 }}>
-          <View className="items-center flex-1">
+          <View className="flex-1 items-center">
             <Ionicons name="repeat" size={20} color={colors.neutral[500]} />
-            <Text className="text-content-muted text-sm mt-1">Target Reps</Text>
-            <Text className="text-content-primary font-bold text-xl mt-1">
+            <Text className="mt-1 text-sm text-content-muted">Target Reps</Text>
+            <Text className="mt-1 text-xl font-bold text-content-primary">
               {plannedSet.targetReps}
             </Text>
           </View>
           {plannedSet.rirTarget !== undefined && (
             <>
               <View className="w-px bg-surface-100" />
-              <View className="items-center flex-1">
+              <View className="flex-1 items-center">
                 <Ionicons name="fitness" size={20} color={colors.neutral[500]} />
-                <Text className="text-content-muted text-sm mt-1">Target RIR</Text>
-                <Text className="text-content-primary font-bold text-xl mt-1">
+                <Text className="mt-1 text-sm text-content-muted">Target RIR</Text>
+                <Text className="mt-1 text-xl font-bold text-content-primary">
                   {plannedSet.rirTarget}
                 </Text>
               </View>
@@ -86,7 +86,7 @@ export function SetTargetCard({
       </Surface>
 
       {/* Instructions */}
-      <Text className="text-content-muted text-center text-sm mt-4">
+      <Text className="mt-4 text-center text-sm text-content-muted">
         {isDiscovery
           ? 'Complete all reps with good form. Stop if weight feels too heavy.'
           : 'Press START when ready to begin recording.'}

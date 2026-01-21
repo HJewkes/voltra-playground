@@ -1,12 +1,12 @@
 /**
  * ProgressBar
- * 
+ *
  * A styled progress/effort bar with customizable color.
  * Used for RPE visualization, loading states, etc.
  */
 
 import React from 'react';
-import { View, StyleProp, ViewStyle } from 'react-native';
+import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { colors } from '@/theme';
 
 export interface ProgressBarProps {
@@ -24,7 +24,7 @@ export interface ProgressBarProps {
 
 /**
  * ProgressBar component - visualizes progress/effort.
- * 
+ *
  * @example
  * ```tsx
  * <ProgressBar progress={75} color={colors.success.DEFAULT} />
@@ -39,12 +39,9 @@ export function ProgressBar({
   style,
 }: ProgressBarProps) {
   const clampedProgress = Math.max(0, Math.min(100, progress));
-  
+
   return (
-    <View 
-      className="rounded-full overflow-hidden"
-      style={[{ height, backgroundColor }, style]}
-    >
+    <View className="overflow-hidden rounded-full" style={[{ height, backgroundColor }, style]}>
       <View
         className="h-full rounded-full"
         style={{

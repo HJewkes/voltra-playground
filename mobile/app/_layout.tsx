@@ -53,7 +53,7 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const router = useRouter();
-  
+
   // Session resumption state
   const [inProgressSession, setInProgressSession] = useState<StoredExerciseSession | null>(null);
   const [showResumePrompt, setShowResumePrompt] = useState(false);
@@ -62,37 +62,38 @@ function RootLayoutNav() {
   useEffect(() => {
     // Bootstrap exercises from catalog
     bootstrapExercises(getExerciseRepository(), getAdapter())
-      .then(result => {
+      .then((result) => {
         if (result.added > 0) {
           console.log(`Bootstrapped ${result.added} exercises from catalog`);
         }
       })
-      .catch(err => {
+      .catch((err) => {
         console.error('Failed to bootstrap exercises:', err);
       });
 
     // Check for in-progress session
-    getSessionRepository().getInProgress()
-      .then(session => {
+    getSessionRepository()
+      .getInProgress()
+      .then((session) => {
         if (session) {
           console.log('[Layout] Found in-progress session:', session.id);
           setInProgressSession(session);
           setShowResumePrompt(true);
         }
       })
-      .catch(err => {
+      .catch((err) => {
         console.error('Failed to check for in-progress session:', err);
       });
 
     // Restore last BLE connection
     useConnectionStore.getState().restoreLastConnection();
-    
+
     // Set up app state listener for auto-reconnect on foreground
     const appStateCleanup = useConnectionStore.getState()._setupAppStateListener();
-    
+
     // Start auto-scan (also checks relay status on web)
     const autoScanCleanup = useConnectionStore.getState().startAutoScan();
-    
+
     return () => {
       appStateCleanup();
       autoScanCleanup();
@@ -132,7 +133,7 @@ function RootLayoutNav() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
-      
+
       {/* Session resumption prompt */}
       {inProgressSession && (
         <ResumeSessionPrompt

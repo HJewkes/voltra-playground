@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { View, StyleProp, ViewStyle } from 'react-native';
+import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { ActionButton, Stack } from '@/components/ui';
 import type { ExerciseSessionUIState } from '@/stores/exercise-session-store';
 

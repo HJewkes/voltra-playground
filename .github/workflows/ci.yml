@@ -1,0 +1,92 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  # Security: Scan for leaked secrets
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Security: npm audit
+  security-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+        working-directory: mobile
+      - run: npm audit --audit-level=high
+        working-directory: mobile
+
+  mobile-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+        working-directory: mobile
+      - run: npm run lint
+        working-directory: mobile
+      - run: npm run format:check
+        working-directory: mobile
+      - run: npm run typecheck
+        working-directory: mobile
+
+  mobile-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+        working-directory: mobile
+      - run: npm run test:coverage
+        working-directory: mobile
+      - name: Check coverage thresholds
+        run: |
+          # Coverage thresholds enforced in vitest.config.ts
+          echo "Coverage report generated"
+        working-directory: mobile
+
+  relay-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+        working-directory: relay
+      - run: ruff check .
+        working-directory: relay
+      - run: ruff format --check .
+        working-directory: relay
+      - run: mypy main.py
+        working-directory: relay
+
+  relay-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+        working-directory: relay
+      - run: pytest -v --cov=. --cov-fail-under=60
+        working-directory: relay

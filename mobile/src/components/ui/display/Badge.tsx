@@ -1,11 +1,11 @@
 /**
  * Badge
- * 
+ *
  * Colored pill label for status, tags, or counts.
  */
 
 import React from 'react';
-import { View, Text, StyleProp, ViewStyle } from 'react-native';
+import { View, Text, type StyleProp, type ViewStyle } from 'react-native';
 import { colors } from '@/theme';
 
 export interface BadgeProps {
@@ -69,7 +69,7 @@ const SIZES = {
 
 /**
  * Badge component - colored pill label.
- * 
+ *
  * @example
  * ```tsx
  * <Badge label="New" variant="primary" />
@@ -77,15 +77,10 @@ const SIZES = {
  * <Badge label="Failed" variant="danger" />
  * ```
  */
-export function Badge({
-  label,
-  variant = 'default',
-  size = 'md',
-  style,
-}: BadgeProps) {
+export function Badge({ label, variant = 'default', size = 'md', style }: BadgeProps) {
   const variantStyle = VARIANT_COLORS[variant];
   const sizeStyle = SIZES[size];
-  
+
   return (
     <View
       style={[

@@ -90,7 +90,7 @@ describe('Sample Generator', () => {
     it('includes all movement phases', () => {
       const samples = generateSampleStream({ repCount: 2 });
 
-      const phases = new Set(samples.map(s => s.phase));
+      const phases = new Set(samples.map((s) => s.phase));
 
       expect(phases.has(MovementPhase.IDLE)).toBe(true);
       expect(phases.has(MovementPhase.CONCENTRIC)).toBe(true);
@@ -106,17 +106,15 @@ describe('Sample Generator', () => {
       });
 
       // Find concentric samples and group by rep
-      const concentricSamples = samples.filter(
-        s => s.phase === MovementPhase.CONCENTRIC
-      );
+      const concentricSamples = samples.filter((s) => s.phase === MovementPhase.CONCENTRIC);
 
       // Get peak velocity from first and last rep's concentric phases
       // First rep samples come first, last rep samples come last
       const firstRepSamples = concentricSamples.slice(0, 10);
       const lastRepSamples = concentricSamples.slice(-10);
 
-      const firstRepPeak = Math.max(...firstRepSamples.map(s => s.velocity));
-      const lastRepPeak = Math.max(...lastRepSamples.map(s => s.velocity));
+      const firstRepPeak = Math.max(...firstRepSamples.map((s) => s.velocity));
+      const lastRepPeak = Math.max(...lastRepSamples.map((s) => s.velocity));
 
       expect(lastRepPeak).toBeLessThan(firstRepPeak);
     });
@@ -167,10 +165,10 @@ describe('Sample Generator', () => {
       const heavySamples = generateSampleStream({ repCount: 1, weight: 200 });
 
       const lightMaxForce = Math.max(
-        ...lightSamples.filter(s => s.phase === MovementPhase.CONCENTRIC).map(s => s.force)
+        ...lightSamples.filter((s) => s.phase === MovementPhase.CONCENTRIC).map((s) => s.force)
       );
       const heavyMaxForce = Math.max(
-        ...heavySamples.filter(s => s.phase === MovementPhase.CONCENTRIC).map(s => s.force)
+        ...heavySamples.filter((s) => s.phase === MovementPhase.CONCENTRIC).map((s) => s.force)
       );
 
       expect(heavyMaxForce).toBeGreaterThan(lightMaxForce);

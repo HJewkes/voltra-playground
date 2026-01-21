@@ -5,10 +5,16 @@
  * These adapters create a clean boundary between domain logic and persistence.
  */
 
-import type { Set, Rep, StoredRep, ExerciseSession, ExercisePlan, PlannedSet, WorkoutSample } from '@/domain/workout';
-import type { Exercise } from '@/domain/exercise';
-import { getExercise, EXERCISE_CATALOG, createExercise } from '@/domain/exercise';
-import type { TrainingGoal } from '@/domain/planning';
+import type {
+  Set,
+  Rep,
+  StoredRep,
+  ExerciseSession,
+  ExercisePlan,
+  PlannedSet,
+  WorkoutSample,
+} from '@/domain/workout';
+import { EXERCISE_CATALOG, createExercise } from '@/domain/exercise';
 import { isDebugTelemetryEnabled } from '@/data/debug-config';
 import type {
   StoredExerciseSession,
@@ -44,10 +50,10 @@ export function toStoredExerciseSession(
     startTime: session.startedAt,
     endTime: status === 'in_progress' ? null : Date.now(),
     plan: toStoredPlan(session.plan),
-    completedSets: session.completedSets.map((set, index) => 
+    completedSets: session.completedSets.map((set, index) =>
       toStoredSessionSet(
-        set, 
-        index, 
+        set,
+        index,
         // Only pass raw samples for the last set (the one just completed)
         index === lastSetIndex ? rawSamplesForLastSet : undefined
       )
@@ -141,10 +147,12 @@ function toStoredRep(rep: Rep): StoredRep {
  */
 export function fromStoredExerciseSession(stored: StoredExerciseSession): ExerciseSession {
   // Look up or create exercise
-  const exercise = EXERCISE_CATALOG[stored.exerciseId] ?? createExercise({
-    id: stored.exerciseId,
-    name: stored.exerciseName ?? stored.exerciseId,
-  });
+  const exercise =
+    EXERCISE_CATALOG[stored.exerciseId] ??
+    createExercise({
+      id: stored.exerciseId,
+      name: stored.exerciseName ?? stored.exerciseId,
+    });
 
   return {
     id: stored.id,
@@ -175,10 +183,10 @@ export function fromStoredPlan(stored: StoredExercisePlan): ExercisePlan {
  */
 export function fromStoredSessionSet(stored: StoredSessionSet): Set {
   const reps = stored.reps.map(fromStoredRep);
-  
+
   // Calculate total duration
   const duration = (stored.endTime - stored.startTime) / 1000;
-  
+
   // Calculate time under tension from reps
   const timeUnderTension = reps.reduce((sum, rep) => {
     return sum + rep.metrics.concentricDuration + rep.metrics.eccentricDuration;
@@ -202,14 +210,15 @@ export function fromStoredSessionSet(stored: StoredSessionSet): Set {
       velocity: {
         concentricBaseline: stored.meanVelocity,
         eccentricBaseline: 0,
-        concentricLast: reps.length > 0 
-          ? reps[reps.length - 1].metrics.concentricMeanVelocity 
-          : stored.meanVelocity,
+        concentricLast:
+          reps.length > 0
+            ? reps[reps.length - 1].metrics.concentricMeanVelocity
+            : stored.meanVelocity,
         eccentricLast: 0,
         concentricDelta: -stored.velocityLossPercent,
         eccentricDelta: 0,
-        concentricByRep: reps.map(r => r.metrics.concentricMeanVelocity),
-        eccentricByRep: reps.map(r => r.metrics.eccentricMeanVelocity),
+        concentricByRep: reps.map((r) => r.metrics.concentricMeanVelocity),
+        eccentricByRep: reps.map((r) => r.metrics.eccentricMeanVelocity),
       },
       fatigue: {
         fatigueIndex: stored.velocityLossPercent,
@@ -245,7 +254,7 @@ function fromStoredRep(stored: StoredRep): Rep {
       endPosition: stored.metrics.rangeOfMotion,
     },
   });
-  
+
   return {
     repNumber: stored.repNumber,
     timestamp: stored.timestamp,
@@ -274,30 +283,36 @@ function fromStoredRep(stored: StoredRep): Rep {
         endPosition: 0,
       },
     },
-    holdAtTop: stored.metrics.topPauseTime > 0 ? {
-      ...emptyPhase(0),
-      metrics: {
-        duration: stored.metrics.topPauseTime,
-        meanVelocity: 0,
-        peakVelocity: 0,
-        meanForce: 0,
-        peakForce: 0,
-        startPosition: stored.metrics.rangeOfMotion,
-        endPosition: stored.metrics.rangeOfMotion,
-      },
-    } : null,
-    holdAtBottom: stored.metrics.bottomPauseTime > 0 ? {
-      ...emptyPhase(0),
-      metrics: {
-        duration: stored.metrics.bottomPauseTime,
-        meanVelocity: 0,
-        peakVelocity: 0,
-        meanForce: 0,
-        peakForce: 0,
-        startPosition: 0,
-        endPosition: 0,
-      },
-    } : null,
+    holdAtTop:
+      stored.metrics.topPauseTime > 0
+        ? {
+            ...emptyPhase(0),
+            metrics: {
+              duration: stored.metrics.topPauseTime,
+              meanVelocity: 0,
+              peakVelocity: 0,
+              meanForce: 0,
+              peakForce: 0,
+              startPosition: stored.metrics.rangeOfMotion,
+              endPosition: stored.metrics.rangeOfMotion,
+            },
+          }
+        : null,
+    holdAtBottom:
+      stored.metrics.bottomPauseTime > 0
+        ? {
+            ...emptyPhase(0),
+            metrics: {
+              duration: stored.metrics.bottomPauseTime,
+              meanVelocity: 0,
+              peakVelocity: 0,
+              meanForce: 0,
+              peakForce: 0,
+              startPosition: 0,
+              endPosition: 0,
+            },
+          }
+        : null,
     metrics: stored.metrics,
   };
 }
@@ -311,7 +326,7 @@ function fromStoredRep(stored: StoredRep): Rep {
  */
 export function toExerciseSessionSummary(session: StoredExerciseSession): ExerciseSessionSummary {
   const totalReps = session.completedSets.reduce((sum, set) => sum + set.reps.length, 0);
-  
+
   return {
     id: session.id,
     exerciseId: session.exerciseId,

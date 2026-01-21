@@ -48,16 +48,16 @@ import { isDebugTelemetryEnabled } from '@/data/provider';
  * Generic UI state for recording components.
  * Used by recording UI components to show appropriate displays.
  */
-export type RecordingUIState = 
-  | 'idle'       // Not recording, ready to start
-  | 'countdown'  // About to start (3-2-1)
-  | 'recording'  // Actively recording reps
-  | 'resting';   // Rest period between sets
+export type RecordingUIState =
+  | 'idle' // Not recording, ready to start
+  | 'countdown' // About to start (3-2-1)
+  | 'recording' // Actively recording reps
+  | 'resting'; // Rest period between sets
 
 export interface RecordingState {
   // UI state for display components
   uiState: RecordingUIState;
-  
+
   // Recording context
   isRecording: boolean;
   exerciseId: string | null;
@@ -264,8 +264,8 @@ export function createRecordingStore(): RecordingStoreApi {
           set(createInitialState());
         },
       }),
-      { name: 'recording-store' },
-    ),
+      { name: 'recording-store' }
+    )
   );
 
   return store;
@@ -282,14 +282,8 @@ function aggregateRepFromBoundary(boundary: RepBoundary): Rep {
   const { phaseSamples, repNumber } = boundary;
 
   // Aggregate phases
-  const concentricPhase = aggregatePhase(
-    MovementPhase.CONCENTRIC,
-    phaseSamples.concentric,
-  );
-  const eccentricPhase = aggregatePhase(
-    MovementPhase.ECCENTRIC,
-    phaseSamples.eccentric,
-  );
+  const concentricPhase = aggregatePhase(MovementPhase.CONCENTRIC, phaseSamples.concentric);
+  const eccentricPhase = aggregatePhase(MovementPhase.ECCENTRIC, phaseSamples.eccentric);
   const holdAtTopPhase =
     phaseSamples.holdAtTop.length > 0
       ? aggregatePhase(MovementPhase.HOLD, phaseSamples.holdAtTop)
@@ -305,7 +299,7 @@ function aggregateRepFromBoundary(boundary: RepBoundary): Rep {
     concentricPhase,
     eccentricPhase,
     holdAtTopPhase,
-    holdAtBottomPhase,
+    holdAtBottomPhase
   );
 }
 

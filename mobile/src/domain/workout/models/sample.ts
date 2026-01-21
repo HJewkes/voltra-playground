@@ -5,7 +5,7 @@
  * Adapters convert device-specific data into this format.
  * All values are normalized/standardized.
  */
-import { MovementPhase } from './types';
+import { type MovementPhase } from './types';
 
 export interface WorkoutSample {
   /** Incrementing sequence number from source device (for drop detection) */
@@ -36,7 +36,7 @@ export function createSample(
   phase: MovementPhase,
   position: number,
   velocity: number,
-  force: number,
+  force: number
 ): WorkoutSample {
   return { sequence, timestamp, phase, position, velocity, force };
 }

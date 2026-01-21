@@ -12,10 +12,7 @@ import {
   createExerciseSessionRepository,
   type ExerciseSessionRepository,
 } from './exercise-session/exercise-session-repository';
-import {
-  createExerciseRepository,
-  type ExerciseRepository,
-} from './exercises/exercise-repository';
+import { createExerciseRepository, type ExerciseRepository } from './exercises/exercise-repository';
 import {
   createRecordingRepository,
   type RecordingRepository,
@@ -90,4 +87,3 @@ export function getRecordingRepository(): RecordingRepository {
   }
   return _recordingRepository;
 }
-

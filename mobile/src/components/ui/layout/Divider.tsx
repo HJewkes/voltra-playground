@@ -1,12 +1,12 @@
 /**
  * Divider
- * 
+ *
  * Visual separator for content sections.
  * Supports horizontal (default) and vertical orientations.
  */
 
 import React from 'react';
-import { View, StyleProp, ViewStyle } from 'react-native';
+import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { colors, spacing } from '@/theme';
 
 export interface DividerProps {
@@ -43,12 +43,12 @@ const SPACING_MAP = {
 
 /**
  * Divider component - visual separator between content.
- * 
+ *
  * @example
  * ```tsx
  * // Horizontal divider with margin
  * <Divider spacing="md" />
- * 
+ *
  * // Vertical divider between items
  * <View style={{ flexDirection: 'row' }}>
  *   <Text>Left</Text>
@@ -67,9 +67,9 @@ export function Divider({
   const color = COLORS[variant];
   const thickness = SIZES[size];
   const space = SPACING_MAP[spacingProp];
-  
+
   const isHorizontal = direction === 'horizontal';
-  
+
   const dividerStyle: ViewStyle = isHorizontal
     ? {
         height: thickness,
@@ -83,6 +83,6 @@ export function Divider({
         backgroundColor: color,
         marginHorizontal: space,
       };
-  
+
   return <View style={[dividerStyle, style]} />;
 }

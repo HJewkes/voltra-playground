@@ -1,6 +1,6 @@
 /**
  * Analytics Components
- * 
+ *
  * Data visualization and history components.
  */
 

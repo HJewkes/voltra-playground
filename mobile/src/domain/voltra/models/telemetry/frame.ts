@@ -1,6 +1,6 @@
 /**
  * Telemetry Frame Model
- * 
+ *
  * Represents a single telemetry data point from the Voltra device.
  */
 
@@ -33,7 +33,7 @@ export function createFrame(
   phase: MovementPhase,
   position: number,
   force: number,
-  velocity: number,
+  velocity: number
 ): TelemetryFrame {
   return {
     sequence,
@@ -49,9 +49,11 @@ export function createFrame(
  * Check if a frame represents active movement.
  */
 export function isActivePhase(frame: TelemetryFrame): boolean {
-  return frame.phase === MovementPhase.CONCENTRIC || 
-         frame.phase === MovementPhase.ECCENTRIC || 
-         frame.phase === MovementPhase.HOLD;
+  return (
+    frame.phase === MovementPhase.CONCENTRIC ||
+    frame.phase === MovementPhase.ECCENTRIC ||
+    frame.phase === MovementPhase.HOLD
+  );
 }
 
 /**

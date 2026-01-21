@@ -1,6 +1,6 @@
 /**
  * Voltra Protocol Module
- * 
+ *
  * Complete TypeScript implementation of the Voltra BLE protocol.
  */
 

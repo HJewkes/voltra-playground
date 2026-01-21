@@ -1,11 +1,11 @@
 /**
  * Banner
- * 
+ *
  * Colored banner with icon for status messages, alerts, etc.
  */
 
 import React from 'react';
-import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
+import { View, Text, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, borderRadius, spacing } from '@/theme';
 
@@ -36,7 +36,7 @@ const variantColors: Record<BannerVariant, string> = {
 
 /**
  * Banner - colored banner with icon for status display.
- * 
+ *
  * @example
  * ```tsx
  * <Banner
@@ -47,16 +47,9 @@ const variantColors: Record<BannerVariant, string> = {
  * />
  * ```
  */
-export function Banner({ 
-  variant, 
-  icon, 
-  title, 
-  subtitle,
-  children,
-  style,
-}: BannerProps) {
+export function Banner({ variant, icon, title, subtitle, children, style }: BannerProps) {
   const backgroundColor = variantColors[variant];
-  
+
   return (
     <View style={[styles.container, { backgroundColor }, style]}>
       <View style={styles.content}>
@@ -66,9 +59,7 @@ export function Banner({
           </View>
           <View style={styles.textContainer}>
             <Text style={styles.title}>{title}</Text>
-            {subtitle && (
-              <Text style={styles.subtitle}>{subtitle}</Text>
-            )}
+            {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
           </View>
         </View>
         {children}

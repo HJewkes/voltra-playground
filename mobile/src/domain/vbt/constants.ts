@@ -1,10 +1,10 @@
 /**
  * VBT Constants and Utility Functions
- * 
+ *
  * Centralized constants for velocity zones, %1RM relationships,
  * and training goal thresholds. Used across discovery, analytics,
  * and workout planning modules.
- * 
+ *
  * Research basis:
  * - González-Badillo & Sánchez-Medina (2010) - Load-velocity relationship
  * - Pareja-Blanco et al. (2017) - VL thresholds and adaptations
@@ -22,14 +22,14 @@ import { TrainingGoal } from '@/domain/planning/types';
 /**
  * Mean concentric velocity at different percentages of 1RM.
  * These are approximate values - individual variation exists.
- * 
+ *
  * Use for:
  * - Estimating %1RM from observed velocity
  * - Predicting velocity at a target %1RM
  * - Building load-velocity profiles
  */
 export const VELOCITY_AT_PERCENT_1RM: Record<number, number> = {
-  100: 0.17,  // Minimum velocity threshold (MVT)
+  100: 0.17, // Minimum velocity threshold (MVT)
   95: 0.25,
   90: 0.37,
   85: 0.47,
@@ -37,11 +37,11 @@ export const VELOCITY_AT_PERCENT_1RM: Record<number, number> = {
   75: 0.62,
   70: 0.72,
   65: 0.82,
-  60: 0.90,
-  55: 1.00,
-  50: 1.10,
-  45: 1.20,
-  40: 1.30,
+  60: 0.9,
+  55: 1.0,
+  50: 1.1,
+  45: 1.2,
+  40: 1.3,
 };
 
 /**
@@ -56,7 +56,7 @@ export const MINIMUM_VELOCITY_THRESHOLD = 0.17;
 
 /**
  * Target %1RM ranges for different training goals.
- * 
+ *
  * - STRENGTH: High intensity, low reps (1-5)
  * - HYPERTROPHY: Moderate intensity, moderate reps (8-12)
  * - ENDURANCE: Lower intensity, high reps (15-20+)
@@ -82,17 +82,17 @@ export const REP_RANGES: Record<TrainingGoal, [number, number]> = {
 
 /**
  * Velocity loss thresholds for different training goals.
- * 
+ *
  * Key insight: cables may reach failure at SMALLER velocity losses
  * than barbells due to constant tension and continuous motor unit engagement.
- * 
+ *
  * Format: { min, max } as percentage loss from first rep
  */
 export const VELOCITY_LOSS_TARGETS = {
-  STRENGTH: { min: 5, max: 10 },      // Heavy, low reps, minimal fatigue
-  HYPERTROPHY: { min: 20, max: 25 },  // Moderate, metabolic stress
-  POWER: { min: 10, max: 15 },        // Explosive, minimal fatigue
-  ENDURANCE: { min: 25, max: 35 },    // High reps, sustained effort
+  STRENGTH: { min: 5, max: 10 }, // Heavy, low reps, minimal fatigue
+  HYPERTROPHY: { min: 20, max: 25 }, // Moderate, metabolic stress
+  POWER: { min: 10, max: 15 }, // Explosive, minimal fatigue
+  ENDURANCE: { min: 25, max: 35 }, // High reps, sustained effort
 } as const;
 
 // =============================================================================
@@ -101,26 +101,26 @@ export const VELOCITY_LOSS_TARGETS = {
 
 /**
  * Velocity loss to RIR/RPE mapping.
- * 
+ *
  * More conservative than barbell research due to cable characteristics:
  * - Constant tension throughout ROM
  * - Continuous motor unit engagement
  * - Earlier fatigue onset
- * 
+ *
  * Format: [maxLossPercent, rir, rpe]
- * 
+ *
  * Note: The new system uses SetMetrics.effort from domain/workout/aggregators
  * for RIR/RPE estimation based on fatigue index (combining concentric + eccentric velocity).
  * This mapping is retained as reference data for the VBT system.
  */
 export const VELOCITY_RIR_MAP: [number, number, number][] = [
-  [10, 5.0, 5.0],   // 10% loss → ~5+ RIR
+  [10, 5.0, 5.0], // 10% loss → ~5+ RIR
   [15, 4.0, 6.0],
-  [20, 3.0, 7.0],   // 20% loss → ~3 RIR (conservative)
+  [20, 3.0, 7.0], // 20% loss → ~3 RIR (conservative)
   [25, 2.5, 7.5],
-  [30, 2.0, 8.0],   // 30% loss → ~2 RIR
+  [30, 2.0, 8.0], // 30% loss → ~2 RIR
   [35, 1.5, 8.5],
-  [40, 1.0, 9.0],   // 40% loss → ~1 RIR
+  [40, 1.0, 9.0], // 40% loss → ~1 RIR
   [50, 0.5, 9.5],
   [100, 0.0, 10.0],
 ];
@@ -140,7 +140,7 @@ export const DISCOVERY_START_PERCENTAGES = [30, 50, 65, 75, 85];
  */
 export const PROFILE_CONFIDENCE_REQUIREMENTS = {
   high: { minPoints: 3, minRSquared: 0.85, minWeightSpread: 0.2 },
-  medium: { minPoints: 2, minRSquared: 0.70, minWeightSpread: 0.15 },
+  medium: { minPoints: 2, minRSquared: 0.7, minWeightSpread: 0.15 },
   low: { minPoints: 1, minRSquared: 0, minWeightSpread: 0 },
 } as const;
 
@@ -198,7 +198,7 @@ export function suggestNextWeight(
   currentWeight: number,
   currentVelocity: number,
   goal: TrainingGoal,
-  increment: number = 5,
+  increment: number = 5
 ): { weight: number; direction: 'up' | 'down' | 'same'; reason: string } {
   const targetVelocity = getTargetVelocityForGoal(goal);
 

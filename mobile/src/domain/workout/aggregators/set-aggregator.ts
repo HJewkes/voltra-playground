@@ -42,7 +42,7 @@ export const DEFAULT_CONFIG: SetAggregatorConfig = {
 export function aggregateSet(
   reps: Rep[],
   targetTempo: TempoTarget | null,
-  config: SetAggregatorConfig = DEFAULT_CONFIG,
+  config: SetAggregatorConfig = DEFAULT_CONFIG
 ): SetMetrics {
   if (reps.length === 0) return createEmptySetMetrics();
 
@@ -60,7 +60,7 @@ export function aggregateSet(
     totalDuration: reps.reduce((sum, r) => sum + r.metrics.totalDuration, 0),
     timeUnderTension: reps.reduce(
       (sum, r) => sum + r.metrics.concentricDuration + r.metrics.eccentricDuration,
-      0,
+      0
     ),
     velocity,
     fatigue,
@@ -75,7 +75,7 @@ export function aggregateSet(
 function computeVelocityMetrics(
   reps: Rep[],
   _targetTempo: TempoTarget | null,
-  config: SetAggregatorConfig,
+  config: SetAggregatorConfig
 ): VelocityMetrics {
   // Extract per-rep velocities
   const concentricByRep = reps.map((r) => r.metrics.concentricMeanVelocity);
@@ -132,12 +132,12 @@ function computeDelta(current: number, baseline: number): number {
 
 function computeFatigueAnalysis(
   velocity: VelocityMetrics,
-  config: SetAggregatorConfig,
+  config: SetAggregatorConfig
 ): FatigueAnalysis {
   const fatigueIndex = computeFatigueIndex(
     velocity.concentricDelta,
     velocity.eccentricDelta,
-    config,
+    config
   );
 
   const eccentricControlScore = computeEccentricControlScore(velocity.eccentricDelta);
@@ -154,7 +154,7 @@ function computeFatigueAnalysis(
 function computeFatigueIndex(
   concentricDelta: number,
   eccentricDelta: number,
-  config: SetAggregatorConfig,
+  config: SetAggregatorConfig
 ): number {
   // Concentric slowing (negative delta) contributes to fatigue
   const concentricFatigue = Math.max(0, -concentricDelta);
@@ -162,7 +162,8 @@ function computeFatigueIndex(
   // Eccentric speeding up (positive delta) contributes with penalty
   const eccentricFatigue = Math.max(0, eccentricDelta) * config.eccentricSpeedupPenalty;
 
-  const rawIndex = concentricFatigue * config.concentricWeight + eccentricFatigue * config.eccentricWeight;
+  const rawIndex =
+    concentricFatigue * config.concentricWeight + eccentricFatigue * config.eccentricWeight;
 
   return Math.min(100, rawIndex);
 }

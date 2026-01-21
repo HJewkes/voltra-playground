@@ -1,19 +1,19 @@
 /**
  * LinkCard
- * 
+ *
  * Pressable card that navigates to a route.
  */
 
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../layout/Card';
 import { colors, spacing, borderRadius } from '@/theme';
 
 export interface LinkCardProps {
   /** Navigation target (expo-router href) */
-  href: string;
+  href: Href;
   /** Icon name (Ionicons) */
   icon: keyof typeof Ionicons.glyphMap;
   /** Icon color */
@@ -30,7 +30,7 @@ export interface LinkCardProps {
 
 /**
  * LinkCard - navigable action card with icon.
- * 
+ *
  * @example
  * ```tsx
  * <LinkCard
@@ -53,16 +53,14 @@ export function LinkCard({
   fullWidth = false,
 }: LinkCardProps) {
   return (
-    <Link href={href as any} asChild>
+    <Link href={href} asChild>
       <TouchableOpacity style={fullWidth ? undefined : styles.flex}>
         <Card elevation={1} padding="lg" marginBottom={false}>
           <View style={[styles.iconContainer, { backgroundColor: iconBgColor }]}>
             <Ionicons name={icon} size={28} color={iconColor} />
           </View>
           <Text style={styles.title}>{title}</Text>
-          {subtitle && (
-            <Text style={styles.subtitle}>{subtitle}</Text>
-          )}
+          {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
         </Card>
       </TouchableOpacity>
     </Link>

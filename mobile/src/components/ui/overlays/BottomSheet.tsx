@@ -1,12 +1,12 @@
 /**
  * BottomSheet
- * 
+ *
  * A modal that slides up from the bottom of the screen.
  * Used for workout summaries, detail views, and confirmations.
  */
 
-import React, { ReactNode } from 'react';
-import { View, Text, Modal, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
+import React, { type ReactNode } from 'react';
+import { View, Text, Modal, type StyleProp, type ViewStyle } from 'react-native';
 import { Surface } from '../layout/Surface';
 import { colors, spacing } from '@/theme';
 
@@ -25,11 +25,11 @@ export interface BottomSheetProps {
 
 /**
  * BottomSheet component - slides up from the bottom.
- * 
+ *
  * @example
  * ```tsx
- * <BottomSheet 
- *   visible={showSummary} 
+ * <BottomSheet
+ *   visible={showSummary}
  *   onClose={() => setShowSummary(false)}
  *   title="Set Complete!"
  * >
@@ -37,52 +37,38 @@ export interface BottomSheetProps {
  * </BottomSheet>
  * ```
  */
-export function BottomSheet({
-  visible,
-  onClose,
-  title,
-  children,
-  style,
-}: BottomSheetProps) {
+export function BottomSheet({ visible, onClose, title, children, style }: BottomSheetProps) {
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={onClose}
-    >
-      <View 
-        className="flex-1 justify-end" 
-        style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
-      >
-        <Surface 
+    <Modal visible={visible} animationType="slide" transparent={true} onRequestClose={onClose}>
+      <View className="flex-1 justify-end" style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}>
+        <Surface
           elevation={2}
           radius="xxl"
           border={false}
-          style={{ 
-            borderBottomLeftRadius: 0, 
+          style={{
+            borderBottomLeftRadius: 0,
             borderBottomRightRadius: 0,
           }}
         >
           <View style={[{ padding: spacing.lg }, style]}>
             {/* Drag handle */}
-            <View className="items-center mb-4">
-              <View 
-                className="w-12 h-1 rounded-full" 
-                style={{ backgroundColor: colors.surface.light }} 
+            <View className="mb-4 items-center">
+              <View
+                className="h-1 w-12 rounded-full"
+                style={{ backgroundColor: colors.surface.light }}
               />
             </View>
-            
+
             {/* Title */}
             {title && (
-              <Text 
-                className="text-2xl font-bold text-content-primary text-center"
+              <Text
+                className="text-center text-2xl font-bold text-content-primary"
                 style={{ marginBottom: spacing.lg }}
               >
                 {title}
               </Text>
             )}
-            
+
             {/* Content */}
             {children}
           </View>

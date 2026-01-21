@@ -57,10 +57,7 @@ export interface ExerciseSession {
 /**
  * Create a new exercise session.
  */
-export function createExerciseSession(
-  exercise: Exercise,
-  plan: ExercisePlan
-): ExerciseSession {
+export function createExerciseSession(exercise: Exercise, plan: ExercisePlan): ExerciseSession {
   return {
     id: generateSessionId(),
     exercise,
@@ -131,10 +128,7 @@ export function isDiscoverySession(session: ExerciseSession): boolean {
  * Get total completed volume (weight × reps).
  */
 export function getCompletedVolume(session: ExerciseSession): number {
-  return session.completedSets.reduce(
-    (total, set) => total + set.weight * set.reps.length,
-    0
-  );
+  return session.completedSets.reduce((total, set) => total + set.weight * set.reps.length, 0);
 }
 
 /**

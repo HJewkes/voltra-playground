@@ -4,7 +4,7 @@
  * Hardware-agnostic representation of one set.
  * This is what we previously called "workout" in many places.
  */
-import type { Rep, StoredRep } from './rep';
+import type { Rep } from './rep';
 
 export interface Set {
   id: string;

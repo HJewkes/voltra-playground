@@ -1,17 +1,17 @@
 /**
  * EmptyState
- * 
+ *
  * A placeholder display for empty lists or states.
  */
 
 import React from 'react';
-import { View, Text, StyleProp, ViewStyle } from 'react-native';
+import { View, Text, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/theme';
 
 export interface EmptyStateProps {
   /** Ionicon name for the icon */
-  icon: string;
+  icon: keyof typeof Ionicons.glyphMap;
   /** Main title text */
   title: string;
   /** Optional subtitle/description */
@@ -24,7 +24,7 @@ export interface EmptyStateProps {
 
 /**
  * EmptyState component - placeholder for empty content.
- * 
+ *
  * @example
  * ```tsx
  * <EmptyState
@@ -34,29 +34,17 @@ export interface EmptyStateProps {
  * />
  * ```
  */
-export function EmptyState({
-  icon,
-  title,
-  subtitle,
-  iconSize = 48,
-  style,
-}: EmptyStateProps) {
+export function EmptyState({ icon, title, subtitle, iconSize = 48, style }: EmptyStateProps) {
   return (
-    <View className="py-8 items-center" style={style}>
-      <View 
-        className="w-24 h-24 rounded-full items-center justify-center mb-4"
+    <View className="items-center py-8" style={style}>
+      <View
+        className="mb-4 h-24 w-24 items-center justify-center rounded-full"
         style={{ backgroundColor: colors.surface.dark }}
       >
-        <Ionicons name={icon as any} size={iconSize} color={colors.text.muted} />
+        <Ionicons name={icon} size={iconSize} color={colors.text.muted} />
       </View>
-      <Text className="text-xl font-bold text-content-primary mb-2 text-center">
-        {title}
-      </Text>
-      {subtitle && (
-        <Text className="text-content-secondary text-center px-4">
-          {subtitle}
-        </Text>
-      )}
+      <Text className="mb-2 text-center text-xl font-bold text-content-primary">{title}</Text>
+      {subtitle && <Text className="px-4 text-center text-content-secondary">{subtitle}</Text>}
     </View>
   );
 }

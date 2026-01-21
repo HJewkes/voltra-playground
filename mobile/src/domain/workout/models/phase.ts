@@ -4,7 +4,7 @@
  * Hardware-agnostic representation of one movement phase.
  * Contains the samples that make up this phase and computed metrics.
  */
-import { MovementPhase } from './types';
+import { type MovementPhase } from './types';
 import type { WorkoutSample } from './sample';
 
 export interface Phase {

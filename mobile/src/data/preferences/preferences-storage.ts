@@ -1,6 +1,6 @@
 /**
  * Preferences Storage
- * 
+ *
  * Simplified storage functions for device and connection preferences.
  * Only exposes the operations that are actually used.
  */

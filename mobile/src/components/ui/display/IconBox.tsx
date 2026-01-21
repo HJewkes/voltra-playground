@@ -1,12 +1,12 @@
 /**
  * IconBox
- * 
+ *
  * Icon displayed in a colored container.
  * Commonly used for list items, buttons, and feature cards.
  */
 
 import React from 'react';
-import { View, StyleProp, ViewStyle } from 'react-native';
+import { View, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/theme';
 
@@ -48,13 +48,13 @@ const SIZES = {
 
 /**
  * IconBox component - icon in colored container.
- * 
+ *
  * @example
  * ```tsx
  * <IconBox icon="fitness" iconColor={colors.primary[500]} />
- * <IconBox 
- *   icon="checkmark" 
- *   iconColor={colors.success.DEFAULT} 
+ * <IconBox
+ *   icon="checkmark"
+ *   iconColor={colors.success.DEFAULT}
  *   bgColor={colors.success.DEFAULT + '20'}
  *   size="lg"
  * />
@@ -68,7 +68,7 @@ export function IconBox({
   style,
 }: IconBoxProps) {
   const sizeConfig = SIZES[size];
-  
+
   return (
     <View
       style={[

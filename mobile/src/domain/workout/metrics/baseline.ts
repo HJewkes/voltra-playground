@@ -56,10 +56,7 @@ export function createVelocityBaseline(exerciseId: string): VelocityBaseline {
  * Get velocity baseline for a specific weight.
  * Returns null if no baseline exists for this weight (or nearby weights).
  */
-export function getBaselineVelocity(
-  baseline: VelocityBaseline,
-  weight: number
-): number | null {
+export function getBaselineVelocity(baseline: VelocityBaseline, weight: number): number | null {
   const map = baseline.weightVelocityMap;
 
   if (map.size === 0) {
@@ -78,10 +75,7 @@ export function getBaselineVelocity(
 /**
  * Interpolate velocity for a weight from nearby baseline points.
  */
-export function interpolateBaseline(
-  baseline: VelocityBaseline,
-  weight: number
-): number | null {
+export function interpolateBaseline(baseline: VelocityBaseline, weight: number): number | null {
   const map = baseline.weightVelocityMap;
 
   if (map.size === 0) {

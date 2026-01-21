@@ -1,20 +1,20 @@
 /**
  * BLE Abstraction Layer
- * 
+ *
  * Provides a unified interface for BLE communication that can be
  * implemented by either native BLE or a WebSocket proxy.
  */
-
-export * from './types';
-export { ProxyBLEAdapter, type ProxyAdapterConfig } from './proxy';
-export { NativeBLEAdapter, type NativeAdapterConfig, type BLEServiceConfig } from './native';
-export { ReplayBLEAdapter } from './replay';
 
 import { Platform } from 'react-native';
 import type { BLEAdapter } from './types';
 import { ProxyBLEAdapter } from './proxy';
 import { NativeBLEAdapter, type BLEServiceConfig } from './native';
 import { RELAY_WS_URL } from '@/config';
+
+export * from './types';
+export { ProxyBLEAdapter, type ProxyAdapterConfig } from './proxy';
+export { NativeBLEAdapter, type NativeAdapterConfig, type BLEServiceConfig } from './native';
+export { ReplayBLEAdapter } from './replay';
 
 /**
  * Full configuration for creating a BLE adapter.
@@ -30,13 +30,13 @@ export interface CreateBLEAdapterConfig {
 
 /**
  * Create a BLE adapter based on configuration.
- * 
+ *
  * @param config Adapter configuration including BLE service UUIDs
  * @returns BLEAdapter instance (NativeBLEAdapter or ProxyBLEAdapter)
  */
 export function createBLEAdapter(config: CreateBLEAdapterConfig): BLEAdapter {
   const useProxy = config.useProxy ?? Platform.OS === 'web';
-  
+
   if (useProxy) {
     return new ProxyBLEAdapter({ url: config.proxyUrl ?? RELAY_WS_URL });
   }

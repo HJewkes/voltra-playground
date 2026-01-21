@@ -79,7 +79,7 @@ export class RecordingRepositoryImpl implements RecordingRepository {
     const index = await this.getIndex();
     if (index.length === 0) return [];
 
-    const keys = index.map(id => this.getKey(id));
+    const keys = index.map((id) => this.getKey(id));
     const results = await this.adapter.getMultiple<SampleRecording>(keys);
 
     const recordings: SampleRecording[] = [];
@@ -100,7 +100,7 @@ export class RecordingRepositoryImpl implements RecordingRepository {
 
     if (recentIds.length === 0) return [];
 
-    const keys = recentIds.map(id => this.getKey(id));
+    const keys = recentIds.map((id) => this.getKey(id));
     const results = await this.adapter.getMultiple<SampleRecording>(keys);
 
     const recordings: SampleRecording[] = [];
@@ -120,7 +120,7 @@ export class RecordingRepositoryImpl implements RecordingRepository {
 
     // Remove from index
     const index = await this.getIndex();
-    const newIndex = index.filter(i => i !== id);
+    const newIndex = index.filter((i) => i !== id);
     await this.saveIndex(newIndex);
   }
 
@@ -133,8 +133,6 @@ export class RecordingRepositoryImpl implements RecordingRepository {
 /**
  * Create a repository instance with the given adapter.
  */
-export function createRecordingRepository(
-  adapter: StorageAdapter
-): RecordingRepository {
+export function createRecordingRepository(adapter: StorageAdapter): RecordingRepository {
   return new RecordingRepositoryImpl(adapter);
 }

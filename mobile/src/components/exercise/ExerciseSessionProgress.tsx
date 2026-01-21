@@ -6,11 +6,10 @@
  */
 
 import React from 'react';
-import { View, Text, StyleProp, ViewStyle } from 'react-native';
+import { View, Text, type StyleProp, type ViewStyle } from 'react-native';
 import { colors } from '@/theme';
 import { Card, ProgressBar } from '@/components/ui';
-import type { PlannedSet } from '@/domain/workout';
-import type { Set } from '@/domain/workout';
+import type { PlannedSet , Set } from '@/domain/workout';
 
 export interface ExerciseSessionProgressProps {
   /** Planned sets */
@@ -46,8 +45,8 @@ export function ExerciseSessionProgress({
     <View style={style}>
       {/* Progress indicator */}
       <Card elevation={1} padding="md" radius="lg">
-        <View className="flex-row justify-between items-center mb-3">
-          <Text className="text-content-secondary font-semibold">
+        <View className="mb-3 flex-row items-center justify-between">
+          <Text className="font-semibold text-content-secondary">
             {isDiscovery ? 'Discovery' : 'Session'} Progress
           </Text>
           <Text className="font-bold" style={{ color: colors.primary[500] }}>
@@ -57,23 +56,20 @@ export function ExerciseSessionProgress({
 
         <ProgressBar progress={progress} color={colors.primary[500]} height={8} />
 
-        {error && (
-          <Text className="text-danger-light text-sm mt-2">Error: {error}</Text>
-        )}
+        {error && <Text className="mt-2 text-sm text-danger-light">Error: {error}</Text>}
       </Card>
 
       {/* Completed sets */}
       {completedSets.length > 0 && (
         <Card elevation={1} padding="md" radius="lg">
-          <Text className="text-xs font-bold text-content-muted uppercase tracking-wider mb-3">
+          <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-content-muted">
             Completed
           </Text>
           <View className="flex-row flex-wrap gap-2">
             {completedSets.map((set, i) => {
               const planned = plannedSets[i];
               const repsDelta = set.reps.length - (planned?.targetReps ?? 0);
-              const deltaColor =
-                repsDelta >= 0 ? colors.success.DEFAULT : colors.danger.light;
+              const deltaColor = repsDelta >= 0 ? colors.success.DEFAULT : colors.danger.light;
 
               return (
                 <View
@@ -81,7 +77,7 @@ export function ExerciseSessionProgress({
                   className="rounded-xl px-4 py-2"
                   style={{ backgroundColor: colors.surface.dark }}
                 >
-                  <Text className="text-content-secondary text-sm font-medium">
+                  <Text className="text-sm font-medium text-content-secondary">
                     {set.weight}lbs × {set.reps.length}
                     {planned && (
                       <Text style={{ color: deltaColor }}>
@@ -91,7 +87,7 @@ export function ExerciseSessionProgress({
                       </Text>
                     )}
                   </Text>
-                  <Text className="text-content-muted text-xs">
+                  <Text className="text-xs text-content-muted">
                     {set.metrics.velocity.concentricBaseline.toFixed(2)} m/s
                   </Text>
                 </View>

@@ -5,7 +5,7 @@
  * Used for validation, defaults, and UI display.
  */
 
-import { MuscleGroup, ExerciseType } from './types';
+import { MuscleGroup, type ExerciseType } from './types';
 
 // =============================================================================
 // Muscle Group Mappings
@@ -101,9 +101,7 @@ export const EXERCISE_TYPES: Record<string, ExerciseType> = {
  * Converts snake_case to Title Case.
  */
 export function getExerciseName(exerciseId: string): string {
-  return exerciseId
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return exerciseId.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 /**

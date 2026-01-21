@@ -7,7 +7,7 @@
  * CRUD operations only - business logic belongs in domain services.
  */
 
-import { StorageAdapter, STORAGE_KEYS } from '@/data/adapters';
+import { type StorageAdapter, STORAGE_KEYS } from '@/data/adapters';
 import type { StoredExerciseSession, ExerciseSessionSummary } from './exercise-session-schema';
 import { toExerciseSessionSummary } from './exercise-session-converters';
 
@@ -98,13 +98,13 @@ export class ExerciseSessionRepositoryImpl implements ExerciseSessionRepository 
 
   async getByExercise(exerciseId: string): Promise<StoredExerciseSession[]> {
     const all = await this.getAll();
-    return all.filter(s => s.exerciseId === exerciseId);
+    return all.filter((s) => s.exerciseId === exerciseId);
   }
 
   async getRecent(count: number): Promise<StoredExerciseSession[]> {
     const index = await this.getIndex();
     const recentIds = index.slice(0, count);
-    const keys = recentIds.map(id => this.getKey(id));
+    const keys = recentIds.map((id) => this.getKey(id));
     const results = await this.adapter.getMultiple<StoredExerciseSession>(keys);
 
     const sessions: StoredExerciseSession[] = [];
@@ -139,7 +139,7 @@ export class ExerciseSessionRepositoryImpl implements ExerciseSessionRepository 
 
     // Remove from index
     const index = await this.getIndex();
-    const newIndex = index.filter(i => i !== id);
+    const newIndex = index.filter((i) => i !== id);
     await this.saveIndex(newIndex);
 
     // Clear current if this was the current session
@@ -159,12 +159,12 @@ export class ExerciseSessionRepositoryImpl implements ExerciseSessionRepository 
     const startTs = start.getTime();
     const endTs = end.getTime();
 
-    return all.filter(s => s.startTime >= startTs && s.startTime <= endTs);
+    return all.filter((s) => s.startTime >= startTs && s.startTime <= endTs);
   }
 
   async getDiscoverySessions(exerciseId?: string): Promise<StoredExerciseSession[]> {
     const all = await this.getAll();
-    return all.filter(s => {
+    return all.filter((s) => {
       const isDiscovery = s.plan.generatedBy === 'discovery';
       if (!isDiscovery) return false;
       if (exerciseId && s.exerciseId !== exerciseId) return false;
@@ -192,7 +192,7 @@ export class ExerciseSessionRepositoryImpl implements ExerciseSessionRepository 
    */
   private async getAll(): Promise<StoredExerciseSession[]> {
     const index = await this.getIndex();
-    const keys = index.map(id => this.getKey(id));
+    const keys = index.map((id) => this.getKey(id));
     const results = await this.adapter.getMultiple<StoredExerciseSession>(keys);
 
     const sessions: StoredExerciseSession[] = [];

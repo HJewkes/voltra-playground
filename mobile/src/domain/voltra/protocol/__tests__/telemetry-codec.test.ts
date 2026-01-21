@@ -98,11 +98,11 @@ describe('Telemetry Codec', () => {
 
     it('handles complete frame with all fields', () => {
       const original = createFrame(
-        9999,                      // sequence
-        MovementPhase.CONCENTRIC,  // phase
-        450,                       // position
-        -75,                       // force (negative)
-        250                        // velocity
+        9999, // sequence
+        MovementPhase.CONCENTRIC, // phase
+        450, // position
+        -75, // force (negative)
+        250 // velocity
       );
 
       const encoded = encodeTelemetryFrame(original);

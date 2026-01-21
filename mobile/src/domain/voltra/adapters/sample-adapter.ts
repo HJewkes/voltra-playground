@@ -21,9 +21,8 @@ const VOLTRA_MAX_POSITION = 600;
 export function toWorkoutSample(frame: TelemetryFrame): WorkoutSample {
   // Phase values are aligned between Voltra protocol and workout domain,
   // but we clamp unknown values to IDLE for safety
-  const phase = frame.phase >= 0 && frame.phase <= 3
-    ? (frame.phase as MovementPhase)
-    : MovementPhase.IDLE;
+  const phase =
+    frame.phase >= 0 && frame.phase <= 3 ? (frame.phase as MovementPhase) : MovementPhase.IDLE;
 
   return createSample(
     frame.sequence, // Pass through sequence for drop detection
@@ -31,7 +30,7 @@ export function toWorkoutSample(frame: TelemetryFrame): WorkoutSample {
     phase,
     frame.position / VOLTRA_MAX_POSITION, // Normalize to 0-1
     frame.velocity, // Already in m/s
-    Math.abs(frame.force), // Absolute force in lbs
+    Math.abs(frame.force) // Absolute force in lbs
   );
 }
 

@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { View, Text, Modal, TouchableOpacity } from 'react-native';
+import { View, Text, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, Stack, ActionButton } from '@/components/ui';
 import { colors } from '@/theme';
@@ -56,60 +56,49 @@ export function ResumeSessionPrompt({
 }: ResumeSessionPromptProps) {
   const setsCompleted = session.completedSets.length;
   const totalSets = session.plan.sets.length;
-  const lastActivity = session.completedSets.length > 0
-    ? session.completedSets[session.completedSets.length - 1].endTime
-    : session.startTime;
+  const lastActivity =
+    session.completedSets.length > 0
+      ? session.completedSets[session.completedSets.length - 1].endTime
+      : session.startTime;
 
   return (
-    <Modal
-      visible={visible}
-      animationType="fade"
-      transparent
-      onRequestClose={onDiscard}
-    >
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onDiscard}>
       <View
-        className="flex-1 justify-center items-center px-6"
+        className="flex-1 items-center justify-center px-6"
         style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)' }}
       >
         <Card elevation={2} padding="lg" className="w-full max-w-sm">
           {/* Header */}
-          <View className="items-center mb-6">
+          <View className="mb-6 items-center">
             <View
-              className="w-16 h-16 rounded-full items-center justify-center mb-4"
+              className="mb-4 h-16 w-16 items-center justify-center rounded-full"
               style={{ backgroundColor: colors.warning.DEFAULT + '20' }}
             >
-              <Ionicons
-                name="pause-circle"
-                size={36}
-                color={colors.warning.DEFAULT}
-              />
+              <Ionicons name="pause-circle" size={36} color={colors.warning.DEFAULT} />
             </View>
-            <Text className="text-xl font-bold text-content-primary text-center">
+            <Text className="text-center text-xl font-bold text-content-primary">
               Session In Progress
             </Text>
-            <Text className="text-content-muted text-center mt-2">
+            <Text className="mt-2 text-center text-content-muted">
               You have an unfinished workout
             </Text>
           </View>
 
           {/* Session Info */}
-          <View
-            className="rounded-xl p-4 mb-6"
-            style={{ backgroundColor: colors.surface.dark }}
-          >
-            <Text className="text-content-primary font-semibold text-lg mb-2">
+          <View className="mb-6 rounded-xl p-4" style={{ backgroundColor: colors.surface.dark }}>
+            <Text className="mb-2 text-lg font-semibold text-content-primary">
               {session.exerciseName ?? 'Exercise'}
             </Text>
             <Stack gap="xs">
               <View className="flex-row justify-between">
                 <Text className="text-content-muted">Progress</Text>
-                <Text className="text-content-secondary font-medium">
+                <Text className="font-medium text-content-secondary">
                   {setsCompleted} of {totalSets} sets
                 </Text>
               </View>
               <View className="flex-row justify-between">
                 <Text className="text-content-muted">Last activity</Text>
-                <Text className="text-content-secondary font-medium">
+                <Text className="font-medium text-content-secondary">
                   {formatTimeSince(lastActivity)}
                 </Text>
               </View>
@@ -118,12 +107,7 @@ export function ResumeSessionPrompt({
 
           {/* Actions */}
           <Stack gap="sm">
-            <ActionButton
-              label="Resume Workout"
-              variant="primary"
-              onPress={onResume}
-              icon="play"
-            />
+            <ActionButton label="Resume Workout" variant="primary" onPress={onResume} icon="play" />
             <ActionButton
               label="Discard Session"
               variant="secondary"

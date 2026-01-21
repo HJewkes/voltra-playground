@@ -1,6 +1,6 @@
 /**
  * Theme Utility Functions
- * 
+ *
  * Helper functions for dynamic color selection based on data.
  */
 
@@ -34,9 +34,12 @@ export function getVelocityColor(velocityLoss: number): string {
  */
 export function getConfidenceColor(confidence: 'low' | 'medium' | 'high'): string {
   switch (confidence) {
-    case 'high': return colors.success.DEFAULT;
-    case 'medium': return colors.warning.DEFAULT;
-    case 'low': return colors.text.tertiary;
+    case 'high':
+      return colors.success.DEFAULT;
+    case 'medium':
+      return colors.warning.DEFAULT;
+    case 'low':
+      return colors.text.tertiary;
   }
 }
 
@@ -52,8 +55,11 @@ export function getConnectionColor(isConnected: boolean): string {
  */
 export function getPhaseColor(phase: 'concentric' | 'eccentric' | 'isometric'): string {
   switch (phase) {
-    case 'concentric': return colors.success.DEFAULT;
-    case 'eccentric': return colors.warning.DEFAULT;
-    case 'isometric': return colors.info.DEFAULT;
+    case 'concentric':
+      return colors.success.DEFAULT;
+    case 'eccentric':
+      return colors.warning.DEFAULT;
+    case 'isometric':
+      return colors.info.DEFAULT;
   }
 }

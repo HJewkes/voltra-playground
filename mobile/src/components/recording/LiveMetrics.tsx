@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { View, Text, StyleProp, ViewStyle } from 'react-native';
+import { View, Text, type StyleProp, type ViewStyle } from 'react-native';
 import { useStore } from 'zustand';
 import {
   type SetMetrics,
@@ -55,31 +55,29 @@ export function LiveMetricsView({
   const velocityLoss = Math.abs(velocity.concentricDelta);
 
   const rpeColor = getRPEColor(rpe);
-  const effortLabel = getEffortLabel(rpe);
-  const rirDescription = getRIRDescription(rir);
+  const _effortLabel = getEffortLabel(rpe);
+  const _rirDescription = getRIRDescription(rir);
 
   if (compact) {
     return (
-      <View className="flex-row items-center justify-between bg-zinc-800/50 rounded-lg px-4 py-2">
+      <View className="flex-row items-center justify-between rounded-lg bg-zinc-800/50 px-4 py-2">
         <View className="flex-row items-center">
-          <Text className="text-zinc-400 text-xs">RPE</Text>
-          <Text className="text-lg font-bold ml-2" style={{ color: rpeColor }}>
+          <Text className="text-xs text-zinc-400">RPE</Text>
+          <Text className="ml-2 text-lg font-bold" style={{ color: rpeColor }}>
             {rpe.toFixed(1)}
           </Text>
         </View>
 
         <View className="flex-row items-center">
-          <Text className="text-zinc-400 text-xs">RIR</Text>
-          <Text className="text-lg font-bold text-white ml-2">
+          <Text className="text-xs text-zinc-400">RIR</Text>
+          <Text className="ml-2 text-lg font-bold text-white">
             {rir >= 5 ? '5+' : `~${Math.round(rir)}`}
           </Text>
         </View>
 
         <View className="flex-row items-center">
-          <Text className="text-zinc-400 text-xs">VL</Text>
-          <Text className="text-lg font-bold text-white ml-2">
-            {velocityLoss.toFixed(0)}%
-          </Text>
+          <Text className="text-xs text-zinc-400">VL</Text>
+          <Text className="ml-2 text-lg font-bold text-white">{velocityLoss.toFixed(0)}%</Text>
         </View>
       </View>
     );
@@ -88,9 +86,9 @@ export function LiveMetricsView({
   return (
     <Card elevation={1} padding="lg">
       {/* Header: Weight & Phase */}
-      <View className="flex-row items-center justify-between mb-5">
+      <View className="mb-5 flex-row items-center justify-between">
         {weight !== undefined && (
-          <Text className="text-content-secondary font-medium">{weight} lbs</Text>
+          <Text className="font-medium text-content-secondary">{weight} lbs</Text>
         )}
         <PhaseIndicator phase={currentSample?.phase ?? MovementPhase.IDLE} />
       </View>
@@ -101,27 +99,24 @@ export function LiveMetricsView({
           <Text className="text-8xl font-bold" style={{ color: colors.primary[500] }}>
             {repCount}
           </Text>
-          <Text className="text-content-tertiary text-lg">reps</Text>
+          <Text className="text-lg text-content-tertiary">reps</Text>
         </View>
 
-        <View className="w-px h-24" style={{ backgroundColor: colors.surface.light }} />
+        <View className="h-24 w-px" style={{ backgroundColor: colors.surface.light }} />
 
         <View className="items-center">
           <Text className="text-6xl font-bold" style={{ color: rpeColor }}>
             {rpe.toFixed(1)}
           </Text>
-          <Text className="text-content-tertiary text-lg">RPE</Text>
-          <Text className="text-content-muted text-sm mt-1">{rir.toFixed(0)} RIR</Text>
+          <Text className="text-lg text-content-tertiary">RPE</Text>
+          <Text className="mt-1 text-sm text-content-muted">{rir.toFixed(0)} RIR</Text>
         </View>
       </Stack>
 
       {/* Status Message */}
       {statusMessage && (
-        <View
-          className="rounded-2xl p-4 mb-5"
-          style={{ backgroundColor: rpeColor + '15' }}
-        >
-          <Text className="text-center font-bold text-base" style={{ color: rpeColor }}>
+        <View className="mb-5 rounded-2xl p-4" style={{ backgroundColor: rpeColor + '15' }}>
+          <Text className="text-center text-base font-bold" style={{ color: rpeColor }}>
             {statusMessage}
           </Text>
         </View>
@@ -130,14 +125,14 @@ export function LiveMetricsView({
       {/* Position Bar (if sample available) */}
       {currentSample && (
         <View className="mb-5">
-          <View className="flex-row justify-between mb-2">
-            <Text className="text-content-tertiary text-sm">Position</Text>
-            <Text className="text-content-secondary text-sm font-medium">
+          <View className="mb-2 flex-row justify-between">
+            <Text className="text-sm text-content-tertiary">Position</Text>
+            <Text className="text-sm font-medium text-content-secondary">
               {((currentSample.position ?? 0) * 100).toFixed(0)}%
             </Text>
           </View>
           <View
-            className="h-3 rounded-full overflow-hidden"
+            className="h-3 overflow-hidden rounded-full"
             style={{ backgroundColor: colors.surface.dark }}
           >
             <View
@@ -154,19 +149,19 @@ export function LiveMetricsView({
       {/* Quick Stats Grid */}
       <Stack direction="row" gap="sm">
         <Surface elevation="inset" radius="lg" border={false} style={{ flex: 1, padding: 16 }}>
-          <Text className="text-content-muted text-xs font-medium mb-1">Force</Text>
+          <Text className="mb-1 text-xs font-medium text-content-muted">Force</Text>
           <Text className="text-2xl font-bold text-content-primary">
             {Math.round(currentSample?.force ?? 0)}
           </Text>
         </Surface>
         <Surface elevation="inset" radius="lg" border={false} style={{ flex: 1, padding: 16 }}>
-          <Text className="text-content-muted text-xs font-medium mb-1">Velocity</Text>
+          <Text className="mb-1 text-xs font-medium text-content-muted">Velocity</Text>
           <Text className="text-2xl font-bold text-content-primary">
             {(currentSample?.velocity ?? 0).toFixed(2)}
           </Text>
         </Surface>
         <Surface elevation="inset" radius="lg" border={false} style={{ flex: 1, padding: 16 }}>
-          <Text className="text-content-muted text-xs font-medium mb-1">Vel Loss</Text>
+          <Text className="mb-1 text-xs font-medium text-content-muted">Vel Loss</Text>
           <Text className="text-2xl font-bold" style={{ color: rpeColor }}>
             {velocityLoss > 0 ? '-' : ''}
             {Math.round(velocityLoss)}%
@@ -176,7 +171,7 @@ export function LiveMetricsView({
 
       {/* Fatigue Progress Bar */}
       <View className="mt-4">
-        <View className="h-2 bg-zinc-700 rounded-full overflow-hidden">
+        <View className="h-2 overflow-hidden rounded-full bg-zinc-700">
           <View
             className="h-full rounded-full"
             style={{
@@ -186,9 +181,9 @@ export function LiveMetricsView({
             }}
           />
         </View>
-        <View className="flex-row justify-between mt-1">
-          <Text className="text-zinc-500 text-xs">Fresh</Text>
-          <Text className="text-zinc-500 text-xs">Fatigued</Text>
+        <View className="mt-1 flex-row justify-between">
+          <Text className="text-xs text-zinc-500">Fresh</Text>
+          <Text className="text-xs text-zinc-500">Fatigued</Text>
         </View>
       </View>
     </Card>

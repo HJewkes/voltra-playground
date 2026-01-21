@@ -1,6 +1,6 @@
 /**
  * Preferences Data Module
- * 
+ *
  * Storage layer for device and connection preferences.
  */
 
