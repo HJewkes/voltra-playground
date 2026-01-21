@@ -54,6 +54,8 @@ import {
 // Data layer
 import type { ExerciseSessionRepository } from '@/data/exercise-session';
 import { toStoredExerciseSession } from '@/data/exercise-session';
+import { getRecordingRepository, isDebugTelemetryEnabled } from '@/data/provider';
+import type { SampleRecording } from '@/data/recordings';
 
 // Recording store for intra-set recording
 import type { RecordingStoreApi } from './recording-store';
@@ -580,17 +582,53 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
     status: 'in_progress' | 'completed' | 'abandoned',
     terminationReason?: TerminationReason
   ) {
-    const { session } = get();
+    const { session, currentPlannedSet } = get();
     if (!session || !repository) return;
 
     try {
-      const stored = toStoredExerciseSession(session, status, terminationReason);
+      // Get raw samples from recording store for the last set (if debug enabled)
+      const rawSamples = recordingStore?.getState().allSamples;
+      
+      const stored = toStoredExerciseSession(
+        session, 
+        status, 
+        terminationReason,
+        rawSamples && rawSamples.length > 0 ? rawSamples : undefined
+      );
       await repository.save(stored);
 
       if (status === 'in_progress') {
         await repository.setCurrent(session.id);
       } else {
         await repository.setCurrent(null);
+      }
+
+      // Save standalone SampleRecording when debug enabled and we have samples
+      if (isDebugTelemetryEnabled() && rawSamples && rawSamples.length > 0) {
+        try {
+          const recordingRepo = getRecordingRepository();
+          const weight = currentPlannedSet?.weight ?? session.plan.sets[0]?.weight ?? 0;
+          const firstTimestamp = rawSamples[0].timestamp;
+          const lastTimestamp = rawSamples[rawSamples.length - 1].timestamp;
+          
+          const recording: SampleRecording = {
+            id: `rec-${session.id}-${Date.now()}`,
+            sessionId: session.id,
+            exerciseId: session.exercise.id,
+            exerciseName: session.exercise.name,
+            weight,
+            recordedAt: Date.now(),
+            durationMs: lastTimestamp - firstTimestamp,
+            sampleCount: rawSamples.length,
+            samples: rawSamples,
+            metadata: {},
+          };
+          
+          await recordingRepo.save(recording);
+          console.log('[ExerciseSessionStore] Saved recording:', recording.id);
+        } catch (recErr) {
+          console.warn('[ExerciseSessionStore] Failed to save recording:', recErr);
+        }
       }
     } catch (err) {
       console.error('Failed to persist session:', err);

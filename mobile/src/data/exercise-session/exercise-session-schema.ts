@@ -10,7 +10,7 @@
  * - velocityProfile and recommendation are NOT stored (derived on demand)
  */
 
-import type { ExercisePlan, PlannedSet, PlanSource } from '@/domain/workout';
+import type { ExercisePlan, PlannedSet, PlanSource, WorkoutSample } from '@/domain/workout';
 import type { TrainingGoal } from '@/domain/planning';
 import type { StoredRep } from '@/domain/workout';
 
@@ -67,6 +67,13 @@ export interface StoredSessionSet {
 
   /** Velocity loss from first to last rep (percentage) */
   velocityLossPercent: number;
+
+  /**
+   * Raw workout samples for the entire set (debug mode only).
+   * Contains full sample stream for replay and debugging.
+   * Only populated when debug telemetry is enabled.
+   */
+  rawSamples?: WorkoutSample[];
 }
 
 /**

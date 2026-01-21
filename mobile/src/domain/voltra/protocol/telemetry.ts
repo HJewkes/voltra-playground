@@ -13,10 +13,11 @@ export type {
 // Re-export computation functions
 export { computeWorkoutStats } from '@/domain/voltra/models/telemetry';
 
-// Re-export decoder
+// Re-export decoder and encoder
 export { 
   decodeNotification, 
   decodeTelemetryFrame,
+  encodeTelemetryFrame,
   identifyMessageType,
   type DecodeResult,
   type MessageType,

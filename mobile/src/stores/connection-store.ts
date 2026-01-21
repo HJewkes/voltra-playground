@@ -10,7 +10,8 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { AppState, AppStateStatus, Platform } from 'react-native';
-import { createBLEAdapter, type BLEAdapter, type Device } from '@/domain/bluetooth';
+import { createBLEAdapter, ReplayBLEAdapter, type BLEAdapter, type Device } from '@/domain/bluetooth';
+import type { SampleRecording } from '@/data/recordings';
 import { Auth, Init, Timing, BLE, filterVoltraDevices } from '@/domain/voltra';
 import {
   getLastDevice,
@@ -88,6 +89,7 @@ interface ConnectionStoreState {
   
   // Actions - Connection
   connectDevice: (device: Device) => Promise<VoltraStoreApi>;
+  connectToReplay: (recording: SampleRecording) => Promise<VoltraStoreApi>;
   disconnectDevice: (deviceId: string) => Promise<void>;
   disconnectAll: () => Promise<void>;
   
@@ -334,6 +336,61 @@ export const useConnectionStore = create<ConnectionStoreState>()(
             set({ error: `Connection failed: ${errorMsg}` });
           }
           
+          throw e;
+        } finally {
+          set({ connectingDeviceId: null });
+        }
+      },
+      
+      connectToReplay: async (recording) => {
+        const replayDeviceId = `replay-${recording.id}`;
+        const replayDeviceName = `Replay: ${recording.exerciseName}`;
+        
+        // Check if already connected to this replay
+        const existing = get().devices.get(replayDeviceId);
+        if (existing) {
+          console.log('[SessionStore] Replay already connected:', replayDeviceId);
+          return existing;
+        }
+        
+        console.log('[SessionStore] Connecting to replay:', recording.exerciseName);
+        
+        // Track connecting state
+        set({ connectingDeviceId: replayDeviceId, error: null });
+        
+        try {
+          // Create replay adapter
+          const replayAdapter = new ReplayBLEAdapter(recording);
+          
+          // Create voltra store with replay adapter
+          const voltraStore = createVoltraStore(replayAdapter, replayDeviceId, replayDeviceName);
+          
+          // Connect the replay adapter
+          await replayAdapter.connect(replayDeviceId);
+          
+          // Set up notification handler
+          replayAdapter.onNotification((data) => {
+            voltraStore.getState()._processNotification(data);
+          });
+          
+          // Update store state
+          voltraStore.getState().setConnectionState('connected');
+          
+          // Add to devices map
+          set(state => ({
+            devices: new Map(state.devices).set(replayDeviceId, voltraStore),
+            primaryDeviceId: replayDeviceId,
+          }));
+          
+          console.log('[SessionStore] Replay connected, starting playback...');
+          
+          // Start playback
+          replayAdapter.play();
+          
+          return voltraStore;
+        } catch (e: any) {
+          console.error('[SessionStore] Replay connection failed:', e);
+          set({ error: `Replay failed: ${e?.message || e}` });
           throw e;
         } finally {
           set({ connectingDeviceId: null });

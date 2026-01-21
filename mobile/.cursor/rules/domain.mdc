@@ -16,7 +16,8 @@ domain/
 │   │   ├── types.ts           # BLEAdapter interface, config types
 │   │   ├── native.ts          # Native react-native-ble-plx adapter (configurable)
 │   │   ├── proxy.ts           # WiFi relay proxy adapter
-│   │   └── index.ts           # createBLEAdapter factory
+│   │   ├── replay.ts          # Replay adapter for recorded samples
+│   │   └── index.ts           # createBLEAdapter factory + ReplayBLEAdapter
 │   ├── models/
 │   │   ├── connection.ts      # Generic BLE connection state (4-state)
 │   │   ├── device.ts          # Generic discovered device model
@@ -151,6 +152,57 @@ BLE Notification → Decoder → TelemetryFrame → voltra-store (raw frames)
                          Rep → SetMetrics
 ```
 
+### ReplayBLEAdapter (Replay Data Flow)
+
+The `ReplayBLEAdapter` enables replay-based development by playing back recorded `WorkoutSample[]`:
+
+```
+SampleRecording → ReplayBLEAdapter → toTelemetryFrame() → encodeTelemetryFrame()
+                        │                                         │
+                        └── onNotification(encoded) ──────────────┘
+                                    │
+                            (same as live BLE)
+                                    │
+                              voltra-store
+```
+
+**Key insight**: The replay adapter reconstructs `TelemetryFrame` from `WorkoutSample` and encodes it as a BLE notification. This allows the entire downstream pipeline (voltra-store → recording-store → UI) to work unchanged.
+
+```typescript
+// domain/bluetooth/adapters/replay.ts
+class ReplayBLEAdapter implements BLEAdapter {
+  constructor(recording: SampleRecording) { ... }
+  
+  // Playback controls
+  play(speed = 1.0): void;
+  pause(): void;
+  stop(): void;
+  seek(sampleIndex: number): void;
+  getProgress(): { current: number; total: number; percent: number };
+  
+  // Standard BLEAdapter interface (connect, disconnect, etc.)
+}
+
+// Usage via connection-store
+const voltraStore = await useConnectionStore.getState().connectToReplay(recording);
+```
+
+### Telemetry Encoding (for Replay)
+
+The protocol layer includes both decode and encode functions:
+
+```typescript
+// domain/voltra/protocol/telemetry-decoder.ts
+
+// Live BLE → App
+decodeTelemetryFrame(data: Uint8Array): TelemetryFrame | null;
+
+// App → Replay (reconstruct BLE notification)
+encodeTelemetryFrame(frame: TelemetryFrame): Uint8Array;
+```
+
+**Critical**: The encode/decode roundtrip must preserve all fields exactly. This is tested with roundtrip tests in `telemetry-codec.test.ts`.
+
 ## domain/workout Module
 
 Hardware-agnostic workout data models, rep detection, and computation logic.
@@ -179,10 +231,25 @@ for (const sample of samples) {
 
 | Model | Purpose |
 |-------|---------|
-| `WorkoutSample` | Single measurement point (normalized 0-1 position, m/s velocity) |
+| `WorkoutSample` | Single measurement point (normalized 0-1 position, m/s velocity, sequence) |
 | `Phase` | Collection of samples for one movement phase |
 | `Rep` | Collection of phases forming one repetition |
 | `Set` | Collection of reps with aggregated metrics |
+
+**WorkoutSample fields:**
+
+```typescript
+interface WorkoutSample {
+  sequence: number;    // BLE packet sequence (for replay reconstruction)
+  timestamp: number;   // Unix ms
+  phase: MovementPhase;
+  position: number;    // 0-1 normalized position
+  velocity: number;    // m/s
+  force: number;       // Absolute force
+}
+```
+
+The `sequence` field preserves the BLE packet ordering needed for accurate telemetry reconstruction during replay.
 
 ### SetMetrics Sub-Models (Tiered Computation)
 
@@ -387,9 +454,11 @@ export const MessageTypes = {
 
 ```typescript
 // domain/voltra/__tests__/device-controller.test.ts
+import { describe, it, expect, vi } from 'vitest';
+
 describe('VoltraDeviceController', () => {
   it('should update device settings after successful write', async () => {
-    const mockAdapter = { write: jest.fn() };
+    const mockAdapter = { write: vi.fn() };
     const device = new VoltraDevice('test-id');
     const controller = new VoltraDeviceController(device, mockAdapter);
     
@@ -401,9 +470,10 @@ describe('VoltraDeviceController', () => {
 });
 ```
 
-- Test models and controllers with plain Jest
+- Test models and controllers with Vitest
 - No React Testing Library needed for business logic
-- Mock external dependencies (BLEAdapter, etc.)
+- Mock external dependencies with `vi.fn()`
+- Use `vi.useFakeTimers()` for time-based logic
 
 ## domain/exercise Module
 

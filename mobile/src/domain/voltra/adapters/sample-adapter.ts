@@ -26,6 +26,7 @@ export function toWorkoutSample(frame: TelemetryFrame): WorkoutSample {
     : MovementPhase.IDLE;
 
   return createSample(
+    frame.sequence, // Pass through sequence for drop detection
     frame.timestamp,
     phase,
     frame.position / VOLTRA_MAX_POSITION, // Normalize to 0-1

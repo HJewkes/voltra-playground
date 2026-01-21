@@ -151,7 +151,7 @@ export class ProxyBLEAdapter implements BLEAdapter {
       console.log(`[ProxyBLE] Reconnect attempt ${this.reconnectAttempts}/${this.config.maxReconnectAttempts}`);
       
       try {
-        await this.connect(this.lastConnectedDeviceId, this.lastConnectedDeviceName ?? undefined);
+        await this.connect(this.lastConnectedDeviceId);
         console.log('[ProxyBLE] Reconnect successful');
         this.isReconnecting = false;
         this.reconnectAttempts = 0;
@@ -457,7 +457,7 @@ export class ProxyBLEAdapter implements BLEAdapter {
    */
   async reconnect(): Promise<void> {
     if (this.lastConnectedDeviceId) {
-      await this.connect(this.lastConnectedDeviceId, this.lastConnectedDeviceName ?? undefined);
+      await this.connect(this.lastConnectedDeviceId);
     } else {
       throw new Error('No previous device to reconnect to');
     }

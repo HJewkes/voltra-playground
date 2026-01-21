@@ -8,8 +8,8 @@
  */
 
 import { StorageAdapter, STORAGE_KEYS } from '@/data/adapters';
-import type { StoredExerciseSession, ExerciseSessionSummary } from './schema';
-import { toExerciseSessionSummary } from './converters';
+import type { StoredExerciseSession, ExerciseSessionSummary } from './exercise-session-schema';
+import { toExerciseSessionSummary } from './exercise-session-converters';
 
 /**
  * Exercise session repository interface.
@@ -47,6 +47,9 @@ export interface ExerciseSessionRepository {
 
   /** Get the most recent session for an exercise */
   getMostRecentForExercise(exerciseId: string): Promise<StoredExerciseSession | null>;
+
+  /** Get in-progress session (convenience method) */
+  getInProgress(): Promise<StoredExerciseSession | null>;
 }
 
 /**
@@ -174,6 +177,14 @@ export class ExerciseSessionRepositoryImpl implements ExerciseSessionRepository 
     if (sessions.length === 0) return null;
     // Sessions are already sorted by most recent first from getAll()
     return sessions[0];
+  }
+
+  async getInProgress(): Promise<StoredExerciseSession | null> {
+    const current = await this.getCurrent();
+    if (current && current.status === 'in_progress') {
+      return current;
+    }
+    return null;
   }
 
   /**

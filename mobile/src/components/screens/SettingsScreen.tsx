@@ -17,6 +17,7 @@ import {
   DeviceList,
   RelayStatus,
 } from '@/components/device';
+import { DevToolsSection } from '@/components/settings';
 import { useConnectionStore } from '@/stores';
 import type { Device } from '@/domain/bluetooth/adapters';
 
@@ -99,6 +100,9 @@ export function SettingsScreen() {
         
         {/* Relay Status (Web only) */}
         {isWeb && <RelayStatus status={relayStatus} />}
+        
+        {/* Dev Tools (DEV only) */}
+        {__DEV__ && <DevToolsSection />}
         
         {/* App Info - inlined using primitives */}
         <AppInfoSection isWeb={isWeb} />

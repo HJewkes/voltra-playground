@@ -15,12 +15,8 @@ import {
   EmptyState,
   Surface,
 } from '@/components/ui';
-import { AsyncStorageAdapter } from '@/data/adapters';
-import {
-  createExerciseSessionRepository,
-  type StoredExerciseSession,
-  type ExerciseSessionRepository,
-} from '@/data/exercise-session';
+import { getSessionRepository } from '@/data/provider';
+import type { StoredExerciseSession } from '@/data/exercise-session';
 import { colors } from '@/theme';
 
 /**
@@ -35,10 +31,6 @@ function formatNumber(num: number): string {
   }
   return String(num);
 }
-
-// Create repository singleton
-const adapter = new AsyncStorageAdapter();
-const sessionRepository = createExerciseSessionRepository(adapter);
 
 /**
  * Calculate aggregate stats from sessions.
@@ -71,7 +63,7 @@ export function HistoryScreen() {
   const loadSessions = useCallback(async () => {
     setIsLoading(true);
     try {
-      const recent = await sessionRepository.getRecent(100);
+      const recent = await getSessionRepository().getRecent(100);
       const completed = recent.filter(s => s.status === 'completed');
       setSessions(completed);
     } catch (err) {
@@ -104,7 +96,7 @@ export function HistoryScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            await sessionRepository.delete(id);
+            await getSessionRepository().delete(id);
             await loadSessions();
           },
         },

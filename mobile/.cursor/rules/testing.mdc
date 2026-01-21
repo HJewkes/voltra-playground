@@ -1,17 +1,49 @@
 ---
-description: Testing guidelines for stores and domain logic
+description: Testing guidelines for stores, domain logic, and data layer
 globs: ["**/*.test.ts", "**/*.spec.ts"]
 ---
 
 # Testing Guidelines
 
+## Test Framework
+
+We use **Vitest** for unit testing.
+
+```bash
+npm test           # Run all tests once
+npm run test:watch # Run tests in watch mode
+```
+
+## Test Directory Structure
+
+```
+src/
+├── data/
+│   ├── exercises/__tests__/
+│   │   └── repository.test.ts
+│   ├── recordings/__tests__/
+│   │   └── repository.test.ts
+│   └── exercise-session/__tests__/
+│       └── repository.test.ts
+├── __fixtures__/__tests__/
+│   ├── sample-generator.test.ts
+│   └── session-generator.test.ts
+├── domain/
+│   ├── voltra/protocol/__tests__/
+│   │   └── telemetry-codec.test.ts
+│   └── bluetooth/adapters/__tests__/
+│       └── replay.test.ts
+└── stores/__tests__/
+```
+
 ## What to Test
 
 | Target | Approach |
 |--------|----------|
-| Stores | Unit test all business logic in Zustand stores |
-| Domain logic | Test classes in `data/`, `planning/`, `ble/` |
-| UI primitives | Snapshot tests (optional) |
+| Repositories | CRUD operations with InMemoryAdapter |
+| Fixture generators | Output validity, configuration options |
+| Domain logic | Classes in `domain/`, protocol encoding |
+| Stores | State transitions, business logic |
 
 ## What NOT to Test
 
@@ -19,13 +51,154 @@ globs: ["**/*.test.ts", "**/*.spec.ts"]
 - **Hooks** - they're thin bindings to stores
 - **Component rendering logic** - test the stores instead
 
+## Repository Testing Pattern (Critical)
+
+**Always use `InMemoryAdapter` for repository tests** - this provides isolated, fast tests without AsyncStorage.
+
+```typescript
+// data/exercises/__tests__/repository.test.ts
+import { describe, it, expect, beforeEach } from 'vitest';
+import { InMemoryAdapter } from '@/data/adapters/in-memory-adapter';
+import { createExerciseRepository } from '../repository';
+
+describe('ExerciseRepository', () => {
+  let adapter: InMemoryAdapter;
+  let repo: ExerciseRepository;
+
+  beforeEach(() => {
+    adapter = new InMemoryAdapter();
+    repo = createExerciseRepository(adapter);
+  });
+
+  it('saves and retrieves exercise', async () => {
+    const exercise = createTestExercise({ id: 'test-1' });
+    await repo.save(exercise);
+    
+    const retrieved = await repo.getById('test-1');
+    expect(retrieved?.id).toBe('test-1');
+  });
+
+  it('returns null for non-existent', async () => {
+    const retrieved = await repo.getById('does-not-exist');
+    expect(retrieved).toBeNull();
+  });
+});
+```
+
+### Test Helper Pattern
+
+Create test helpers to generate valid entities:
+
+```typescript
+function createTestExercise(overrides = {}): StoredExercise {
+  return {
+    id: `test-${Date.now()}`,
+    name: 'Test Exercise',
+    muscleGroups: ['back'],
+    movementPattern: 'pull',
+    isCustom: false,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    ...overrides,
+  };
+}
+```
+
+## Fixture Generator Testing
+
+Test that generators produce valid data:
+
+```typescript
+// __fixtures__/__tests__/sample-generator.test.ts
+describe('generateSampleStream()', () => {
+  beforeEach(() => {
+    resetSequence(); // Reset sequence counter between tests
+  });
+
+  it('generates samples with all movement phases', () => {
+    const samples = generateSampleStream({ repCount: 2 });
+    const phases = new Set(samples.map(s => s.phase));
+
+    expect(phases.has(MovementPhase.IDLE)).toBe(true);
+    expect(phases.has(MovementPhase.CONCENTRIC)).toBe(true);
+    expect(phases.has(MovementPhase.HOLD)).toBe(true);
+    expect(phases.has(MovementPhase.ECCENTRIC)).toBe(true);
+  });
+
+  it('sequences are continuous', () => {
+    const samples = generateSampleStream({ repCount: 2 });
+    for (let i = 0; i < samples.length; i++) {
+      expect(samples[i].sequence).toBe(i);
+    }
+  });
+});
+```
+
+## Protocol Roundtrip Testing
+
+For telemetry encoding, test encode → decode preserves all fields:
+
+```typescript
+// domain/voltra/protocol/__tests__/telemetry-codec.test.ts
+describe('encode → decode roundtrip', () => {
+  it('preserves all frame fields', () => {
+    const original = createFrame(9999, MovementPhase.CONCENTRIC, 450, -75, 250);
+    
+    const encoded = encodeTelemetryFrame(original);
+    const decoded = decodeTelemetryFrame(encoded);
+
+    expect(decoded!.sequence).toBe(9999);
+    expect(decoded!.phase).toBe(MovementPhase.CONCENTRIC);
+    expect(decoded!.position).toBe(450);
+    expect(decoded!.force).toBe(-75);  // Test negative values!
+    expect(decoded!.velocity).toBe(250);
+  });
+});
+```
+
+## Adapter Testing with Fake Timers
+
+For time-based logic (like ReplayBLEAdapter), use Vitest fake timers:
+
+```typescript
+import { vi, beforeEach, afterEach } from 'vitest';
+
+describe('ReplayBLEAdapter', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('connect() transitions to connected', async () => {
+    const connectPromise = adapter.connect('replay-device');
+    await vi.runAllTimersAsync();
+    await connectPromise;
+
+    expect(adapter.isConnected()).toBe(true);
+  });
+
+  it('playback emits samples at intervals', () => {
+    const callback = vi.fn();
+    adapter.onNotification(callback);
+
+    adapter.play();
+    expect(callback).toHaveBeenCalledTimes(1);
+
+    vi.advanceTimersByTime(500);
+    expect(callback.mock.calls.length).toBeGreaterThan(1);
+  });
+});
+```
+
 ## Store Testing Pattern
 
 ```typescript
 // stores/__tests__/connection-store.test.ts
 describe('connection-store', () => {
   beforeEach(() => {
-    // Reset store state
     useConnectionStore.setState(initialState);
   });
 
@@ -34,19 +207,14 @@ describe('connection-store', () => {
     await store.checkRelayStatus();
     expect(store.relayStatus).toBe('connected');
   });
-
-  it('should handle connection errors', async () => {
-    fetchMock.mockRejectedValueOnce(new Error('Network error'));
-    const store = useConnectionStore.getState();
-    await store.checkRelayStatus();
-    expect(store.relayStatus).toBe('disconnected');
-  });
 });
 ```
 
 ## Key Principles
 
-- Use `useStore.getState()` to access store directly in tests
-- Mock external dependencies (fetch, BLE, etc.)
-- Test state transitions and side effects
+- **Use InMemoryAdapter** for all repository tests (isolation, speed)
+- **Use fixture generators** instead of hardcoded test data
+- **Reset state in beforeEach** - generators, adapters, stores
+- **Test edge cases** - empty data, max values, negative numbers
+- **Use fake timers** for time-dependent logic
 - Focus on behavior, not implementation details

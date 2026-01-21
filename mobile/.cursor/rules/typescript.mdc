@@ -42,6 +42,35 @@ export type { CardProps, SurfaceProps } from './types';
 export function MyComponent() { ... }  // NEVER do this
 ```
 
+## Data Layer File Naming
+
+In `data/` modules, use **explicit entity-prefixed names** for all files except `index.ts`. This ensures clarity when all data modules share the same structure pattern.
+
+| File Role | Naming Pattern | Example |
+|-----------|----------------|---------|
+| Types/Schema | `{entity}-schema.ts` | `exercise-session-schema.ts` |
+| Repository | `{entity}-repository.ts` | `exercise-session-repository.ts` |
+| Converters | `{entity}-converters.ts` | `exercise-session-converters.ts` |
+| Storage | `{entity}-storage.ts` | `preferences-storage.ts` |
+| Bootstrap | `{entity}-bootstrap.ts` | `exercise-bootstrap.ts` |
+| Barrel | `index.ts` | `index.ts` |
+
+```typescript
+// GOOD: Explicit entity-prefixed names
+data/recordings/
+├── recording-schema.ts
+├── recording-repository.ts
+└── index.ts
+
+// BAD: Generic names (unclear which entity)
+data/recordings/
+├── schema.ts      // Which schema?
+├── repository.ts  // Which repository?
+└── index.ts
+```
+
+**Domain layer** files use semantic content-descriptive names (`rep.ts`, `session.ts`, `phase.ts`) since each file has unique content.
+
 ## Import Patterns
 
 ### Always Use `@/` Path Alias

@@ -28,6 +28,24 @@ function readInt16LE(data: Uint8Array, offset: number): number {
 }
 
 /**
+ * Write a little-endian uint16 to a Uint8Array.
+ */
+function writeUint16LE(data: Uint8Array, offset: number, value: number): void {
+  data[offset] = value & 0xff;
+  data[offset + 1] = (value >> 8) & 0xff;
+}
+
+/**
+ * Write a little-endian int16 to a Uint8Array.
+ */
+function writeInt16LE(data: Uint8Array, offset: number, value: number): void {
+  if (value < 0) {
+    value = value + 0x10000;
+  }
+  writeUint16LE(data, offset, value);
+}
+
+/**
  * Check if two byte arrays are equal.
  */
 function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
@@ -146,4 +164,40 @@ export function decodeNotification(data: Uint8Array): DecodeResult {
     default:
       return null;
   }
+}
+
+// =============================================================================
+// Encoder (for replay)
+// =============================================================================
+
+/**
+ * Encode a TelemetryFrame into a BLE notification payload.
+ * Creates a minimal 30-byte message that can be decoded by decodeTelemetryFrame.
+ * Used for replay functionality.
+ */
+export function encodeTelemetryFrame(frame: TelemetryFrame): Uint8Array {
+  const data = new Uint8Array(30);
+  
+  // Message type header (telemetry stream)
+  data[0] = 0x55;
+  data[1] = 0x3a;
+  data[2] = 0x04;
+  data[3] = 0x70;
+  
+  // Sequence (bytes 6-7)
+  writeUint16LE(data, TelemetryOffsets.SEQUENCE, frame.sequence);
+  
+  // Phase (byte 13)
+  data[TelemetryOffsets.PHASE] = frame.phase;
+  
+  // Position (bytes 24-25)
+  writeUint16LE(data, TelemetryOffsets.POSITION, frame.position);
+  
+  // Force (bytes 26-27, signed)
+  writeInt16LE(data, TelemetryOffsets.FORCE, frame.force);
+  
+  // Velocity (bytes 28-29)
+  writeUint16LE(data, TelemetryOffsets.VELOCITY, frame.velocity);
+  
+  return data;
 }

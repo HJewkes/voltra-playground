@@ -65,6 +65,15 @@ export const STORAGE_KEYS = {
   EXERCISE_SESSION_PREFIX: 'voltra:exercise-sessions:',
   EXERCISE_SESSION_CURRENT: 'voltra:exercise-sessions:current',
   
+  // Exercises (stored exercise definitions)
+  EXERCISES_INDEX: 'voltra:exercises:index',
+  EXERCISE_PREFIX: 'voltra:exercises:',
+  EXERCISE_CATALOG_VERSION: 'voltra:exercises:catalog-version',
+  
+  // Recordings (telemetry recordings for replay)
+  RECORDINGS_INDEX: 'voltra:recordings:index',
+  RECORDING_PREFIX: 'voltra:recordings:',
+  
   // Progression state
   PROGRESSION_STATE: 'voltra:progression:state',
   PROGRESSION_EXERCISE_PREFIX: 'voltra:progression:exercise:',

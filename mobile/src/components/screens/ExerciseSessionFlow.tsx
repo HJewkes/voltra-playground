@@ -8,15 +8,11 @@
  * This is the main entry point for the Workout tab.
  */
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useConnectionStore } from '@/stores';
-import { AsyncStorageAdapter, STORAGE_KEYS } from '@/data/adapters';
-import {
-  createExerciseSessionRepository,
-  type ExerciseSessionRepository,
-} from '@/data/exercise-session';
+import { getSessionRepository } from '@/data/provider';
 import type { Exercise } from '@/domain/exercise';
 import type { ExercisePlan } from '@/domain/workout';
 import { ConnectPrompt } from '@/components/device';
@@ -38,30 +34,11 @@ export function ExerciseSessionFlow() {
   const [sessionExercise, setSessionExercise] = useState<Exercise | null>(null);
   const [sessionPlan, setSessionPlan] = useState<ExercisePlan | null>(null);
 
-  // Create repository (singleton)
-  const repository = useMemo<ExerciseSessionRepository>(() => {
-    const adapter = new AsyncStorageAdapter();
-    return createExerciseSessionRepository(adapter);
-  }, []);
-
   // Check for existing in-progress session on mount
+  // Note: Session resumption is now handled at the app layout level
   useEffect(() => {
-    async function checkForExistingSession() {
-      try {
-        const current = await repository.getCurrent();
-        if (current && current.status === 'in_progress') {
-          // Resume existing session - for now, clear it and start fresh
-          // TODO: Implement session resumption
-          await repository.setCurrent(null);
-        }
-        setFlowState('picker');
-      } catch (err) {
-        console.error('Failed to check for existing session:', err);
-        setFlowState('picker');
-      }
-    }
-    checkForExistingSession();
-  }, [repository]);
+    setFlowState('picker');
+  }, []);
 
   // Handle starting a session
   const handleStartSession = useCallback(
@@ -118,7 +95,7 @@ export function ExerciseSessionFlow() {
         exercise={sessionExercise}
         plan={sessionPlan}
         voltraStore={voltraStore}
-        repository={repository}
+        repository={getSessionRepository()}
         onComplete={handleSessionComplete}
         onNewSession={handleNewSession}
       />

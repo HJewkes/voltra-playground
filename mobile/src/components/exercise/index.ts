@@ -19,3 +19,7 @@ export type { ExerciseSessionSummaryCardProps } from './ExerciseSessionSummaryCa
 // Action buttons
 export { ExerciseSessionActionButtons } from './ExerciseSessionActionButtons';
 export type { ExerciseSessionActionButtonsProps } from './ExerciseSessionActionButtons';
+
+// Resume session prompt
+export { ResumeSessionPrompt } from './ResumeSessionPrompt';
+export type { ResumeSessionPromptProps } from './ResumeSessionPrompt';

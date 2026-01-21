@@ -11,7 +11,8 @@ components/        → All UI (screens, domain, primitives)
 hooks/             → React bindings to stores (NO hooks in components/)
 stores/            → Thin reactive wrappers over domain controllers (Zustand)
 domain/            → Business logic, models, controllers, analytics, training
-data/              → Persistence, repositories
+data/              → Persistence, repositories, storage adapters
+__fixtures__/      → Test data generators, seeders
 ```
 
 ## Directory Structure
@@ -51,18 +52,29 @@ domain/
 └── shared/        # Utilities, shared types
 
 data/
+├── provider.ts        # Centralized repository access (singleton pattern)
 ├── exercise-session/  # Exercise sessions (unified storage)
-│   ├── schema.ts           # StoredExerciseSession
-│   ├── repository.ts       # ExerciseSessionRepository
-│   ├── converters.ts       # Domain ↔ Storage
+│   ├── exercise-session-schema.ts      # StoredExerciseSession
+│   ├── exercise-session-repository.ts  # ExerciseSessionRepository
+│   ├── exercise-session-converters.ts  # Domain ↔ Storage
 │   └── index.ts
-├── set/           # (deprecated) Recorded sets - use exercise-session
-├── discovery/     # (deprecated) Weight discovery - use exercise-session
-├── preferences/   # Device and connection preferences
+├── exercises/         # Exercise definitions (persisted catalog)
+│   ├── exercise-schema.ts      # StoredExercise
+│   ├── exercise-repository.ts  # ExerciseRepository
+│   ├── exercise-bootstrap.ts   # Seed catalog from domain
+│   └── index.ts
+├── recordings/        # Sample recordings (debug telemetry)
+│   ├── recording-schema.ts      # SampleRecording
+│   ├── recording-repository.ts  # RecordingRepository
+│   └── index.ts
+├── preferences/       # Device and connection preferences
 │   ├── preferences-schema.ts
 │   ├── preferences-storage.ts
 │   └── index.ts
-└── adapters/      # Low-level storage abstraction (AsyncStorage)
+└── adapters/          # Storage abstraction layer
+    ├── types.ts                  # StorageAdapter interface, STORAGE_KEYS
+    ├── async-storage-adapter.ts  # Production (AsyncStorage)
+    └── in-memory-adapter.ts      # Testing (isolated)
 
 components/
 ├── ui/            # App-agnostic primitives (Card, Button, Banner, etc.)
@@ -89,7 +101,8 @@ components/
 | `stores/` | Thin reactive wrappers, state sync | voltra-store, recording-store, connection-store |
 | `hooks/` | Cross-store orchestration | useDiscoveryFlow |
 | `components/` | UI rendering only | All .tsx files |
-| `data/` | Entity-based persistence | set-repository, discovery-storage |
+| `data/` | Entity-based persistence | ExerciseSessionRepository, RecordingRepository |
+| `__fixtures__/` | Test data generation, database seeding | generateSampleStream, seedDatabase |
 
 ## Domain-First Design
 
@@ -105,14 +118,14 @@ Business logic lives in `domain/` modules, not stores:
 
 ### Entity-Based Organization
 
-Data is organized by entity, not by type:
+Data is organized by entity, not by type. Files use explicit entity-prefixed names:
 
 ```
-# GOOD: Entity-based
-data/set/
-├── set-schema.ts      # Types (StoredSet, etc.)
-├── set-adapters.ts    # Domain ↔ Storage conversion
-├── set-repository.ts  # CRUD operations
+# GOOD: Entity-based with explicit file names
+data/exercise-session/
+├── exercise-session-schema.ts      # Types (StoredExerciseSession, etc.)
+├── exercise-session-converters.ts  # Domain ↔ Storage conversion
+├── exercise-session-repository.ts  # CRUD operations
 └── index.ts
 
 # BAD: Type-based (old pattern)
@@ -125,19 +138,19 @@ data/repositories/ # All repos mixed
 Schema files define the storage format only (no functions):
 
 ```typescript
-// data/set/set-schema.ts - Types only
-export interface StoredSet { ... }
-export interface StoredSetAnalytics { ... }
+// data/exercise-session/exercise-session-schema.ts - Types only
+export interface StoredExerciseSession { ... }
+export interface StoredSessionSet { ... }
 ```
 
-### Adapters
+### Converters
 
-Adapters convert between domain models and storage schemas:
+Converters transform between domain models and storage schemas:
 
 ```typescript
-// data/set/set-adapters.ts
-export function toStoredSet(set: Set): StoredSet { ... }
-export function fromStoredSet(stored: StoredSet): Set { ... }
+// data/exercise-session/converters.ts
+export function toStoredSession(session: ExerciseSession): StoredExerciseSession { ... }
+export function fromStoredSession(stored: StoredExerciseSession): ExerciseSession { ... }
 ```
 
 ### Repositories
@@ -146,17 +159,17 @@ Repositories are CRUD-only. No business logic:
 
 ```typescript
 // GOOD: Pure data access
-interface SetRepository {
-  getById(id: string): Promise<StoredSet | null>;
-  getAll(): Promise<StoredSet[]>;
-  save(set: StoredSet): Promise<void>;
+interface ExerciseSessionRepository {
+  getById(id: string): Promise<StoredExerciseSession | null>;
+  getRecent(limit: number): Promise<StoredExerciseSession[]>;
+  save(session: StoredExerciseSession): Promise<void>;
   delete(id: string): Promise<void>;
-  getByExercise(exerciseId: string): Promise<StoredSet[]>;
+  getByExercise(exerciseId: string): Promise<StoredExerciseSession[]>;
 }
 
 // BAD: Business logic in repository
 getAggregateStats(): Promise<Stats>;  // Move to domain/history
-getTopPerformers(): Promise<Set[]>;   // Move to domain/history
+getTopPerformers(): Promise<Session[]>;   // Move to domain/history
 ```
 
 ### Simplified Storage
@@ -183,3 +196,125 @@ PersonalRecord    // Computed from stored sets
 computeVelocityBaseline(sets) → VelocityBaseline
 computePersonalRecords(sets) → PersonalRecord[]
 ```
+
+### Centralized Repository Access
+
+**Always use `data/provider.ts` to access repositories** - never instantiate repositories directly in components or stores.
+
+```typescript
+// GOOD: Use centralized provider
+import { getSessionRepository, getExerciseRepository } from '@/data/provider';
+
+const session = await getSessionRepository().getById(id);
+const exercises = await getExerciseRepository().getAll();
+
+// BAD: Direct instantiation
+const repo = createExerciseSessionRepository(adapter); // Don't do this in UI code
+```
+
+The provider manages singleton instances and storage adapter initialization:
+
+```typescript
+// data/provider.ts exports:
+getAdapter()              // StorageAdapter (AsyncStorage in prod)
+getSessionRepository()    // ExerciseSessionRepository
+getExerciseRepository()   // ExerciseRepository
+getRecordingRepository()  // RecordingRepository
+isDebugTelemetryEnabled() // Check debug mode
+setDebugTelemetryEnabled(enabled) // Toggle debug mode
+```
+
+### Storage Adapter Interface
+
+All repositories use the `StorageAdapter` interface for storage operations:
+
+```typescript
+interface StorageAdapter {
+  getItem(key: string): Promise<string | null>;
+  setItem(key: string, value: string): Promise<void>;
+  removeItem(key: string): Promise<void>;
+  getAllKeys(): Promise<string[]>;
+  multiGet(keys: string[]): Promise<[string, string | null][]>;
+}
+```
+
+Two implementations:
+- `AsyncStorageAdapter` - Production (wraps @react-native-async-storage)
+- `InMemoryAdapter` - Testing (isolated, fast, no side effects)
+
+## Fixtures & Data Generation
+
+Test fixtures live in `src/__fixtures__/`:
+
+```
+__fixtures__/
+├── generators/
+│   ├── sample-generator.ts   # WorkoutSample, sample streams
+│   ├── session-generator.ts  # StoredSet, StoredExerciseSession
+│   ├── recording-generator.ts # SampleRecording
+│   └── index.ts
+├── seeder.ts                 # seedDatabase(), clearSeedData()
+└── index.ts
+```
+
+### Generator Functions
+
+Generators create realistic test data with configurable options:
+
+```typescript
+// Generate a single WorkoutSample
+const sample = generateWorkoutSample({ phase: MovementPhase.CONCENTRIC });
+
+// Generate a stream of samples for N reps
+const samples = generateSampleStream({
+  repCount: 8,
+  startingVelocity: 1.0,
+  fatigueRate: 0.05,
+});
+
+// Generate a complete session
+const session = generateStoredSession({
+  exerciseId: 'bench_press',
+  setCount: 4,
+  daysAgo: 3,
+  includeRawSamples: true, // Include debug telemetry
+});
+
+// Generate a sample recording
+const recording = generateRecording({
+  repCount: 8,
+  weight: 150,
+});
+```
+
+### Database Seeding
+
+For development and testing:
+
+```typescript
+import { seedDatabase, clearSeedData } from '@/__fixtures__';
+
+// Seed with default options
+await seedDatabase();
+
+// Seed with specific options
+await seedDatabase({
+  sessionsCount: 20,
+  daysBack: 30,
+  includeRawSamples: true,
+  includeRecordings: true,
+});
+
+// Clear all seeded data
+await clearSeedData();
+```
+
+### Debug Telemetry
+
+When debug telemetry is enabled, raw `WorkoutSample[]` are stored with sets and as standalone recordings. This enables:
+
+- Replay-based development (visualizations, tools)
+- Data analysis without physical device
+- Testing the full telemetry pipeline
+
+Toggle via: `setDebugTelemetryEnabled(true)` or Dev Tools in Settings.

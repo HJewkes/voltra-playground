@@ -13,7 +13,7 @@ export {
   type ExerciseSessionSummary,
   type TerminationReason,
   type SessionStatus,
-} from './schema';
+} from './exercise-session-schema';
 
 // Converters
 export {
@@ -24,11 +24,11 @@ export {
   fromStoredPlan,
   fromStoredSessionSet,
   toExerciseSessionSummary,
-} from './converters';
+} from './exercise-session-converters';
 
 // Repository
 export {
   type ExerciseSessionRepository,
   ExerciseSessionRepositoryImpl,
   createExerciseSessionRepository,
-} from './repository';
+} from './exercise-session-repository';

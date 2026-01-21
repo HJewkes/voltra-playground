@@ -8,6 +8,9 @@
 import { MovementPhase } from './types';
 
 export interface WorkoutSample {
+  /** Incrementing sequence number from source device (for drop detection) */
+  sequence: number;
+
   /** Timestamp in ms since epoch */
   timestamp: number;
 
@@ -28,11 +31,12 @@ export interface WorkoutSample {
  * Create a workout sample from normalized values.
  */
 export function createSample(
+  sequence: number,
   timestamp: number,
   phase: MovementPhase,
   position: number,
   velocity: number,
   force: number,
 ): WorkoutSample {
-  return { timestamp, phase, position, velocity, force };
+  return { sequence, timestamp, phase, position, velocity, force };
 }

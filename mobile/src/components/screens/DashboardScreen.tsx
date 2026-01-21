@@ -19,11 +19,8 @@ import {
   EmptyState,
 } from '@/components/ui';
 import { colors } from '@/theme';
-import { AsyncStorageAdapter } from '@/data/adapters';
-import {
-  createExerciseSessionRepository,
-  type StoredExerciseSession,
-} from '@/data/exercise-session';
+import { getSessionRepository } from '@/data/provider';
+import type { StoredExerciseSession } from '@/data/exercise-session';
 
 /**
  * Format volume for display.
@@ -34,10 +31,6 @@ function formatVolume(volume: number): string {
   }
   return String(volume);
 }
-
-// Create repository singleton
-const adapter = new AsyncStorageAdapter();
-const sessionRepository = createExerciseSessionRepository(adapter);
 
 /**
  * Display data for a recent session.
@@ -84,7 +77,7 @@ export function DashboardScreen() {
   useEffect(() => {
     async function loadRecentSessions() {
       try {
-        const sessions = await sessionRepository.getRecent(50);
+        const sessions = await getSessionRepository().getRecent(50);
         const completed = sessions.filter(s => s.status === 'completed');
         setRecentSessions(completed.map(toRecentDisplay));
       } catch (err) {

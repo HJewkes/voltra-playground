@@ -87,6 +87,10 @@ make ios-sim           # Build & run on Simulator
 # Android Development
 make android           # Build & run on physical Android device
 
+# Testing
+make test              # Run all tests
+make test-watch        # Run tests in watch mode
+
 # Utilities
 make typecheck         # Run TypeScript checks
 make clean             # Remove build artifacts
@@ -148,6 +152,7 @@ The app automatically detects the environment and uses the appropriate BLE metho
 - **Zustand** for state management
 - **NativeWind** (Tailwind CSS) for styling
 - **react-native-ble-plx** for native Bluetooth
+- **Vitest** for unit testing
 
 ## Documentation
 

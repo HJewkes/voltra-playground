@@ -3,7 +3,7 @@
 # Commands for setting up and running the Voltra workout app
 #
 
-.PHONY: help setup setup-mobile setup-relay mobile web relay relay-bg ios ios-device ios-sim android clean
+.PHONY: help setup setup-mobile setup-relay mobile web relay relay-bg ios ios-device ios-sim android test test-watch clean
 
 # Default target
 help:
@@ -28,6 +28,10 @@ help:
 	@echo ""
 	@echo "Android Development:"
 	@echo "  make android        - Build and run on physical Android device"
+	@echo ""
+	@echo "Testing:"
+	@echo "  make test           - Run all tests"
+	@echo "  make test-watch     - Run tests in watch mode"
 	@echo ""
 	@echo "Other:"
 	@echo "  make mobile         - Start Expo dev server (shows QR for Expo Go)"
@@ -143,6 +147,18 @@ mobile:
 	@echo "   For BLE testing, use: make ios-device"
 	@echo ""
 	cd mobile && CI=false npx expo start
+
+# =============================================================================
+# Testing
+# =============================================================================
+
+test:
+	@echo "🧪 Running tests..."
+	cd mobile && npm test
+
+test-watch:
+	@echo "🧪 Running tests in watch mode..."
+	cd mobile && npm run test:watch
 
 # =============================================================================
 # Utilities

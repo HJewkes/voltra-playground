@@ -8,6 +8,7 @@
 export * from './types';
 export { ProxyBLEAdapter, type ProxyAdapterConfig } from './proxy';
 export { NativeBLEAdapter, type NativeAdapterConfig, type BLEServiceConfig } from './native';
+export { ReplayBLEAdapter } from './replay';
 
 import { Platform } from 'react-native';
 import type { BLEAdapter } from './types';

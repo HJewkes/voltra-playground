@@ -37,6 +37,9 @@ import {
 // Training domain
 import { getLiveEffortMessage } from '@/domain/workout';
 
+// Data provider
+import { isDebugTelemetryEnabled } from '@/data/provider';
+
 // =============================================================================
 // Types
 // =============================================================================
@@ -79,6 +82,9 @@ export interface RecordingState {
   // UI feedback
   liveMessage: string;
 
+  // Debug telemetry - all samples for replay (only populated when debug enabled)
+  allSamples: WorkoutSample[];
+
   // Post-recording - domain Set for UI to display summary
   lastSet: Set | null;
 
@@ -116,6 +122,7 @@ function createInitialState(): Pick<
   | 'rir'
   | 'velocityTrend'
   | 'liveMessage'
+  | 'allSamples'
   | 'lastSet'
 > {
   return {
@@ -134,6 +141,7 @@ function createInitialState(): Pick<
     rir: 6,
     velocityTrend: [],
     liveMessage: '',
+    allSamples: [],
     lastSet: null,
   };
 }
@@ -213,6 +221,12 @@ export function createRecordingStore(): RecordingStoreApi {
 
         processSample: (sample: WorkoutSample) => {
           if (!get().isRecording) return;
+
+          // Accumulate samples if debug telemetry is enabled
+          if (isDebugTelemetryEnabled()) {
+            const currentSamples = get().allSamples;
+            set({ allSamples: [...currentSamples, sample] });
+          }
 
           // Run through rep detector
           const boundary = repDetector.processSample(sample);

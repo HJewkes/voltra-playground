@@ -5,17 +5,18 @@
  * These adapters create a clean boundary between domain logic and persistence.
  */
 
-import type { Set, Rep, StoredRep, ExerciseSession, ExercisePlan, PlannedSet } from '@/domain/workout';
+import type { Set, Rep, StoredRep, ExerciseSession, ExercisePlan, PlannedSet, WorkoutSample } from '@/domain/workout';
 import type { Exercise } from '@/domain/exercise';
 import { getExercise, EXERCISE_CATALOG, createExercise } from '@/domain/exercise';
 import type { TrainingGoal } from '@/domain/planning';
+import { isDebugTelemetryEnabled } from '@/data/debug-config';
 import type {
   StoredExerciseSession,
   StoredExercisePlan,
   StoredSessionSet,
   ExerciseSessionSummary,
   TerminationReason,
-} from './schema';
+} from './exercise-session-schema';
 
 // =============================================================================
 // Domain → Storage
@@ -23,12 +24,19 @@ import type {
 
 /**
  * Convert domain ExerciseSession to storage format.
+ * @param session - The domain ExerciseSession
+ * @param status - Session status
+ * @param terminationReason - Optional termination reason
+ * @param rawSamplesForLastSet - Optional raw samples to attach to the last set (debug mode)
  */
 export function toStoredExerciseSession(
   session: ExerciseSession,
   status: 'in_progress' | 'completed' | 'abandoned',
-  terminationReason?: TerminationReason
+  terminationReason?: TerminationReason,
+  rawSamplesForLastSet?: WorkoutSample[]
 ): StoredExerciseSession {
+  const lastSetIndex = session.completedSets.length - 1;
+
   return {
     id: session.id,
     exerciseId: session.exercise.id,
@@ -36,7 +44,14 @@ export function toStoredExerciseSession(
     startTime: session.startedAt,
     endTime: status === 'in_progress' ? null : Date.now(),
     plan: toStoredPlan(session.plan),
-    completedSets: session.completedSets.map((set, index) => toStoredSessionSet(set, index)),
+    completedSets: session.completedSets.map((set, index) => 
+      toStoredSessionSet(
+        set, 
+        index, 
+        // Only pass raw samples for the last set (the one just completed)
+        index === lastSetIndex ? rawSamplesForLastSet : undefined
+      )
+    ),
     status,
     terminationReason,
   };
@@ -75,9 +90,16 @@ function toStoredPlannedSet(set: PlannedSet): PlannedSet {
 
 /**
  * Convert domain Set to StoredSessionSet.
+ * @param set - The domain Set object
+ * @param setIndex - Index of the set within the session
+ * @param rawSamples - Optional raw WorkoutSamples (only included if debug telemetry enabled)
  */
-export function toStoredSessionSet(set: Set, setIndex: number): StoredSessionSet {
-  return {
+export function toStoredSessionSet(
+  set: Set,
+  setIndex: number,
+  rawSamples?: WorkoutSample[]
+): StoredSessionSet {
+  const stored: StoredSessionSet = {
     setIndex,
     weight: set.weight,
     chains: set.chains,
@@ -90,6 +112,13 @@ export function toStoredSessionSet(set: Set, setIndex: number): StoredSessionSet
     estimatedRIR: set.metrics.effort.rir,
     velocityLossPercent: Math.abs(set.metrics.velocity.concentricDelta),
   };
+
+  // Only include raw samples if debug telemetry is enabled
+  if (rawSamples && isDebugTelemetryEnabled()) {
+    stored.rawSamples = rawSamples;
+  }
+
+  return stored;
 }
 
 /**

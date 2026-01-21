@@ -13,7 +13,8 @@ globs: ["**/stores/*.ts"]
 |-------|----------------|---------|
 | `voltra-store` | Device control, raw telemetry | `createVoltraStore()` |
 | `recording-store` | Rep detection, analytics | `createRecordingStore()` |
-| `connection-store` | Multi-device connection orchestration, BLE environment | `useConnectionStore` (singleton) |
+| `connection-store` | Multi-device connection orchestration, BLE environment, replay | `useConnectionStore` (singleton) |
+| `exercise-session-store` | Multi-set orchestration, persistence, termination | `createExerciseSessionStore()` |
 | `history-store` | Workout history persistence | `useHistoryStore` (singleton) |
 
 ### voltra-store + recording-store Pattern
@@ -203,10 +204,12 @@ const relayNotReady = bleEnvironment.isWeb && relayStatus !== 'connected';
 ## Store Testing Pattern
 
 ```typescript
+import { describe, it, expect, vi } from 'vitest';
+
 // Test the domain controller directly (preferred)
 describe('VoltraDeviceController', () => {
   it('should update device settings', async () => {
-    const mockAdapter = { write: jest.fn() };
+    const mockAdapter = { write: vi.fn() };
     const device = new VoltraDevice('test-id');
     const controller = new VoltraDeviceController(device, mockAdapter);
     
@@ -261,3 +264,50 @@ Weight adjustment allowed during rest period.
 ### Persistence
 
 Exercise-session-store persists to `ExerciseSessionRepository` after each set completion and on session end.
+
+**Automatic persistence points:**
+- After each set completes (`status: 'in_progress'`)
+- On session completion (`status: 'completed'`)
+- On session abandonment (`status: 'abandoned'`)
+- On app interruption (via `setCurrent()` for resume)
+
+**Debug telemetry**: When enabled, `rawSamples` are stored with each set and standalone `SampleRecording` objects are saved to `RecordingRepository`.
+
+### Session Resumption
+
+On app startup, `app/_layout.tsx` checks for in-progress sessions:
+
+```typescript
+// In RootLayoutNav
+useEffect(() => {
+  getSessionRepository().getInProgress().then(session => {
+    if (session) {
+      setInProgressSession(session);
+      setShowResumePrompt(true);
+    }
+  });
+}, []);
+```
+
+User can resume (navigate to workout) or discard (mark as abandoned).
+
+## connection-store Replay Support
+
+The connection store supports connecting to recorded samples for replay:
+
+```typescript
+// connection-store actions
+connectToReplay: async (recording: SampleRecording) => {
+  const replayAdapter = new ReplayBLEAdapter(recording);
+  const voltraStore = createVoltraStore(replayAdapter, replayDeviceId, replayDeviceName);
+  // ... setup notifications ...
+  replayAdapter.play();
+  return voltraStore;
+}
+
+// Usage
+const recording = await getRecordingRepository().getById(recordingId);
+const voltraStore = await useConnectionStore.getState().connectToReplay(recording);
+```
+
+This allows the entire UI to work unchanged with recorded data.
