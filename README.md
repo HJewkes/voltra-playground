@@ -17,6 +17,7 @@ A React Native app for controlling Beyond Power Voltra resistance training devic
 - Node.js 18+
 - Python 3.9+ (for Mac development)
 - Xcode (for iOS)
+- Android Studio + JDK 17 (for Android)
 
 ### Setup
 
@@ -48,7 +49,17 @@ make ios-device
 
 Requires one-time Xcode setup. See [iOS Development Guide](mobile/docs/iOS-DEVELOPMENT.md).
 
-#### Option 3: iOS Simulator (UI Only)
+#### Option 3: Android Device (Full Native)
+
+Build and run directly on your Android phone with native Bluetooth:
+
+```bash
+make android
+```
+
+Requires Android Studio and JDK setup. See [Android Development Guide](mobile/docs/ANDROID-DEVELOPMENT.md).
+
+#### Option 4: iOS Simulator (UI Only)
 
 For UI development without Bluetooth:
 
@@ -73,6 +84,9 @@ make relay             # Start BLE relay (foreground)
 make ios-device        # Build & run on physical iPhone
 make ios-sim           # Build & run on Simulator
 
+# Android Development
+make android           # Build & run on physical Android device
+
 # Utilities
 make typecheck         # Run TypeScript checks
 make clean             # Remove build artifacts
@@ -91,6 +105,7 @@ voltras/
 │   │   ├── data/            # Persistence layer
 │   │   └── theme/           # Colors, spacing, typography
 │   └── docs/
+│       ├── ANDROID-DEVELOPMENT.md
 │       ├── iOS-DEVELOPMENT.md
 │       └── MAC-DEVELOPMENT.md
 ├── relay/                   # Python BLE relay (Mac dev)
@@ -122,7 +137,9 @@ The app automatically detects the environment and uses the appropriate BLE metho
 |-------------|------------|
 | Web browser | WebSocket → Python relay |
 | iOS device | Native (react-native-ble-plx) |
+| Android device | Native (react-native-ble-plx) |
 | iOS Simulator | None (shows warning) |
+| Android Emulator | None (no BLE support) |
 | Expo Go | None (shows warning) |
 
 ### Tech Stack
@@ -136,6 +153,7 @@ The app automatically detects the environment and uses the appropriate BLE metho
 
 - [Mac Development Guide](mobile/docs/MAC-DEVELOPMENT.md) - Web development with BLE relay
 - [iOS Development Guide](mobile/docs/iOS-DEVELOPMENT.md) - Building for iPhone
+- [Android Development Guide](mobile/docs/ANDROID-DEVELOPMENT.md) - Building for Android
 
 ## Velocity-Based Training
 

@@ -27,7 +27,7 @@ help:
 	@echo "  make ios            - Alias for ios-sim"
 	@echo ""
 	@echo "Android Development:"
-	@echo "  make android        - Build and run on Android emulator"
+	@echo "  make android        - Build and run on physical Android device"
 	@echo ""
 	@echo "Other:"
 	@echo "  make mobile         - Start Expo dev server (shows QR for Expo Go)"
@@ -35,8 +35,9 @@ help:
 	@echo "  make clean          - Remove build artifacts and dependencies"
 	@echo ""
 	@echo "Documentation:"
-	@echo "  mobile/docs/iOS-DEVELOPMENT.md  - iOS setup guide"
-	@echo "  mobile/docs/MAC-DEVELOPMENT.md  - Mac/web development guide"
+	@echo "  mobile/docs/ANDROID-DEVELOPMENT.md - Android setup guide"
+	@echo "  mobile/docs/iOS-DEVELOPMENT.md     - iOS setup guide"
+	@echo "  mobile/docs/MAC-DEVELOPMENT.md     - Mac/web development guide"
 	@echo ""
 
 # =============================================================================
@@ -50,7 +51,9 @@ setup: setup-relay setup-mobile
 	@echo "Quick start for Mac development:"
 	@echo "  make dev"
 	@echo ""
-	@echo "For iOS device development, see: mobile/docs/iOS-DEVELOPMENT.md"
+	@echo "For native device development:"
+	@echo "  iOS:     mobile/docs/iOS-DEVELOPMENT.md"
+	@echo "  Android: mobile/docs/ANDROID-DEVELOPMENT.md"
 	@echo ""
 
 setup-mobile:
@@ -124,8 +127,11 @@ ios: ios-sim
 # =============================================================================
 
 android:
-	@echo "📱 Building for Android..."
-	cd mobile && CI=false npx expo run:android
+	@echo "📱 Building for physical Android device..."
+	@echo "   Note: Requires Android Studio + JDK setup"
+	@echo "   See: mobile/docs/ANDROID-DEVELOPMENT.md"
+	@echo ""
+	cd mobile && npx expo run:android
 
 # =============================================================================
 # Expo Go (Limited - No Native BLE)
@@ -176,8 +182,10 @@ info:
 	@echo "Development Options:"
 	@echo "  1. Mac + Web: make dev (uses relay for BLE)"
 	@echo "  2. iOS Device: make ios-device (native BLE)"
-	@echo "  3. iOS Simulator: make ios-sim (no BLE)"
+	@echo "  3. Android Device: make android (native BLE)"
+	@echo "  4. iOS Simulator: make ios-sim (no BLE)"
 	@echo ""
 	@echo "Documentation:"
+	@echo "  mobile/docs/ANDROID-DEVELOPMENT.md"
 	@echo "  mobile/docs/iOS-DEVELOPMENT.md"
 	@echo "  mobile/docs/MAC-DEVELOPMENT.md"
