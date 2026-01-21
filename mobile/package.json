@@ -36,7 +36,7 @@
     "expo": "~54.0.31",
     "expo-constants": "~18.0.13",
     "expo-device": "^8.0.10",
-    "expo-font": "~14.0.10",
+    "expo-font": "~14.0.11",
     "expo-linking": "~8.0.11",
     "expo-router": "~6.0.21",
     "expo-splash-screen": "~31.0.13",
