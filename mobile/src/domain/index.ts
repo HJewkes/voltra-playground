@@ -5,23 +5,21 @@
  * Business logic organized by concept with models and controllers.
  *
  * Domain Structure:
- * - bluetooth/  - BLE connection and scanning
+ * - device/     - SDK adapter layer (converts SDK TelemetryFrame to WorkoutSample)
  * - exercise/   - Exercise definitions, catalog, and mappings
- * - training/   - Training engines and progression (being refactored to planning)
+ * - history/    - Workout history, personal records, and trends
+ * - planning/   - Training plans and progression strategies
  * - vbt/        - VBT reference data and load-velocity profiles
- * - voltra/     - Voltra device-specific protocol and telemetry
  * - workout/    - Hardware-agnostic workout models, sessions, and aggregators
- * - shared/     - Shared utilities
  *
- * Note: Some symbols have the same name in multiple modules:
- * - VELOCITY_LOSS_TARGETS: exists in both training and vbt (import from specific module)
+ * Note: Bluetooth and Voltra hardware logic is now in @voltras/node-sdk.
+ * The device/ module provides the adapter layer to convert SDK data to app models.
  *
  * Movement phase and phase names come from workout domain (hardware-agnostic).
- * Voltra has its own internal phase enum for protocol decoding but doesn't export it.
  */
 
-// Bluetooth domain
-export * from './bluetooth';
+// Device adapter layer (wraps @voltras/node-sdk)
+export * from './device';
 
 // Exercise domain (pure definitions/catalog)
 export * from './exercise';
@@ -63,63 +61,5 @@ export {
   type WarmupSet,
 } from './vbt';
 
-// Voltra domain (hardware-specific)
-export {
-  // Device
-  VoltraDevice,
-  DEFAULT_SETTINGS,
-  type VoltraDeviceSettings,
-  type VoltraRecordingState,
-  type VoltraDeviceState,
-  // Telemetry (internal types - use WorkoutSample for UI)
-  type TelemetryFrame,
-  type WorkoutStats,
-  type TelemetryState,
-  createFrame,
-  isActivePhase,
-  isConcentricPhase,
-  isEccentricPhase,
-  computeWorkoutStats,
-  createEmptyWorkoutStats,
-  createTelemetryState,
-  DEFAULT_TELEMETRY_STATE,
-  RECENT_FRAMES_WINDOW,
-  // Controllers
-  VoltraDeviceController,
-  InvalidWeightError,
-  InvalidChainsError,
-  InvalidEccentricError,
-  NotConnectedError,
-  TelemetryController,
-  type TelemetryEvent,
-  type TelemetryEventListener,
-  RecordingController,
-  type RecordingEvent,
-  type RecordingEventListener,
-  // Protocol
-  WeightCommands,
-  ChainsCommands,
-  EccentricCommands,
-  type DualCommand,
-  MessageTypes,
-  TelemetryOffsets,
-  Timing,
-  Auth,
-  Init,
-  Workout,
-  BLE,
-  decodeNotification,
-  decodeTelemetryFrame,
-  identifyMessageType,
-  type DecodeResult,
-  type MessageType,
-  // Adapters
-  toWorkoutSample,
-  toWorkoutSamples,
-} from './voltra';
-
 // Workout domain (hardware-agnostic - includes MovementPhase, PhaseNames)
 export * from './workout';
-
-// Shared utilities
-export * from './shared';

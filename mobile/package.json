@@ -35,6 +35,7 @@
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/slider": "^5.1.2",
     "@react-navigation/native": "^7.1.8",
+    "@voltras/node-sdk": "file:../../voltra-node-sdk",
     "expo": "~54.0.31",
     "expo-constants": "~18.0.13",
     "expo-device": "^8.0.10",

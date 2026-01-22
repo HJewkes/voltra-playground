@@ -4,23 +4,18 @@
  * Singleton Zustand store that manages the fleet of connected Voltra devices.
  * Handles scanning, connection, auto-reconnect, and auto-scan logic.
  *
- * Uses ScannerController for scanning operations.
+ * Uses @voltras/node-sdk's VoltraManager for device discovery and connection.
  */
 
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { AppState, type AppStateStatus } from 'react-native';
 import {
-  createBLEAdapter,
-  ReplayBLEAdapter,
-  ScannerController,
-  type BLEAdapter,
-  type Device,
-  type ScannerConfig,
-  type ScannerEvent,
-} from '@/domain/bluetooth';
-import type { SampleRecording } from '@/data/recordings';
-import { Auth, Init, Timing, BLE, filterVoltraDevices } from '@/domain/voltra';
+  VoltraManager,
+  detectBLEEnvironment,
+  type BLEEnvironmentInfo,
+  type DiscoveredDevice,
+} from '@/domain/device';
 import {
   getLastDevice,
   saveLastDevice,
@@ -29,13 +24,8 @@ import {
   setAutoReconnectEnabled,
 } from '@/data/preferences';
 import { createVoltraStore, type VoltraStoreApi } from './voltra-store';
-import { delay } from '@/domain/shared/utils';
-import { detectBLEEnvironment } from '@/domain/bluetooth/models/environment';
 
 import { SCAN_DURATION, SCAN_INTERVAL } from '@/config';
-
-// Import BLEEnvironmentInfo type for the store
-import type { BLEEnvironmentInfo } from '@/domain/bluetooth/models/environment';
 
 // =============================================================================
 // Types
@@ -51,9 +41,9 @@ interface ConnectionStoreState {
   // For single-device screens (workout tab, etc.)
   primaryDeviceId: string | null;
 
-  // Scanning state (synced from ScannerController)
+  // Scanning state
   isScanning: boolean;
-  discoveredDevices: Device[];
+  discoveredDevices: DiscoveredDevice[];
 
   // Connection restoration state
   isRestoring: boolean;
@@ -77,8 +67,7 @@ interface ConnectionStoreState {
   stopScan: () => void;
 
   // Actions - Connection
-  connectDevice: (device: Device) => Promise<VoltraStoreApi>;
-  connectToReplay: (recording: SampleRecording) => Promise<VoltraStoreApi>;
+  connectDevice: (device: DiscoveredDevice) => Promise<VoltraStoreApi>;
   disconnectDevice: (deviceId: string) => Promise<void>;
   disconnectAll: () => Promise<void>;
 
@@ -103,20 +92,9 @@ interface ConnectionStoreState {
   _handleAppStateChange: (state: AppStateStatus) => void;
 
   // Internal
-  _adapter: BLEAdapter | null;
-  _scanner: ScannerController | null;
-  _initAdapter: () => BLEAdapter;
-  _initScanner: () => ScannerController;
+  _manager: VoltraManager | null;
+  _initManager: () => VoltraManager;
 }
-
-// =============================================================================
-// Scanner Configuration
-// =============================================================================
-
-const scannerConfig: ScannerConfig = {
-  scanDurationMs: SCAN_DURATION,
-  scanIntervalMs: SCAN_INTERVAL,
-};
 
 // =============================================================================
 // Store
@@ -149,83 +127,126 @@ export const useConnectionStore = create<ConnectionStoreState>()(
       autoReconnectEnabled: true,
       autoScanEnabled: true,
       lastScanTime: 0,
-      _adapter: null,
-      _scanner: null,
+      _manager: null,
 
-      _initAdapter: () => {
-        let adapter = get()._adapter;
-        if (!adapter) {
-          adapter = createBLEAdapter({
-            ble: {
-              serviceUUID: BLE.SERVICE_UUID,
-              notifyCharUUID: BLE.NOTIFY_CHAR_UUID,
-              writeCharUUID: BLE.WRITE_CHAR_UUID,
-              deviceNamePrefix: BLE.DEVICE_NAME_PREFIX,
-            },
-          });
-          set({ _adapter: adapter });
-        }
-        return adapter;
-      },
+      _initManager: () => {
+        let manager = get()._manager;
+        if (!manager) {
+          const env = detectBLEEnvironment();
 
-      _initScanner: () => {
-        let scanner = get()._scanner;
-        if (!scanner) {
-          const adapter = get()._initAdapter();
-          const environment = detectBLEEnvironment();
-          scanner = new ScannerController(adapter, environment, scannerConfig, filterVoltraDevices);
+          if (env.environment === 'native') {
+            manager = VoltraManager.forNative();
+          } else if (env.environment === 'web') {
+            manager = VoltraManager.forWeb();
+          } else {
+            manager = VoltraManager.forNode();
+          }
 
-          // Subscribe to scanner events
-          scanner.subscribe((event: ScannerEvent) => {
+          // Subscribe to manager events
+          manager.subscribe((event) => {
             switch (event.type) {
               case 'scanStarted':
                 set({ isScanning: true, error: null });
                 break;
 
-              case 'scanCompleted':
+              case 'scanStopped':
                 set({
                   isScanning: false,
-                  discoveredDevices: event.devices as Device[],
+                  discoveredDevices: event.devices,
                   lastScanTime: Date.now(),
                 });
                 break;
 
-              case 'scanFailed':
-                set({ isScanning: false, error: event.error });
+              case 'deviceDisconnected': {
+                const { devices, primaryDeviceId } = get();
+                const voltraStore = devices.get(event.deviceId);
+
+                if (voltraStore) {
+                  voltraStore.getState()._dispose();
+
+                  set((state) => {
+                    const newDevices = new Map(state.devices);
+                    newDevices.delete(event.deviceId);
+                    return {
+                      devices: newDevices,
+                      primaryDeviceId:
+                        primaryDeviceId === event.deviceId ? null : state.primaryDeviceId,
+                    };
+                  });
+                }
+                break;
+              }
+
+              case 'deviceError':
+                set({ error: event.error.message });
                 break;
             }
           });
 
-          set({ _scanner: scanner });
+          set({ _manager: manager });
         }
-        return scanner;
+        return manager;
       },
 
       setError: (error) => set({ error }),
       clearError: () => set({ error: null }),
 
-      scan: async () => {
+      scan: async (timeout = SCAN_DURATION) => {
         const { primaryDeviceId, devices } = get();
         const isConnected = primaryDeviceId && devices.has(primaryDeviceId);
 
         // Don't scan if connected
         if (isConnected) return;
 
-        const scanner = get()._initScanner();
-        set({ discoveredDevices: [] });
-        await scanner.scan();
+        const manager = get()._initManager();
+        set({ discoveredDevices: [], isScanning: true, error: null });
+
+        try {
+          const foundDevices = await manager.scan({ timeout });
+          set({
+            isScanning: false,
+            discoveredDevices: foundDevices,
+            lastScanTime: Date.now(),
+          });
+        } catch (e: unknown) {
+          set({
+            isScanning: false,
+            error: e instanceof Error ? e.message : String(e),
+          });
+        }
       },
 
       startAutoScan: () => {
-        const scanner = get()._initScanner();
+        // On web, auto-scan is not possible - Web Bluetooth requires user gesture
+        const env = detectBLEEnvironment();
+        if (env.requiresUserGesture) {
+          console.log('[ConnectionStore] Skipping auto-scan on web (requires user gesture)');
+          return () => {}; // Return no-op cleanup
+        }
 
-        // Provide isConnected callback to scanner
-        const isConnected = () => {
-          const { primaryDeviceId, devices } = get();
-          return !!(primaryDeviceId && devices.has(primaryDeviceId));
+        let intervalId: ReturnType<typeof setInterval> | null = null;
+
+        const doScan = () => {
+          const { primaryDeviceId, devices, isScanning } = get();
+          const isConnected = primaryDeviceId && devices.has(primaryDeviceId);
+
+          if (!isConnected && !isScanning) {
+            get().scan();
+          }
         };
 
-        return scanner.startAutoScan(isConnected);
+        // Initial scan
+        doScan();
+
+        // Set up interval
+        intervalId = setInterval(doScan, SCAN_INTERVAL);
+
+        // Return cleanup function
+        return () => {
+          if (intervalId) {
+            clearInterval(intervalId);
+          }
+        };
       },
 
       stopScan: () => {
@@ -233,74 +254,50 @@ export const useConnectionStore = create<ConnectionStoreState>()(
       },
 
       connectDevice: async (device) => {
-        const adapter = get()._initAdapter();
+        const manager = get()._initManager();
 
         // Check if already connected
         const existing = get().devices.get(device.id);
         if (existing) {
-          console.log('[SessionStore] Device already connected:', device.id);
+          console.log('[ConnectionStore] Device already connected:', device.id);
           return existing;
         }
 
-        console.log('[SessionStore] Connecting to:', device.name ?? device.id);
+        console.log('[ConnectionStore] Connecting to:', device.name ?? device.id);
 
         // Track connecting state
         set({ connectingDeviceId: device.id, error: null });
 
-        // Create voltra store first (will update connection state)
+        // Create voltra store (will add to devices map after connection succeeds)
         const voltraStore = createVoltraStore(null, device.id, device.name);
         voltraStore.getState().setConnectionState('connecting');
 
-        // Add to devices map immediately
-        set((state) => ({
-          devices: new Map(state.devices).set(device.id, voltraStore),
-          primaryDeviceId: state.primaryDeviceId ?? device.id,
-        }));
-
         try {
-          // Connect adapter with immediate auth write
-          // The Voltra device requires authentication within a tight time window
-          // after connection, so we pass it as an immediate write option
+          // Connect via manager - handles auth and init
           voltraStore.getState().setConnectionState('authenticating');
-          await adapter.connect(device.id, { immediateWrite: Auth.DEVICE_ID });
+          const client = await manager.connect(device);
 
-          // Wait for device to process authentication
-          await delay(Timing.AUTH_TIMEOUT_MS);
-
-          // Send init sequence
-          for (const cmd of Init.SEQUENCE) {
-            await adapter.write(cmd);
-            await delay(Timing.INIT_COMMAND_DELAY_MS);
-          }
-
-          // Set up notification handler
-          adapter.onNotification((data) => {
-            voltraStore.getState()._processNotification(data);
-          });
-
-          // Update store with adapter and connected state
-          voltraStore.getState()._setAdapter(adapter);
+          // Update store with client BEFORE adding to devices map
+          // This prevents race condition where UI sees device but client is null
+          voltraStore.getState()._setClient(client);
           voltraStore.getState().setConnectionState('connected');
+
+          // NOW add to devices map - UI will see fully connected device
+          set((state) => ({
+            devices: new Map(state.devices).set(device.id, voltraStore),
+            primaryDeviceId: state.primaryDeviceId ?? device.id,
+          }));
 
           // Persist for auto-reconnect
           await saveLastDevice(device);
 
-          console.log('[SessionStore] Connected successfully:', device.name ?? device.id);
+          console.log('[ConnectionStore] Connected successfully:', device.name ?? device.id);
 
           return voltraStore;
         } catch (e: unknown) {
-          console.error('[SessionStore] Connection failed:', e);
+          console.error('[ConnectionStore] Connection failed:', e);
 
-          // Remove from devices map on failure
-          set((state) => {
-            const devices = new Map(state.devices);
-            devices.delete(device.id);
-            return {
-              devices,
-              primaryDeviceId: state.primaryDeviceId === device.id ? null : state.primaryDeviceId,
-            };
-          });
-
+          // Clean up the voltra store (never added to devices map since connection failed)
           const errMsg = e instanceof Error ? e.message : String(e);
           voltraStore.getState().setError(`Connection failed: ${errMsg}`);
           voltraStore.getState().setConnectionState('disconnected');
@@ -319,74 +316,21 @@ export const useConnectionStore = create<ConnectionStoreState>()(
         }
       },
 
-      connectToReplay: async (recording) => {
-        const replayDeviceId = `replay-${recording.id}`;
-        const replayDeviceName = `Replay: ${recording.exerciseName}`;
-
-        // Check if already connected to this replay
-        const existing = get().devices.get(replayDeviceId);
-        if (existing) {
-          console.log('[SessionStore] Replay already connected:', replayDeviceId);
-          return existing;
-        }
-
-        console.log('[SessionStore] Connecting to replay:', recording.exerciseName);
-
-        // Track connecting state
-        set({ connectingDeviceId: replayDeviceId, error: null });
-
-        try {
-          // Create replay adapter
-          const replayAdapter = new ReplayBLEAdapter(recording);
-
-          // Create voltra store with replay adapter
-          const voltraStore = createVoltraStore(replayAdapter, replayDeviceId, replayDeviceName);
-
-          // Connect the replay adapter
-          await replayAdapter.connect(replayDeviceId);
-
-          // Set up notification handler
-          replayAdapter.onNotification((data) => {
-            voltraStore.getState()._processNotification(data);
-          });
-
-          // Update store state
-          voltraStore.getState().setConnectionState('connected');
-
-          // Add to devices map
-          set((state) => ({
-            devices: new Map(state.devices).set(replayDeviceId, voltraStore),
-            primaryDeviceId: replayDeviceId,
-          }));
-
-          console.log('[SessionStore] Replay connected, starting playback...');
-
-          // Start playback
-          replayAdapter.play();
-
-          return voltraStore;
-        } catch (e: unknown) {
-          console.error('[SessionStore] Replay connection failed:', e);
-          set({ error: `Replay failed: ${e instanceof Error ? e.message : String(e)}` });
-          throw e;
-        } finally {
-          set({ connectingDeviceId: null });
-        }
-      },
-
       disconnectDevice: async (deviceId) => {
+        const manager = get()._manager;
         const voltra = get().devices.get(deviceId);
+
         if (!voltra) return;
 
         set({ error: null });
 
-        const adapter = voltra.getState()._adapter;
-        if (adapter) {
-          try {
-            await adapter.disconnect();
-          } catch (e: unknown) {
-            set({ error: `Disconnect failed: ${e instanceof Error ? e.message : String(e)}` });
+        try {
+          // Disconnect via manager
+          if (manager) {
+            await manager.disconnect(deviceId);
           }
+        } catch (e: unknown) {
+          set({ error: `Disconnect failed: ${e instanceof Error ? e.message : String(e)}` });
         }
 
         // Cleanup voltra store
@@ -394,10 +338,10 @@ export const useConnectionStore = create<ConnectionStoreState>()(
 
         // Remove from devices map
         set((state) => {
-          const devices = new Map(state.devices);
-          devices.delete(deviceId);
+          const newDevices = new Map(state.devices);
+          newDevices.delete(deviceId);
           return {
-            devices,
+            devices: newDevices,
             primaryDeviceId: state.primaryDeviceId === deviceId ? null : state.primaryDeviceId,
           };
         });
@@ -433,11 +377,9 @@ export const useConnectionStore = create<ConnectionStoreState>()(
 
       restoreLastConnection: async () => {
         // On web, auto-reconnect is not possible - Web Bluetooth requires user gesture
-        // to select a device via requestDevice() before connecting
         const env = detectBLEEnvironment();
         if (env.requiresUserGesture) {
-          console.log('[SessionStore] Skipping auto-reconnect on web (requires user gesture)');
-          // Still load the preference so UI can show it
+          console.log('[ConnectionStore] Skipping auto-reconnect on web (requires user gesture)');
           const autoReconnect = await isAutoReconnectEnabled();
           set({ autoReconnectEnabled: autoReconnect, isRestoring: false });
           return;
@@ -459,29 +401,29 @@ export const useConnectionStore = create<ConnectionStoreState>()(
               const lastDevice = await getLastDevice();
               if (lastDevice) {
                 console.log(
-                  '[SessionStore] Restoring connection to:',
+                  '[ConnectionStore] Restoring connection to:',
                   lastDevice.name ?? lastDevice.id
                 );
                 try {
                   await get().connectDevice(lastDevice);
                 } catch (e) {
-                  console.warn('[SessionStore] Could not restore connection:', e);
+                  console.warn('[ConnectionStore] Could not restore connection:', e);
                 }
               } else {
-                console.log('[SessionStore] No saved device to restore');
+                console.log('[ConnectionStore] No saved device to restore');
               }
             } else {
-              console.log('[SessionStore] Auto-reconnect disabled');
+              console.log('[ConnectionStore] Auto-reconnect disabled');
             }
           } catch (e) {
-            console.warn('[SessionStore] Error during restore:', e);
+            console.warn('[ConnectionStore] Error during restore:', e);
           }
         };
 
         try {
           await Promise.race([restorePromise(), timeoutPromise]);
         } catch (e) {
-          console.warn('[SessionStore] Restore timed out or failed:', e);
+          console.warn('[ConnectionStore] Restore timed out or failed:', e);
         } finally {
           set({ isRestoring: false });
         }
@@ -511,11 +453,11 @@ export const useConnectionStore = create<ConnectionStoreState>()(
               try {
                 const lastDevice = await getLastDevice();
                 if (lastDevice && lastDevice.id === primaryDeviceId) {
-                  console.log('[SessionStore] Attempting reconnect...');
+                  console.log('[ConnectionStore] Attempting reconnect...');
                   await get().connectDevice(lastDevice);
                 }
               } catch (e) {
-                console.warn('[SessionStore] Reconnect failed:', e);
+                console.warn('[ConnectionStore] Reconnect failed:', e);
               } finally {
                 set({ isReconnecting: false });
               }
@@ -532,8 +474,6 @@ export const useConnectionStore = create<ConnectionStoreState>()(
 // Selectors
 // =============================================================================
 // Use these with useConnectionStore(selector) for proper reactivity.
-// Do NOT use the getters pattern (get isX() { return get()... }) as Zustand
-// cannot track those for re-renders.
 
 /**
  * Get the BLE environment - always detects fresh to avoid SSR/caching issues.

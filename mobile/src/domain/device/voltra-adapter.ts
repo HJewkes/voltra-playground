@@ -1,19 +1,25 @@
 /**
- * SampleAdapter - converts Voltra TelemetryFrames to WorkoutSamples.
+ * Voltra Adapter - converts SDK TelemetryFrames to app's WorkoutSamples.
  *
- * This is a THIN adapter that only normalizes/maps fields.
- * No metric computation happens here - that's in domain/workout/aggregators.
- *
- * Note: The workout domain's MovementPhase enum is aligned with Voltra's
- * protocol ordering, so phase values pass through directly.
+ * This adapter isolates the workout domain from hardware-specific data.
+ * The SDK exposes raw TelemetryFrame; this converts to WorkoutSample.
  */
-import type { TelemetryFrame } from '@/domain/voltra/models/telemetry';
+import type { TelemetryFrame } from '@voltras/node-sdk';
 import type { WorkoutSample } from '@/domain/workout/models/sample';
 import { createSample } from '@/domain/workout/models/sample';
 import { MovementPhase } from '@/domain/workout/models/types';
 
 /** Voltra position range (0 = rest, ~600 = full extension) */
 const VOLTRA_MAX_POSITION = 600;
+
+/**
+ * Velocity scaling factor.
+ * Raw encoder value is in approximate mm/s, divide by 1000 to get m/s.
+ * - Raw 500 → 0.5 m/s (moderate lifting speed)
+ * - Raw 200 → 0.2 m/s (heavy/slow lifting)
+ * - Raw 800 → 0.8 m/s (explosive/fast lifting)
+ */
+const VELOCITY_SCALE = 1000;
 
 /**
  * Convert a Voltra TelemetryFrame to a hardware-agnostic WorkoutSample.
@@ -24,12 +30,14 @@ export function toWorkoutSample(frame: TelemetryFrame): WorkoutSample {
   const phase =
     frame.phase >= 0 && frame.phase <= 3 ? (frame.phase as MovementPhase) : MovementPhase.IDLE;
 
+  const scaledVelocity = frame.velocity / VELOCITY_SCALE;
+
   return createSample(
     frame.sequence, // Pass through sequence for drop detection
     frame.timestamp,
     phase,
     frame.position / VOLTRA_MAX_POSITION, // Normalize to 0-1
-    frame.velocity, // Already in m/s
+    scaledVelocity, // Convert raw encoder to m/s
     Math.abs(frame.force) // Absolute force in lbs
   );
 }

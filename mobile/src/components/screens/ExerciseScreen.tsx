@@ -125,16 +125,15 @@ export function ExerciseScreen({
   }, [uiState, recordingStore]);
 
   // Connect voltra telemetry to recording store
+  // Subscribe to currentSample changes from the voltra store
   useEffect(() => {
-    const telemetryController = voltraStore.getState()._telemetryController;
-    if (!telemetryController) return;
+    if (uiState !== 'recording') return;
 
-    const unsubscribe = telemetryController.subscribe((event) => {
-      if (event.type === 'frame' && uiState === 'recording') {
-        const sample = voltraStore.getState().currentSample;
-        if (sample) {
-          recordingStore.getState().processSample(sample);
-        }
+    // Subscribe to store updates
+    const unsubscribe = voltraStore.subscribe((state, prevState) => {
+      // Only process if we have a new sample
+      if (state.currentSample && state.currentSample !== prevState.currentSample) {
+        recordingStore.getState().processSample(state.currentSample);
       }
     });
 

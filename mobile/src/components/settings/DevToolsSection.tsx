@@ -18,7 +18,6 @@ import {
 } from '@/data/provider';
 import { seedDatabase, clearSeedData } from '@/__fixtures__';
 import type { SampleRecording } from '@/data/recordings';
-import { useConnectionStore } from '@/stores';
 
 interface StorageStats {
   sessionCount: number;
@@ -35,8 +34,6 @@ export function DevToolsSection() {
   const [stats, setStats] = useState<StorageStats>({ sessionCount: 0, recordingCount: 0 });
   const [recordings, setRecordings] = useState<SampleRecording[]>([]);
   const [showRecordings, setShowRecordings] = useState(false);
-
-  const { connectToReplay } = useConnectionStore();
 
   // Load stats on mount
   useEffect(() => {
@@ -108,18 +105,15 @@ export function DevToolsSection() {
     setDebugTelemetryEnabled(value);
   }, []);
 
-  const handleReplaySelect = useCallback(
-    async (recording: SampleRecording) => {
-      try {
-        setShowRecordings(false);
-        await connectToReplay(recording);
-        Alert.alert('Replay Started', `Playing: ${recording.exerciseName}`);
-      } catch (err: unknown) {
-        Alert.alert('Replay Failed', err instanceof Error ? err.message : 'Unknown error');
-      }
-    },
-    [connectToReplay]
-  );
+  // TODO: Replay functionality is planned for post-v1
+  // See docs/roadmap/replay-adapter.md
+  const handleReplaySelect = useCallback(async (recording: SampleRecording) => {
+    Alert.alert(
+      'Coming Soon',
+      `Replay functionality for "${recording.exerciseName}" is planned for a future release.`
+    );
+    setShowRecordings(false);
+  }, []);
 
   const renderRecordingItem = ({ item }: { item: SampleRecording }) => (
     <TouchableOpacity

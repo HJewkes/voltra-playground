@@ -12,7 +12,7 @@ import { useConnectionStore, selectIsConnected, selectBleEnvironment } from '@/s
 import { colors } from '@/theme';
 import { SCAN_DURATION, SCAN_INTERVAL } from '@/config';
 import { Card, Stack, Surface, ListItem } from '@/components/ui';
-import type { Device } from '@/domain/bluetooth/adapters';
+import type { DiscoveredDevice } from '@/domain/device';
 
 export interface ConnectPromptProps {
   /** Optional subtitle/message */
@@ -38,7 +38,7 @@ export function ConnectPrompt({
 
   // BLE environment - detected fresh each render to avoid SSR/caching issues
   const bleEnvironment = selectBleEnvironment();
-  const { environment, bleSupported, warningMessage, requiresUserGesture } = bleEnvironment;
+  const { bleSupported, warningMessage, requiresUserGesture } = bleEnvironment;
 
   // Get list of connected devices for display
   const connectedDevices = Array.from(connectedDevicesMap.entries()).map(([id, store]) => ({
@@ -55,7 +55,7 @@ export function ConnectPrompt({
   const scanIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const handleConnect = useCallback(
-    async (device: Device) => {
+    async (device: DiscoveredDevice) => {
       setConnectingDeviceId(device.id);
       setError(null);
       try {
@@ -215,7 +215,7 @@ export function ConnectPrompt({
             />
             <View className="ml-3 flex-1">
               <Text className="mb-1 font-semibold" style={{ color: colors.warning.DEFAULT }}>
-                {environment === 'simulator' ? 'Simulator Detected' : 'Expo Go Detected'}
+                BLE Warning
               </Text>
               <Text className="text-xs leading-5" style={{ color: colors.text.secondary }}>
                 {warningMessage}

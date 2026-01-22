@@ -10,11 +10,11 @@ import { ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Surface, ListItem } from '@/components/ui';
 import { colors } from '@/theme';
-import type { Device } from '@/domain/bluetooth/adapters';
+import type { DiscoveredDevice } from '@/domain/device';
 
 export interface DeviceListItemProps {
   /** The device to display */
-  device: Device;
+  device: DiscoveredDevice;
   /** Whether this device is currently being connected to */
   isConnecting: boolean;
   /** Whether another device is being connected to */

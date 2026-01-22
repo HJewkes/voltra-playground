@@ -11,7 +11,7 @@ import { Surface, InfoRow, ErrorBanner } from '@/components/ui';
 import { ConnectionBanner, DeviceList } from '@/components/device';
 import { DevToolsSection } from '@/components/settings';
 import { useConnectionStore, selectBleEnvironment } from '@/stores';
-import type { Device } from '@/domain/bluetooth/adapters';
+import type { DiscoveredDevice } from '@/domain/device';
 
 /**
  * SettingsScreen - connection and app settings.
@@ -54,7 +54,10 @@ export function SettingsScreen() {
       }
     }
   }, [scan, requiresUserGesture, connectDevice]);
-  const handleConnect = useCallback((device: Device) => connectDevice(device), [connectDevice]);
+  const handleConnect = useCallback(
+    (device: DiscoveredDevice) => connectDevice(device),
+    [connectDevice]
+  );
   const handleDisconnect = useCallback(() => {
     if (primaryDeviceId) {
       disconnectAll();

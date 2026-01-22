@@ -12,11 +12,11 @@ import { colors } from '@/theme';
 import { BLEWarning } from './BLEWarning';
 import { ScanButton } from './ScanButton';
 import { DeviceListItem } from './DeviceListItem';
-import type { Device } from '@/domain/bluetooth/adapters';
+import type { DiscoveredDevice } from '@/domain/device';
 
 export interface DeviceListProps {
   /** List of discovered devices */
-  devices: Device[];
+  devices: DiscoveredDevice[];
   /** Whether currently scanning */
   isScanning: boolean;
   /** Whether restoring a previous connection */
@@ -34,7 +34,7 @@ export interface DeviceListProps {
   /** Called when scan button is pressed */
   onScan: () => void;
   /** Called when a device is selected */
-  onDeviceSelect: (device: Device) => void;
+  onDeviceSelect: (device: DiscoveredDevice) => void;
 }
 
 /**
