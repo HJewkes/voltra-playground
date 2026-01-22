@@ -41,9 +41,10 @@ src/
 | Target | Approach |
 |--------|----------|
 | Repositories | CRUD operations with InMemoryAdapter |
-| Fixture generators | Output validity, configuration options |
-| Domain logic | Classes in `domain/`, protocol encoding |
+| Fixture generators | Output validity, validation through real logic |
+| Domain logic | Use behavioral fixtures (aggregators, detectors, planners) |
 | Stores | State transitions, business logic |
+| Integration flows | Use session compositions for realistic scenarios |
 
 ## What NOT to Test
 
@@ -102,6 +103,152 @@ function createTestExercise(overrides = {}): StoredExercise {
     ...overrides,
   };
 }
+```
+
+## Behavioral Fixtures Infrastructure
+
+We use **physics-based behavioral fixtures** that model realistic exercise data.
+Prefer these over simple mocks for testing domain logic.
+
+### Rep Behaviors
+
+Generate samples for specific physical phenomena:
+
+| Behavior | Velocity | Physics |
+|----------|----------|---------|
+| `explosive` | 0.9+ m/s | Quick concentric, smooth curve |
+| `normal` | 0.6-0.8 m/s | Standard timing, controlled |
+| `fatiguing` | 0.4-0.6 m/s | Slower, eccentric speeds up |
+| `grinding` | 0.2-0.4 m/s | Long concentric, sticking point |
+| `failed` | → 0 m/s | Stalls mid-concentric, no eccentric |
+| `partial` | ~0.6 m/s | Reduced ROM (<80%) |
+
+```typescript
+import { generateRepSamples } from '@/__fixtures__/generators';
+
+const samples = generateRepSamples('grinding', { weight: 100 });
+```
+
+### Set Compositions
+
+Combine rep behaviors into realistic sets:
+
+```typescript
+import { generateSetFromBehaviors, setPresets, sets } from '@/__fixtures__/generators';
+
+// Use a preset
+const { samples, set } = generateSetFromBehaviors(setPresets.toFailure, {
+  weight: 100,
+  processWithAggregators: true,
+});
+
+// Or define custom composition
+const customSet = generateSetFromBehaviors(
+  ['normal', 'normal', 'fatiguing', 'grinding', 'failed'],
+  { weight: 100 }
+);
+
+// Convenience function
+const { set } = sets.productiveWorking(100, { processWithAggregators: true });
+```
+
+### Session Compositions
+
+Build full sessions with warmups and working sets:
+
+```typescript
+import { generateSessionFromComposition, sessionPresets, sessions } from '@/__fixtures__/generators';
+
+// Generate from preset
+const { session, plan, totalReps, totalVolume } = generateSessionFromComposition(
+  sessionPresets.standardWorkout,
+  { workingWeight: 100, goal: TrainingGoal.HYPERTROPHY }
+);
+
+// Convenience function
+const { session } = sessions.standard(100);
+```
+
+### Planning Fixtures
+
+Generate planning contexts for testing planners:
+
+```typescript
+import {
+  generatePlanningContext,
+  generateHistoricalMetrics,
+  generateSessionMetrics,
+} from '@/__fixtures__/generators';
+
+const context = generatePlanningContext({
+  goal: TrainingGoal.STRENGTH,
+  historicalMetrics: { lastWorkingWeight: 100, sessionCount: 10 },
+  sessionMetrics: { fatigueLevel: 0.5 },
+});
+```
+
+## Real Data vs Mocks
+
+### When to Use Behavioral Fixtures (Preferred)
+
+- Testing domain logic (aggregators, detectors, planners)
+- Testing data flow through multiple components
+- Integration tests
+- UI demonstrations and storybook
+
+```typescript
+// GOOD: Real data through real logic
+it('detects velocity grinding termination', () => {
+  const { set } = generateSetFromBehaviors(setPresets.junkVolume, {
+    weight: 100,
+    processWithAggregators: true,
+  });
+  
+  const result = checkTermination(session, set);
+  expect(result.reason).toBe('velocity_grinding');
+});
+```
+
+### When to Use Mocks
+
+- External dependencies (BLE, AsyncStorage, network)
+- Time-dependent logic (use fake timers instead of mocks when possible)
+- Error path testing where you need to force specific failures
+
+```typescript
+// OK: Mock external dependency
+vi.mock('react-native-ble-plx', () => ({
+  BleManager: vi.fn(),
+}));
+```
+
+## Fixture Validation
+
+Behavioral fixtures are validated by running through real domain logic.
+This ensures they produce realistic, correct data.
+
+### Validation Tests Check:
+
+1. **Rep behaviors** pass through `RepDetector` correctly
+2. **Failed reps** are NOT detected as complete (correct behavior)
+3. **Set presets** produce expected velocity loss ranges
+4. **Session presets** produce expected metrics
+
+```typescript
+// This is how we validate fixtures - by running them through real logic
+it('toFailure preset shows >30% velocity loss', () => {
+  const { set } = generateSetFromBehaviors(setPresets.toFailure, {
+    weight: 100,
+    processWithAggregators: true,
+  });
+  
+  const velocityLoss = 
+    (set.reps[0].metrics.concentricMeanVelocity - 
+     set.reps[set.reps.length - 1].metrics.concentricMeanVelocity) /
+    set.reps[0].metrics.concentricMeanVelocity;
+    
+  expect(velocityLoss).toBeGreaterThan(0.3);
+});
 ```
 
 ## Fixture Generator Testing
@@ -213,7 +360,9 @@ describe('connection-store', () => {
 ## Key Principles
 
 - **Use InMemoryAdapter** for all repository tests (isolation, speed)
+- **Prefer behavioral fixtures over mocks** for domain logic testing
 - **Use fixture generators** instead of hardcoded test data
+- **Validate fixtures through real domain logic** (RepDetector, aggregators)
 - **Reset state in beforeEach** - generators, adapters, stores
 - **Test edge cases** - empty data, max values, negative numbers
 - **Use fake timers** for time-dependent logic
