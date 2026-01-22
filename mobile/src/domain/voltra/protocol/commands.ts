@@ -193,7 +193,13 @@ export const ChainsCommands = {
     };
   },
 
-  _build(pounds: number, step: 1 | 2, seq: string, checksum: string, format: ChainsData['format']): Uint8Array {
+  _build(
+    pounds: number,
+    step: 1 | 2,
+    seq: string,
+    checksum: string,
+    format: ChainsData['format']
+  ): Uint8Array {
     const fmt = format[`step${step}`];
     const cmd = new Uint8Array(21);
     let offset = 0;

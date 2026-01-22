@@ -96,12 +96,7 @@ export function ActionButton({
         {loading ? (
           <ActivityIndicator size="small" color={textColor} style={{ marginRight: 8 }} />
         ) : icon ? (
-          <Ionicons
-            name={icon}
-            size={iconSize}
-            color={textColor}
-            style={{ marginRight: 8 }}
-          />
+          <Ionicons name={icon} size={iconSize} color={textColor} style={{ marginRight: 8 }} />
         ) : null}
         <Text className="text-center font-bold" style={{ color: textColor, fontSize }}>
           {label}

@@ -9,7 +9,7 @@ import React from 'react';
 import { View, Text, type StyleProp, type ViewStyle } from 'react-native';
 import { colors } from '@/theme';
 import { Card, ProgressBar } from '@/components/ui';
-import type { PlannedSet , Set } from '@/domain/workout';
+import type { PlannedSet, Set } from '@/domain/workout';
 
 export interface ExerciseSessionProgressProps {
   /** Planned sets */
