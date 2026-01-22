@@ -1,0 +1,15 @@
+# Default owners for the entire repository
+* @hjewkes
+
+# Mobile app (React Native/Expo)
+/mobile/ @hjewkes
+
+# Python relay
+/relay/ @hjewkes
+
+# GitHub workflows
+/.github/ @hjewkes
+
+# Documentation
+*.md @hjewkes
+/docs/ @hjewkes
