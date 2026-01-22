@@ -349,10 +349,10 @@ describe('connection-store', () => {
     useConnectionStore.setState(initialState);
   });
 
-  it('should update relay status on successful check', async () => {
+  it('should scan for devices', async () => {
     const store = useConnectionStore.getState();
-    await store.checkRelayStatus();
-    expect(store.relayStatus).toBe('connected');
+    await store.scan();
+    expect(store.discoveredDevices.length).toBeGreaterThanOrEqual(0);
   });
 });
 ```

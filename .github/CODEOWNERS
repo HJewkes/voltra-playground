@@ -4,9 +4,6 @@
 # Mobile app (React Native/Expo)
 /mobile/ @hjewkes
 
-# Python relay
-/relay/ @hjewkes
-
 # GitHub workflows
 /.github/ @hjewkes
 

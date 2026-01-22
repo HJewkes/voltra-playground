@@ -1,19 +1,24 @@
 /**
  * BLE Abstraction Layer
  *
- * Provides a unified interface for BLE communication that can be
- * implemented by either native BLE or a WebSocket proxy.
+ * Provides a unified interface for BLE communication across platforms:
+ * - Native (iOS/Android): react-native-ble-plx
+ * - Browser: Web Bluetooth API
+ * - Node.js: webbluetooth npm package
  */
 
 import { Platform } from 'react-native';
 import type { BLEAdapter } from './types';
-import { ProxyBLEAdapter } from './proxy';
 import { NativeBLEAdapter, type BLEServiceConfig } from './native';
-import { RELAY_WS_URL } from '@/config';
+import { WebBLEAdapter } from './web';
+import { NodeBLEAdapter } from './node';
 
 export * from './types';
-export { ProxyBLEAdapter, type ProxyAdapterConfig } from './proxy';
-export { NativeBLEAdapter, type NativeAdapterConfig, type BLEServiceConfig } from './native';
+export { BaseBLEAdapter } from './base';
+export { WebBluetoothBase, type WebBluetoothConfig } from './web-bluetooth-base';
+export { WebBLEAdapter } from './web';
+export { NodeBLEAdapter, type NodeBLEConfig, type DeviceChooser } from './node';
+export { NativeBLEAdapter, type NativeAdapterConfig } from './native';
 export { ReplayBLEAdapter } from './replay';
 
 /**
@@ -22,23 +27,40 @@ export { ReplayBLEAdapter } from './replay';
 export interface CreateBLEAdapterConfig {
   /** BLE service configuration (UUIDs, device name prefix) */
   ble: BLEServiceConfig;
-  /** Use proxy adapter (WebSocket to Python relay) instead of native BLE */
-  useProxy?: boolean;
-  /** Proxy server URL (only used if useProxy is true) */
-  proxyUrl?: string;
 }
 
 /**
- * Create a BLE adapter based on configuration.
+ * Detect if running in Node.js environment.
+ */
+function isNodeEnvironment(): boolean {
+  return (
+    typeof process !== 'undefined' &&
+    process.versions != null &&
+    process.versions.node != null
+  );
+}
+
+/**
+ * Create a BLE adapter based on the current environment.
+ *
+ * Environment detection:
+ * - Web browser: WebBLEAdapter (Web Bluetooth API)
+ * - Node.js: NodeBLEAdapter (webbluetooth package)
+ * - Native (iOS/Android): NativeBLEAdapter (react-native-ble-plx)
  *
  * @param config Adapter configuration including BLE service UUIDs
- * @returns BLEAdapter instance (NativeBLEAdapter or ProxyBLEAdapter)
+ * @returns BLEAdapter instance appropriate for the current environment
  */
 export function createBLEAdapter(config: CreateBLEAdapterConfig): BLEAdapter {
-  const useProxy = config.useProxy ?? Platform.OS === 'web';
-
-  if (useProxy) {
-    return new ProxyBLEAdapter({ url: config.proxyUrl ?? RELAY_WS_URL });
+  // Environment detection
+  if (Platform.OS === 'web') {
+    // Check if Node.js or browser
+    if (isNodeEnvironment()) {
+      return new NodeBLEAdapter({ ble: config.ble });
+    }
+    return new WebBLEAdapter({ ble: config.ble });
   }
+
+  // Native (iOS/Android)
   return new NativeBLEAdapter({ ble: config.ble });
 }

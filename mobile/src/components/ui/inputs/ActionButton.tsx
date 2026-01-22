@@ -94,13 +94,24 @@ export function ActionButton({
     >
       <View className="flex-row items-center justify-center">
         {loading ? (
-          <ActivityIndicator size="small" color={textColor} style={{ marginRight: 8 }} />
+          <ActivityIndicator
+            size="small"
+            color={textColor}
+            style={label ? { marginRight: 8 } : undefined}
+          />
         ) : icon ? (
-          <Ionicons name={icon} size={iconSize} color={textColor} style={{ marginRight: 8 }} />
+          <Ionicons
+            name={icon}
+            size={iconSize}
+            color={textColor}
+            style={label ? { marginRight: 8 } : undefined}
+          />
         ) : null}
-        <Text className="text-center font-bold" style={{ color: textColor, fontSize }}>
-          {label}
-        </Text>
+        {label ? (
+          <Text className="text-center font-bold" style={{ color: textColor, fontSize }}>
+            {label}
+          </Text>
+        ) : null}
       </View>
     </TouchableOpacity>
   );

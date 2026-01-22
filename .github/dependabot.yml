@@ -18,14 +18,6 @@ updates:
           - "minor"
           - "patch"
 
-  # Relay (pip)
-  - package-ecosystem: "pip"
-    directory: "/relay"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-    open-pull-requests-limit: 3
-
   # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"

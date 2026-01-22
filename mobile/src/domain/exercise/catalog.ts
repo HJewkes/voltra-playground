@@ -61,6 +61,14 @@ export function createExercise(base: Pick<Exercise, 'id' | 'name'> & Partial<Exe
  * Future: Load from database or API.
  */
 export const EXERCISE_CATALOG: Record<string, Exercise> = {
+  // General / Testing
+  general: createExercise({
+    id: 'general',
+    name: 'General Exercise',
+    muscleGroups: [],
+    movementPattern: 'pull',
+  }),
+
   // Back exercises
   cable_row: createExercise({
     id: 'cable_row',

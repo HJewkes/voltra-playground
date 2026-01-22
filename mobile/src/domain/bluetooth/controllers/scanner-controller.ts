@@ -1,13 +1,13 @@
 /**
  * Scanner Controller
  *
- * Manages BLE device scanning with auto-scan and relay status checking.
+ * Manages BLE device scanning with auto-scan functionality.
  * This is a generic controller that can be configured with a device filter.
  */
 
 import type { BLEAdapter } from '@/domain/bluetooth/adapters';
 import { type DiscoveredDevice } from '@/domain/bluetooth/models/device';
-import { type BLEEnvironmentInfo, requiresRelay } from '@/domain/bluetooth/models/environment';
+import type { BLEEnvironmentInfo } from '@/domain/bluetooth/models/environment';
 
 /**
  * Device filter function type.
@@ -16,17 +16,11 @@ import { type BLEEnvironmentInfo, requiresRelay } from '@/domain/bluetooth/model
 export type DeviceFilter = (devices: DiscoveredDevice[]) => DiscoveredDevice[];
 
 /**
- * Relay status for web environments.
- */
-export type RelayStatus = 'checking' | 'connected' | 'disconnected' | 'error';
-
-/**
  * Scanner state snapshot.
  */
 export interface ScannerState {
   isScanning: boolean;
   discoveredDevices: DiscoveredDevice[];
-  relayStatus: RelayStatus;
   lastScanTime: number;
   error: string | null;
 }
@@ -37,8 +31,7 @@ export interface ScannerState {
 export type ScannerEvent =
   | { type: 'scanStarted' }
   | { type: 'scanCompleted'; devices: DiscoveredDevice[] }
-  | { type: 'scanFailed'; error: string }
-  | { type: 'relayStatusChanged'; status: RelayStatus };
+  | { type: 'scanFailed'; error: string };
 
 /**
  * Scanner event listener.
@@ -51,9 +44,6 @@ export type ScannerEventListener = (event: ScannerEvent) => void;
 export interface ScannerConfig {
   scanDurationMs: number;
   scanIntervalMs: number;
-  relayCheckTimeoutMs: number;
-  relayCheckIntervalMs: number;
-  relayHttpUrl: string;
 }
 
 /**
@@ -62,23 +52,18 @@ export interface ScannerConfig {
 export class ScannerController {
   private _isScanning = false;
   private _discoveredDevices: DiscoveredDevice[] = [];
-  private _relayStatus: RelayStatus = 'checking';
   private _lastScanTime = 0;
   private _error: string | null = null;
 
   private _autoScanInterval: ReturnType<typeof setInterval> | null = null;
-  private _relayCheckInterval: ReturnType<typeof setInterval> | null = null;
   private _listeners: Set<ScannerEventListener> = new Set();
 
   constructor(
     private adapter: BLEAdapter,
-    private environment: BLEEnvironmentInfo,
+    private _environment: BLEEnvironmentInfo,
     private config: ScannerConfig,
     private deviceFilter?: DeviceFilter
-  ) {
-    // Set initial relay status based on environment
-    this._relayStatus = requiresRelay(this.environment) ? 'checking' : 'connected';
-  }
+  ) {}
 
   /**
    * Get current scanner state.
@@ -87,7 +72,6 @@ export class ScannerController {
     return {
       isScanning: this._isScanning,
       discoveredDevices: this._discoveredDevices,
-      relayStatus: this._relayStatus,
       lastScanTime: this._lastScanTime,
       error: this._error,
     };
@@ -114,12 +98,6 @@ export class ScannerController {
       return this._discoveredDevices;
     }
 
-    // Don't scan if relay not ready on web
-    if (requiresRelay(this.environment) && this._relayStatus !== 'connected') {
-      this._error = 'BLE relay not running. Start with "make relay".';
-      return [];
-    }
-
     this._isScanning = true;
     this._error = null;
     this.emit({ type: 'scanStarted' });
@@ -141,12 +119,23 @@ export class ScannerController {
       this._isScanning = false;
       const errorMsg = e instanceof Error ? e.message : String(e);
 
+      // User cancelled device picker (web) - not an error
+      if (errorMsg.includes('NotFoundError')) {
+        this._error = null;
+        this.emit({ type: 'scanCompleted', devices: [] });
+        return [];
+      }
+
+      // On web, "permission" errors are expected when scan is called without user gesture
+      // Don't show these as errors - user just needs to click the scan button
+      if (this._environment.requiresUserGesture && errorMsg.includes('permission')) {
+        this._error = null;
+        this.emit({ type: 'scanCompleted', devices: [] });
+        return [];
+      }
+
       // Categorize errors
-      if (errorMsg.includes('WebSocket') || errorMsg.includes('Failed to connect')) {
-        this._relayStatus = 'disconnected';
-        this._error = 'BLE relay not running. Start with "make relay".';
-        this.emit({ type: 'relayStatusChanged', status: 'disconnected' });
-      } else if (errorMsg.includes('permission') || errorMsg.includes('Unauthorized')) {
+      if (errorMsg.includes('permission') || errorMsg.includes('Unauthorized')) {
         this._error = 'Bluetooth permission required. Please enable in Settings.';
       } else if (errorMsg.includes('Timeout') || errorMsg.includes('PoweredOff')) {
         this._error = 'Please enable Bluetooth on your device.';
@@ -154,39 +143,8 @@ export class ScannerController {
         this._error = `Scan failed: ${errorMsg}`;
       }
 
-      this.emit({ type: 'scanFailed', error: this._error });
+      this.emit({ type: 'scanFailed', error: this._error ?? 'Unknown error' });
       return [];
-    }
-  }
-
-  /**
-   * Check relay status (web only).
-   */
-  async checkRelayStatus(): Promise<RelayStatus> {
-    if (!requiresRelay(this.environment)) {
-      this._relayStatus = 'connected';
-      return 'connected';
-    }
-
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), this.config.relayCheckTimeoutMs);
-
-      const response = await fetch(`${this.config.relayHttpUrl}/`, { signal: controller.signal });
-      clearTimeout(timeout);
-
-      const newStatus: RelayStatus = response.ok ? 'connected' : 'error';
-      if (newStatus !== this._relayStatus) {
-        this._relayStatus = newStatus;
-        this.emit({ type: 'relayStatusChanged', status: newStatus });
-      }
-      return newStatus;
-    } catch {
-      if (this._relayStatus !== 'disconnected') {
-        this._relayStatus = 'disconnected';
-        this.emit({ type: 'relayStatusChanged', status: 'disconnected' });
-      }
-      return 'disconnected';
     }
   }
 
@@ -198,19 +156,9 @@ export class ScannerController {
     // Clear existing intervals
     this.stopAutoScan();
 
-    // Check relay status immediately and periodically
-    this.checkRelayStatus();
-    this._relayCheckInterval = setInterval(
-      () => this.checkRelayStatus(),
-      this.config.relayCheckIntervalMs
-    );
-
     // Initial scan after short delay
     setTimeout(() => {
-      if (
-        (this._relayStatus === 'connected' || !requiresRelay(this.environment)) &&
-        !isConnected()
-      ) {
+      if (!isConnected()) {
         this.scan();
       }
     }, 500);
@@ -232,10 +180,6 @@ export class ScannerController {
     if (this._autoScanInterval) {
       clearInterval(this._autoScanInterval);
       this._autoScanInterval = null;
-    }
-    if (this._relayCheckInterval) {
-      clearInterval(this._relayCheckInterval);
-      this._relayCheckInterval = null;
     }
   }
 

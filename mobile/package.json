@@ -18,7 +18,8 @@
     "format": "prettier --write \"src/**/*.{ts,tsx}\" \"app/**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"app/**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
-    "prepare": "husky"
+    "prepare": "husky",
+    "test:node-ble": "tsx scripts/test-node-connection.ts"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
@@ -32,6 +33,7 @@
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
     "@react-native-async-storage/async-storage": "^2.2.0",
+    "@react-native-community/slider": "^5.1.2",
     "@react-navigation/native": "^7.1.8",
     "expo": "~54.0.31",
     "expo-constants": "~18.0.13",
@@ -64,6 +66,7 @@
     "@testing-library/react-native": "^13.0.0",
     "@types/react": "~19.1.0",
     "@types/uuid": "^10.0.0",
+    "@types/web-bluetooth": "^0.0.21",
     "@vitest/coverage-v8": "^4.0.0",
     "eslint": "^9.18.0",
     "eslint-import-resolver-typescript": "^4.4.4",
@@ -81,9 +84,18 @@
     "prettier": "^3.4.0",
     "prettier-plugin-tailwindcss": "^0.6.9",
     "react-test-renderer": "19.1.0",
+    "tsx": "^4.19.0",
     "typescript": "~5.9.2",
     "typescript-eslint": "^8.21.0",
     "vitest": "^4.0.17"
   },
-  "private": true
+  "private": true,
+  "optionalDependencies": {
+    "webbluetooth": "^3.4.0"
+  },
+  "overrides": {
+    "eslint-plugin-react-native-a11y": {
+      "eslint": "$eslint"
+    }
+  }
 }

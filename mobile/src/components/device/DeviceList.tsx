@@ -25,12 +25,12 @@ export interface DeviceListProps {
   connectingDeviceId: string | null;
   /** Whether BLE is supported */
   bleSupported: boolean;
-  /** Whether relay is not ready (web only) */
-  relayNotReady: boolean;
   /** Environment type for warning */
   environment: string;
   /** Warning message about BLE environment */
   warningMessage: string | null;
+  /** Whether user gesture is required (web) */
+  requiresUserGesture?: boolean;
   /** Called when scan button is pressed */
   onScan: () => void;
   /** Called when a device is selected */
@@ -46,13 +46,13 @@ export function DeviceList({
   isRestoring,
   connectingDeviceId,
   bleSupported,
-  relayNotReady,
   environment,
   warningMessage,
+  requiresUserGesture = false,
   onScan,
   onDeviceSelect,
 }: DeviceListProps) {
-  const scanDisabled = isScanning || relayNotReady || !bleSupported;
+  const scanDisabled = isScanning || !bleSupported;
 
   return (
     <Card elevation={1} padding="lg">
@@ -60,7 +60,13 @@ export function DeviceList({
       <View className="mb-4 flex-row items-center justify-between">
         <Text className="text-lg font-bold text-content-primary">Voltras</Text>
         {bleSupported && (
-          <ScanButton isScanning={isScanning} disabled={scanDisabled} onPress={onScan} />
+          <ScanButton
+            isScanning={isScanning}
+            disabled={scanDisabled}
+            onPress={onScan}
+            label={requiresUserGesture ? 'Connect' : 'Scan'}
+            scanningLabel={requiresUserGesture ? 'Connecting' : 'Scanning'}
+          />
         )}
       </View>
 
@@ -90,11 +96,11 @@ export function DeviceList({
         <View className="items-center py-8">
           <Ionicons name="bluetooth-outline" size={40} color={colors.text.muted} />
           <Text className="mt-3 text-center text-sm text-content-muted">
-            {relayNotReady ? 'Waiting for BLE relay...' : 'No Voltras found'}
+            {requiresUserGesture ? 'Click to connect a device' : 'No Voltras found'}
           </Text>
-          {!relayNotReady && (
-            <Text className="mt-1 text-xs text-content-muted">Will scan again automatically</Text>
-          )}
+          <Text className="mt-1 text-xs text-content-muted">
+            {requiresUserGesture ? 'Use the Scan button above' : 'Will scan again automatically'}
+          </Text>
         </View>
       )}
 

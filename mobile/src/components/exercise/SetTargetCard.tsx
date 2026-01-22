@@ -40,14 +40,22 @@ export function SetTargetCard({
       {/* Header */}
       <View className="mb-4 flex-row items-center justify-between">
         <Text className="font-semibold text-content-muted">
-          {isDiscovery ? 'Discovery Set' : 'Set'} {setNumber} of {totalSets}
+          {isDiscovery ? 'Discovery Set' : plannedSet.isWarmup ? 'Warmup' : 'Set'} {setNumber} of{' '}
+          {totalSets}
         </Text>
         <View
           className="rounded-full px-3 py-1"
-          style={{ backgroundColor: colors.primary[500] + '20' }}
+          style={{
+            backgroundColor: plannedSet.isWarmup
+              ? colors.warning.DEFAULT + '20'
+              : colors.primary[500] + '20',
+          }}
         >
-          <Text className="font-bold" style={{ color: colors.primary[500] }}>
-            {isDiscovery ? 'Testing' : 'Working'}
+          <Text
+            className="font-bold"
+            style={{ color: plannedSet.isWarmup ? colors.warning.DEFAULT : colors.primary[500] }}
+          >
+            {isDiscovery ? 'Testing' : plannedSet.isWarmup ? 'Warmup' : 'Working'}
           </Text>
         </View>
       </View>

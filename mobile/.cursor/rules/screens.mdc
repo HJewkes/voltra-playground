@@ -18,13 +18,12 @@ Screens are **pure orchestration** - they compose components and connect to hook
 ```typescript
 // screens/SettingsScreen.tsx - GOOD: pure orchestration
 export function SettingsScreen() {
-  const { discoveredDevices, isScanning, scan, relayStatus, isConnected } = useConnectionStore();
+  const { discoveredDevices, isScanning, scan, isConnected } = useConnectionStore();
   
   return (
     <ScrollView>
       {isConnected && <ConnectionBanner />}
       {!isConnected && <DeviceList devices={discoveredDevices} onScan={scan} />}
-      {isWeb && <RelayStatus status={relayStatus} />}
     </ScrollView>
   );
 }

@@ -11,14 +11,11 @@
 import { BleManager, type Device as BleDevice, State } from 'react-native-ble-plx';
 // eslint-disable-next-line react-native/split-platform-components
 import { AppState, type AppStateStatus, Platform, PermissionsAndroid } from 'react-native';
-import type {
-  BLEAdapter,
-  Device,
-  ConnectionState,
-  NotificationCallback,
-  ConnectionStateCallback,
-  ConnectOptions,
-} from './types';
+import { BaseBLEAdapter } from './base';
+import type { Device, ConnectOptions, BLEServiceConfig } from './types';
+
+// Re-export BLEServiceConfig for backward compatibility
+export type { BLEServiceConfig } from './types';
 
 /**
  * Request Android Bluetooth permissions at runtime.
@@ -89,20 +86,6 @@ function bytesToBase64(bytes: Uint8Array): string {
 }
 
 /**
- * BLE service configuration for the adapter.
- */
-export interface BLEServiceConfig {
-  /** Main service UUID */
-  serviceUUID: string;
-  /** Characteristic UUID for receiving notifications */
-  notifyCharUUID: string;
-  /** Characteristic UUID for writing commands */
-  writeCharUUID: string;
-  /** Optional device name prefix for filtering during scan */
-  deviceNamePrefix?: string;
-}
-
-/**
  * Configuration for auto-reconnect behavior.
  */
 export interface NativeAdapterConfig {
@@ -126,12 +109,9 @@ const DEFAULT_RECONNECT_CONFIG = {
  * BLE adapter using react-native-ble-plx for native device communication.
  * Supports auto-reconnect when app resumes from background.
  */
-export class NativeBLEAdapter implements BLEAdapter {
+export class NativeBLEAdapter extends BaseBLEAdapter {
   private manager: BleManager;
   private device: BleDevice | null = null;
-  private connectionState: ConnectionState = 'disconnected';
-  private notificationCallbacks: NotificationCallback[] = [];
-  private stateCallbacks: ConnectionStateCallback[] = [];
   private notifySubscription: { remove: () => void } | null = null;
   private writeSubscription: { remove: () => void } | null = null;
   private bleConfig: BLEServiceConfig;
@@ -156,6 +136,7 @@ export class NativeBLEAdapter implements BLEAdapter {
   private onReconnectFailed?: (error: Error) => void;
 
   constructor(config: NativeAdapterConfig) {
+    super();
     this.bleConfig = config.ble;
     this.autoReconnect = config.autoReconnect ?? DEFAULT_RECONNECT_CONFIG.autoReconnect;
     this.maxReconnectAttempts =
@@ -247,19 +228,6 @@ export class NativeBLEAdapter implements BLEAdapter {
     console.error('[NativeBLE] Auto-reconnect failed after all attempts');
     this.isReconnecting = false;
     this.onReconnectFailed?.(new Error('Auto-reconnect failed'));
-  }
-
-  private setConnectionState(state: ConnectionState): void {
-    if (this.connectionState !== state) {
-      this.connectionState = state;
-      for (const callback of this.stateCallbacks) {
-        try {
-          callback(state);
-        } catch (e) {
-          console.error('[NativeBLE] State callback error:', e);
-        }
-      }
-    }
   }
 
   private async waitForPoweredOn(): Promise<void> {
@@ -437,7 +405,7 @@ export class NativeBLEAdapter implements BLEAdapter {
           }
           if (characteristic?.value) {
             const bytes = base64ToBytes(characteristic.value);
-            this.notifyCallbacks(bytes);
+            this.emitNotification(bytes);
           }
         }
       );
@@ -462,7 +430,7 @@ export class NativeBLEAdapter implements BLEAdapter {
           }
           if (characteristic?.value) {
             const bytes = base64ToBytes(characteristic.value);
-            this.notifyCallbacks(bytes);
+            this.emitNotification(bytes);
           }
         }
       );
@@ -508,16 +476,6 @@ export class NativeBLEAdapter implements BLEAdapter {
     }
   }
 
-  private notifyCallbacks(data: Uint8Array): void {
-    for (const callback of this.notificationCallbacks) {
-      try {
-        callback(data);
-      } catch (e) {
-        console.error('[NativeBLE] Notification callback error:', e);
-      }
-    }
-  }
-
   async disconnect(): Promise<void> {
     this.setConnectionState('disconnecting');
 
@@ -559,32 +517,11 @@ export class NativeBLEAdapter implements BLEAdapter {
     );
   }
 
-  onNotification(callback: NotificationCallback): () => void {
-    this.notificationCallbacks.push(callback);
-    return () => {
-      const index = this.notificationCallbacks.indexOf(callback);
-      if (index >= 0) {
-        this.notificationCallbacks.splice(index, 1);
-      }
-    };
-  }
-
-  onConnectionStateChange(callback: ConnectionStateCallback): () => void {
-    this.stateCallbacks.push(callback);
-    return () => {
-      const index = this.stateCallbacks.indexOf(callback);
-      if (index >= 0) {
-        this.stateCallbacks.splice(index, 1);
-      }
-    };
-  }
-
-  getConnectionState(): ConnectionState {
-    return this.connectionState;
-  }
-
-  isConnected(): boolean {
-    return this.connectionState === 'connected' && this.device !== null;
+  /**
+   * Override isConnected to also check if device exists.
+   */
+  override isConnected(): boolean {
+    return super.isConnected() && this.device !== null;
   }
 
   /**

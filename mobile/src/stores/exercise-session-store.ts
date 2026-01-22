@@ -401,14 +401,33 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
         },
 
         manualStopRecording: () => {
+          console.log('[ExerciseSessionStore] manualStopRecording called');
           // Delegate to recording store
           if (recordingStore) {
             const state = get();
             const weight = state.currentPlannedSet?.weight ?? 0;
+            console.log('[ExerciseSessionStore] Stopping recording with weight:', weight);
             const completedSet = recordingStore.getState().stopRecording(weight);
+            console.log('[ExerciseSessionStore] Completed set:', completedSet ? 'yes' : 'no');
             if (completedSet) {
               get().onSetCompleted(completedSet);
+            } else {
+              // No reps completed - still allow ending the set for testing/skipping
+              // Just transition to rest/ready state
+              console.log('[ExerciseSessionStore] No reps, skipping to next set');
+              const { session } = get();
+              if (session) {
+                const nextSetIndex = session.completedSets.length;
+                const hasMoreSets = nextSetIndex < session.plan.sets.length;
+                if (hasMoreSets) {
+                  set({ uiState: 'ready' });
+                } else {
+                  set({ uiState: 'results' });
+                }
+              }
             }
+          } else {
+            console.log('[ExerciseSessionStore] No recordingStore bound!');
           }
         },
 

@@ -1,13 +1,13 @@
 /**
  * WeightPicker
  *
- * A +/- stepper control for selecting weight values.
- * Large, touch-friendly buttons with prominent display.
+ * A slider control for selecting weight values.
+ * Shows current weight prominently with a draggable thumb slider.
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, type StyleProp, type ViewStyle } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, type StyleProp, type ViewStyle } from 'react-native';
+import Slider from '@react-native-community/slider';
 import { colors } from '@/theme';
 
 export interface WeightPickerProps {
@@ -28,7 +28,7 @@ export interface WeightPickerProps {
 }
 
 /**
- * WeightPicker component - +/- stepper for weight selection.
+ * WeightPicker component - slider for weight selection.
  *
  * @example
  * ```tsx
@@ -49,48 +49,41 @@ export function WeightPicker({
   unit = 'lbs',
   style,
 }: WeightPickerProps) {
-  const handleDecrement = () => {
-    onChange(Math.max(min, value - step));
-  };
-
-  const handleIncrement = () => {
-    onChange(Math.min(max, value + step));
+  // Round to nearest step to ensure clean values
+  const handleChange = (newValue: number) => {
+    const rounded = Math.round(newValue / step) * step;
+    onChange(Math.max(min, Math.min(max, rounded)));
   };
 
   return (
-    <View className="flex-row items-center justify-center" style={style}>
-      <TouchableOpacity
-        onPress={handleDecrement}
-        disabled={value <= min}
-        className="h-14 w-14 items-center justify-center rounded-full border border-surface-100"
-        style={{
-          backgroundColor: colors.surface.dark,
-          opacity: value <= min ? 0.5 : 1,
-        }}
-        activeOpacity={0.7}
-      >
-        <Ionicons name="remove" size={28} color={colors.text.secondary} />
-      </TouchableOpacity>
-
-      <View className="mx-10 items-center">
-        <Text className="text-6xl font-bold" style={{ color: colors.primary[500] }}>
+    <View style={style}>
+      {/* Current value display */}
+      <View className="mb-4 items-center">
+        <Text className="text-5xl font-bold" style={{ color: colors.primary[500] }}>
           {value}
         </Text>
         <Text className="text-lg text-content-tertiary">{unit}</Text>
       </View>
 
-      <TouchableOpacity
-        onPress={handleIncrement}
-        disabled={value >= max}
-        className="h-14 w-14 items-center justify-center rounded-full border border-surface-100"
-        style={{
-          backgroundColor: colors.surface.dark,
-          opacity: value >= max ? 0.5 : 1,
-        }}
-        activeOpacity={0.7}
-      >
-        <Ionicons name="add" size={28} color={colors.text.secondary} />
-      </TouchableOpacity>
+      {/* Slider */}
+      <View className="px-2">
+        <Slider
+          value={value}
+          onValueChange={handleChange}
+          minimumValue={min}
+          maximumValue={max}
+          step={step}
+          minimumTrackTintColor={colors.primary[500]}
+          maximumTrackTintColor={colors.surface.card}
+          thumbTintColor={colors.primary[500]}
+        />
+
+        {/* Min/Max labels */}
+        <View className="mt-1 flex-row justify-between">
+          <Text className="text-xs text-content-muted">{min}</Text>
+          <Text className="text-xs text-content-muted">{max}</Text>
+        </View>
+      </View>
     </View>
   );
 }

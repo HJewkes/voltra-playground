@@ -44,14 +44,14 @@ export function useDiscoveryFlow() {
 
 ```typescript
 // BAD: business logic in hook (should be in store)
-export function useRelayStatus() {
-  const [status, setStatus] = useState('checking');
+export function useDeviceScanner() {
+  const [devices, setDevices] = useState([]);
   
-  const checkStatus = useCallback(async () => {
+  const scan = useCallback(async () => {
     try {
-      const response = await fetch(url);
-      setStatus(response.ok ? 'connected' : 'error');
-    } catch { setStatus('disconnected'); }
+      const found = await adapter.scan(5);
+      setDevices(found);
+    } catch { setDevices([]); }
   }, []);
   
   // ... this logic belongs in connection-store

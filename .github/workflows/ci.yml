@@ -63,30 +63,3 @@ jobs:
           echo "Coverage report generated"
         working-directory: mobile
 
-  relay-lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - run: pip install -r requirements.txt
-        working-directory: relay
-      - run: ruff check .
-        working-directory: relay
-      - run: ruff format --check .
-        working-directory: relay
-      - run: mypy main.py
-        working-directory: relay
-
-  relay-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - run: pip install -r requirements.txt
-        working-directory: relay
-      - run: pytest -v --cov=. --cov-fail-under=60
-        working-directory: relay

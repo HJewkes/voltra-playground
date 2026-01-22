@@ -17,6 +17,10 @@ export interface ScanButtonProps {
   disabled: boolean;
   /** Called when button is pressed */
   onPress: () => void;
+  /** Custom label (defaults to "Scan") */
+  label?: string;
+  /** Custom scanning label (defaults to "Scanning") */
+  scanningLabel?: string;
 }
 
 /**
@@ -31,7 +35,13 @@ export interface ScanButtonProps {
  * />
  * ```
  */
-export function ScanButton({ isScanning, disabled, onPress }: ScanButtonProps) {
+export function ScanButton({
+  isScanning,
+  disabled,
+  onPress,
+  label = 'Scan',
+  scanningLabel = 'Scanning',
+}: ScanButtonProps) {
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -45,12 +55,12 @@ export function ScanButton({ isScanning, disabled, onPress }: ScanButtonProps) {
       {isScanning ? (
         <>
           <ActivityIndicator size="small" color={colors.primary[500]} />
-          <Text className="ml-2 text-sm font-medium text-primary-500">Scanning</Text>
+          <Text className="ml-2 text-sm font-medium text-primary-500">{scanningLabel}</Text>
         </>
       ) : (
         <>
           <Ionicons
-            name="refresh"
+            name={label === 'Connect' ? 'bluetooth' : 'refresh'}
             size={16}
             color={disabled ? colors.text.muted : colors.text.secondary}
           />
@@ -58,7 +68,7 @@ export function ScanButton({ isScanning, disabled, onPress }: ScanButtonProps) {
             className="ml-2 text-sm font-medium"
             style={{ color: disabled ? colors.text.muted : colors.text.secondary }}
           >
-            Scan
+            {label}
           </Text>
         </>
       )}

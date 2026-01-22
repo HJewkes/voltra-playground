@@ -8,9 +8,9 @@
 import React, { useCallback } from 'react';
 import { View, Text, ScrollView } from 'react-native';
 import { Surface, InfoRow, ErrorBanner } from '@/components/ui';
-import { ConnectionBanner, DeviceList, RelayStatus } from '@/components/device';
+import { ConnectionBanner, DeviceList } from '@/components/device';
 import { DevToolsSection } from '@/components/settings';
-import { useConnectionStore } from '@/stores';
+import { useConnectionStore, selectBleEnvironment } from '@/stores';
 import type { Device } from '@/domain/bluetooth/adapters';
 
 /**
@@ -22,10 +22,8 @@ export function SettingsScreen() {
     discoveredDevices,
     isScanning,
     isRestoring,
-    relayStatus,
     error,
     connectingDeviceId,
-    bleEnvironment,
     primaryDeviceId,
     devices,
     // Actions
@@ -36,17 +34,26 @@ export function SettingsScreen() {
     getPrimaryDevice,
   } = useConnectionStore();
 
+  // BLE environment - detected fresh to avoid SSR/caching issues
+  const bleEnvironment = selectBleEnvironment();
+  const { bleSupported, warningMessage, environment, isWeb, requiresUserGesture } = bleEnvironment;
+
   // Compute derived state locally (Zustand getters don't trigger re-renders reliably)
-  const isWeb = bleEnvironment.isWeb;
   const isConnected = !!(primaryDeviceId && devices.has(primaryDeviceId));
   const connectedDeviceName = getPrimaryDevice()?.getState().deviceName ?? null;
-  const relayNotReady = isWeb && relayStatus !== 'connected';
-
-  // Environment
-  const { bleSupported, warningMessage, environment } = bleEnvironment;
 
   // Wrap actions for the DeviceList component
-  const handleScan = useCallback(() => scan(), [scan]);
+  // On web, auto-connect after device is selected from browser picker
+  const handleScan = useCallback(async () => {
+    await scan();
+    if (requiresUserGesture) {
+      const devices = useConnectionStore.getState().discoveredDevices;
+      if (devices.length > 0) {
+        const device = devices[devices.length - 1]; // Most recently selected
+        await connectDevice(device);
+      }
+    }
+  }, [scan, requiresUserGesture, connectDevice]);
   const handleConnect = useCallback((device: Device) => connectDevice(device), [connectDevice]);
   const handleDisconnect = useCallback(() => {
     if (primaryDeviceId) {
@@ -73,9 +80,9 @@ export function SettingsScreen() {
             isRestoring={isRestoring}
             connectingDeviceId={connectingDeviceId}
             bleSupported={bleSupported}
-            relayNotReady={relayNotReady}
             environment={environment}
             warningMessage={warningMessage}
+            requiresUserGesture={requiresUserGesture}
             onScan={handleScan}
             onDeviceSelect={handleConnect}
           />
@@ -85,9 +92,6 @@ export function SettingsScreen() {
         {error && (
           <ErrorBanner message={error} onDismiss={clearError} style={{ marginVertical: 16 }} />
         )}
-
-        {/* Relay Status (Web only) */}
-        {isWeb && <RelayStatus status={relayStatus} />}
 
         {/* Dev Tools (DEV only) */}
         {__DEV__ && <DevToolsSection />}
@@ -109,7 +113,7 @@ function AppInfoSection({ isWeb }: { isWeb: boolean }) {
       <Surface elevation="inset" radius="lg" border={false} style={{ marginBottom: 16 }}>
         <View className="p-4">
           <InfoRow label="Version" value="0.2.0" showBorder />
-          <InfoRow label="BLE Mode" value={isWeb ? 'Proxy (Web)' : 'Native'} />
+          <InfoRow label="BLE Mode" value={isWeb ? 'Web Bluetooth' : 'Native'} />
         </View>
       </Surface>
 

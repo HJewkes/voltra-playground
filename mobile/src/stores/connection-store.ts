@@ -2,7 +2,7 @@
  * Connection Store
  *
  * Singleton Zustand store that manages the fleet of connected Voltra devices.
- * Handles scanning, connection, auto-reconnect, relay status, and auto-scan logic.
+ * Handles scanning, connection, auto-reconnect, and auto-scan logic.
  *
  * Uses ScannerController for scanning operations.
  */
@@ -18,7 +18,6 @@ import {
   type Device,
   type ScannerConfig,
   type ScannerEvent,
-  type RelayStatus,
 } from '@/domain/bluetooth';
 import type { SampleRecording } from '@/data/recordings';
 import { Auth, Init, Timing, BLE, filterVoltraDevices } from '@/domain/voltra';
@@ -33,13 +32,7 @@ import { createVoltraStore, type VoltraStoreApi } from './voltra-store';
 import { delay } from '@/domain/shared/utils';
 import { detectBLEEnvironment } from '@/domain/bluetooth/models/environment';
 
-import {
-  RELAY_HTTP_URL,
-  RELAY_CHECK_TIMEOUT,
-  RELAY_CHECK_INTERVAL,
-  SCAN_DURATION,
-  SCAN_INTERVAL,
-} from '@/config';
+import { SCAN_DURATION, SCAN_INTERVAL } from '@/config';
 
 // Import BLEEnvironmentInfo type for the store
 import type { BLEEnvironmentInfo } from '@/domain/bluetooth/models/environment';
@@ -47,8 +40,6 @@ import type { BLEEnvironmentInfo } from '@/domain/bluetooth/models/environment';
 // =============================================================================
 // Types
 // =============================================================================
-
-export type { RelayStatus };
 
 interface ConnectionStoreState {
   // BLE Environment (static - detected once at startup)
@@ -70,9 +61,6 @@ interface ConnectionStoreState {
 
   // Connection in progress
   connectingDeviceId: string | null;
-
-  // Relay status (synced from ScannerController)
-  relayStatus: RelayStatus;
 
   // Error state
   error: string | null;
@@ -103,9 +91,6 @@ interface ConnectionStoreState {
   restoreLastConnection: () => Promise<void>;
   setAutoReconnect: (enabled: boolean) => Promise<void>;
 
-  // Actions - Relay status
-  checkRelayStatus: () => Promise<void>;
-
   // Actions - Error handling
   setError: (error: string | null) => void;
   clearError: () => void;
@@ -131,23 +116,26 @@ interface ConnectionStoreState {
 const scannerConfig: ScannerConfig = {
   scanDurationMs: SCAN_DURATION,
   scanIntervalMs: SCAN_INTERVAL,
-  relayCheckTimeoutMs: RELAY_CHECK_TIMEOUT,
-  relayCheckIntervalMs: RELAY_CHECK_INTERVAL,
-  relayHttpUrl: RELAY_HTTP_URL,
 };
 
 // =============================================================================
 // Store
 // =============================================================================
 
-// Detect environment once at module load
-const bleEnvironment = detectBLEEnvironment();
+// Placeholder environment - will be replaced by selector
+const PLACEHOLDER_ENVIRONMENT: BLEEnvironmentInfo = {
+  environment: 'web',
+  bleSupported: true,
+  warningMessage: null,
+  isWeb: true,
+  requiresUserGesture: true,
+};
 
 export const useConnectionStore = create<ConnectionStoreState>()(
   devtools(
     (set, get) => ({
-      // BLE Environment (static)
-      bleEnvironment,
+      // BLE Environment - placeholder, use selectBleEnvironment selector instead
+      bleEnvironment: PLACEHOLDER_ENVIRONMENT,
 
       // State
       devices: new Map(),
@@ -157,7 +145,6 @@ export const useConnectionStore = create<ConnectionStoreState>()(
       isRestoring: false,
       isReconnecting: false,
       connectingDeviceId: null,
-      relayStatus: bleEnvironment.isWeb ? 'checking' : 'connected',
       error: null,
       autoReconnectEnabled: true,
       autoScanEnabled: true,
@@ -206,21 +193,12 @@ export const useConnectionStore = create<ConnectionStoreState>()(
               case 'scanFailed':
                 set({ isScanning: false, error: event.error });
                 break;
-
-              case 'relayStatusChanged':
-                set({ relayStatus: event.status });
-                break;
             }
           });
 
           set({ _scanner: scanner });
         }
         return scanner;
-      },
-
-      checkRelayStatus: async () => {
-        const scanner = get()._initScanner();
-        await scanner.checkRelayStatus();
       },
 
       setError: (error) => set({ error }),
@@ -329,9 +307,7 @@ export const useConnectionStore = create<ConnectionStoreState>()(
           voltraStore.getState()._dispose();
 
           // Categorize error for better UX
-          if (errMsg.includes('WebSocket') || errMsg.includes('relay')) {
-            set({ error: 'Cannot connect to BLE relay. Run "make relay" in terminal.' });
-          } else if (errMsg.includes('timeout')) {
+          if (errMsg.includes('timeout')) {
             set({ error: 'Connection timed out. Ensure Voltra is powered on.' });
           } else {
             set({ error: `Connection failed: ${errMsg}` });
@@ -456,6 +432,17 @@ export const useConnectionStore = create<ConnectionStoreState>()(
       },
 
       restoreLastConnection: async () => {
+        // On web, auto-reconnect is not possible - Web Bluetooth requires user gesture
+        // to select a device via requestDevice() before connecting
+        const env = detectBLEEnvironment();
+        if (env.requiresUserGesture) {
+          console.log('[SessionStore] Skipping auto-reconnect on web (requires user gesture)');
+          // Still load the preference so UI can show it
+          const autoReconnect = await isAutoReconnectEnabled();
+          set({ autoReconnectEnabled: autoReconnect, isRestoring: false });
+          return;
+        }
+
         set({ isRestoring: true });
 
         // Add a timeout to prevent hanging forever
@@ -548,8 +535,16 @@ export const useConnectionStore = create<ConnectionStoreState>()(
 // Do NOT use the getters pattern (get isX() { return get()... }) as Zustand
 // cannot track those for re-renders.
 
+/**
+ * Get the BLE environment - always detects fresh to avoid SSR/caching issues.
+ * Use this selector instead of accessing bleEnvironment directly.
+ */
+export const selectBleEnvironment = (): BLEEnvironmentInfo => {
+  return detectBLEEnvironment();
+};
+
 /** Whether running on web */
-export const selectIsWeb = (state: ConnectionStoreState) => state.bleEnvironment.isWeb;
+export const selectIsWeb = () => selectBleEnvironment().isWeb;
 
 /** Whether a device is connected */
 export const selectIsConnected = (state: ConnectionStoreState) =>
@@ -560,7 +555,3 @@ export const selectConnectedDeviceName = (state: ConnectionStoreState) => {
   const device = state.primaryDeviceId ? state.devices.get(state.primaryDeviceId) : null;
   return device?.getState().deviceName ?? null;
 };
-
-/** Whether relay is required but not ready */
-export const selectRelayNotReady = (state: ConnectionStoreState) =>
-  state.bleEnvironment.isWeb && state.relayStatus !== 'connected';

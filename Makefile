@@ -3,12 +3,13 @@
 # Commands for setting up and running the Voltra workout app
 #
 
-.PHONY: help setup setup-mobile setup-relay setup-hooks mobile web relay relay-bg ios ios-device ios-sim android test test-watch clean
-.PHONY: lint lint-mobile lint-relay lint-fix lint-fix-mobile lint-fix-relay
-.PHONY: format format-mobile format-relay format-check format-check-mobile format-check-relay
-.PHONY: typecheck typecheck-mobile typecheck-relay
-.PHONY: test-unit test-integration test-unit-mobile test-integration-mobile test-unit-relay test-integration-relay test-coverage
+.PHONY: help setup setup-mobile setup-hooks mobile web ios ios-device ios-sim android android-device test test-watch clean
+.PHONY: lint lint-mobile lint-fix lint-fix-mobile
+.PHONY: format format-mobile format-check format-check-mobile
+.PHONY: typecheck typecheck-mobile
+.PHONY: test-unit test-integration test-unit-mobile test-integration-mobile test-coverage
 .PHONY: security security-audit check check-quick ci
+.PHONY: stop kill-expo
 
 # Default target
 help:
@@ -17,15 +18,14 @@ help:
 	@echo "Setup:"
 	@echo "  make setup          - Set up everything (deps + git hooks)"
 	@echo "  make setup-mobile   - Install mobile app dependencies"
-	@echo "  make setup-relay    - Create Python venv and install relay dependencies"
 	@echo "  make setup-hooks    - Set up git hooks (husky)"
 	@echo ""
 	@echo "Code Quality:"
-	@echo "  make lint           - Run all linters (ESLint + Ruff)"
+	@echo "  make lint           - Run linter (ESLint)"
 	@echo "  make lint-fix       - Auto-fix lint issues"
 	@echo "  make format         - Format all code"
 	@echo "  make format-check   - Check formatting without changes"
-	@echo "  make typecheck      - Run TypeScript + mypy type checking"
+	@echo "  make typecheck      - Run TypeScript type checking"
 	@echo ""
 	@echo "Testing:"
 	@echo "  make test           - Run all tests"
@@ -42,12 +42,10 @@ help:
 	@echo "  make check-quick    - Fast check (lint + types, no tests)"
 	@echo "  make ci             - Full CI simulation (security + check)"
 	@echo ""
-	@echo "Mac Development (Web + BLE Relay):"
-	@echo "  make dev            - Start relay (bg) + web app together"
-	@echo "  make web            - Start Expo web dev server only"
-	@echo "  make relay          - Start BLE relay service (foreground)"
-	@echo "  make relay-bg       - Start BLE relay service (background)"
-	@echo "  make relay-stop     - Stop background relay service"
+	@echo "Mac Development (Web):"
+	@echo "  make dev            - Start Expo web dev server (stops existing first)"
+	@echo "  make web            - Alias for dev"
+	@echo "  make stop           - Stop any running Expo dev servers"
 	@echo ""
 	@echo "iOS Development:"
 	@echo "  make ios-device     - Build and run on physical iPhone"
@@ -66,7 +64,7 @@ help:
 # Setup
 # =============================================================================
 
-setup: setup-relay setup-mobile setup-hooks
+setup: setup-mobile setup-hooks
 	@echo ""
 	@echo "✅ Setup complete!"
 	@echo ""
@@ -81,54 +79,33 @@ setup-mobile:
 	cd mobile && npm install
 	@echo "✅ Mobile dependencies installed"
 
-setup-relay:
-	@echo "🔗 Setting up BLE relay service..."
-	cd relay && python3 -m venv venv
-	cd relay && ./venv/bin/pip install --upgrade pip
-	cd relay && ./venv/bin/pip install -r requirements.txt
-	@echo "✅ Relay dependencies installed"
-
 setup-hooks:
 	@echo "🔧 Setting up git hooks..."
 	cd mobile && npm run prepare
 	@echo "✅ Git hooks configured"
 
 # =============================================================================
-# Mac Development (Web + Relay)
+# Mac Development (Web)
 # =============================================================================
 
-web:
+# Kill any existing Expo processes
+kill-expo:
+	@echo "🛑 Stopping any existing Expo processes..."
+	@-pkill -f "expo start" 2>/dev/null || true
+	@-lsof -ti:8081 | xargs kill -9 2>/dev/null || true
+	@sleep 1
+
+# Stop alias
+stop: kill-expo
+	@echo "✅ Stopped"
+
+web: kill-expo
 	@echo "🌐 Starting Expo web dev server..."
-	@echo "   Open http://localhost:8081 in your browser"
+	@echo "   Open http://localhost:8081 in Chrome/Edge for Web Bluetooth support"
 	@echo ""
 	cd mobile && CI=false npx expo start --web
 
-relay:
-	@echo "🔗 Starting BLE relay service on ws://localhost:8765..."
-	@echo "   Press Ctrl+C to stop"
-	cd relay && ./venv/bin/python main.py
-
-relay-bg:
-	@echo "🔗 Starting BLE relay service in background..."
-	@cd relay && ./venv/bin/python main.py > /tmp/voltra-relay.log 2>&1 & echo $$! > /tmp/voltra-relay.pid
-	@sleep 1
-	@echo "   PID: $$(cat /tmp/voltra-relay.pid)"
-	@echo "   Logs: /tmp/voltra-relay.log"
-	@echo "   Stop with: make relay-stop"
-
-relay-stop:
-	@if [ -f /tmp/voltra-relay.pid ]; then \
-		kill $$(cat /tmp/voltra-relay.pid) 2>/dev/null || true; \
-		rm -f /tmp/voltra-relay.pid; \
-		echo "🛑 Relay service stopped"; \
-	else \
-		echo "No relay service running"; \
-	fi
-
-dev: relay-bg
-	@echo ""
-	@sleep 1
-	@$(MAKE) web
+dev: web
 
 # =============================================================================
 # iOS Development
@@ -151,10 +128,33 @@ ios: ios-sim
 # Android Development
 # =============================================================================
 
+android-device:
+	@echo "📱 Building for physical Android device (USB)..."
+	@echo ""
+	@DEVICE_ID=$$(adb devices 2>/dev/null | grep 'device$$' | head -1 | cut -f1); \
+	if [ -z "$$DEVICE_ID" ]; then \
+		echo "❌ No Android device detected!"; \
+		echo ""; \
+		echo "Troubleshooting:"; \
+		echo "  1. Ensure USB debugging is enabled (Settings → Developer options)"; \
+		echo "  2. Unlock your phone and check for 'Allow USB debugging?' prompt"; \
+		echo "  3. Try: Settings → Developer options → Revoke USB debugging authorizations"; \
+		echo "     Then unplug/replug the cable and accept the prompt"; \
+		echo "  4. Make sure USB mode is 'File transfer' (not 'Charging only')"; \
+		echo "  5. Try a different USB cable (some are charge-only)"; \
+		echo ""; \
+		echo "Run 'adb devices' to check connection status."; \
+		echo "See: mobile/docs/ANDROID-DEVELOPMENT.md"; \
+		exit 1; \
+	fi; \
+	echo "✅ Device detected: $$DEVICE_ID"; \
+	echo ""; \
+	cd mobile && ANDROID_SERIAL="$$DEVICE_ID" npx expo run:android --device
+
 android:
-	@echo "📱 Building for physical Android device..."
-	@echo "   Note: Requires Android Studio + JDK setup"
-	@echo "   See: mobile/docs/ANDROID-DEVELOPMENT.md"
+	@echo "📱 Building for Android..."
+	@echo "   Note: Will show device picker if multiple devices/emulators available"
+	@echo "   For physical device only, use: make android-device"
 	@echo ""
 	cd mobile && npx expo run:android
 
@@ -162,7 +162,7 @@ android:
 # Expo Go (Limited - No Native BLE)
 # =============================================================================
 
-mobile:
+mobile: kill-expo
 	@echo "📱 Starting Expo dev server..."
 	@echo "   Note: Expo Go does NOT support native BLE"
 	@echo "   For BLE testing, use: make ios-device"
@@ -173,91 +173,67 @@ mobile:
 # Linting
 # =============================================================================
 
-lint: lint-mobile lint-relay
+lint: lint-mobile
 	@echo "✅ All linting passed!"
 
 lint-mobile:
 	@echo "🔍 Linting mobile app..."
 	cd mobile && npm run lint
 
-lint-relay:
-	@echo "🔍 Linting relay service..."
-	cd relay && ./venv/bin/ruff check .
-
-lint-fix: lint-fix-mobile lint-fix-relay
+lint-fix: lint-fix-mobile
 	@echo "✅ All lint fixes applied!"
 
 lint-fix-mobile:
 	@echo "🔧 Fixing mobile lint issues..."
 	cd mobile && npm run lint:fix
 
-lint-fix-relay:
-	@echo "🔧 Fixing relay lint issues..."
-	cd relay && ./venv/bin/ruff check --fix .
-
 # =============================================================================
 # Formatting
 # =============================================================================
 
-format: format-mobile format-relay
+format: format-mobile
 	@echo "✅ All formatting applied!"
 
 format-mobile:
 	@echo "🎨 Formatting mobile app..."
 	cd mobile && npm run format
 
-format-relay:
-	@echo "🎨 Formatting relay service..."
-	cd relay && ./venv/bin/ruff format .
-
-format-check: format-check-mobile format-check-relay
+format-check: format-check-mobile
 	@echo "✅ All format checks passed!"
 
 format-check-mobile:
 	@echo "🔍 Checking mobile formatting..."
 	cd mobile && npm run format:check
 
-format-check-relay:
-	@echo "🔍 Checking relay formatting..."
-	cd relay && ./venv/bin/ruff format --check .
-
 # =============================================================================
 # Type Checking
 # =============================================================================
 
-typecheck: typecheck-mobile typecheck-relay
+typecheck: typecheck-mobile
 	@echo "✅ All type checks passed!"
 
 typecheck-mobile:
 	@echo "🔍 Type checking mobile app..."
 	cd mobile && npm run typecheck
 
-typecheck-relay:
-	@echo "🔍 Type checking relay service..."
-	cd relay && ./venv/bin/mypy main.py
-
 # =============================================================================
 # Testing
 # =============================================================================
 
-test: test-mobile test-relay
+test: test-mobile
 	@echo "✅ All tests passed!"
 
 test-mobile:
 	@echo "🧪 Running mobile tests..."
 	cd mobile && npm test
 
-test-relay:
-	@echo "🧪 Running relay tests..."
-	cd relay && ./venv/bin/pytest -v
-
 test-watch:
 	@echo "🧪 Running tests in watch mode..."
 	cd mobile && npm run test:watch
 
 # Granular test targets
-test-unit: test-unit-mobile test-unit-relay
-test-integration: test-integration-mobile test-integration-relay
+test-unit: test-unit-mobile
+test-integration: test-integration-mobile
 
 test-unit-mobile:
 	@echo "🧪 Running mobile unit tests..."
@@ -267,18 +243,9 @@ test-integration-mobile:
 	@echo "🧪 Running mobile integration tests..."
 	cd mobile && npm run test:integration
 
-test-unit-relay:
-	@echo "🧪 Running relay unit tests..."
-	cd relay && ./venv/bin/pytest tests/test_relay.py -v
-
-test-integration-relay:
-	@echo "🧪 Running relay integration tests..."
-	cd relay && ./venv/bin/pytest tests/test_api.py -v
-
 test-coverage:
 	@echo "🧪 Running tests with coverage..."
 	cd mobile && npm run test:coverage
-	cd relay && ./venv/bin/pytest --cov=. --cov-report=term-missing --cov-fail-under=60
 
 # =============================================================================
 # Security
@@ -307,7 +274,7 @@ check-quick: lint typecheck
 ci: security check
 	@echo "✅ CI simulation complete!"
 
-clean: clean-mobile clean-relay
+clean: clean-mobile
 	@echo "✅ Cleanup complete"
 
 clean-mobile:
@@ -317,10 +284,6 @@ clean-mobile:
 	rm -rf mobile/android
 	rm -rf mobile/ios
 
-clean-relay:
-	@echo "🧹 Cleaning relay venv..."
-	rm -rf relay/venv
-
 # =============================================================================
 # Info
 # =============================================================================
@@ -328,10 +291,9 @@ clean-relay:
 info:
 	@echo "Project Structure:"
 	@echo "  mobile/     - React Native app (Expo)"
-	@echo "  relay/      - Python BLE passthrough (Mac dev only)"
 	@echo ""
 	@echo "Development Options:"
-	@echo "  1. Mac + Web: make dev (uses relay for BLE)"
+	@echo "  1. Mac + Web: make dev (uses Web Bluetooth API)"
 	@echo "  2. iOS Device: make ios-device (native BLE)"
 	@echo "  3. Android Device: make android (native BLE)"
 	@echo "  4. iOS Simulator: make ios-sim (no BLE)"
@@ -339,4 +301,3 @@ info:
 	@echo "Documentation:"
 	@echo "  mobile/docs/ANDROID-DEVELOPMENT.md"
 	@echo "  mobile/docs/iOS-DEVELOPMENT.md"
-	@echo "  mobile/docs/MAC-DEVELOPMENT.md"

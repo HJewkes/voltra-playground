@@ -50,7 +50,7 @@ export function createStandardPlan(options: StandardPlanOptions): ExercisePlan {
     workingReps = 10,
     restSeconds = 90,
     goal,
-    includeWarmups = true,
+    includeWarmups = false, // Default to false for simpler UX
   } = options;
 
   const sets: PlannedSet[] = [];

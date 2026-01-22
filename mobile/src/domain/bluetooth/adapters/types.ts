@@ -1,8 +1,10 @@
 /**
  * BLE Abstraction Layer Types
  *
- * Defines interfaces for BLE operations that can be implemented by
- * either native BLE (react-native-ble-plx) or a WebSocket proxy relay.
+ * Defines interfaces for BLE operations implemented by platform-specific adapters:
+ * - Native (iOS/Android): react-native-ble-plx
+ * - Browser: Web Bluetooth API
+ * - Node.js: webbluetooth npm package
  */
 
 import { type DiscoveredDevice } from '@/domain/bluetooth/models/device';
@@ -31,8 +33,10 @@ export type ConnectionStateCallback = (state: ConnectionState) => void;
  * Abstract interface for BLE operations.
  *
  * Implemented by:
- * - NativeBLEAdapter: Uses react-native-ble-plx for direct device communication
- * - ProxyBLEAdapter: Uses WebSocket to relay through Python backend (for dev)
+ * - NativeBLEAdapter: Uses react-native-ble-plx (iOS/Android)
+ * - WebBLEAdapter: Uses Web Bluetooth API (browser)
+ * - NodeBLEAdapter: Uses webbluetooth package (Node.js)
+ * - ReplayBLEAdapter: Plays back recorded samples (testing/demo)
  */
 /**
  * Options for BLE connection.
@@ -43,6 +47,21 @@ export interface ConnectOptions {
    * Used for authentication that must happen within a tight time window.
    */
   immediateWrite?: Uint8Array;
+}
+
+/**
+ * BLE service configuration for adapters.
+ * Defines the UUIDs and device name prefix for BLE operations.
+ */
+export interface BLEServiceConfig {
+  /** Main service UUID */
+  serviceUUID: string;
+  /** Characteristic UUID for receiving notifications */
+  notifyCharUUID: string;
+  /** Characteristic UUID for writing commands */
+  writeCharUUID: string;
+  /** Optional device name prefix for filtering during scan */
+  deviceNamePrefix?: string;
 }
 
 export interface BLEAdapter {
@@ -96,12 +115,3 @@ export interface BLEAdapter {
   isConnected(): boolean;
 }
 
-/**
- * Configuration for BLE adapter selection.
- */
-export interface BLEConfig {
-  /** Use proxy adapter (WebSocket to Python relay) instead of native BLE */
-  useProxy: boolean;
-  /** Proxy server URL (only used if useProxy is true) */
-  proxyUrl?: string;
-}

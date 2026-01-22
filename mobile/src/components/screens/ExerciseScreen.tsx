@@ -162,7 +162,14 @@ export function ExerciseScreen({
   };
 
   const handleManualStop = () => {
+    console.log('[ExerciseScreen] handleManualStop called');
     sessionStore.getState().manualStopRecording();
+  };
+
+  const handleCancel = () => {
+    // Stop any device activity and go back
+    voltraStore.getState().stopRecording().catch(() => {});
+    onComplete?.();
   };
 
   // Map session UI state to recording display UI state
@@ -175,35 +182,67 @@ export function ExerciseScreen({
           ? 'resting'
           : 'idle';
 
+  // Results need scrolling, other states use flex layout
+  if (uiState === 'results') {
+    return (
+      <SafeAreaView className="bg-background flex-1" edges={['top']}>
+        <ScrollView className="flex-1" contentContainerClassName="p-4">
+          {session &&
+            (isDiscovery && recommendation ? (
+              <RecommendationCard
+                recommendation={{
+                  workingWeight: recommendation.workingWeight,
+                  repRange: recommendation.repRange,
+                  warmupSets: recommendation.warmupSets.map((s) => ({
+                    weight: s.weight,
+                    reps: s.reps,
+                    purpose: s.purpose ?? 'warmup',
+                    restSeconds: s.restSeconds ?? 90,
+                  })),
+                  confidence: recommendation.confidence,
+                  explanation: recommendation.explanation,
+                  estimated1RM: recommendation.estimated1RM,
+                  profile: recommendation.profile,
+                }}
+                exerciseId={exercise.id}
+                goal={plan.goal!}
+                onStartTraining={onNewSession}
+                onDiscoverAnother={onComplete}
+              />
+            ) : (
+              <ExerciseSessionSummaryCard
+                session={session}
+                terminationReason={terminationReason}
+                terminationMessage={terminationMessage}
+                onNewSession={onNewSession}
+                onDone={onComplete}
+              />
+            ))}
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView className="bg-background flex-1" edges={['top']}>
-      {/* Header */}
-      <View className="border-b border-surface-100 px-4 py-3">
-        <Text className="text-xl font-bold text-content-primary">{exercise.name}</Text>
-        <Text className="text-content-muted">
-          Set {currentSetIndex + 1} of {plan.sets.length}
-          {isDiscovery && ' • Discovery'}
-        </Text>
-      </View>
-
-      <ScrollView className="flex-1" contentContainerClassName="p-4">
-        {/* Progress indicator */}
-        {session && uiState !== 'results' && (
+      <View className="flex-1 px-4 pt-2">
+        {/* Progress indicator with exercise name */}
+        {session && (
           <ExerciseSessionProgress
+            exerciseName={exercise.name}
             plannedSets={plan.sets}
             completedSets={session.completedSets}
             currentSetIndex={currentSetIndex}
             isDiscovery={isDiscovery}
             error={error}
-            style={{ marginBottom: 16 }}
           />
         )}
 
-        {/* Main content area */}
-        <View className="flex-1">
+        {/* Main content area - fills remaining space */}
+        <View className="flex-1 justify-center" style={{ overflow: 'hidden' }}>
           {/* Preparing state */}
           {uiState === 'preparing' && (
-            <View className="flex-1 items-center justify-center py-20">
+            <View className="items-center">
               <ActivityIndicator size="large" color={colors.primary[500]} />
               <Text className="mt-4 text-content-muted">Setting weight...</Text>
             </View>
@@ -221,7 +260,7 @@ export function ExerciseScreen({
 
           {/* Countdown / Recording / Resting states */}
           {(uiState === 'countdown' || uiState === 'recording' || uiState === 'resting') && (
-            <View className="flex-1">
+            <View>
               <RecordingDisplayView
                 uiState={displayUIState}
                 instruction={
@@ -249,59 +288,24 @@ export function ExerciseScreen({
 
           {/* Processing state */}
           {uiState === 'processing' && (
-            <View className="flex-1 items-center justify-center py-20">
+            <View className="items-center">
               <ActivityIndicator size="large" color={colors.primary[500]} />
               <Text className="mt-4 text-content-muted">Processing...</Text>
             </View>
           )}
-
-          {/* Results state */}
-          {uiState === 'results' && session && (
-            <>
-              {isDiscovery && recommendation ? (
-                <RecommendationCard
-                  recommendation={{
-                    workingWeight: recommendation.workingWeight,
-                    repRange: recommendation.repRange,
-                    warmupSets: recommendation.warmupSets.map((s) => ({
-                      weight: s.weight,
-                      reps: s.reps,
-                      purpose: s.purpose ?? 'warmup',
-                      restSeconds: s.restSeconds ?? 90,
-                    })),
-                    confidence: recommendation.confidence,
-                    explanation: recommendation.explanation,
-                    estimated1RM: recommendation.estimated1RM,
-                    profile: recommendation.profile,
-                  }}
-                  exerciseId={exercise.id}
-                  goal={plan.goal!}
-                  onStartTraining={onNewSession}
-                  onDiscoverAnother={onComplete}
-                />
-              ) : (
-                <ExerciseSessionSummaryCard
-                  session={session}
-                  terminationReason={terminationReason}
-                  terminationMessage={terminationMessage}
-                  onNewSession={onNewSession}
-                  onDone={onComplete}
-                />
-              )}
-            </>
-          )}
         </View>
-      </ScrollView>
 
-      {/* Action buttons */}
-      <View className="px-4 pb-4">
-        <ExerciseSessionActionButtons
-          uiState={uiState}
-          onStart={handleStart}
-          onSkipRest={handleSkipRest}
-          onStopAndSave={handleStopAndSave}
-          onManualStop={handleManualStop}
-        />
+        {/* Action buttons - pinned to bottom */}
+        <View className="pb-4 pt-2" style={{ zIndex: 10 }}>
+          <ExerciseSessionActionButtons
+            uiState={uiState}
+            onStart={handleStart}
+            onSkipRest={handleSkipRest}
+            onStopAndSave={handleStopAndSave}
+            onManualStop={handleManualStop}
+            onCancel={handleCancel}
+          />
+        </View>
       </View>
     </SafeAreaView>
   );

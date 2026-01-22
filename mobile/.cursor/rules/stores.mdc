@@ -153,7 +153,7 @@ const isConnected = useConnectionStore(selectIsConnected);
 
 ```typescript
 // Single value selector
-const relayStatus = useConnectionStore(state => state.relayStatus);
+const isScanning = useConnectionStore(state => state.isScanning);
 
 // Computed selector (exported)
 const isConnected = useConnectionStore(selectIsConnected);
@@ -161,17 +161,16 @@ const isConnected = useConnectionStore(selectIsConnected);
 // Multiple values with useShallow (prevents unnecessary re-renders)
 import { useShallow } from 'zustand/react/shallow';
 
-const { relayStatus, primaryDeviceId } = useConnectionStore(
+const { isScanning, primaryDeviceId } = useConnectionStore(
   useShallow(state => ({
-    relayStatus: state.relayStatus,
+    isScanning: state.isScanning,
     primaryDeviceId: state.primaryDeviceId,
   }))
 );
 
 // OR compute derived state locally in component
-const { primaryDeviceId, devices, relayStatus, bleEnvironment } = useConnectionStore();
+const { primaryDeviceId, devices, bleEnvironment } = useConnectionStore();
 const isConnected = primaryDeviceId && devices.has(primaryDeviceId);
-const relayNotReady = bleEnvironment.isWeb && relayStatus !== 'connected';
 ```
 
 ### When to Use Each Pattern

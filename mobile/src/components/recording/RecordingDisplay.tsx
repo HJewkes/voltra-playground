@@ -199,8 +199,8 @@ export function RecordingDisplayView({
 }: RecordingDisplayViewProps) {
   return (
     <View
-      className="flex-1 items-center justify-center rounded-3xl p-8"
-      style={{ backgroundColor: getStateColor(uiState) }}
+      className="items-center justify-center rounded-3xl p-8"
+      style={{ backgroundColor: getStateColor(uiState), minHeight: 350 }}
     >
       {uiState === 'idle' && (
         <IdleDisplay instruction={instruction} subInstruction={subInstruction} />

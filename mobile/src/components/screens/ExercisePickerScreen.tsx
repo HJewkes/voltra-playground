@@ -25,7 +25,7 @@ import { type Exercise, getExercise } from '@/domain/exercise';
 import { type ExercisePlan, createStandardPlan, createDiscoveryPlan } from '@/domain/workout';
 
 // Component imports
-import { Card, Stack, ActionButton } from '@/components/ui';
+import { Card, Stack, ActionButton, WeightPicker } from '@/components/ui';
 import { ExerciseSelector, GoalPicker } from '@/components/planning';
 
 // =============================================================================
@@ -52,14 +52,15 @@ export function ExercisePickerScreen({ onStartSession, onBack }: ExercisePickerS
   // Mode selection
   const [mode, setMode] = useState<SessionMode>('standard');
 
-  // Exercise selection
-  const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null);
+  // Exercise selection - default to 'general' for easier testing
+  const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>('general');
   const [showExerciseSelector, setShowExerciseSelector] = useState(false);
 
   // Standard mode settings
-  const [workingWeight, setWorkingWeight] = useState('');
+  const [workingWeight, setWorkingWeight] = useState(25);
   const [workingSets, setWorkingSets] = useState('3');
   const [workingReps, setWorkingReps] = useState('10');
+  const [includeWarmups, setIncludeWarmups] = useState(false);
 
   // Discovery mode settings
   const [goal, setGoal] = useState<TrainingGoal>(TrainingGoal.HYPERTROPHY);
@@ -70,8 +71,7 @@ export function ExercisePickerScreen({ onStartSession, onBack }: ExercisePickerS
 
   // Validation
   const canStart =
-    selectedExerciseId &&
-    (mode === 'discovery' || (mode === 'standard' && parseInt(workingWeight) > 0));
+    selectedExerciseId && (mode === 'discovery' || (mode === 'standard' && workingWeight > 0));
 
   // Handle exercise selection
   const handleSelectExercise = useCallback((exerciseId: string) => {
@@ -88,10 +88,11 @@ export function ExercisePickerScreen({ onStartSession, onBack }: ExercisePickerS
     if (mode === 'standard') {
       plan = createStandardPlan({
         exerciseId: selectedExercise.id,
-        workingWeight: parseInt(workingWeight) || 100,
+        workingWeight: workingWeight,
         workingSets: parseInt(workingSets) || 3,
         workingReps: parseInt(workingReps) || 10,
         goal: goal,
+        includeWarmups: includeWarmups,
       });
     } else {
       plan = createDiscoveryPlan({
@@ -110,6 +111,7 @@ export function ExercisePickerScreen({ onStartSession, onBack }: ExercisePickerS
     workingReps,
     goal,
     estimatedMax,
+    includeWarmups,
     onStartSession,
   ]);
 
@@ -201,18 +203,15 @@ export function ExercisePickerScreen({ onStartSession, onBack }: ExercisePickerS
 
               {/* Working weight */}
               <View className="mb-4">
-                <Text className="mb-2 text-sm text-content-secondary">Working Weight (lbs)</Text>
-                <TextInput
-                  className="rounded-xl p-4 text-lg font-bold"
-                  style={{
-                    backgroundColor: colors.surface.dark,
-                    color: colors.content.primary,
-                  }}
+                <Text className="mb-3 text-center text-sm text-content-secondary">
+                  Working Weight
+                </Text>
+                <WeightPicker
                   value={workingWeight}
-                  onChangeText={setWorkingWeight}
-                  keyboardType="numeric"
-                  placeholder="e.g., 185"
-                  placeholderTextColor={colors.content.muted}
+                  onChange={setWorkingWeight}
+                  min={5}
+                  max={200}
+                  step={5}
                 />
               </View>
 
@@ -245,6 +244,35 @@ export function ExercisePickerScreen({ onStartSession, onBack }: ExercisePickerS
                   />
                 </View>
               </Stack>
+
+              {/* Warmup toggle */}
+              <TouchableOpacity
+                className="mt-4 flex-row items-center justify-between rounded-xl p-4"
+                style={{ backgroundColor: colors.surface.dark }}
+                onPress={() => setIncludeWarmups(!includeWarmups)}
+                activeOpacity={0.7}
+              >
+                <View className="flex-1">
+                  <Text className="font-semibold text-content-primary">Include Warmup Sets</Text>
+                  <Text className="mt-1 text-xs text-content-muted">
+                    Adds sets at 50% and 75% of working weight
+                  </Text>
+                </View>
+                <View
+                  className="h-7 w-12 rounded-full p-1"
+                  style={{
+                    backgroundColor: includeWarmups ? colors.primary[500] : colors.surface.card,
+                  }}
+                >
+                  <View
+                    className="h-5 w-5 rounded-full"
+                    style={{
+                      backgroundColor: 'white',
+                      transform: [{ translateX: includeWarmups ? 20 : 0 }],
+                    }}
+                  />
+                </View>
+              </TouchableOpacity>
             </Card>
           )}
 
@@ -282,38 +310,33 @@ export function ExercisePickerScreen({ onStartSession, onBack }: ExercisePickerS
             </>
           )}
 
-          {/* Info card */}
-          <Card
-            elevation={0}
-            padding="md"
-            style={{
-              backgroundColor: colors.primary[500] + '10',
-              borderWidth: 1,
-              borderColor: colors.primary[500] + '30',
-            }}
-          >
-            <View className="flex-row items-start">
-              <Ionicons
-                name="information-circle"
-                size={20}
-                color={colors.primary[500]}
-                style={{ marginRight: 8, marginTop: 2 }}
-              />
-              <View className="flex-1">
-                {mode === 'standard' ? (
-                  <Text className="text-sm text-content-secondary">
-                    Standard sessions include automatic warmup sets at 50% and 75% of your working
-                    weight, followed by your configured working sets.
-                  </Text>
-                ) : (
+          {/* Info card - only for discovery mode */}
+          {mode === 'discovery' && (
+            <Card
+              elevation={0}
+              padding="md"
+              style={{
+                backgroundColor: colors.primary[500] + '10',
+                borderWidth: 1,
+                borderColor: colors.primary[500] + '30',
+              }}
+            >
+              <View className="flex-row items-start">
+                <Ionicons
+                  name="information-circle"
+                  size={20}
+                  color={colors.primary[500]}
+                  style={{ marginRight: 8, marginTop: 2 }}
+                />
+                <View className="flex-1">
                   <Text className="text-sm text-content-secondary">
                     Discovery mode will guide you through increasing weights to find your optimal
                     working weight. The session will automatically stop when you reach your limit.
                   </Text>
-                )}
+                </View>
               </View>
-            </View>
-          </Card>
+            </Card>
+          )}
         </ScrollView>
 
         {/* Start button */}

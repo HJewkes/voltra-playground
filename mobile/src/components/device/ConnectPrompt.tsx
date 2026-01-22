@@ -8,7 +8,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useConnectionStore } from '@/stores';
+import { useConnectionStore, selectIsConnected, selectBleEnvironment } from '@/stores';
 import { colors } from '@/theme';
 import { SCAN_DURATION, SCAN_INTERVAL } from '@/config';
 import { Card, Stack, Surface, ListItem } from '@/components/ui';
@@ -25,45 +25,107 @@ export function ConnectPrompt({
   subtitle = 'Connect to your Voltra to continue',
   autoScan = true,
 }: ConnectPromptProps) {
-  const { discoveredDevices, isScanning, isRestoring, scan, connectDevice, bleEnvironment } =
-    useConnectionStore();
+  const {
+    discoveredDevices,
+    isScanning,
+    isRestoring,
+    scan,
+    connectDevice,
+    devices: connectedDevicesMap,
+  } = useConnectionStore();
 
-  // BLE environment info from store
-  const { environment, bleSupported, warningMessage } = bleEnvironment;
+  const isConnected = useConnectionStore(selectIsConnected);
+
+  // BLE environment - detected fresh each render to avoid SSR/caching issues
+  const bleEnvironment = selectBleEnvironment();
+  const { environment, bleSupported, warningMessage, requiresUserGesture } = bleEnvironment;
+
+  // Get list of connected devices for display
+  const connectedDevices = Array.from(connectedDevicesMap.entries()).map(([id, store]) => ({
+    id,
+    name: store.getState().deviceName ?? 'Voltra',
+  }));
+
+  // Disable auto-scan if user gesture is required (Web Bluetooth)
+  const canAutoScan = autoScan && !requiresUserGesture;
 
   const [connectingDeviceId, setConnectingDeviceId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hasScanned, setHasScanned] = useState(false);
   const scanIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Perform a scan
+  const handleConnect = useCallback(
+    async (device: Device) => {
+      setConnectingDeviceId(device.id);
+      setError(null);
+      try {
+        await connectDevice(device);
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : String(e);
+        setError(`Connection failed: ${msg}`);
+      } finally {
+        setConnectingDeviceId(null);
+      }
+    },
+    [connectDevice]
+  );
+
+  // Perform a scan (and auto-connect on web)
   const doScan = useCallback(async () => {
-    if (isScanning) return;
+    if (isScanning || connectingDeviceId) return;
 
     try {
       setHasScanned(true);
-      await scan(SCAN_DURATION);
       setError(null);
+      await scan(SCAN_DURATION);
+
+      // On web, auto-connect to the device that was just selected from browser picker
+      // We need to get the latest devices from the store after scan completes
+      if (requiresUserGesture) {
+        const devices = useConnectionStore.getState().discoveredDevices;
+        if (devices.length > 0) {
+          // Connect to the most recently selected device (last in list)
+          const device = devices[devices.length - 1];
+          setConnectingDeviceId(device.id);
+          try {
+            await connectDevice(device);
+          } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            setError(`Connection failed: ${msg}`);
+          } finally {
+            setConnectingDeviceId(null);
+          }
+        }
+      }
     } catch {
       // Silent fail for auto-scans
     }
-  }, [isScanning, scan]);
+  }, [isScanning, connectingDeviceId, scan, requiresUserGesture, connectDevice]);
 
-  // Auto-scan on mount (only if BLE is supported)
+  // Auto-scan on mount (only if BLE is supported and doesn't require user gesture)
   useEffect(() => {
-    if (autoScan && !isRestoring && bleSupported) {
+    if (canAutoScan && !isRestoring && bleSupported && discoveredDevices.length === 0) {
       const timeout = setTimeout(doScan, 300);
       return () => clearTimeout(timeout);
     }
-  }, [autoScan, isRestoring, bleSupported, doScan]);
+  }, [canAutoScan, isRestoring, bleSupported]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Periodic auto-scan (only if BLE is supported)
+  // Periodic auto-scan (only if no devices found yet)
   useEffect(() => {
-    if (!autoScan || !bleSupported) return;
+    // Stop auto-scanning once we have devices to show
+    if (!canAutoScan || !bleSupported || discoveredDevices.length > 0) {
+      if (scanIntervalRef.current) {
+        clearInterval(scanIntervalRef.current);
+        scanIntervalRef.current = null;
+      }
+      return;
+    }
 
     scanIntervalRef.current = setInterval(() => {
-      if (!isScanning) {
-        doScan();
+      const state = useConnectionStore.getState();
+      // Only scan if not already scanning and still no devices
+      if (!state.isScanning && state.discoveredDevices.length === 0) {
+        scan(SCAN_DURATION);
       }
     }, SCAN_INTERVAL);
 
@@ -73,24 +135,7 @@ export function ConnectPrompt({
         scanIntervalRef.current = null;
       }
     };
-  }, [autoScan, isScanning, doScan, bleSupported]);
-
-  const handleConnect = async (device: Device) => {
-    setConnectingDeviceId(device.id);
-    setError(null);
-    try {
-      await connectDevice(device);
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (msg.includes('WebSocket') || msg.includes('relay')) {
-        setError('BLE relay not running. Run "make relay".');
-      } else {
-        setError(`Connection failed: ${msg}`);
-      }
-    } finally {
-      setConnectingDeviceId(null);
-    }
-  };
+  }, [canAutoScan, bleSupported, discoveredDevices.length, scan]);
 
   // Restoring state
   if (isRestoring) {
@@ -110,7 +155,7 @@ export function ConnectPrompt({
         marginBottom={false}
         style={{ maxWidth: 400, width: '100%' }}
       >
-        {/* Header with scan indicator */}
+        {/* Header with scan/connect button */}
         <View className="mb-4 flex-row items-center justify-between">
           <View className="flex-row items-center">
             <Ionicons name="bluetooth-outline" size={24} color={colors.text.muted} />
@@ -119,22 +164,37 @@ export function ConnectPrompt({
           {bleSupported && (
             <TouchableOpacity
               onPress={doScan}
-              disabled={isScanning || !bleSupported}
+              disabled={isScanning || connectingDeviceId !== null}
               className="flex-row items-center rounded-xl px-3 py-2"
               style={{
-                backgroundColor: isScanning ? colors.primary[500] + '20' : colors.surface.dark,
+                backgroundColor:
+                  isScanning || connectingDeviceId
+                    ? colors.primary[500] + '20'
+                    : colors.surface.dark,
               }}
               activeOpacity={0.7}
             >
-              {isScanning ? (
+              {isScanning || connectingDeviceId ? (
                 <>
                   <ActivityIndicator size="small" color={colors.primary[500]} />
-                  <Text className="ml-2 text-sm font-medium text-primary-500">Scanning</Text>
+                  <Text className="ml-2 text-sm font-medium text-primary-500">
+                    {connectingDeviceId ? 'Connecting' : 'Scanning'}
+                  </Text>
                 </>
               ) : (
                 <>
-                  <Ionicons name="refresh" size={16} color={colors.text.secondary} />
-                  <Text className="ml-2 text-sm font-medium text-content-secondary">Scan</Text>
+                  <Ionicons
+                    name={requiresUserGesture ? 'add' : 'refresh'}
+                    size={16}
+                    color={colors.text.secondary}
+                  />
+                  <Text className="ml-2 text-sm font-medium text-content-secondary">
+                    {requiresUserGesture
+                      ? connectedDevices.length > 0
+                        ? 'Add Another'
+                        : 'Connect'
+                      : 'Scan'}
+                  </Text>
                 </>
               )}
             </TouchableOpacity>
@@ -164,66 +224,124 @@ export function ConnectPrompt({
           </View>
         )}
 
-        {/* Subtitle - only show if BLE is supported */}
-        {bleSupported && <Text className="mb-4 text-sm text-content-tertiary">{subtitle}</Text>}
+        {/* Subtitle - only show if BLE is supported and not connected */}
+        {bleSupported && !isConnected && (
+          <Text className="mb-4 text-sm text-content-tertiary">{subtitle}</Text>
+        )}
 
-        {/* Device List */}
-        {discoveredDevices.length > 0 && (
-          <Stack gap="xs">
-            {discoveredDevices.map((device) => {
-              const isThisConnecting = connectingDeviceId === device.id;
-              return (
-                <Surface
-                  key={device.id}
-                  elevation="inset"
-                  radius="lg"
-                  border={false}
-                  style={{ opacity: connectingDeviceId !== null && !isThisConnecting ? 0.5 : 1 }}
-                >
+        {/* Connected Devices */}
+        {connectedDevices.length > 0 && (
+          <View className="mb-4">
+            <Text className="mb-2 text-xs font-medium uppercase tracking-wide text-content-muted">
+              Connected
+            </Text>
+            <Stack gap="xs">
+              {connectedDevices.map((device) => (
+                <Surface key={device.id} elevation="inset" radius="lg" border={false}>
                   <ListItem
-                    icon="hardware-chip-outline"
-                    iconColor={colors.primary[500]}
-                    iconBgColor={colors.surface.card}
-                    title={device.name || 'Voltra'}
-                    subtitle={device.id}
-                    onPress={() => handleConnect(device)}
-                    disabled={connectingDeviceId !== null}
+                    icon="checkmark-circle"
+                    iconColor={colors.success.DEFAULT}
+                    iconBgColor={colors.success.DEFAULT + '20'}
+                    title={device.name}
+                    subtitle="Connected"
                     trailing={
-                      isThisConnecting ? (
-                        <ActivityIndicator size="small" color={colors.primary[500]} />
-                      ) : (
-                        <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
-                      )
+                      <View className="flex-row items-center">
+                        <View
+                          className="h-2 w-2 rounded-full"
+                          style={{ backgroundColor: colors.success.DEFAULT }}
+                        />
+                      </View>
                     }
                   />
                 </Surface>
-              );
-            })}
-          </Stack>
+              ))}
+            </Stack>
+          </View>
         )}
 
-        {/* Empty state - scanning */}
-        {discoveredDevices.length === 0 && isScanning && (
+        {/* Discovered (not yet connected) Device List - only for native, web auto-connects */}
+        {!requiresUserGesture && discoveredDevices.length > 0 && (
+          <View>
+            {connectedDevices.length > 0 && (
+              <Text className="mb-2 text-xs font-medium uppercase tracking-wide text-content-muted">
+                Available
+              </Text>
+            )}
+            <Stack gap="xs">
+              {discoveredDevices.map((device) => {
+                const isThisConnecting = connectingDeviceId === device.id;
+                const isAlreadyConnected = connectedDevices.some((d) => d.id === device.id);
+                if (isAlreadyConnected) return null;
+                return (
+                  <Surface
+                    key={device.id}
+                    elevation="inset"
+                    radius="lg"
+                    border={false}
+                    style={{ opacity: connectingDeviceId !== null && !isThisConnecting ? 0.5 : 1 }}
+                  >
+                    <ListItem
+                      icon="hardware-chip-outline"
+                      iconColor={colors.primary[500]}
+                      iconBgColor={colors.surface.card}
+                      title={device.name || 'Voltra'}
+                      subtitle={device.id}
+                      onPress={() => handleConnect(device)}
+                      disabled={connectingDeviceId !== null}
+                      trailing={
+                        isThisConnecting ? (
+                          <ActivityIndicator size="small" color={colors.primary[500]} />
+                        ) : (
+                          <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
+                        )
+                      }
+                    />
+                  </Surface>
+                );
+              })}
+            </Stack>
+          </View>
+        )}
+
+        {/* Empty state - scanning (native only, web shows connecting state in button) */}
+        {!requiresUserGesture && discoveredDevices.length === 0 && isScanning && (
           <View className="items-center py-6">
             <ActivityIndicator size="large" color={colors.primary[500]} />
             <Text className="mt-3 text-content-secondary">Looking for Voltras...</Text>
           </View>
         )}
 
-        {/* Empty state - no devices */}
-        {discoveredDevices.length === 0 && !isScanning && hasScanned && (
+        {/* Empty state - no devices (native) */}
+        {!requiresUserGesture &&
+          connectedDevices.length === 0 &&
+          discoveredDevices.length === 0 &&
+          !isScanning &&
+          hasScanned && (
+            <View className="items-center py-6">
+              <Ionicons name="bluetooth-outline" size={36} color={colors.text.muted} />
+              <Text className="mt-3 text-center text-sm text-content-muted">No Voltras found</Text>
+              <Text className="mt-1 text-xs text-content-muted">Will scan again automatically</Text>
+            </View>
+          )}
+
+        {/* Initial state - no devices connected yet */}
+        {connectedDevices.length === 0 && !isScanning && !connectingDeviceId && !hasScanned && (
           <View className="items-center py-6">
             <Ionicons name="bluetooth-outline" size={36} color={colors.text.muted} />
-            <Text className="mt-3 text-center text-sm text-content-muted">No Voltras found</Text>
-            <Text className="mt-1 text-xs text-content-muted">Will scan again automatically</Text>
+            <Text className="mt-3 text-sm text-content-muted">
+              {requiresUserGesture
+                ? 'Click Connect to pair your Voltra'
+                : 'Waiting to scan...'}
+            </Text>
           </View>
         )}
 
-        {/* Initial state */}
-        {discoveredDevices.length === 0 && !isScanning && !hasScanned && (
-          <View className="items-center py-6">
-            <Ionicons name="bluetooth-outline" size={36} color={colors.text.muted} />
-            <Text className="mt-3 text-sm text-content-muted">Waiting to scan...</Text>
+        {/* Web: Prompt to add more devices after first connection */}
+        {requiresUserGesture && connectedDevices.length > 0 && !connectingDeviceId && (
+          <View className="items-center py-4">
+            <Text className="text-xs text-content-muted">
+              Click "Add Another" to connect additional devices
+            </Text>
           </View>
         )}
 

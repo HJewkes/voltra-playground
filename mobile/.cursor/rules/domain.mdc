@@ -14,10 +14,13 @@ domain/
 ├── bluetooth/                 # GENERIC BLE infrastructure (device-agnostic)
 │   ├── adapters/              # BLE adapter implementations
 │   │   ├── types.ts           # BLEAdapter interface, config types
-│   │   ├── native.ts          # Native react-native-ble-plx adapter (configurable)
-│   │   ├── proxy.ts           # WiFi relay proxy adapter
+│   │   ├── base.ts            # BaseBLEAdapter abstract class
+│   │   ├── native.ts          # Native react-native-ble-plx adapter
+│   │   ├── web-bluetooth-base.ts  # W3C Web Bluetooth base adapter
+│   │   ├── web.ts             # Browser Web Bluetooth adapter
+│   │   ├── node.ts            # Node.js webbluetooth adapter
 │   │   ├── replay.ts          # Replay adapter for recorded samples
-│   │   └── index.ts           # createBLEAdapter factory + ReplayBLEAdapter
+│   │   └── index.ts           # createBLEAdapter factory
 │   ├── models/
 │   │   ├── connection.ts      # Generic BLE connection state (4-state)
 │   │   ├── device.ts          # Generic discovered device model

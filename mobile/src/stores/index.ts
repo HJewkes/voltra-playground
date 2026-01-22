@@ -27,12 +27,11 @@ export type {
 
 // Singleton stores
 export { useConnectionStore } from './connection-store';
-export type { RelayStatus } from './connection-store';
 
 // Connection store selectors (use with useConnectionStore(selector))
 export {
+  selectBleEnvironment,
   selectIsWeb,
   selectIsConnected,
   selectConnectedDeviceName,
-  selectRelayNotReady,
 } from './connection-store';

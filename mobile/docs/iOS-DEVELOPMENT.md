@@ -267,9 +267,10 @@ mobile/
 │   ├── Voltra/             # App source
 │   └── Pods/               # CocoaPods dependencies
 ├── src/
-│   └── ble/
-│       ├── native.ts       # Native BLE implementation (react-native-ble-plx)
-│       └── proxy.ts        # WebSocket proxy for web development
+│   └── domain/bluetooth/adapters/
+│       ├── native.ts       # Native BLE (react-native-ble-plx)
+│       ├── web.ts          # Web Bluetooth API
+│       └── node.ts         # Node.js (webbluetooth)
 └── app.json                # Expo config with iOS permissions
 ```
 

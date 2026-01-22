@@ -8,14 +8,8 @@
  * the standard notification callback at appropriate timing intervals.
  */
 
-import type {
-  BLEAdapter,
-  ConnectionState,
-  NotificationCallback,
-  ConnectionStateCallback,
-  ConnectOptions,
-  Device,
-} from './types';
+import { BaseBLEAdapter } from './base';
+import type { Device, ConnectOptions } from './types';
 import type { SampleRecording } from '@/data/recordings';
 import type { WorkoutSample } from '@/domain/workout';
 import type { TelemetryFrame } from '@/domain/voltra/models/telemetry';
@@ -42,11 +36,8 @@ function toTelemetryFrame(sample: WorkoutSample): TelemetryFrame {
 /**
  * ReplayBLEAdapter - plays back recorded samples as if from a real device.
  */
-export class ReplayBLEAdapter implements BLEAdapter {
+export class ReplayBLEAdapter extends BaseBLEAdapter {
   private recording: SampleRecording;
-  private connectionState: ConnectionState = 'disconnected';
-  private notificationCallback: NotificationCallback | null = null;
-  private connectionStateCallback: ConnectionStateCallback | null = null;
 
   // Playback state
   private isPlaying = false;
@@ -55,6 +46,7 @@ export class ReplayBLEAdapter implements BLEAdapter {
   private playbackTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   constructor(recording: SampleRecording) {
+    super();
     this.recording = recording;
   }
 
@@ -96,34 +88,6 @@ export class ReplayBLEAdapter implements BLEAdapter {
    */
   async write(_data: Uint8Array): Promise<void> {
     // Commands are ignored during replay
-  }
-
-  /**
-   * Register notification callback for receiving frame data.
-   */
-  onNotification(callback: NotificationCallback): () => void {
-    this.notificationCallback = callback;
-    return () => {
-      this.notificationCallback = null;
-    };
-  }
-
-  /**
-   * Register callback for connection state changes.
-   */
-  onConnectionStateChange(callback: ConnectionStateCallback): () => void {
-    this.connectionStateCallback = callback;
-    return () => {
-      this.connectionStateCallback = null;
-    };
-  }
-
-  getConnectionState(): ConnectionState {
-    return this.connectionState;
-  }
-
-  isConnected(): boolean {
-    return this.connectionState === 'connected';
   }
 
   // ==========================================================================
@@ -201,11 +165,6 @@ export class ReplayBLEAdapter implements BLEAdapter {
   // Private helpers
   // ==========================================================================
 
-  private setConnectionState(state: ConnectionState): void {
-    this.connectionState = state;
-    this.connectionStateCallback?.(state);
-  }
-
   private scheduleNextSample(): void {
     if (!this.isPlaying) return;
     if (this.currentIndex >= this.recording.samples.length) {
@@ -233,11 +192,9 @@ export class ReplayBLEAdapter implements BLEAdapter {
   }
 
   private emitSample(sample: WorkoutSample): void {
-    if (!this.notificationCallback) return;
-
     // Reconstruct TelemetryFrame and encode as BLE notification
     const frame = toTelemetryFrame(sample);
     const encoded = encodeTelemetryFrame(frame);
-    this.notificationCallback(encoded);
+    this.emitNotification(encoded);
   }
 }

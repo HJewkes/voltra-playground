@@ -14,7 +14,6 @@ export * from './models/environment';
 // Controllers
 export { ScannerController } from './controllers/scanner-controller';
 export type {
-  RelayStatus,
   ScannerState,
   ScannerEvent,
   ScannerEventListener,

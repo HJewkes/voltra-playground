@@ -15,7 +15,6 @@ A React Native app for controlling Beyond Power Voltra resistance training devic
 ### Prerequisites
 
 - Node.js 18+
-- Python 3.9+ (for Mac development)
 - Xcode (for iOS)
 - Android Studio + JDK 17 (for Android)
 
@@ -27,21 +26,19 @@ make setup
 
 ### Development Options
 
-#### Option 1: Mac + Web Browser (Easiest)
+#### Option 1: Android Device (Recommended)
 
-Uses a Python BLE relay to connect to your Voltra from a web browser:
+Build and run on your Android phone with native Bluetooth:
 
 ```bash
-make dev
+make android-device
 ```
 
-Opens http://localhost:8081 with full BLE support via relay.
+Requires Android Studio and JDK setup. See [Android Development Guide](mobile/docs/ANDROID-DEVELOPMENT.md).
 
-See [Mac Development Guide](mobile/docs/MAC-DEVELOPMENT.md) for details.
+#### Option 2: iOS Device
 
-#### Option 2: iOS Device (Full Native)
-
-Build and run directly on your iPhone with native Bluetooth:
+Build and run on your iPhone with native Bluetooth:
 
 ```bash
 make ios-device
@@ -49,15 +46,15 @@ make ios-device
 
 Requires one-time Xcode setup. See [iOS Development Guide](mobile/docs/iOS-DEVELOPMENT.md).
 
-#### Option 3: Android Device (Full Native)
+#### Option 3: Web Browser
 
-Build and run directly on your Android phone with native Bluetooth:
+Uses the Web Bluetooth API to connect from Chrome or Edge:
 
 ```bash
-make android
+make dev
 ```
 
-Requires Android Studio and JDK setup. See [Android Development Guide](mobile/docs/ANDROID-DEVELOPMENT.md).
+Opens http://localhost:8081. Requires Chrome, Edge, or Opera (Safari/Firefox don't support Web Bluetooth).
 
 #### Option 4: iOS Simulator (UI Only)
 
@@ -76,16 +73,14 @@ make help              # Show all commands
 make setup             # Install all dependencies
 
 # Mac Development
-make dev               # Start relay + web app together
-make web               # Start web app only
-make relay             # Start BLE relay (foreground)
+make dev               # Start web app
 
 # iOS Development  
 make ios-device        # Build & run on physical iPhone
 make ios-sim           # Build & run on Simulator
 
 # Android Development
-make android           # Build & run on physical Android device
+make android-device    # Build & run on physical Android device (USB)
 
 # Testing
 make test              # Run all tests
@@ -110,10 +105,7 @@ voltras/
 │   │   └── theme/           # Colors, spacing, typography
 │   └── docs/
 │       ├── ANDROID-DEVELOPMENT.md
-│       ├── iOS-DEVELOPMENT.md
-│       └── MAC-DEVELOPMENT.md
-├── relay/                   # Python BLE relay (Mac dev)
-│   └── main.py
+│       └── iOS-DEVELOPMENT.md
 ├── Makefile
 └── README.md
 ```
@@ -135,13 +127,14 @@ domain/
 
 ### BLE Abstraction Layer
 
-The app automatically detects the environment and uses the appropriate BLE method:
+The app automatically detects the environment and uses the appropriate BLE adapter:
 
-| Environment | BLE Method |
-|-------------|------------|
-| Web browser | WebSocket → Python relay |
+| Environment | BLE Adapter |
+|-------------|-------------|
+| Web browser (Chrome/Edge) | Web Bluetooth API |
 | iOS device | Native (react-native-ble-plx) |
 | Android device | Native (react-native-ble-plx) |
+| Node.js | webbluetooth npm package |
 | iOS Simulator | None (shows warning) |
 | Android Emulator | None (no BLE support) |
 | Expo Go | None (shows warning) |
@@ -156,7 +149,6 @@ The app automatically detects the environment and uses the appropriate BLE metho
 
 ## Documentation
 
-- [Mac Development Guide](mobile/docs/MAC-DEVELOPMENT.md) - Web development with BLE relay
 - [iOS Development Guide](mobile/docs/iOS-DEVELOPMENT.md) - Building for iPhone
 - [Android Development Guide](mobile/docs/ANDROID-DEVELOPMENT.md) - Building for Android
 

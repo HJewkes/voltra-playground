@@ -18,7 +18,7 @@ globs: ["**/components/**/*.tsx"]
 
 | Category | Components |
 |----------|------------|
-| `device/` | DeviceList, ScanButton, DeviceListItem, ConnectionBanner, RelayStatus |
+| `device/` | DeviceList, ScanButton, DeviceListItem, ConnectionBanner, BLEWarning |
 | `session/` | LiveStatsDisplay, WorkoutControls, PhaseIndicator, RestTimer |
 | `analytics/` | ForceCurveChart, VelocityTrendChart, WorkoutListItem, SetSummaryModal |
 | `planning/` | WeightSetupCard, GoalPicker, ExerciseSelector, DiscoveryProgress |

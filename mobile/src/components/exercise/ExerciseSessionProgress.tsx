@@ -12,6 +12,8 @@ import { Card, ProgressBar } from '@/components/ui';
 import type { PlannedSet, Set } from '@/domain/workout';
 
 export interface ExerciseSessionProgressProps {
+  /** Exercise name */
+  exerciseName: string;
   /** Planned sets */
   plannedSets: PlannedSet[];
   /** Completed sets */
@@ -30,6 +32,7 @@ export interface ExerciseSessionProgressProps {
  * ExerciseSessionProgress - shows session progress.
  */
 export function ExerciseSessionProgress({
+  exerciseName,
   plannedSets,
   completedSets,
   currentSetIndex,
@@ -42,60 +45,82 @@ export function ExerciseSessionProgress({
   const progress = totalSets > 0 ? Math.min(100, (completedCount / totalSets) * 100) : 0;
 
   return (
-    <View style={style}>
-      {/* Progress indicator */}
-      <Card elevation={1} padding="md" radius="lg">
-        <View className="mb-3 flex-row items-center justify-between">
-          <Text className="font-semibold text-content-secondary">
-            {isDiscovery ? 'Discovery' : 'Session'} Progress
+    <Card elevation={1} padding="md" radius="lg" style={style}>
+      {/* Header with exercise name */}
+      <View className="mb-3 flex-row items-center justify-between">
+        <Text className="text-lg font-bold text-content-primary">{exerciseName}</Text>
+        {isDiscovery && (
+          <Text className="text-sm" style={{ color: colors.primary[500] }}>
+            Discovery
           </Text>
-          <Text className="font-bold" style={{ color: colors.primary[500] }}>
-            Set {currentSetIndex + 1} of {totalSets}
-          </Text>
-        </View>
+        )}
+      </View>
 
-        <ProgressBar progress={progress} color={colors.primary[500]} height={8} />
+      {/* Progress bar */}
+      <ProgressBar progress={progress} color={colors.primary[500]} height={6} />
 
-        {error && <Text className="mt-2 text-sm text-danger-light">Error: {error}</Text>}
-      </Card>
+      {error && <Text className="mt-2 text-sm text-danger-light">Error: {error}</Text>}
 
-      {/* Completed sets */}
-      {completedSets.length > 0 && (
-        <Card elevation={1} padding="md" radius="lg">
-          <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-content-muted">
-            Completed
-          </Text>
-          <View className="flex-row flex-wrap gap-2">
-            {completedSets.map((set, i) => {
-              const planned = plannedSets[i];
-              const repsDelta = set.reps.length - (planned?.targetReps ?? 0);
-              const deltaColor = repsDelta >= 0 ? colors.success.DEFAULT : colors.danger.light;
+      {/* Session Plan */}
+      <View className="mt-3">
+        <View className="flex-row flex-wrap gap-2">
+          {plannedSets.map((planned, i) => {
+            const completed = completedSets[i];
+            const isCurrent = i === currentSetIndex;
+            const isCompleted = i < completedSets.length;
 
-              return (
-                <View
-                  key={i}
-                  className="rounded-xl px-4 py-2"
-                  style={{ backgroundColor: colors.surface.dark }}
+            // Determine background color
+            let bgColor = colors.surface.dark;
+            if (isCompleted) {
+              bgColor = colors.success.DEFAULT + '20';
+            } else if (isCurrent) {
+              bgColor = colors.primary[500] + '20';
+            }
+
+            // Border for current set
+            const borderStyle = isCurrent
+              ? { borderWidth: 2, borderColor: colors.primary[500] }
+              : {};
+
+            return (
+              <View
+                key={i}
+                className="rounded-xl px-3 py-2"
+                style={{ backgroundColor: bgColor, ...borderStyle }}
+              >
+                {/* Set type indicator */}
+                <Text
+                  className="mb-1 text-xs font-medium"
+                  style={{
+                    color: planned.isWarmup ? colors.warning.DEFAULT : colors.primary[500],
+                  }}
                 >
-                  <Text className="text-sm font-medium text-content-secondary">
-                    {set.weight}lbs × {set.reps.length}
-                    {planned && (
-                      <Text style={{ color: deltaColor }}>
-                        {' '}
-                        ({repsDelta >= 0 ? '+' : ''}
-                        {repsDelta})
-                      </Text>
-                    )}
-                  </Text>
+                  {planned.isWarmup ? 'Warmup' : 'Working'}
+                </Text>
+
+                {/* Weight and reps */}
+                <Text className="text-sm font-medium text-content-secondary">
+                  {planned.weight}lbs × {planned.targetReps}
+                </Text>
+
+                {/* Completed stats */}
+                {completed && (
                   <Text className="text-xs text-content-muted">
-                    {set.metrics.velocity.concentricBaseline.toFixed(2)} m/s
+                    {completed.metrics.velocity.concentricBaseline.toFixed(2)} m/s
                   </Text>
-                </View>
-              );
-            })}
-          </View>
-        </Card>
-      )}
-    </View>
+                )}
+
+                {/* Current indicator */}
+                {isCurrent && !isCompleted && (
+                  <Text className="mt-1 text-xs font-bold" style={{ color: colors.primary[500] }}>
+                    Current
+                  </Text>
+                )}
+              </View>
+            );
+          })}
+        </View>
+      </View>
+    </Card>
   );
 }

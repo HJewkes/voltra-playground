@@ -147,9 +147,7 @@ export class VoltraConnectionController {
 
       // Categorize error
       const errorMsg = e instanceof Error ? e.message : String(e);
-      if (errorMsg.includes('WebSocket') || errorMsg.includes('relay')) {
-        this._error = 'Cannot connect to BLE relay. Run "make relay" in terminal.';
-      } else if (errorMsg.includes('timeout')) {
+      if (errorMsg.includes('timeout')) {
         this._error = 'Connection timed out. Ensure Voltra is powered on.';
       } else {
         this._error = `Connection failed: ${errorMsg}`;

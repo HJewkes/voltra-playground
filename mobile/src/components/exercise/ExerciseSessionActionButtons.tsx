@@ -21,6 +21,8 @@ export interface ExerciseSessionActionButtonsProps {
   onStopAndSave?: () => void;
   /** Called to manually stop recording */
   onManualStop?: () => void;
+  /** Called to cancel session before starting */
+  onCancel?: () => void;
   /** Whether actions are disabled */
   disabled?: boolean;
   /** Additional styles */
@@ -36,6 +38,7 @@ export function ExerciseSessionActionButtons({
   onSkipRest,
   onStopAndSave,
   onManualStop,
+  onCancel,
   disabled = false,
   style,
 }: ExerciseSessionActionButtonsProps) {
@@ -46,16 +49,34 @@ export function ExerciseSessionActionButtons({
 
   return (
     <View style={style}>
-      {/* Ready state - START button */}
-      {uiState === 'ready' && onStart && (
-        <ActionButton
-          label="START"
-          icon="play"
-          variant="primary"
-          size="lg"
-          onPress={onStart}
-          disabled={disabled}
-        />
+      {/* Ready state - START button + Cancel inline */}
+      {uiState === 'ready' && (
+        <View className="flex-row gap-2">
+          {onStart && (
+            <View style={{ flex: 3 }}>
+              <ActionButton
+                label="START"
+                icon="play"
+                variant="primary"
+                size="lg"
+                onPress={onStart}
+                disabled={disabled}
+              />
+            </View>
+          )}
+          {onCancel && (
+            <View style={{ flex: 1 }}>
+              <ActionButton
+                label=""
+                icon="close"
+                variant="secondary"
+                size="lg"
+                onPress={onCancel}
+                disabled={disabled}
+              />
+            </View>
+          )}
+        </View>
       )}
 
       {/* Countdown state - no actions (automatic) */}
@@ -72,7 +93,10 @@ export function ExerciseSessionActionButtons({
               icon="checkmark"
               variant="secondary"
               size="lg"
-              onPress={onManualStop}
+              onPress={() => {
+                console.log('[ActionButtons] Done Set pressed');
+                onManualStop();
+              }}
               disabled={disabled}
             />
           )}
@@ -89,9 +113,16 @@ export function ExerciseSessionActionButtons({
         </Stack>
       )}
 
-      {/* Preparing state - no actions (automatic) */}
-      {uiState === 'preparing' && (
-        <View className="h-16" /> // Placeholder
+      {/* Preparing state - Cancel button */}
+      {uiState === 'preparing' && onCancel && (
+        <ActionButton
+          label="Cancel"
+          icon="close"
+          variant="secondary"
+          size="md"
+          onPress={onCancel}
+          disabled={disabled}
+        />
       )}
 
       {/* Resting state - skip rest + stop & save */}

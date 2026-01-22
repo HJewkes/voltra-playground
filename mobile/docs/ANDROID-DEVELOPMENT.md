@@ -260,15 +260,22 @@ npx expo run:android
 
 ### "adb devices" Shows Nothing
 
-1. Check USB cable is connected properly (try a different cable)
-2. Ensure USB debugging is enabled on the phone
-3. Try different USB ports
-4. Restart adb server:
+1. **Check USB cable** - Some cables are charge-only. Try a different cable that supports data transfer.
+2. **Ensure USB debugging is enabled** - Settings → Developer options → USB debugging
+3. **Check USB mode** - Pull down notification shade after plugging in, ensure it's set to "File transfer" (MTP), not "Charging only"
+4. **Unlock your phone** - The authorization prompt only appears when the phone is unlocked
+5. **Revoke and re-authorize** - This often fixes stale authorization issues:
+   - Go to **Settings → Developer options → Revoke USB debugging authorizations**
+   - Unplug the USB cable
+   - Plug it back in
+   - Accept the "Allow USB debugging?" prompt on your phone
+6. **Restart adb server:**
    ```bash
    adb kill-server
    adb start-server
    adb devices
    ```
+7. **Try different USB ports** - Some ports may not work properly
 
 ### App Crashes on Bluetooth Disconnect
 
@@ -296,8 +303,13 @@ npx expo start --clear
 # Install dependencies
 npm install
 
-# Build and run on connected device
-npx expo run:android
+# Build and run on physical USB device (recommended)
+make android-device
+# Or: npx expo run:android --device
+
+# Build and run (emulator or device picker)
+make android
+# Or: npx expo run:android
 
 # Start Metro bundler only (for hot reload & logs)
 npx expo start
@@ -342,7 +354,8 @@ mobile/
 │       └── bluetooth/
 │           ├── adapters/
 │           │   ├── native.ts   # Native BLE (react-native-ble-plx)
-│           │   └── proxy.ts    # WebSocket proxy for web development
+│           │   ├── web.ts      # Web Bluetooth API (browser)
+│           │   └── node.ts     # Node.js (webbluetooth)
 │           └── models/
 │               └── environment.ts  # Platform detection
 └── app.json                  # Expo config with Android permissions
@@ -362,5 +375,4 @@ mobile/
 ## Next Steps
 
 - For iOS device development, see [iOS-DEVELOPMENT.md](./iOS-DEVELOPMENT.md)
-- For Mac/web development with BLE relay, see [MAC-DEVELOPMENT.md](./MAC-DEVELOPMENT.md)
 - For the main project overview, see the root [README.md](../../README.md)

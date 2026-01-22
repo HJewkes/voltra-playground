@@ -16,9 +16,6 @@ export type { DeviceListItemProps } from './DeviceListItem';
 export { ScanButton } from './ScanButton';
 export type { ScanButtonProps } from './ScanButton';
 
-export { RelayStatus } from './RelayStatus';
-export type { RelayStatusProps } from './RelayStatus';
-
 export { BLEWarning } from './BLEWarning';
 export type { BLEWarningProps } from './BLEWarning';
 

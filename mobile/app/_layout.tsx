@@ -91,7 +91,7 @@ function RootLayoutNav() {
     // Set up app state listener for auto-reconnect on foreground
     const appStateCleanup = useConnectionStore.getState()._setupAppStateListener();
 
-    // Start auto-scan (also checks relay status on web)
+    // Start auto-scan for nearby devices
     const autoScanCleanup = useConnectionStore.getState().startAutoScan();
 
     return () => {

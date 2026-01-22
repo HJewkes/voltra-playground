@@ -20,7 +20,7 @@ __fixtures__/      → Test data generators, seeders
 ```
 domain/
 ├── bluetooth/     # BLE connection, scanning, environment, adapters
-│   ├── adapters/  # BLEAdapter implementations (native, proxy)
+│   ├── adapters/  # BLEAdapter implementations (native, web, node)
 │   ├── models/
 │   └── controllers/
 ├── exercise/      # Pure exercise definitions (metadata only)
