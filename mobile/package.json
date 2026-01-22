@@ -96,6 +96,7 @@
   "overrides": {
     "eslint-plugin-react-native-a11y": {
       "eslint": "$eslint"
-    }
+    },
+    "tar": "^7.5.4"
   }
 }
