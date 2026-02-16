@@ -1,20 +1,10 @@
 /**
  * Theme Module
  *
- * Dark mode design system with orange accents.
- *
- * Usage:
- *   import { colors, shadows, styles } from '@/theme';
+ * Legacy color palette for programmatic inline styles.
+ * Components should prefer Tailwind classes from @titan-design/react-ui.
+ * This module will be removed when all inline style color references
+ * are replaced during Phase 2 screen recomposition.
  */
 
-// Re-export everything from individual modules
 export { colors } from './colors';
-export { shadows, neumorphic, getElevationStyles, type Elevation } from './shadows';
-export { styles, icons, spacing, borderRadius, fontSize } from './styles';
-export {
-  getRPEColor,
-  getVelocityColor,
-  getConfidenceColor,
-  getConnectionColor,
-  getPhaseColor,
-} from './utils';

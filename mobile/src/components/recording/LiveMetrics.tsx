@@ -13,7 +13,8 @@ import { getEffortLabel, getRIRDescription } from '@/domain/workout';
 import type { RecordingStoreApi } from '@/stores';
 import { Card, CardContent, HStack, Surface } from '@titan-design/react-ui';
 import { PhaseIndicator } from './PhaseIndicator';
-import { colors, getRPEColor } from '@/theme';
+import { colors } from '@/theme';
+import { getRPEColor } from '@/domain/workout';
 
 // =============================================================================
 // View Component (Presentational)

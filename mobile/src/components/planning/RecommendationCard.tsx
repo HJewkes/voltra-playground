@@ -17,7 +17,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { TrainingGoal, type DiscoveryRecommendation } from '@/domain/planning';
 import { getExerciseName } from '@/domain/exercise';
-import { colors, getConfidenceColor } from '@/theme';
+import { colors } from '@/theme';
+import { getConfidenceColor } from '@/domain/display-utils';
 import { Card, CardContent, HStack, VStack, Surface } from '@titan-design/react-ui';
 
 type WeightRecommendation = DiscoveryRecommendation;

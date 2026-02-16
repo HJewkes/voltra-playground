@@ -1,22 +1,12 @@
 /**
- * Theme Utility Functions
+ * Display Utility Functions
  *
- * Helper functions for dynamic color selection based on data.
+ * Domain-specific color helpers for data visualization.
+ * Uses hardcoded hex values for programmatic inline styles
+ * (React Native inline styles can't use CSS variables).
  */
 
-import { colors } from './colors';
-
-/**
- * Get color based on RPE (Rate of Perceived Exertion) level.
- * Lower RPE = easier (green), higher RPE = harder (red).
- */
-export function getRPEColor(rpe: number): string {
-  if (rpe < 6) return colors.success.DEFAULT;
-  if (rpe < 7.5) return colors.success.light;
-  if (rpe < 8.5) return colors.warning.DEFAULT;
-  if (rpe < 9.5) return colors.primary[500];
-  return colors.danger.DEFAULT;
-}
+import { colors } from '@/theme';
 
 /**
  * Get color based on velocity loss percentage.
