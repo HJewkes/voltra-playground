@@ -7,8 +7,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Stack, LoadingState } from '@/components/ui';
-import { Card, CardContent } from '@titan-design/react-ui';
+import { Card, CardContent, VStack, Spinner } from '@titan-design/react-ui';
 import { colors } from '@/theme';
 import { BLEWarning } from './BLEWarning';
 import { ScanButton } from './ScanButton';
@@ -76,11 +75,16 @@ export function DeviceList({
         {warningMessage && <BLEWarning environment={environment} message={warningMessage} />}
 
         {/* Restoring state */}
-        {isRestoring && <LoadingState message="Restoring connection..." />}
+        {isRestoring && (
+          <View className="items-center py-6">
+            <Spinner size="lg" />
+            <Text className="mt-3 text-content-secondary">Restoring connection...</Text>
+          </View>
+        )}
 
         {/* Device List */}
         {!isRestoring && devices.length > 0 && (
-          <Stack gap="sm">
+          <VStack gap={2}>
             {devices.map((device) => (
               <DeviceListItem
                 key={device.id}
@@ -90,7 +94,7 @@ export function DeviceList({
                 onSelect={() => onDeviceSelect(device)}
               />
             ))}
-          </Stack>
+          </VStack>
         )}
 
         {/* Empty state - no devices */}
@@ -108,7 +112,10 @@ export function DeviceList({
 
         {/* Scanning state */}
         {!isRestoring && devices.length === 0 && isScanning && (
-          <LoadingState size="large" message="Looking for Voltras..." />
+          <View className="items-center py-6">
+            <Spinner size="lg" />
+            <Text className="mt-3 text-content-secondary">Looking for Voltras...</Text>
+          </View>
         )}
       </CardContent>
     </Card>

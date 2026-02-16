@@ -11,8 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useConnectionStore, selectIsConnected, selectBleEnvironment } from '@/stores';
 import { colors } from '@/theme';
 import { SCAN_DURATION, SCAN_INTERVAL } from '@/config';
-import { Stack, Surface, ListItem } from '@/components/ui';
-import { Card, CardContent } from '@titan-design/react-ui';
+import { Card, CardContent, VStack, Surface, ListItem, ListItemContent, ListItemTrailing } from '@titan-design/react-ui';
 import type { DiscoveredDevice } from '@/domain/device';
 
 export interface ConnectPromptProps {
@@ -235,27 +234,27 @@ export function ConnectPrompt({
             <Text className="mb-2 text-xs font-medium uppercase tracking-wide text-content-muted">
               Connected
             </Text>
-            <Stack gap="xs">
+            <VStack gap={1}>
               {connectedDevices.map((device) => (
-                <Surface key={device.id} elevation="inset" radius="lg" border={false}>
-                  <ListItem
-                    icon="checkmark-circle"
-                    iconColor={colors.success.DEFAULT}
-                    iconBgColor={colors.success.DEFAULT + '20'}
-                    title={device.name}
-                    subtitle="Connected"
-                    trailing={
-                      <View className="flex-row items-center">
-                        <View
-                          className="h-2 w-2 rounded-full"
-                          style={{ backgroundColor: colors.success.DEFAULT }}
-                        />
-                      </View>
-                    }
-                  />
+                <Surface key={device.id} elevation={0} className="rounded-xl bg-surface-input">
+                  <ListItem>
+                    <View
+                      className="mr-3 items-center justify-center rounded-xl"
+                      style={{ width: 48, height: 48, backgroundColor: colors.success.DEFAULT + '20' }}
+                    >
+                      <Ionicons name="checkmark-circle" size={24} color={colors.success.DEFAULT} />
+                    </View>
+                    <ListItemContent title={device.name} subtitle="Connected" />
+                    <ListItemTrailing>
+                      <View
+                        className="h-2 w-2 rounded-full"
+                        style={{ backgroundColor: colors.success.DEFAULT }}
+                      />
+                    </ListItemTrailing>
+                  </ListItem>
                 </Surface>
               ))}
-            </Stack>
+            </VStack>
           </View>
         )}
 
@@ -267,7 +266,7 @@ export function ConnectPrompt({
                 Available
               </Text>
             )}
-            <Stack gap="xs">
+            <VStack gap={1}>
               {discoveredDevices.map((device) => {
                 const isThisConnecting = connectingDeviceId === device.id;
                 const isAlreadyConnected = connectedDevices.some((d) => d.id === device.id);
@@ -275,31 +274,30 @@ export function ConnectPrompt({
                 return (
                   <Surface
                     key={device.id}
-                    elevation="inset"
-                    radius="lg"
-                    border={false}
+                    elevation={0}
+                    className="rounded-xl bg-surface-input"
                     style={{ opacity: connectingDeviceId !== null && !isThisConnecting ? 0.5 : 1 }}
                   >
-                    <ListItem
-                      icon="hardware-chip-outline"
-                      iconColor={colors.primary[500]}
-                      iconBgColor={colors.surface.card}
-                      title={device.name || 'Voltra'}
-                      subtitle={device.id}
-                      onPress={() => handleConnect(device)}
-                      disabled={connectingDeviceId !== null}
-                      trailing={
-                        isThisConnecting ? (
+                    <ListItem onPress={() => handleConnect(device)} disabled={connectingDeviceId !== null}>
+                      <View
+                        className="mr-3 items-center justify-center rounded-xl"
+                        style={{ width: 48, height: 48, backgroundColor: colors.surface.card }}
+                      >
+                        <Ionicons name="hardware-chip-outline" size={24} color={colors.primary[500]} />
+                      </View>
+                      <ListItemContent title={device.name || 'Voltra'} subtitle={device.id} />
+                      <ListItemTrailing>
+                        {isThisConnecting ? (
                           <ActivityIndicator size="small" color={colors.primary[500]} />
                         ) : (
                           <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
-                        )
-                      }
-                    />
+                        )}
+                      </ListItemTrailing>
+                    </ListItem>
                   </Surface>
                 );
               })}
-            </Stack>
+            </VStack>
           </View>
         )}
 

@@ -6,7 +6,7 @@
 
 import React from 'react';
 import { View, Text, ScrollView } from 'react-native';
-import { getEffortLabel, getRPEColor, type CompletedSet } from '@/domain/workout';
+import { getEffortLabel, type CompletedSet } from '@/domain/workout';
 import {
   getSetMeanVelocity,
   getSetVelocityLossPct,
@@ -16,9 +16,7 @@ import {
   getPhaseMovementDuration,
   getPhaseHoldDuration,
 } from '@voltras/workout-analytics';
-import { Stack, Surface, StatDisplay, InfoRow } from '@/components';
-import { Drawer, DrawerBody, DrawerFooter, Button, ButtonText } from '@titan-design/react-ui';
-import { colors } from '@/theme';
+import { Drawer, DrawerBody, DrawerFooter, Button, ButtonText, DataRow, Metric, Surface, HStack } from '@titan-design/react-ui';
 
 export interface WorkoutDetailModalProps {
   workout: CompletedSet | null;
@@ -48,43 +46,41 @@ export function WorkoutDetailModal({ workout, visible, onClose }: WorkoutDetailM
             </Text>
 
             {/* Summary Stats */}
-            <Surface elevation="inset" radius="lg" border={false} style={{ marginBottom: 20 }}>
-              <Stack direction="row" justify="space-around" style={{ padding: 20 }}>
-                <StatDisplay
-                  value={workout.data.reps.length}
+            <Surface elevation={0} className="rounded-xl bg-surface-input" style={{ marginBottom: 20 }}>
+              <HStack justify="around" style={{ padding: 20 }}>
+                <Metric
+                  value={String(workout.data.reps.length)}
                   label="Reps"
                   size="sm"
-                  color={colors.primary[500]}
                 />
                 <View className="w-px bg-surface-100" />
-                <StatDisplay value={workout.weight} label="lbs" size="sm" />
+                <Metric value={String(workout.weight)} label="lbs" size="sm" />
                 <View className="w-px bg-surface-100" />
-                <StatDisplay
-                  value={rpe || '—'}
+                <Metric
+                  value={String(rpe || '\u2014')}
                   label="RPE"
                   size="sm"
-                  color={getRPEColor(rpe || 5)}
                 />
-              </Stack>
+              </HStack>
             </Surface>
 
             {/* Analytics */}
             {workout.data.reps.length > 0 && (
               <View className="mb-5">
                 <Text className="mb-3 font-bold text-content-secondary">Analytics</Text>
-                <Surface elevation="inset" radius="lg" border={false}>
+                <Surface elevation={0} className="rounded-xl bg-surface-input">
                   <View className="p-5">
-                    <InfoRow
+                    <DataRow
                       label="Effort"
                       value={getEffortLabel(rirEstimate?.rpe ?? 5)}
-                      showBorder
+                      className="border-b border-surface-200 pb-3 mb-3"
                     />
-                    <InfoRow
+                    <DataRow
                       label="Velocity Loss"
                       value={`${Math.abs(getSetVelocityLossPct(workout.data)).toFixed(0)}%`}
-                      showBorder
+                      className="border-b border-surface-200 pb-3 mb-3"
                     />
-                    <InfoRow
+                    <DataRow
                       label="Avg Velocity"
                       value={`${getSetMeanVelocity(workout.data).toFixed(2)} m/s`}
                     />
@@ -97,7 +93,7 @@ export function WorkoutDetailModal({ workout, visible, onClose }: WorkoutDetailM
             {workout.data.reps.length > 0 && (
               <View className="mb-5">
                 <Text className="mb-3 font-bold text-content-secondary">Per-Rep Breakdown</Text>
-                <Surface elevation="inset" radius="lg" border={false}>
+                <Surface elevation={0} className="rounded-xl bg-surface-input">
                   <View className="p-4">
                     {workout.data.reps.map((rep, index) => {
                       const eccDuration = getPhaseMovementDuration(rep.eccentric);

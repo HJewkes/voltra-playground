@@ -11,8 +11,7 @@ import { useStore } from 'zustand';
 import { type WorkoutSample, MovementPhase } from '@voltras/workout-analytics';
 import { getEffortLabel, getRIRDescription } from '@/domain/workout';
 import type { RecordingStoreApi } from '@/stores';
-import { Stack, Surface } from '@/components/ui';
-import { Card, CardContent } from '@titan-design/react-ui';
+import { Card, CardContent, HStack, Surface } from '@titan-design/react-ui';
 import { PhaseIndicator } from './PhaseIndicator';
 import { colors, getRPEColor } from '@/theme';
 
@@ -95,7 +94,7 @@ export function LiveMetricsView({
         </View>
 
         {/* Rep Counter & Live RPE */}
-        <Stack direction="row" justify="space-around" align="center" style={{ marginBottom: 20 }}>
+        <HStack justify="around" align="center" style={{ marginBottom: 20 }}>
           <View className="items-center">
             <Text className="text-8xl font-bold" style={{ color: colors.primary[500] }}>
               {repCount}
@@ -112,7 +111,7 @@ export function LiveMetricsView({
             <Text className="text-lg text-content-tertiary">RPE</Text>
             <Text className="mt-1 text-sm text-content-muted">{rir.toFixed(0)} RIR</Text>
           </View>
-        </Stack>
+        </HStack>
 
         {/* Status Message */}
         {statusMessage && (
@@ -148,27 +147,27 @@ export function LiveMetricsView({
         )}
 
         {/* Quick Stats Grid */}
-        <Stack direction="row" gap="sm">
-          <Surface elevation="inset" radius="lg" border={false} style={{ flex: 1, padding: 16 }}>
+        <HStack gap={2}>
+          <Surface elevation={0} className="rounded-xl bg-surface-input" style={{ flex: 1, padding: 16 }}>
             <Text className="mb-1 text-xs font-medium text-content-muted">Force</Text>
             <Text className="text-2xl font-bold text-content-primary">
               {Math.round(currentSample?.force ?? 0)}
             </Text>
           </Surface>
-          <Surface elevation="inset" radius="lg" border={false} style={{ flex: 1, padding: 16 }}>
+          <Surface elevation={0} className="rounded-xl bg-surface-input" style={{ flex: 1, padding: 16 }}>
             <Text className="mb-1 text-xs font-medium text-content-muted">Velocity</Text>
             <Text className="text-2xl font-bold text-content-primary">
               {(currentSample?.velocity ?? 0).toFixed(2)}
             </Text>
           </Surface>
-          <Surface elevation="inset" radius="lg" border={false} style={{ flex: 1, padding: 16 }}>
+          <Surface elevation={0} className="rounded-xl bg-surface-input" style={{ flex: 1, padding: 16 }}>
             <Text className="mb-1 text-xs font-medium text-content-muted">Vel Loss</Text>
             <Text className="text-2xl font-bold" style={{ color: rpeColor }}>
               {velocityLossPct > 0 ? '-' : ''}
               {Math.round(velocityLossPct)}%
             </Text>
           </Surface>
-        </Stack>
+        </HStack>
 
         {/* Fatigue Progress Bar */}
         <View className="mt-4">

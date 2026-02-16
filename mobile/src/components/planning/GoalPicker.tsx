@@ -9,7 +9,7 @@ import { Text, TouchableOpacity, type StyleProp, type ViewStyle } from 'react-na
 import { Ionicons } from '@expo/vector-icons';
 import { TrainingGoal } from '@/domain/planning';
 import { colors } from '@/theme';
-import { Stack } from '../ui';
+import { HStack } from '@titan-design/react-ui';
 
 export interface GoalPickerProps {
   /** Currently selected goal */
@@ -39,7 +39,7 @@ const GOALS: { goal: TrainingGoal; label: string; icon: 'flash' | 'body' | 'fitn
  */
 export function GoalPicker({ selected, onSelect, style }: GoalPickerProps) {
   return (
-    <Stack direction="row" gap="sm" style={style}>
+    <HStack gap={2} style={style}>
       {GOALS.map(({ goal, label, icon }) => {
         const isSelected = selected === goal;
 
@@ -72,6 +72,6 @@ export function GoalPicker({ selected, onSelect, style }: GoalPickerProps) {
           </TouchableOpacity>
         );
       })}
-    </Stack>
+    </HStack>
   );
 }

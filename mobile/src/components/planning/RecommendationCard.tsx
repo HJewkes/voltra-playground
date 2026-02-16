@@ -18,8 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { TrainingGoal, type DiscoveryRecommendation } from '@/domain/planning';
 import { getExerciseName } from '@/domain/exercise';
 import { colors, getConfidenceColor } from '@/theme';
-import { Stack, Surface } from '../ui';
-import { Card, CardContent } from '@titan-design/react-ui';
+import { Card, CardContent, HStack, VStack, Surface } from '@titan-design/react-ui';
 
 type WeightRecommendation = DiscoveryRecommendation;
 
@@ -113,8 +112,8 @@ export function RecommendationCard({
             <Text className="ml-2 text-2xl text-content-muted">lbs</Text>
           </View>
 
-          <Surface elevation="inset" radius="lg" border={false}>
-            <Stack direction="row" justify="space-between" style={{ padding: 16 }}>
+          <Surface elevation={0} className="rounded-xl bg-surface-input">
+            <HStack justify="between" style={{ padding: 16 }}>
               <View className="flex-1 items-center">
                 <Text className="text-sm text-content-muted">Rep Range</Text>
                 <Text className="mt-1 text-lg font-bold text-content-primary">
@@ -132,7 +131,7 @@ export function RecommendationCard({
                     recommendation.confidence.slice(1)}
                 </Text>
               </View>
-            </Stack>
+            </HStack>
           </Surface>
         </CardContent>
       </Card>
@@ -180,7 +179,7 @@ export function RecommendationCard({
       )}
 
       {/* Action buttons */}
-      <Stack gap="sm" style={{ marginBottom: 32 }}>
+      <VStack gap={2} style={{ marginBottom: 32 }}>
         <TouchableOpacity
           className="items-center rounded-2xl p-5"
           style={{ backgroundColor: colors.primary[600] }}
@@ -200,7 +199,7 @@ export function RecommendationCard({
             <Text className="font-bold text-content-secondary">Discover Another Exercise</Text>
           </TouchableOpacity>
         )}
-      </Stack>
+      </VStack>
     </ScrollView>
   );
 }

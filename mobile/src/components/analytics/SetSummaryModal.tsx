@@ -6,8 +6,7 @@
 
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { Drawer, DrawerBody, DrawerFooter } from '@titan-design/react-ui';
-import { Stack, Surface, StatDisplay } from '../ui';
+import { Drawer, DrawerBody, DrawerFooter, HStack, Surface, Metric } from '@titan-design/react-ui';
 import { getEffortLabel, getRIRDescription, getRPEColor } from '@/domain/workout';
 import { colors } from '@/theme';
 
@@ -55,19 +54,18 @@ export function SetSummaryModal({
         {summary && (
           <>
             {/* Main Stats */}
-            <Stack direction="row" justify="space-around" style={{ marginBottom: 24 }}>
-              <StatDisplay value={repCount} label="Reps" size="lg" color={colors.primary[500]} />
-              <StatDisplay
+            <HStack justify="around" style={{ marginBottom: 24 }}>
+              <Metric value={String(repCount)} label="Reps" size="lg" />
+              <Metric
                 value={summary.rpe.toFixed(1)}
                 label="RPE"
                 size="lg"
-                color={getRPEColor(summary.rpe)}
               />
-              <StatDisplay value={summary.rir.toFixed(0)} label="RIR" size="lg" />
-            </Stack>
+              <Metric value={summary.rir.toFixed(0)} label="RIR" size="lg" />
+            </HStack>
 
             {/* Effort Bar */}
-            <Surface elevation="inset" radius="lg" border={false} style={{ marginBottom: 16 }}>
+            <Surface elevation={0} className="rounded-xl bg-surface-input" style={{ marginBottom: 16 }}>
               <View className="p-5">
                 <View className="mb-3 flex-row justify-between">
                   <Text className="font-bold text-content-secondary">Effort</Text>
@@ -85,11 +83,10 @@ export function SetSummaryModal({
             </Surface>
 
             {/* Velocity Stats */}
-            <Stack direction="row" gap="sm" style={{ marginBottom: 16 }}>
+            <HStack gap={2} style={{ marginBottom: 16 }}>
               <Surface
-                elevation="inset"
-                radius="lg"
-                border={false}
+                elevation={0}
+                className="rounded-xl bg-surface-input"
                 style={{ flex: 1, padding: 16 }}
               >
                 <Text className="text-xs font-medium text-content-muted">Velocity Loss</Text>
@@ -99,9 +96,8 @@ export function SetSummaryModal({
                 </Text>
               </Surface>
               <Surface
-                elevation="inset"
-                radius="lg"
-                border={false}
+                elevation={0}
+                className="rounded-xl bg-surface-input"
                 style={{ flex: 1, padding: 16 }}
               >
                 <Text className="text-xs font-medium text-content-muted">Avg Velocity</Text>
@@ -109,11 +105,11 @@ export function SetSummaryModal({
                   {summary.meanVelocity.toFixed(2)}
                 </Text>
               </Surface>
-            </Stack>
+            </HStack>
 
             {/* Tempo - only show if breakdown provided */}
             {tempoBreakdown && (
-              <Surface elevation="inset" radius="lg" border={false} style={{ marginBottom: 24 }}>
+              <Surface elevation={0} className="rounded-xl bg-surface-input" style={{ marginBottom: 24 }}>
                 <View className="p-5">
                   <View className="mb-3 flex-row justify-between">
                     <Text className="font-bold text-content-secondary">Avg Tempo</Text>
@@ -121,7 +117,7 @@ export function SetSummaryModal({
                       {avgTempo ?? '0-0-0-0'}
                     </Text>
                   </View>
-                  <Stack direction="row" gap="xs">
+                  <HStack gap={1}>
                     <View className="flex-1 items-center">
                       <Text className="font-bold" style={{ color: colors.info.DEFAULT }}>
                         {tempoBreakdown.eccentric.toFixed(1)}s
@@ -146,7 +142,7 @@ export function SetSummaryModal({
                       </Text>
                       <Text className="mt-1 text-xs text-content-muted">Bot</Text>
                     </View>
-                  </Stack>
+                  </HStack>
                 </View>
               </Surface>
             )}

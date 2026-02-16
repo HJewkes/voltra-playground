@@ -6,8 +6,8 @@
 
 import React from 'react';
 import { View, Text } from 'react-native';
-import { Stack, ListItem } from '@/components';
-import { Card, CardContent } from '@titan-design/react-ui';
+import { Ionicons } from '@expo/vector-icons';
+import { Card, HStack, ListItem, ListItemContent, ListItemTrailing } from '@titan-design/react-ui';
 import { colors } from '@/theme';
 import type { CompletedSet } from '@/domain/workout';
 import { estimateSetRIR } from '@voltras/workout-analytics';
@@ -40,15 +40,16 @@ export function WorkoutListItem({ workout, onPress, onLongPress }: WorkoutListIt
 
   return (
     <Card elevation={1}>
-      <ListItem
-        icon="fitness"
-        iconColor={colors.primary[500]}
-        title={workout.exerciseName || 'Set'}
-        subtitle={formattedDate}
-        onPress={onPress}
-        onLongPress={onLongPress}
-        trailing={
-          <Stack direction="row" gap="sm" align="center">
+      <ListItem onPress={onPress} onLongPress={onLongPress}>
+        <View
+          className="mr-3 items-center justify-center rounded-xl"
+          style={{ width: 48, height: 48, backgroundColor: colors.primary[500] + '20' }}
+        >
+          <Ionicons name="fitness" size={24} color={colors.primary[500]} />
+        </View>
+        <ListItemContent title={workout.exerciseName || 'Set'} subtitle={formattedDate} />
+        <ListItemTrailing>
+          <HStack gap={2} align="center">
             <View className="mr-2 items-end">
               <Text className="text-base font-bold" style={{ color: colors.primary[500] }}>
                 {repCount} reps
@@ -62,9 +63,9 @@ export function WorkoutListItem({ workout, onPress, onLongPress }: WorkoutListIt
                 </Text>
               </View>
             )}
-          </Stack>
-        }
-      />
+          </HStack>
+        </ListItemTrailing>
+      </ListItem>
     </Card>
   );
 }

@@ -7,8 +7,7 @@
 import React from 'react';
 import { View, Text, type StyleProp, type ViewStyle } from 'react-native';
 import { colors } from '@/theme';
-import { ProgressBar } from '../ui';
-import { Card, CardContent } from '@titan-design/react-ui';
+import { Card, CardContent, Progress } from '@titan-design/react-ui';
 
 export interface CompletedSet {
   weight: number;
@@ -69,7 +68,7 @@ export function DiscoveryProgress({
             </Text>
           </View>
 
-          <ProgressBar progress={progress} color={colors.primary[500]} height={8} />
+          <Progress value={progress * 100} color="primary" size="lg" />
 
           <Text className="mt-2 text-xs text-content-muted">
             Device: {deviceWeight} lbs | Target: {targetWeight ?? '-'} lbs

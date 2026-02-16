@@ -7,8 +7,7 @@
 
 import React, { useCallback } from 'react';
 import { View, Text, ScrollView } from 'react-native';
-import { Surface, InfoRow } from '@/components/ui';
-import { Alert, AlertDescription } from '@titan-design/react-ui';
+import { Alert, AlertDescription, DataRow, Surface } from '@titan-design/react-ui';
 import { ConnectionBanner, DeviceList } from '@/components/device';
 import { DevToolsSection } from '@/components/settings';
 import { useConnectionStore, selectBleEnvironment } from '@/stores';
@@ -116,10 +115,10 @@ export function SettingsScreen() {
 function AppInfoSection({ isWeb }: { isWeb: boolean }) {
   return (
     <>
-      <Surface elevation="inset" radius="lg" border={false} style={{ marginBottom: 16 }}>
+      <Surface elevation={0} className="rounded-xl bg-surface-input" style={{ marginBottom: 16 }}>
         <View className="p-4">
-          <InfoRow label="Version" value="0.2.0" showBorder />
-          <InfoRow label="BLE Mode" value={isWeb ? 'Web Bluetooth' : 'Native'} />
+          <DataRow label="Version" value="0.2.0" className="border-b border-surface-200 pb-3 mb-3" />
+          <DataRow label="BLE Mode" value={isWeb ? 'Web Bluetooth' : 'Native'} />
         </View>
       </Surface>
 

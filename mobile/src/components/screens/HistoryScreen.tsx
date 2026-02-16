@@ -16,8 +16,7 @@ import {
   Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Stack, StatsRow, EmptyState } from '@/components/ui';
-import { Card, CardContent } from '@titan-design/react-ui';
+import { Card, CardContent, VStack, Metric, MetricGroup, EmptyState } from '@titan-design/react-ui';
 import { getSessionRepository } from '@/data/provider';
 import type { StoredExerciseSession } from '@/data/exercise-session';
 import { colors } from '@/theme';
@@ -121,13 +120,11 @@ export function HistoryScreen() {
         <Card elevation={1} style={{ marginBottom: 24 }}>
           <CardContent className="p-6">
             <Text className="mb-4 font-bold text-content-secondary">All Time Stats</Text>
-            <StatsRow
-              stats={[
-                { value: aggregateStats.totalSets, label: 'Sets' },
-                { value: formatNumber(aggregateStats.totalReps), label: 'Total Reps' },
-                { value: formatNumber(aggregateStats.totalVolume), label: 'Volume (lbs)' },
-              ]}
-            />
+            <MetricGroup>
+              <Metric value={String(aggregateStats.totalSets)} label="Sets" />
+              <Metric value={formatNumber(aggregateStats.totalReps)} label="Total Reps" />
+              <Metric value={formatNumber(aggregateStats.totalVolume)} label="Volume (lbs)" />
+            </MetricGroup>
           </CardContent>
         </Card>
 
@@ -141,7 +138,7 @@ export function HistoryScreen() {
             description="Complete your first session to see it here"
           />
         ) : (
-          <Stack gap="sm">
+          <VStack gap={2}>
             {sessions.map((session) => (
               <SessionListItem
                 key={session.id}
@@ -150,7 +147,7 @@ export function HistoryScreen() {
                 onLongPress={() => handleDelete(session.id)}
               />
             ))}
-          </Stack>
+          </VStack>
         )}
 
         {/* Tip */}
@@ -282,13 +279,11 @@ function SessionDetailModal({
           {/* Summary stats */}
           <Card elevation={1} className="mb-4">
             <CardContent className="p-6">
-              <StatsRow
-                stats={[
-                  { value: session.completedSets.length, label: 'Sets' },
-                  { value: totalReps, label: 'Reps' },
-                  { value: formatNumber(totalVolume), label: 'Volume' },
-                ]}
-              />
+              <MetricGroup>
+                <Metric value={String(session.completedSets.length)} label="Sets" />
+                <Metric value={String(totalReps)} label="Reps" />
+                <Metric value={formatNumber(totalVolume)} label="Volume" />
+              </MetricGroup>
             </CardContent>
           </Card>
 

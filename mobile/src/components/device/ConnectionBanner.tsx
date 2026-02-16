@@ -8,7 +8,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { StatusIndicator } from '@/components/ui';
 import { colors } from '@/theme';
 
 export interface ConnectionBannerProps {
@@ -41,7 +40,7 @@ export function ConnectionBanner({ deviceName, onDisconnect }: ConnectionBannerP
         </View>
         <View className="flex-1">
           <View className="mb-1 flex-row items-center">
-            <StatusIndicator status="success" size="sm" />
+            <View className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: colors.success.DEFAULT }} />
             <Text
               className="ml-2 text-xs font-semibold uppercase tracking-wider"
               style={{ color: colors.success.DEFAULT }}

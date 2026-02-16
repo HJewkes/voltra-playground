@@ -6,9 +6,9 @@
  */
 
 import React from 'react';
-import { ActivityIndicator } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Surface, ListItem } from '@/components/ui';
+import { ListItem, ListItemContent, ListItemTrailing, Surface } from '@titan-design/react-ui';
 import { colors } from '@/theme';
 import type { DiscoveredDevice } from '@/domain/device';
 
@@ -44,27 +44,26 @@ export function DeviceListItem({
 }: DeviceListItemProps) {
   return (
     <Surface
-      elevation="inset"
-      radius="lg"
-      border={false}
+      elevation={0}
+      className="rounded-xl bg-surface-input"
       style={{ opacity: isOtherConnecting ? 0.5 : 1 }}
     >
-      <ListItem
-        icon="hardware-chip-outline"
-        iconColor={colors.primary[500]}
-        iconBgColor={colors.surface.card}
-        title={device.name || 'Voltra'}
-        subtitle={device.id}
-        onPress={onSelect}
-        disabled={isOtherConnecting}
-        trailing={
-          isConnecting ? (
+      <ListItem onPress={onSelect} disabled={isOtherConnecting}>
+        <View
+          className="mr-3 items-center justify-center rounded-xl"
+          style={{ width: 48, height: 48, backgroundColor: colors.surface.card }}
+        >
+          <Ionicons name="hardware-chip-outline" size={24} color={colors.primary[500]} />
+        </View>
+        <ListItemContent title={device.name || 'Voltra'} subtitle={device.id} />
+        <ListItemTrailing>
+          {isConnecting ? (
             <ActivityIndicator size="small" color={colors.primary[500]} />
           ) : (
             <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
-          )
-        }
-      />
+          )}
+        </ListItemTrailing>
+      </ListItem>
     </Surface>
   );
 }

@@ -8,9 +8,7 @@
 import React from 'react';
 import { View, Text, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Stack } from '@/components/ui';
-import { Card, CardContent } from '@titan-design/react-ui';
-import { Button, ButtonText } from '@titan-design/react-ui';
+import { Card, CardContent, Button, ButtonText, VStack } from '@titan-design/react-ui';
 import { colors } from '@/theme';
 import type { StoredExerciseSession } from '@/data/exercise-session';
 
@@ -92,7 +90,7 @@ export function ResumeSessionPrompt({
             <Text className="mb-2 text-lg font-semibold text-content-primary">
               {session.exerciseName ?? 'Exercise'}
             </Text>
-            <Stack gap="xs">
+            <VStack gap={1}>
               <View className="flex-row justify-between">
                 <Text className="text-content-muted">Progress</Text>
                 <Text className="font-medium text-content-secondary">
@@ -105,11 +103,11 @@ export function ResumeSessionPrompt({
                   {formatTimeSince(lastActivity)}
                 </Text>
               </View>
-            </Stack>
+            </VStack>
           </View>
 
           {/* Actions */}
-          <Stack gap="sm">
+          <VStack gap={2}>
             <Button variant="solid" color="primary" fullWidth onPress={onResume} className="rounded-2xl">
               <Ionicons name="play" size={20} color="white" style={{ marginRight: 8 }} />
               <ButtonText>Resume Workout</ButtonText>
@@ -118,7 +116,7 @@ export function ResumeSessionPrompt({
               <Ionicons name="trash-outline" size={20} color="#f97316" style={{ marginRight: 8 }} />
               <ButtonText>Discard Session</ButtonText>
             </Button>
-          </Stack>
+          </VStack>
           </CardContent>
         </Card>
       </View>

@@ -8,11 +8,9 @@
 import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useStore } from 'zustand';
-import { RadioGroup, Radio } from '@titan-design/react-ui';
+import { RadioGroup, Radio, Surface, Section, SectionHeader, SectionContent } from '@titan-design/react-ui';
 import { useConnectionStore, selectIsConnected } from '@/stores';
 import { TrainingMode } from '@/domain/device';
-import { Section } from '@/components/ui/layout';
-import { Surface } from '@/components/ui';
 import { ConnectionGuard } from '@/components/device';
 import { WeightTrainingConfig } from '@/components/mode';
 
@@ -37,23 +35,26 @@ function ModeSelectionContent() {
   return (
     <ScrollView className="flex-1 bg-surface-400">
       <View className="p-4">
-        <Section title="Training Mode">
-          <Surface elevation={1} radius="lg" border={false}>
-            <View className="p-4">
-              <RadioGroup
-                value={String(mode)}
-                onChange={(v) => setMode(v as TrainingMode)}
-                orientation="vertical"
-                gap="sm"
-              >
-                {MODE_OPTIONS.map((opt) => (
-                  <Radio key={String(opt.value)} value={String(opt.value)}>
-                    {opt.label}
-                  </Radio>
-                ))}
-              </RadioGroup>
-            </View>
-          </Surface>
+        <Section>
+          <SectionHeader title="Training Mode" />
+          <SectionContent>
+            <Surface elevation={1} className="rounded-xl">
+              <View className="p-4">
+                <RadioGroup
+                  value={String(mode)}
+                  onChange={(v) => setMode(v as TrainingMode)}
+                  orientation="vertical"
+                  gap="sm"
+                >
+                  {MODE_OPTIONS.map((opt) => (
+                    <Radio key={String(opt.value)} value={String(opt.value)}>
+                      {opt.label}
+                    </Radio>
+                  ))}
+                </RadioGroup>
+              </View>
+            </Surface>
+          </SectionContent>
         </Section>
 
         {mode === TrainingMode.WeightTraining && (
@@ -61,14 +62,17 @@ function ModeSelectionContent() {
         )}
 
         {mode !== TrainingMode.Idle && mode !== TrainingMode.WeightTraining && (
-          <Section title="Configuration">
-            <Surface elevation={1} radius="lg" border={false}>
-              <View className="items-center p-6">
-                <Text className="text-center text-content-muted">
-                  Configuration for this mode is not yet available.
-                </Text>
-              </View>
-            </Surface>
+          <Section>
+            <SectionHeader title="Configuration" />
+            <SectionContent>
+              <Surface elevation={1} className="rounded-xl">
+                <View className="items-center p-6">
+                  <Text className="text-center text-content-muted">
+                    Configuration for this mode is not yet available.
+                  </Text>
+                </View>
+              </Surface>
+            </SectionContent>
           </Section>
         )}
       </View>

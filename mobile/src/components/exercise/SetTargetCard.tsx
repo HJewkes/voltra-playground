@@ -9,8 +9,7 @@ import React from 'react';
 import { View, Text, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/theme';
-import { Surface, Stack } from '@/components/ui';
-import { Card, CardContent } from '@titan-design/react-ui';
+import { Card, CardContent, HStack, Surface } from '@titan-design/react-ui';
 import type { PlannedSet } from '@/domain/workout';
 
 export interface SetTargetCardProps {
@@ -71,8 +70,8 @@ export function SetTargetCard({
       </View>
 
       {/* Target details */}
-      <Surface elevation="inset" radius="lg" border={false}>
-        <Stack direction="row" justify="space-between" style={{ padding: 16 }}>
+      <Surface elevation={0} className="rounded-xl bg-surface-input">
+        <HStack justify="between" style={{ padding: 16 }}>
           <View className="flex-1 items-center">
             <Ionicons name="repeat" size={20} color={colors.neutral[500]} />
             <Text className="mt-1 text-sm text-content-muted">Target Reps</Text>
@@ -92,7 +91,7 @@ export function SetTargetCard({
               </View>
             </>
           )}
-        </Stack>
+        </HStack>
       </Surface>
 
       {/* Instructions */}

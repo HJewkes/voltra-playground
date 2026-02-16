@@ -9,8 +9,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/theme';
-import { Surface, Stack } from '@/components/ui';
-import { Card, CardContent } from '@titan-design/react-ui';
+import { Card, CardContent, HStack, VStack, Surface } from '@titan-design/react-ui';
 import type { ExerciseSession, TerminationReason } from '@/domain/workout';
 import { getSetMeanVelocity, estimateSetRIR } from '@voltras/workout-analytics';
 
@@ -102,8 +101,8 @@ export function ExerciseSessionSummaryCard({
         <CardContent className="p-6">
           <Text className="mb-4 text-sm font-medium text-content-muted">{session.exercise.name}</Text>
 
-          <Surface elevation="inset" radius="lg" border={false}>
-            <Stack direction="row" justify="space-between" style={{ padding: 16 }}>
+          <Surface elevation={0} className="rounded-xl bg-surface-input">
+            <HStack justify="between" style={{ padding: 16 }}>
               <View className="flex-1 items-center">
                 <Text className="text-sm text-content-muted">Sets</Text>
                 <Text className="mt-1 text-2xl font-bold text-content-primary">
@@ -124,7 +123,7 @@ export function ExerciseSessionSummaryCard({
                 </Text>
                 <Text className="text-xs text-content-muted">lbs</Text>
               </View>
-            </Stack>
+            </HStack>
           </Surface>
         </CardContent>
       </Card>
@@ -182,7 +181,7 @@ export function ExerciseSessionSummaryCard({
       </Card>
 
       {/* Action buttons */}
-      <Stack gap="sm" style={{ marginTop: 16, marginBottom: 32 }}>
+      <VStack gap={2} style={{ marginTop: 16, marginBottom: 32 }}>
         {onNewSession && (
           <TouchableOpacity
             className="items-center rounded-2xl p-5"
@@ -204,7 +203,7 @@ export function ExerciseSessionSummaryCard({
             <Text className="font-bold text-content-secondary">Done</Text>
           </TouchableOpacity>
         )}
-      </Stack>
+      </VStack>
     </View>
   );
 }

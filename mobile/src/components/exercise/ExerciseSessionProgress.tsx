@@ -8,8 +8,7 @@
 import React from 'react';
 import { View, Text, type StyleProp, type ViewStyle } from 'react-native';
 import { colors } from '@/theme';
-import { ProgressBar } from '@/components/ui';
-import { Card, CardContent } from '@titan-design/react-ui';
+import { Card, CardContent, Progress } from '@titan-design/react-ui';
 import type { PlannedSet, CompletedSet } from '@/domain/workout';
 import { getSetMeanVelocity } from '@voltras/workout-analytics';
 
@@ -60,7 +59,7 @@ export function ExerciseSessionProgress({
         </View>
 
         {/* Progress bar */}
-        <ProgressBar progress={progress} color={colors.primary[500]} height={6} />
+        <Progress value={progress * 100} color="primary" size="md" />
 
         {error && <Text className="mt-2 text-sm text-danger-light">Error: {error}</Text>}
 

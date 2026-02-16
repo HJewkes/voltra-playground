@@ -8,8 +8,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, Switch, Alert, FlatList, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Surface, Stack } from '@/components/ui';
-import { Button, ButtonText } from '@titan-design/react-ui';
+import { Button, ButtonText, VStack, Surface } from '@titan-design/react-ui';
 import { colors } from '@/theme';
 import {
   getSessionRepository,
@@ -132,7 +131,7 @@ export function DevToolsSection() {
   );
 
   return (
-    <Surface elevation="inset" radius="lg" border={false} style={{ marginBottom: 16 }}>
+    <Surface elevation={0} className="rounded-xl bg-surface-input" style={{ marginBottom: 16 }}>
       <View className="p-4">
         {/* Header */}
         <View className="mb-4 flex-row items-center">
@@ -140,7 +139,7 @@ export function DevToolsSection() {
           <Text className="ml-2 text-lg font-bold text-content-primary">Dev Tools</Text>
         </View>
 
-        <Stack gap="md">
+        <VStack gap={4}>
           {/* Storage Stats */}
           <View className="rounded-lg bg-surface-300 p-3">
             <Text className="mb-2 text-xs uppercase text-content-muted">Storage Stats</Text>
@@ -233,7 +232,7 @@ export function DevToolsSection() {
               )}
             </>
           )}
-        </Stack>
+        </VStack>
       </View>
     </Surface>
   );

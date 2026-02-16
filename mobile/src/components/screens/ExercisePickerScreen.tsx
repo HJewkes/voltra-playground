@@ -25,9 +25,8 @@ import { type Exercise, getExercise } from '@/domain/exercise';
 import { type ExercisePlan, createStandardPlan, createDiscoveryPlan } from '@/domain/workout';
 
 // Component imports
-import { Stack, WeightPicker } from '@/components/ui';
-import { Card, CardContent } from '@titan-design/react-ui';
-import { Button, ButtonText } from '@titan-design/react-ui';
+import { WeightPicker } from '@/components/ui';
+import { Card, CardContent, HStack, Button, ButtonText } from '@titan-design/react-ui';
 import { ExerciseSelector, GoalPicker } from '@/components/planning';
 
 // =============================================================================
@@ -221,7 +220,7 @@ export function ExercisePickerScreen({ onStartSession, onBack }: ExercisePickerS
                 </View>
 
                 {/* Sets and Reps */}
-                <Stack direction="row" gap="md">
+                <HStack gap={4}>
                   <View className="flex-1">
                     <Text className="mb-2 text-sm text-content-secondary">Sets</Text>
                     <TextInput
@@ -248,7 +247,7 @@ export function ExercisePickerScreen({ onStartSession, onBack }: ExercisePickerS
                       keyboardType="numeric"
                     />
                   </View>
-                </Stack>
+                </HStack>
 
                 {/* Warmup toggle */}
                 <TouchableOpacity

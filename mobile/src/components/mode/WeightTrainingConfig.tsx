@@ -8,8 +8,8 @@
 import React from 'react';
 import { useStore } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
-import { Section } from '@/components/ui/layout';
-import { Surface, WeightPicker } from '@/components/ui';
+import { WeightPicker } from '@/components/ui';
+import { Surface, Section, SectionHeader, SectionContent } from '@titan-design/react-ui';
 import { ChainsSelector } from './ChainsSelector';
 import { EccentricSlider } from './EccentricSlider';
 import type { VoltraStoreApi } from '@/stores/voltra-store';
@@ -35,27 +35,36 @@ export function WeightTrainingConfig({ voltraStore }: WeightTrainingConfigProps)
 
   return (
     <>
-      <Section title="Base Weight">
-        <Surface elevation={1} radius="lg" border={false}>
-          <WeightPicker value={weight} onChange={setWeight} min={5} max={200} step={1} />
-        </Surface>
+      <Section>
+        <SectionHeader title="Base Weight" />
+        <SectionContent>
+          <Surface elevation={1} className="rounded-xl">
+            <WeightPicker value={weight} onChange={setWeight} min={5} max={200} step={1} />
+          </Surface>
+        </SectionContent>
       </Section>
 
-      <Section title="Chains">
-        <Surface elevation={1} radius="lg" border={false}>
-          <ChainsSelector
-            chains={chains}
-            inverseChains={inverseChains}
-            onChainsChange={setChains}
-            onInverseChainsChange={setInverseChains}
-          />
-        </Surface>
+      <Section>
+        <SectionHeader title="Chains" />
+        <SectionContent>
+          <Surface elevation={1} className="rounded-xl">
+            <ChainsSelector
+              chains={chains}
+              inverseChains={inverseChains}
+              onChainsChange={setChains}
+              onInverseChainsChange={setInverseChains}
+            />
+          </Surface>
+        </SectionContent>
       </Section>
 
-      <Section title="Eccentric Load">
-        <Surface elevation={1} radius="lg" border={false}>
-          <EccentricSlider value={eccentric} onChange={setEccentric} />
-        </Surface>
+      <Section>
+        <SectionHeader title="Eccentric Load" />
+        <SectionContent>
+          <Surface elevation={1} className="rounded-xl">
+            <EccentricSlider value={eccentric} onChange={setEccentric} />
+          </Surface>
+        </SectionContent>
       </Section>
     </>
   );
