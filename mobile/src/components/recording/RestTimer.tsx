@@ -8,7 +8,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, Vibration } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@/theme';
+import { getSemanticColors } from '@titan-design/react-ui';
+
+const t = getSemanticColors('dark');
 
 interface RestTimerProps {
   /** Rest duration in seconds */
@@ -72,16 +74,16 @@ export function RestTimer({
 
   // Color based on time remaining
   const getTimeColor = () => {
-    if (remaining <= 10) return colors.success.DEFAULT;
-    if (remaining <= 30) return colors.warning.DEFAULT;
-    return colors.text.primary;
+    if (remaining <= 10) return t['status-success'];
+    if (remaining <= 30) return t['status-warning'];
+    return t['text-primary'];
   };
 
   return (
     <View className="items-center py-6">
       <Text
         className="mb-3 text-sm font-medium uppercase tracking-wider"
-        style={{ color: colors.text.muted }}
+        style={{ color: t['text-disabled'] }}
       >
         {label}
       </Text>
@@ -95,13 +97,13 @@ export function RestTimer({
         {/* Progress bar */}
         <View
           className="mt-4 h-2 w-48 overflow-hidden rounded-full"
-          style={{ backgroundColor: colors.surface.dark }}
+          style={{ backgroundColor: t['background-subtle'] }}
         >
           <View
             className="h-full rounded-full"
             style={{
               width: `${progress}%`,
-              backgroundColor: colors.primary[500],
+              backgroundColor: t['brand-primary'],
             }}
           />
         </View>
@@ -111,25 +113,25 @@ export function RestTimer({
       <View className="mt-8 flex-row gap-4">
         <TouchableOpacity
           className="h-14 w-14 items-center justify-center rounded-full"
-          style={[{ backgroundColor: colors.surface.card }]}
+          style={[{ backgroundColor: t['surface-elevated'] }]}
           onPress={handlePause}
           activeOpacity={0.7}
         >
-          <Ionicons name={isRunning ? 'pause' : 'play'} size={24} color={colors.text.secondary} />
+          <Ionicons name={isRunning ? 'pause' : 'play'} size={24} color={t['text-secondary']} />
         </TouchableOpacity>
 
         <TouchableOpacity
           className="h-14 w-14 items-center justify-center rounded-full"
-          style={[{ backgroundColor: colors.surface.card }]}
+          style={[{ backgroundColor: t['surface-elevated'] }]}
           onPress={handleReset}
           activeOpacity={0.7}
         >
-          <Ionicons name="refresh" size={24} color={colors.text.secondary} />
+          <Ionicons name="refresh" size={24} color={t['text-secondary']} />
         </TouchableOpacity>
 
         <TouchableOpacity
           className="rounded-2xl px-8 py-4"
-          style={[{ backgroundColor: colors.primary[600] }]}
+          style={[{ backgroundColor: t['brand-primary-dark'] }]}
           onPress={handleSkip}
           activeOpacity={0.8}
         >
@@ -139,7 +141,7 @@ export function RestTimer({
 
       {/* Ready indicator when close to done */}
       {remaining <= 10 && remaining > 0 && (
-        <Text className="mt-6 text-lg font-bold" style={{ color: colors.success.DEFAULT }}>
+        <Text className="mt-6 text-lg font-bold" style={{ color: t['status-success'] }}>
           Get ready!
         </Text>
       )}

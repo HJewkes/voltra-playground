@@ -13,7 +13,9 @@ import {
   EXERCISE_MUSCLE_GROUPS,
   MuscleGroup,
 } from '@/domain/exercise';
-import { colors } from '@/theme';
+import { getSemanticColors, alpha } from '@titan-design/react-ui';
+
+const t = getSemanticColors('dark');
 
 export interface ExerciseSelectorProps {
   /** Whether the modal is visible */
@@ -75,19 +77,19 @@ export function ExerciseSelector({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View className="flex-1" style={{ backgroundColor: colors.surface.background }}>
+      <View className="flex-1" style={{ backgroundColor: t['background-default'] }}>
         {/* Header */}
         <View
           className="flex-row items-center justify-between border-b px-5 py-5"
-          style={{ backgroundColor: colors.surface.elevated, borderColor: colors.surface.light }}
+          style={{ backgroundColor: t['surface-elevated'], borderColor: t['border-strong'] }}
         >
-          <Text className="text-xl font-bold text-content-primary">Select Exercise</Text>
+          <Text className="text-xl font-bold text-text-primary">Select Exercise</Text>
           <TouchableOpacity
             onPress={onClose}
             className="h-10 w-10 items-center justify-center rounded-full"
-            style={{ backgroundColor: colors.surface.dark }}
+            style={{ backgroundColor: t['background-subtle'] }}
           >
-            <Ionicons name="close" size={22} color={colors.text.secondary} />
+            <Ionicons name="close" size={22} color={t['text-secondary']} />
           </TouchableOpacity>
         </View>
 
@@ -95,7 +97,7 @@ export function ExerciseSelector({
         <ScrollView className="flex-1 p-4">
           {Object.entries(groupedExercises).map(([muscle, exercises]) => (
             <View key={muscle} className="mb-6">
-              <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-content-muted">
+              <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-text-disabled">
                 {muscle}
               </Text>
               {exercises.map((ex) => {
@@ -105,11 +107,11 @@ export function ExerciseSelector({
                     key={ex}
                     className="mb-2 rounded-2xl p-4"
                     style={[
-                      { backgroundColor: colors.surface.card },
+                      { backgroundColor: t['surface-elevated'] },
                       isSelected && {
                         borderWidth: 2,
-                        borderColor: colors.primary[500],
-                        backgroundColor: colors.primary[600] + '15',
+                        borderColor: t['brand-primary'],
+                        backgroundColor: alpha(t['brand-primary-dark'], 0.08),
                       },
                     ]}
                     onPress={() => onSelect(ex)}
@@ -117,7 +119,7 @@ export function ExerciseSelector({
                   >
                     <Text
                       className="font-semibold"
-                      style={{ color: isSelected ? colors.primary[500] : colors.text.primary }}
+                      style={{ color: isSelected ? t['brand-primary'] : t['text-primary'] }}
                     >
                       {getExerciseName(ex)}
                     </Text>

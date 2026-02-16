@@ -8,8 +8,9 @@ import React from 'react';
 import { Text, TouchableOpacity, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { TrainingGoal } from '@/domain/planning';
-import { colors } from '@/theme';
-import { HStack } from '@titan-design/react-ui';
+import { HStack, getSemanticColors, alpha } from '@titan-design/react-ui';
+
+const t = getSemanticColors('dark');
 
 export interface GoalPickerProps {
   /** Currently selected goal */
@@ -48,11 +49,11 @@ export function GoalPicker({ selected, onSelect, style }: GoalPickerProps) {
             key={goal}
             className="flex-1 items-center rounded-2xl p-4"
             style={[
-              { backgroundColor: colors.surface.dark },
+              { backgroundColor: t['background-subtle'] },
               isSelected && {
-                backgroundColor: colors.primary[600] + '20',
+                backgroundColor: alpha(t['brand-primary-dark'], 0.12),
                 borderWidth: 2,
-                borderColor: colors.primary[500],
+                borderColor: t['brand-primary'],
               },
             ]}
             onPress={() => onSelect(goal)}
@@ -61,11 +62,11 @@ export function GoalPicker({ selected, onSelect, style }: GoalPickerProps) {
             <Ionicons
               name={icon}
               size={28}
-              color={isSelected ? colors.primary[500] : colors.text.muted}
+              color={isSelected ? t['brand-primary'] : t['text-disabled']}
             />
             <Text
               className="mt-2 text-sm font-semibold"
-              style={{ color: isSelected ? colors.primary[500] : colors.text.secondary }}
+              style={{ color: isSelected ? t['brand-primary'] : t['text-secondary'] }}
             >
               {label}
             </Text>

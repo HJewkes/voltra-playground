@@ -11,9 +11,10 @@ import { useStore } from 'zustand';
 import { type WorkoutSample, MovementPhase } from '@voltras/workout-analytics';
 import { getEffortLabel, getRIRDescription, getRPEColor } from '@/domain/workout';
 import type { RecordingStoreApi } from '@/stores';
-import { Card, CardContent, HStack, Surface } from '@titan-design/react-ui';
+import { Card, CardContent, HStack, Surface, getSemanticColors } from '@titan-design/react-ui';
 import { PhaseIndicator } from './PhaseIndicator';
-import { colors } from '@/theme';
+
+const t = getSemanticColors('dark');
 
 // =============================================================================
 // View Component (Presentational)
@@ -88,7 +89,7 @@ export function LiveMetricsView({
         {/* Header: Weight & Phase */}
         <View className="mb-5 flex-row items-center justify-between">
           {weight !== undefined && (
-            <Text className="font-medium text-content-secondary">{weight} lbs</Text>
+            <Text className="font-medium text-text-secondary">{weight} lbs</Text>
           )}
           <PhaseIndicator phase={currentSample?.phase ?? MovementPhase.IDLE} />
         </View>
@@ -96,20 +97,20 @@ export function LiveMetricsView({
         {/* Rep Counter & Live RPE */}
         <HStack justify="around" align="center" style={{ marginBottom: 20 }}>
           <View className="items-center">
-            <Text className="text-8xl font-bold" style={{ color: colors.primary[500] }}>
+            <Text className="text-8xl font-bold" style={{ color: t['brand-primary'] }}>
               {repCount}
             </Text>
-            <Text className="text-lg text-content-tertiary">reps</Text>
+            <Text className="text-lg text-text-tertiary">reps</Text>
           </View>
 
-          <View className="h-24 w-px" style={{ backgroundColor: colors.surface.light }} />
+          <View className="h-24 w-px" style={{ backgroundColor: t['border-strong'] }} />
 
           <View className="items-center">
             <Text className="text-6xl font-bold" style={{ color: rpeColor }}>
               {rpe.toFixed(1)}
             </Text>
-            <Text className="text-lg text-content-tertiary">RPE</Text>
-            <Text className="mt-1 text-sm text-content-muted">{rir.toFixed(0)} RIR</Text>
+            <Text className="text-lg text-text-tertiary">RPE</Text>
+            <Text className="mt-1 text-sm text-text-disabled">{rir.toFixed(0)} RIR</Text>
           </View>
         </HStack>
 
@@ -126,20 +127,20 @@ export function LiveMetricsView({
         {currentSample && (
           <View className="mb-5">
             <View className="mb-2 flex-row justify-between">
-              <Text className="text-sm text-content-tertiary">Position</Text>
-              <Text className="text-sm font-medium text-content-secondary">
+              <Text className="text-sm text-text-tertiary">Position</Text>
+              <Text className="text-sm font-medium text-text-secondary">
                 {((currentSample.position ?? 0) * 100).toFixed(0)}%
               </Text>
             </View>
             <View
               className="h-3 overflow-hidden rounded-full"
-              style={{ backgroundColor: colors.surface.dark }}
+              style={{ backgroundColor: t['background-subtle'] }}
             >
               <View
                 className="h-full rounded-full"
                 style={{
                   width: `${Math.min(100, (currentSample.position ?? 0) * 100)}%`,
-                  backgroundColor: colors.primary[500],
+                  backgroundColor: t['brand-primary'],
                 }}
               />
             </View>
@@ -149,19 +150,19 @@ export function LiveMetricsView({
         {/* Quick Stats Grid */}
         <HStack gap={2}>
           <Surface elevation={0} className="rounded-xl bg-surface-input" style={{ flex: 1, padding: 16 }}>
-            <Text className="mb-1 text-xs font-medium text-content-muted">Force</Text>
-            <Text className="text-2xl font-bold text-content-primary">
+            <Text className="mb-1 text-xs font-medium text-text-disabled">Force</Text>
+            <Text className="text-2xl font-bold text-text-primary">
               {Math.round(currentSample?.force ?? 0)}
             </Text>
           </Surface>
           <Surface elevation={0} className="rounded-xl bg-surface-input" style={{ flex: 1, padding: 16 }}>
-            <Text className="mb-1 text-xs font-medium text-content-muted">Velocity</Text>
-            <Text className="text-2xl font-bold text-content-primary">
+            <Text className="mb-1 text-xs font-medium text-text-disabled">Velocity</Text>
+            <Text className="text-2xl font-bold text-text-primary">
               {(currentSample?.velocity ?? 0).toFixed(2)}
             </Text>
           </Surface>
           <Surface elevation={0} className="rounded-xl bg-surface-input" style={{ flex: 1, padding: 16 }}>
-            <Text className="mb-1 text-xs font-medium text-content-muted">Vel Loss</Text>
+            <Text className="mb-1 text-xs font-medium text-text-disabled">Vel Loss</Text>
             <Text className="text-2xl font-bold" style={{ color: rpeColor }}>
               {velocityLossPct > 0 ? '-' : ''}
               {Math.round(velocityLossPct)}%

@@ -62,9 +62,9 @@ export function LinkCard({
             >
               <Ionicons name={icon} size={28} color={iconColor} />
             </View>
-            <Text className="text-base font-semibold text-content-primary">{title}</Text>
+            <Text className="text-base font-semibold text-text-primary">{title}</Text>
             {subtitle && (
-              <Text className="mt-1 text-sm text-content-tertiary">{subtitle}</Text>
+              <Text className="mt-1 text-sm text-text-tertiary">{subtitle}</Text>
             )}
           </CardContent>
         </Card>

@@ -7,7 +7,9 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@/theme';
+import { getSemanticColors, alpha } from '@titan-design/react-ui';
+
+const t = getSemanticColors('dark');
 
 export interface BLEWarningProps {
   /** Environment type */
@@ -25,14 +27,14 @@ export function BLEWarning({ environment, message }: BLEWarningProps) {
   return (
     <View
       className="mb-4 flex-row items-start rounded-xl p-4"
-      style={{ backgroundColor: colors.warning.DEFAULT + '15' }}
+      style={{ backgroundColor: alpha(t['status-warning'], 0.08) }}
     >
-      <Ionicons name="warning" size={20} color={colors.warning.DEFAULT} style={{ marginTop: 2 }} />
+      <Ionicons name="warning" size={20} color={t['status-warning']} style={{ marginTop: 2 }} />
       <View className="ml-3 flex-1">
-        <Text className="mb-1 font-semibold" style={{ color: colors.warning.DEFAULT }}>
+        <Text className="mb-1 font-semibold" style={{ color: t['status-warning'] }}>
           {title}
         </Text>
-        <Text className="text-xs leading-5" style={{ color: colors.text.secondary }}>
+        <Text className="text-xs leading-5" style={{ color: t['text-secondary'] }}>
           {message}
         </Text>
       </View>

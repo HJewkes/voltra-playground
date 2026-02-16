@@ -122,7 +122,7 @@ function AppInfoSection({ isWeb }: { isWeb: boolean }) {
         </View>
       </Surface>
 
-      <Text className="mb-6 px-4 text-center text-xs text-content-muted">
+      <Text className="mb-6 px-4 text-center text-xs text-text-disabled">
         Unofficial Voltra SDK. Not affiliated with Beyond Power.
       </Text>
     </>

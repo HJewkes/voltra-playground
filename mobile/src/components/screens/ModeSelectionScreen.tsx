@@ -67,7 +67,7 @@ function ModeSelectionContent() {
             <SectionContent>
               <Surface elevation={1} className="rounded-xl">
                 <View className="items-center p-6">
-                  <Text className="text-center text-content-muted">
+                  <Text className="text-center text-text-disabled">
                     Configuration for this mode is not yet available.
                   </Text>
                 </View>

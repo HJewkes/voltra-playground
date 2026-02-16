@@ -7,8 +7,9 @@
 import React from 'react';
 import { Text, TouchableOpacity } from 'react-native';
 import { WeightPicker } from '@/components/ui';
-import { Card, CardHeader, CardTitle, CardContent } from '@titan-design/react-ui';
-import { colors } from '@/theme';
+import { Card, CardHeader, CardTitle, CardContent, getSemanticColors } from '@titan-design/react-ui';
+
+const t = getSemanticColors('dark');
 
 export interface WeightSetupCardProps {
   /** Currently selected weight */
@@ -48,14 +49,14 @@ export function WeightSetupCard({
         <TouchableOpacity
           onPress={onSetWeight}
           className="rounded-2xl py-4"
-          style={{ backgroundColor: colors.primary[600] }}
+          style={{ backgroundColor: t['brand-primary-dark'] }}
           activeOpacity={0.8}
         >
           <Text className="text-center text-lg font-bold text-white">Set Weight</Text>
         </TouchableOpacity>
 
         {deviceWeight > 0 && (
-          <Text className="mt-3 text-center text-content-tertiary">Current: {deviceWeight} lbs</Text>
+          <Text className="mt-3 text-center text-text-tertiary">Current: {deviceWeight} lbs</Text>
         )}
       </CardContent>
     </Card>

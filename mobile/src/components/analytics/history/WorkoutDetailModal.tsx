@@ -41,7 +41,7 @@ export function WorkoutDetailModal({ workout, visible, onClose }: WorkoutDetailM
       <DrawerBody>
         {workout && (
           <ScrollView className="max-h-96" showsVerticalScrollIndicator={false}>
-            <Text className="mb-4 text-center text-content-tertiary">
+            <Text className="mb-4 text-center text-text-tertiary">
               {new Date(workout.timestamp.start).toLocaleDateString()}
             </Text>
 
@@ -67,7 +67,7 @@ export function WorkoutDetailModal({ workout, visible, onClose }: WorkoutDetailM
             {/* Analytics */}
             {workout.data.reps.length > 0 && (
               <View className="mb-5">
-                <Text className="mb-3 font-bold text-content-secondary">Analytics</Text>
+                <Text className="mb-3 font-bold text-text-secondary">Analytics</Text>
                 <Surface elevation={0} className="rounded-xl bg-surface-input">
                   <View className="p-5">
                     <DataRow
@@ -92,7 +92,7 @@ export function WorkoutDetailModal({ workout, visible, onClose }: WorkoutDetailM
             {/* Per-Rep Data */}
             {workout.data.reps.length > 0 && (
               <View className="mb-5">
-                <Text className="mb-3 font-bold text-content-secondary">Per-Rep Breakdown</Text>
+                <Text className="mb-3 font-bold text-text-secondary">Per-Rep Breakdown</Text>
                 <Surface elevation={0} className="rounded-xl bg-surface-input">
                   <View className="p-4">
                     {workout.data.reps.map((rep, index) => {
@@ -109,19 +109,19 @@ export function WorkoutDetailModal({ workout, visible, onClose }: WorkoutDetailM
                           className={`py-3 ${index < workout.data.reps.length - 1 ? 'border-b border-surface-100' : ''}`}
                         >
                           <View className="mb-1 flex-row justify-between">
-                            <Text className="font-bold text-content-primary">
+                            <Text className="font-bold text-text-primary">
                               Rep {rep.repNumber}
                             </Text>
-                            <Text className="text-sm text-content-tertiary">{tempo}</Text>
+                            <Text className="text-sm text-text-tertiary">{tempo}</Text>
                           </View>
                           <View className="flex-row justify-between">
-                            <Text className="text-xs text-content-muted">
+                            <Text className="text-xs text-text-disabled">
                               Force: {Math.round(getRepPeakForce(rep))}
                             </Text>
-                            <Text className="text-xs text-content-muted">
+                            <Text className="text-xs text-text-disabled">
                               Vel: {getRepPeakVelocity(rep).toFixed(2)}
                             </Text>
-                            <Text className="text-xs text-content-muted">
+                            <Text className="text-xs text-text-disabled">
                               Dur: {duration.toFixed(1)}s
                             </Text>
                           </View>

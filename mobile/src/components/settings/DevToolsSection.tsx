@@ -8,8 +8,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, Switch, Alert, FlatList, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Button, ButtonText, VStack, Surface } from '@titan-design/react-ui';
-import { colors } from '@/theme';
+import { Button, ButtonText, VStack, Surface, getSemanticColors } from '@titan-design/react-ui';
 import {
   getSessionRepository,
   getRecordingRepository,
@@ -18,6 +17,8 @@ import {
 } from '@/data/provider';
 import { seedDatabase, clearSeedData } from '@/__fixtures__';
 import type { SampleRecording } from '@/data/recordings';
+
+const t = getSemanticColors('dark');
 
 interface StorageStats {
   sessionCount: number;
@@ -121,12 +122,12 @@ export function DevToolsSection() {
       onPress={() => handleReplaySelect(item)}
     >
       <View className="flex-1">
-        <Text className="font-medium text-content-primary">{item.exerciseName}</Text>
-        <Text className="text-xs text-content-muted">
+        <Text className="font-medium text-text-primary">{item.exerciseName}</Text>
+        <Text className="text-xs text-text-disabled">
           {item.sampleCount} samples • {Math.round(item.durationMs / 1000)}s • {item.weight} lbs
         </Text>
       </View>
-      <Ionicons name="play-circle" size={24} color={colors.primary[500]} />
+      <Ionicons name="play-circle" size={24} color={t['brand-primary']} />
     </TouchableOpacity>
   );
 
@@ -135,34 +136,34 @@ export function DevToolsSection() {
       <View className="p-4">
         {/* Header */}
         <View className="mb-4 flex-row items-center">
-          <Ionicons name="construct" size={20} color={colors.warning.DEFAULT} />
-          <Text className="ml-2 text-lg font-bold text-content-primary">Dev Tools</Text>
+          <Ionicons name="construct" size={20} color={t['status-warning']} />
+          <Text className="ml-2 text-lg font-bold text-text-primary">Dev Tools</Text>
         </View>
 
         <VStack gap={4}>
           {/* Storage Stats */}
           <View className="rounded-lg bg-surface-300 p-3">
-            <Text className="mb-2 text-xs uppercase text-content-muted">Storage Stats</Text>
+            <Text className="mb-2 text-xs uppercase text-text-disabled">Storage Stats</Text>
             <View className="flex-row justify-between">
-              <Text className="text-content-secondary">Sessions</Text>
-              <Text className="font-medium text-content-primary">{stats.sessionCount}</Text>
+              <Text className="text-text-secondary">Sessions</Text>
+              <Text className="font-medium text-text-primary">{stats.sessionCount}</Text>
             </View>
             <View className="mt-1 flex-row justify-between">
-              <Text className="text-content-secondary">Recordings</Text>
-              <Text className="font-medium text-content-primary">{stats.recordingCount}</Text>
+              <Text className="text-text-secondary">Recordings</Text>
+              <Text className="font-medium text-text-primary">{stats.recordingCount}</Text>
             </View>
           </View>
 
           {/* Debug Telemetry Toggle */}
           <View className="flex-row items-center justify-between py-2">
             <View className="flex-1">
-              <Text className="text-content-primary">Debug Telemetry</Text>
-              <Text className="text-xs text-content-muted">Store raw samples with sessions</Text>
+              <Text className="text-text-primary">Debug Telemetry</Text>
+              <Text className="text-xs text-text-disabled">Store raw samples with sessions</Text>
             </View>
             <Switch
               value={debugEnabled}
               onValueChange={handleDebugToggle}
-              trackColor={{ false: colors.surface.dark, true: colors.primary[500] }}
+              trackColor={{ false: t['background-subtle'], true: t['brand-primary'] }}
             />
           </View>
 
@@ -206,13 +207,13 @@ export function DevToolsSection() {
                 onPress={() => setShowRecordings(!showRecordings)}
               >
                 <View className="flex-row items-center">
-                  <Ionicons name="play-circle" size={20} color={colors.primary[500]} />
-                  <Text className="ml-2 text-content-primary">Replay Recording</Text>
+                  <Ionicons name="play-circle" size={20} color={t['brand-primary']} />
+                  <Text className="ml-2 text-text-primary">Replay Recording</Text>
                 </View>
                 <Ionicons
                   name={showRecordings ? 'chevron-up' : 'chevron-down'}
                   size={20}
-                  color={colors.content.muted}
+                  color={t['text-disabled']}
                 />
               </TouchableOpacity>
 
@@ -223,7 +224,7 @@ export function DevToolsSection() {
                     keyExtractor={(item) => item.id}
                     renderItem={renderRecordingItem}
                     ListEmptyComponent={
-                      <Text className="py-4 text-center text-content-muted">
+                      <Text className="py-4 text-center text-text-disabled">
                         No recordings available
                       </Text>
                     }

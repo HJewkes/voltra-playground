@@ -9,7 +9,9 @@ import React, { useMemo } from 'react';
 import { View, Text } from 'react-native';
 import Svg, { Path, Line, Rect } from 'react-native-svg';
 import { MovementPhase, type WorkoutSample } from '@/domain/workout';
-import { colors } from '@/theme';
+import { getSemanticColors, alpha } from '@titan-design/react-ui';
+
+const t = getSemanticColors('dark');
 
 interface ForceCurveChartProps {
   /** Recent samples to display */
@@ -88,13 +90,13 @@ export function ForceCurveChart({
   const getPhaseColor = (phase: MovementPhase) => {
     switch (phase) {
       case MovementPhase.CONCENTRIC:
-        return colors.success.DEFAULT + '25';
+        return alpha(t['status-success'], 0.15);
       case MovementPhase.HOLD:
-        return colors.warning.DEFAULT + '25';
+        return alpha(t['status-warning'], 0.15);
       case MovementPhase.ECCENTRIC:
-        return colors.info.DEFAULT + '25';
+        return alpha(t['status-info'], 0.15);
       default:
-        return colors.surface.light + '30';
+        return alpha(t['border-strong'], 0.19);
     }
   };
 
@@ -121,14 +123,14 @@ export function ForceCurveChart({
           y1={zeroY}
           x2={width - padding.right}
           y2={zeroY}
-          stroke={colors.surface.light}
+          stroke={t['border-strong']}
           strokeWidth={1}
           strokeDasharray="4,4"
         />
 
         {/* Force curve - orange primary */}
         {forcePath && (
-          <Path d={forcePath} stroke={colors.primary[500]} strokeWidth={2.5} fill="none" />
+          <Path d={forcePath} stroke={t['brand-primary']} strokeWidth={2.5} fill="none" />
         )}
 
         {/* Y-axis */}
@@ -137,7 +139,7 @@ export function ForceCurveChart({
           y1={padding.top}
           x2={padding.left}
           y2={height - padding.bottom}
-          stroke={colors.surface.light}
+          stroke={t['border-strong']}
           strokeWidth={1}
         />
       </Svg>
@@ -152,7 +154,7 @@ export function ForceCurveChart({
           alignItems: 'flex-end',
         }}
       >
-        <Text style={{ fontSize: 10, color: colors.text.muted }}>{Math.round(maxForce)}</Text>
+        <Text style={{ fontSize: 10, color: t['text-disabled'] }}>{Math.round(maxForce)}</Text>
       </View>
       <View
         style={{
@@ -163,7 +165,7 @@ export function ForceCurveChart({
           alignItems: 'flex-end',
         }}
       >
-        <Text style={{ fontSize: 10, color: colors.text.muted }}>{Math.round(minForce)}</Text>
+        <Text style={{ fontSize: 10, color: t['text-disabled'] }}>{Math.round(minForce)}</Text>
       </View>
     </View>
   );

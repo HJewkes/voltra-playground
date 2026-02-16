@@ -7,10 +7,11 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, HStack, ListItem, ListItemContent, ListItemTrailing } from '@titan-design/react-ui';
-import { colors } from '@/theme';
+import { Card, HStack, ListItem, ListItemContent, ListItemTrailing, getSemanticColors, alpha } from '@titan-design/react-ui';
 import type { CompletedSet } from '@/domain/workout';
 import { estimateSetRIR } from '@voltras/workout-analytics';
+
+const t = getSemanticColors('dark');
 
 export interface WorkoutListItemProps {
   workout: CompletedSet;
@@ -22,10 +23,10 @@ export interface WorkoutListItemProps {
  * Get RPE badge styling.
  */
 function getRPEBadgeStyle(rpe: number | undefined) {
-  if (!rpe) return { bg: colors.surface.dark, text: colors.text.muted };
-  if (rpe <= 6) return { bg: colors.success.DEFAULT + '20', text: colors.success.DEFAULT };
-  if (rpe <= 8) return { bg: colors.warning.DEFAULT + '20', text: colors.warning.DEFAULT };
-  return { bg: colors.danger.DEFAULT + '20', text: colors.danger.DEFAULT };
+  if (!rpe) return { bg: t['background-subtle'], text: t['text-disabled'] };
+  if (rpe <= 6) return { bg: alpha(t['status-success'], 0.12), text: t['status-success'] };
+  if (rpe <= 8) return { bg: alpha(t['status-warning'], 0.12), text: t['status-warning'] };
+  return { bg: alpha(t['status-error'], 0.12), text: t['status-error'] };
 }
 
 /**
@@ -43,18 +44,18 @@ export function WorkoutListItem({ workout, onPress, onLongPress }: WorkoutListIt
       <ListItem onPress={onPress} onLongPress={onLongPress}>
         <View
           className="mr-3 items-center justify-center rounded-xl"
-          style={{ width: 48, height: 48, backgroundColor: colors.primary[500] + '20' }}
+          style={{ width: 48, height: 48, backgroundColor: alpha(t['brand-primary'], 0.12) }}
         >
-          <Ionicons name="fitness" size={24} color={colors.primary[500]} />
+          <Ionicons name="fitness" size={24} color={t['brand-primary']} />
         </View>
         <ListItemContent title={workout.exerciseName || 'Set'} subtitle={formattedDate} />
         <ListItemTrailing>
           <HStack gap={2} align="center">
             <View className="mr-2 items-end">
-              <Text className="text-base font-bold" style={{ color: colors.primary[500] }}>
+              <Text className="text-base font-bold text-brand-primary">
                 {repCount} reps
               </Text>
-              <Text className="text-sm text-content-tertiary">{workout.weight} lbs</Text>
+              <Text className="text-sm text-text-tertiary">{workout.weight} lbs</Text>
             </View>
             {avgRPE > 0 && (
               <View className="rounded-lg px-3 py-1.5" style={{ backgroundColor: badgeStyle.bg }}>

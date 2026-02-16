@@ -10,11 +10,12 @@ import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { Link } from 'expo-router';
 import { useConnectionStore } from '@/stores';
 import { LinkCard } from '@/components/ui';
-import { HStack, Card, CardContent, Alert, AlertTitle, AlertDescription, Metric, MetricGroup, EmptyState, ListItem, ListItemContent, ListItemTrailing, ListItemDivider } from '@titan-design/react-ui';
+import { HStack, Card, CardContent, Alert, AlertTitle, AlertDescription, Metric, MetricGroup, EmptyState, ListItem, ListItemContent, ListItemTrailing, ListItemDivider, getSemanticColors, alpha } from '@titan-design/react-ui';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@/theme';
 import { getSessionRepository } from '@/data/provider';
 import type { StoredExerciseSession } from '@/data/exercise-session';
+
+const t = getSemanticColors('dark');
 
 /**
  * Format volume for display.
@@ -107,29 +108,29 @@ export function DashboardScreen() {
         </Alert>
 
         {/* Quick Actions */}
-        <Text className="mb-4 text-lg font-bold text-content-primary">Quick Actions</Text>
+        <Text className="mb-4 text-lg font-bold text-text-primary">Quick Actions</Text>
 
         <HStack gap={4} style={{ marginBottom: 24 }}>
           <LinkCard
             href="/(tabs)/workout"
             icon="fitness"
-            iconColor={colors.primary[500]}
-            iconBgColor={colors.primary[600] + '20'}
+            iconColor={t['brand-primary']}
+            iconBgColor={alpha(t['brand-primary-dark'], 0.12)}
             title="Start Workout"
             subtitle="Begin a new session"
           />
           <LinkCard
             href="/(tabs)/settings"
             icon={isConnected ? 'bluetooth' : 'bluetooth-outline'}
-            iconColor={isConnected ? colors.success.DEFAULT : colors.text.tertiary}
-            iconBgColor={isConnected ? colors.success.DEFAULT + '20' : colors.surface.light}
+            iconColor={isConnected ? t['status-success'] : t['text-tertiary']}
+            iconBgColor={isConnected ? alpha(t['status-success'], 0.12) : t['border-strong']}
             title={isConnected ? 'Connected' : 'Connect'}
             subtitle={isConnected ? deviceName : 'Set up device'}
           />
         </HStack>
 
         {/* Weekly Stats */}
-        <Text className="mb-4 text-lg font-bold text-content-primary">This Week</Text>
+        <Text className="mb-4 text-lg font-bold text-text-primary">This Week</Text>
 
         <Card elevation={1} style={{ marginBottom: 24 }}>
           <CardContent className="p-6">
@@ -163,7 +164,7 @@ export function DashboardScreen() {
 function RecentSessionsSection({ sessions }: { sessions: RecentSessionDisplay[] }) {
   return (
     <>
-      <Text className="mb-4 text-lg font-bold text-content-primary">Recent Sessions</Text>
+      <Text className="mb-4 text-lg font-bold text-text-primary">Recent Sessions</Text>
 
       <Card elevation={1} className="mb-4 overflow-hidden">
         {sessions.map((session, index) => {
@@ -176,17 +177,17 @@ function RecentSessionsSection({ sessions }: { sessions: RecentSessionDisplay[] 
                   <ListItem>
                     <View
                       className="mr-3 items-center justify-center rounded-xl"
-                      style={{ width: 48, height: 48, backgroundColor: colors.primary[500] + '20' }}
+                      style={{ width: 48, height: 48, backgroundColor: alpha(t['brand-primary'], 0.12) }}
                     >
-                      <Ionicons name="fitness" size={24} color={colors.primary[500]} />
+                      <Ionicons name="fitness" size={24} color={t['brand-primary']} />
                     </View>
                     <ListItemContent title={session.exerciseName} subtitle={formattedDate} />
                     <ListItemTrailing>
                       <View className="items-end">
-                        <Text className="text-base font-bold" style={{ color: colors.primary[500] }}>
+                        <Text className="text-base font-bold text-brand-primary">
                           {session.setCount} sets • {session.totalReps} reps
                         </Text>
-                        <Text className="text-sm text-content-muted">
+                        <Text className="text-sm text-text-disabled">
                           {formatVolume(session.totalVolume)} lbs
                         </Text>
                       </View>

@@ -72,7 +72,7 @@ export function ChainsSelector({
       </View>
 
       {/* Description */}
-      <Text className="mt-4 text-center text-sm text-content-muted">
+      <Text className="mt-4 text-center text-sm text-text-disabled">
         {activeType === 'normal'
           ? 'Normal chains add resistance at the top of the lift'
           : 'Inverse chains reduce resistance at the top of the lift'}

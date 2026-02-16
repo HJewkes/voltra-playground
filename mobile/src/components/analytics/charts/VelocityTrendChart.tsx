@@ -6,7 +6,9 @@
 
 import React, { useMemo } from 'react';
 import Svg, { Path, Rect } from 'react-native-svg';
-import { colors } from '@/theme';
+import { getSemanticColors } from '@titan-design/react-ui';
+
+const t = getSemanticColors('dark');
 
 export interface VelocityTrendChartProps {
   /** Array of velocity values for each rep */
@@ -40,7 +42,7 @@ export function VelocityTrendChart({ velocities, width, height }: VelocityTrendC
     trendColor: string;
   } => {
     if (velocities.length === 0) {
-      return { path: '', dots: [], trendColor: colors.success.DEFAULT };
+      return { path: '', dots: [], trendColor: t['status-success'] };
     }
 
     const max = Math.max(...velocities, 1);
@@ -72,13 +74,13 @@ export function VelocityTrendChart({ velocities, width, height }: VelocityTrendC
         ? (velocities[0] - velocities[velocities.length - 1]) / velocities[0]
         : 0;
 
-    let color: string = colors.success.DEFAULT;
+    let color: string = t['status-success'];
     if (velocityLoss > 0.3) {
-      color = colors.danger.DEFAULT;
+      color = t['status-error'];
     } else if (velocityLoss > 0.15) {
-      color = colors.primary[500];
+      color = t['brand-primary'];
     } else if (velocityLoss > 0) {
-      color = colors.warning.DEFAULT;
+      color = t['status-warning'];
     }
 
     return { path: pathStr, dots: dotPositions, trendColor: color };

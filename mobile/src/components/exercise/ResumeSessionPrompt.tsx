@@ -8,9 +8,10 @@
 import React from 'react';
 import { View, Text, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, CardContent, Button, ButtonText, VStack } from '@titan-design/react-ui';
-import { colors } from '@/theme';
+import { Card, CardContent, Button, ButtonText, VStack, getSemanticColors, alpha } from '@titan-design/react-ui';
 import type { StoredExerciseSession } from '@/data/exercise-session';
+
+const t = getSemanticColors('dark');
 
 export interface ResumeSessionPromptProps {
   /** The in-progress session to resume */
@@ -73,33 +74,33 @@ export function ResumeSessionPrompt({
           <View className="mb-6 items-center">
             <View
               className="mb-4 h-16 w-16 items-center justify-center rounded-full"
-              style={{ backgroundColor: colors.warning.DEFAULT + '20' }}
+              style={{ backgroundColor: alpha(t['status-warning'], 0.12) }}
             >
-              <Ionicons name="pause-circle" size={36} color={colors.warning.DEFAULT} />
+              <Ionicons name="pause-circle" size={36} color={t['status-warning']} />
             </View>
-            <Text className="text-center text-xl font-bold text-content-primary">
+            <Text className="text-center text-xl font-bold text-text-primary">
               Session In Progress
             </Text>
-            <Text className="mt-2 text-center text-content-muted">
+            <Text className="mt-2 text-center text-text-disabled">
               You have an unfinished workout
             </Text>
           </View>
 
           {/* Session Info */}
-          <View className="mb-6 rounded-xl p-4" style={{ backgroundColor: colors.surface.dark }}>
-            <Text className="mb-2 text-lg font-semibold text-content-primary">
+          <View className="mb-6 rounded-xl p-4" style={{ backgroundColor: t['background-subtle'] }}>
+            <Text className="mb-2 text-lg font-semibold text-text-primary">
               {session.exerciseName ?? 'Exercise'}
             </Text>
             <VStack gap={1}>
               <View className="flex-row justify-between">
-                <Text className="text-content-muted">Progress</Text>
-                <Text className="font-medium text-content-secondary">
+                <Text className="text-text-disabled">Progress</Text>
+                <Text className="font-medium text-text-secondary">
                   {setsCompleted} of {totalSets} sets
                 </Text>
               </View>
               <View className="flex-row justify-between">
-                <Text className="text-content-muted">Last activity</Text>
-                <Text className="font-medium text-content-secondary">
+                <Text className="text-text-disabled">Last activity</Text>
+                <Text className="font-medium text-text-secondary">
                   {formatTimeSince(lastActivity)}
                 </Text>
               </View>

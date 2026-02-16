@@ -8,10 +8,11 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@/theme';
-import { Card, CardContent, HStack, VStack, Surface } from '@titan-design/react-ui';
+import { Card, CardContent, HStack, VStack, Surface, getSemanticColors, alpha } from '@titan-design/react-ui';
 import type { ExerciseSession, TerminationReason } from '@/domain/workout';
 import { getSetMeanVelocity, estimateSetRIR } from '@voltras/workout-analytics';
+
+const t = getSemanticColors('dark');
 
 export interface ExerciseSessionSummaryCardProps {
   /** The completed session */
@@ -38,17 +39,17 @@ function getTerminationDisplay(reason?: TerminationReason | null): {
 } {
   switch (reason) {
     case 'plan_exhausted':
-      return { icon: 'checkmark-circle', color: colors.success.DEFAULT, label: 'Complete!' };
+      return { icon: 'checkmark-circle', color: t['status-success'], label: 'Complete!' };
     case 'failure':
-      return { icon: 'alert-circle', color: colors.warning.DEFAULT, label: 'Reached Failure' };
+      return { icon: 'alert-circle', color: t['status-warning'], label: 'Reached Failure' };
     case 'velocity_grinding':
-      return { icon: 'trending-down', color: colors.warning.DEFAULT, label: 'Max Effort' };
+      return { icon: 'trending-down', color: t['status-warning'], label: 'Max Effort' };
     case 'junk_volume':
-      return { icon: 'warning', color: colors.danger.light, label: 'Volume Limit' };
+      return { icon: 'warning', color: t['status-error'], label: 'Volume Limit' };
     case 'user_stopped':
-      return { icon: 'stop-circle', color: colors.primary[500], label: 'Stopped Early' };
+      return { icon: 'stop-circle', color: t['brand-primary'], label: 'Stopped Early' };
     default:
-      return { icon: 'checkmark-circle', color: colors.success.DEFAULT, label: 'Session Complete' };
+      return { icon: 'checkmark-circle', color: t['status-success'], label: 'Session Complete' };
   }
 }
 
@@ -77,9 +78,9 @@ export function ExerciseSessionSummaryCard({
       <View
         className="mb-4 items-center rounded-3xl p-6"
         style={{
-          backgroundColor: termDisplay.color + '15',
+          backgroundColor: alpha(termDisplay.color, 0.08),
           borderWidth: 1,
-          borderColor: termDisplay.color + '30',
+          borderColor: alpha(termDisplay.color, 0.19),
         }}
       >
         <View
@@ -92,36 +93,36 @@ export function ExerciseSessionSummaryCard({
           {termDisplay.label}
         </Text>
         {terminationMessage && (
-          <Text className="text-center text-content-muted">{terminationMessage}</Text>
+          <Text className="text-center text-text-disabled">{terminationMessage}</Text>
         )}
       </View>
 
       {/* Summary stats */}
       <Card elevation={1} className="mb-4">
         <CardContent className="p-6">
-          <Text className="mb-4 text-sm font-medium text-content-muted">{session.exercise.name}</Text>
+          <Text className="mb-4 text-sm font-medium text-text-disabled">{session.exercise.name}</Text>
 
           <Surface elevation={0} className="rounded-xl bg-surface-input">
             <HStack justify="between" style={{ padding: 16 }}>
               <View className="flex-1 items-center">
-                <Text className="text-sm text-content-muted">Sets</Text>
-                <Text className="mt-1 text-2xl font-bold text-content-primary">
+                <Text className="text-sm text-text-disabled">Sets</Text>
+                <Text className="mt-1 text-2xl font-bold text-text-primary">
                   {session.completedSets.length}
                 </Text>
-                <Text className="text-xs text-content-muted">of {session.plan.sets.length}</Text>
+                <Text className="text-xs text-text-disabled">of {session.plan.sets.length}</Text>
               </View>
               <View className="w-px bg-surface-100" />
               <View className="flex-1 items-center">
-                <Text className="text-sm text-content-muted">Reps</Text>
-                <Text className="mt-1 text-2xl font-bold text-content-primary">{totalReps}</Text>
+                <Text className="text-sm text-text-disabled">Reps</Text>
+                <Text className="mt-1 text-2xl font-bold text-text-primary">{totalReps}</Text>
               </View>
               <View className="w-px bg-surface-100" />
               <View className="flex-1 items-center">
-                <Text className="text-sm text-content-muted">Volume</Text>
-                <Text className="mt-1 text-2xl font-bold text-content-primary">
+                <Text className="text-sm text-text-disabled">Volume</Text>
+                <Text className="mt-1 text-2xl font-bold text-text-primary">
                   {(totalVolume / 1000).toFixed(1)}k
                 </Text>
-                <Text className="text-xs text-content-muted">lbs</Text>
+                <Text className="text-xs text-text-disabled">lbs</Text>
               </View>
             </HStack>
           </Surface>
@@ -131,7 +132,7 @@ export function ExerciseSessionSummaryCard({
       {/* Set breakdown */}
       <Card elevation={1} className="mb-4">
         <CardContent className="p-6">
-          <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-content-muted">
+          <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-text-disabled">
             Set Breakdown
           </Text>
           {session.completedSets.map((set, i) => {
@@ -150,17 +151,17 @@ export function ExerciseSessionSummaryCard({
                 <View className="flex-row items-center">
                   <View
                     className="mr-4 h-9 w-9 items-center justify-center rounded-full"
-                    style={{ backgroundColor: colors.surface.dark }}
+                    style={{ backgroundColor: t['background-subtle'] }}
                   >
-                    <Text className="font-bold text-content-secondary">{i + 1}</Text>
+                    <Text className="font-bold text-text-secondary">{i + 1}</Text>
                   </View>
                   <View>
-                    <Text className="font-medium text-content-primary">
+                    <Text className="font-medium text-text-primary">
                       {set.weight} lbs × {set.data.reps.length}
                       {planned && (
                         <Text
                           style={{
-                            color: repsDelta >= 0 ? colors.success.DEFAULT : colors.danger.light,
+                            color: repsDelta >= 0 ? t['status-success'] : t['status-error'],
                           }}
                         >
                           {' '}
@@ -169,7 +170,7 @@ export function ExerciseSessionSummaryCard({
                         </Text>
                       )}
                     </Text>
-                    <Text className="text-xs text-content-muted">
+                    <Text className="text-xs text-text-disabled">
                       {meanVel.toFixed(2)} m/s • RPE {rirEstimate.rpe.toFixed(1)}
                     </Text>
                   </View>
@@ -185,7 +186,7 @@ export function ExerciseSessionSummaryCard({
         {onNewSession && (
           <TouchableOpacity
             className="items-center rounded-2xl p-5"
-            style={{ backgroundColor: colors.primary[600] }}
+            style={{ backgroundColor: t['brand-primary-dark'] }}
             onPress={onNewSession}
             activeOpacity={0.8}
           >
@@ -196,11 +197,11 @@ export function ExerciseSessionSummaryCard({
         {onDone && (
           <TouchableOpacity
             className="items-center rounded-2xl p-5"
-            style={{ backgroundColor: colors.surface.card }}
+            style={{ backgroundColor: t['surface-elevated'] }}
             onPress={onDone}
             activeOpacity={0.7}
           >
-            <Text className="font-bold text-content-secondary">Done</Text>
+            <Text className="font-bold text-text-secondary">Done</Text>
           </TouchableOpacity>
         )}
       </VStack>

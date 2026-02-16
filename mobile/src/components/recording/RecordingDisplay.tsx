@@ -14,8 +14,10 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useStore } from 'zustand';
-import { colors } from '@/theme';
+import { getSemanticColors } from '@titan-design/react-ui';
 import type { RecordingUIState, RecordingStoreApi } from '@/stores';
+
+const t = getSemanticColors('dark');
 
 // =============================================================================
 // Types
@@ -49,13 +51,13 @@ export interface RecordingDisplayViewProps {
 function getStateColor(uiState: RecordingUIState): string {
   switch (uiState) {
     case 'recording':
-      return colors.success.DEFAULT;
+      return t['status-success'];
     case 'resting':
-      return colors.primary[600];
+      return t['brand-primary-dark'];
     case 'countdown':
-      return colors.warning.DEFAULT;
+      return t['status-warning'];
     default:
-      return colors.primary[500];
+      return t['brand-primary'];
   }
 }
 

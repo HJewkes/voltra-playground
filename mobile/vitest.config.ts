@@ -5,7 +5,14 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
-    include: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/*.integration.test.tsx'],
+    include: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/*.integration.test.tsx', 'test/**/*.test.ts'],
+    server: {
+      deps: {
+        // Force titan through Vite's transform pipeline so the
+        // react-native alias is applied to its internal imports
+        inline: ['@titan-design/react-ui'],
+      },
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -24,9 +31,14 @@ export default defineConfig({
       },
     },
   },
+  define: {
+    __DEV__: true,
+  },
   resolve: {
+    extensions: ['.ios.ts', '.ios.tsx', '.ios.js', '.mts', '.ts', '.tsx', '.mjs', '.js', '.jsx', '.json'],
     alias: {
       '@': path.resolve(__dirname, './src'),
+      'react-native': path.resolve(__dirname, './test/react-native-mock.ts'),
     },
   },
 });

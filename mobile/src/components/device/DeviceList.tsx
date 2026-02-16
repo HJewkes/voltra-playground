@@ -7,12 +7,13 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, CardContent, VStack, Spinner } from '@titan-design/react-ui';
-import { colors } from '@/theme';
+import { Card, CardContent, VStack, Spinner, getSemanticColors } from '@titan-design/react-ui';
 import { BLEWarning } from './BLEWarning';
 import { ScanButton } from './ScanButton';
 import { DeviceListItem } from './DeviceListItem';
 import type { DiscoveredDevice } from '@/domain/device';
+
+const t = getSemanticColors('dark');
 
 export interface DeviceListProps {
   /** List of discovered devices */
@@ -59,7 +60,7 @@ export function DeviceList({
       <CardContent className="p-6">
         {/* Header with scan button */}
         <View className="mb-4 flex-row items-center justify-between">
-          <Text className="text-lg font-bold text-content-primary">Voltras</Text>
+          <Text className="text-lg font-bold text-text-primary">Voltras</Text>
           {bleSupported && (
             <ScanButton
               isScanning={isScanning}
@@ -78,7 +79,7 @@ export function DeviceList({
         {isRestoring && (
           <View className="items-center py-6">
             <Spinner size="lg" />
-            <Text className="mt-3 text-content-secondary">Restoring connection...</Text>
+            <Text className="mt-3 text-text-secondary">Restoring connection...</Text>
           </View>
         )}
 
@@ -100,11 +101,11 @@ export function DeviceList({
         {/* Empty state - no devices */}
         {!isRestoring && devices.length === 0 && !isScanning && (
           <View className="items-center py-8">
-            <Ionicons name="bluetooth-outline" size={40} color={colors.text.muted} />
-            <Text className="mt-3 text-center text-sm text-content-muted">
+            <Ionicons name="bluetooth-outline" size={40} color={t['text-disabled']} />
+            <Text className="mt-3 text-center text-sm text-text-disabled">
               {requiresUserGesture ? 'Click to connect a device' : 'No Voltras found'}
             </Text>
-            <Text className="mt-1 text-xs text-content-muted">
+            <Text className="mt-1 text-xs text-text-disabled">
               {requiresUserGesture ? 'Use the Scan button above' : 'Will scan again automatically'}
             </Text>
           </View>
@@ -114,7 +115,7 @@ export function DeviceList({
         {!isRestoring && devices.length === 0 && isScanning && (
           <View className="items-center py-6">
             <Spinner size="lg" />
-            <Text className="mt-3 text-content-secondary">Looking for Voltras...</Text>
+            <Text className="mt-3 text-text-secondary">Looking for Voltras...</Text>
           </View>
         )}
       </CardContent>

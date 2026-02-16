@@ -6,9 +6,10 @@
 
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { Drawer, DrawerBody, DrawerFooter, HStack, Surface, Metric } from '@titan-design/react-ui';
+import { Drawer, DrawerBody, DrawerFooter, HStack, Surface, Metric, getSemanticColors } from '@titan-design/react-ui';
 import { getEffortLabel, getRIRDescription, getRPEColor } from '@/domain/workout';
-import { colors } from '@/theme';
+
+const t = getSemanticColors('dark');
 
 export interface SetSummaryData {
   rpe: number;
@@ -68,15 +69,15 @@ export function SetSummaryModal({
             <Surface elevation={0} className="rounded-xl bg-surface-input" style={{ marginBottom: 16 }}>
               <View className="p-5">
                 <View className="mb-3 flex-row justify-between">
-                  <Text className="font-bold text-content-secondary">Effort</Text>
-                  <Text className="font-bold text-content-primary">
+                  <Text className="font-bold text-text-secondary">Effort</Text>
+                  <Text className="font-bold text-text-primary">
                     {getEffortLabel(summary.rpe)}
                   </Text>
                 </View>
                 <View className="overflow-hidden rounded-full" style={{ height: 6, backgroundColor: '#1C1C1C' }}>
                   <View className="h-full rounded-full" style={{ width: `${summary.rpe * 10}%`, backgroundColor: getRPEColor(summary.rpe) }} />
                 </View>
-                <Text className="mt-3 text-sm text-content-muted">
+                <Text className="mt-3 text-sm text-text-disabled">
                   {getRIRDescription(summary.rir)}
                 </Text>
               </View>
@@ -89,8 +90,8 @@ export function SetSummaryModal({
                 className="rounded-xl bg-surface-input"
                 style={{ flex: 1, padding: 16 }}
               >
-                <Text className="text-xs font-medium text-content-muted">Velocity Loss</Text>
-                <Text className="mt-1 text-xl font-bold text-content-primary">
+                <Text className="text-xs font-medium text-text-disabled">Velocity Loss</Text>
+                <Text className="mt-1 text-xl font-bold text-text-primary">
                   {summary.velocityLossPct > 0 ? '-' : ''}
                   {Math.abs(summary.velocityLossPct).toFixed(0)}%
                 </Text>
@@ -100,8 +101,8 @@ export function SetSummaryModal({
                 className="rounded-xl bg-surface-input"
                 style={{ flex: 1, padding: 16 }}
               >
-                <Text className="text-xs font-medium text-content-muted">Avg Velocity</Text>
-                <Text className="mt-1 text-xl font-bold text-content-primary">
+                <Text className="text-xs font-medium text-text-disabled">Avg Velocity</Text>
+                <Text className="mt-1 text-xl font-bold text-text-primary">
                   {summary.meanVelocity.toFixed(2)}
                 </Text>
               </Surface>
@@ -112,35 +113,35 @@ export function SetSummaryModal({
               <Surface elevation={0} className="rounded-xl bg-surface-input" style={{ marginBottom: 24 }}>
                 <View className="p-5">
                   <View className="mb-3 flex-row justify-between">
-                    <Text className="font-bold text-content-secondary">Avg Tempo</Text>
-                    <Text className="font-bold text-content-primary">
+                    <Text className="font-bold text-text-secondary">Avg Tempo</Text>
+                    <Text className="font-bold text-text-primary">
                       {avgTempo ?? '0-0-0-0'}
                     </Text>
                   </View>
                   <HStack gap={1}>
                     <View className="flex-1 items-center">
-                      <Text className="font-bold" style={{ color: colors.info.DEFAULT }}>
+                      <Text className="font-bold" style={{ color: t['status-info'] }}>
                         {tempoBreakdown.eccentric.toFixed(1)}s
                       </Text>
-                      <Text className="mt-1 text-xs text-content-muted">Ecc</Text>
+                      <Text className="mt-1 text-xs text-text-disabled">Ecc</Text>
                     </View>
                     <View className="flex-1 items-center">
-                      <Text className="font-bold" style={{ color: colors.warning.DEFAULT }}>
+                      <Text className="font-bold" style={{ color: t['status-warning'] }}>
                         {tempoBreakdown.pauseTop.toFixed(1)}s
                       </Text>
-                      <Text className="mt-1 text-xs text-content-muted">Top</Text>
+                      <Text className="mt-1 text-xs text-text-disabled">Top</Text>
                     </View>
                     <View className="flex-1 items-center">
-                      <Text className="font-bold" style={{ color: colors.success.DEFAULT }}>
+                      <Text className="font-bold" style={{ color: t['status-success'] }}>
                         {tempoBreakdown.concentric.toFixed(1)}s
                       </Text>
-                      <Text className="mt-1 text-xs text-content-muted">Con</Text>
+                      <Text className="mt-1 text-xs text-text-disabled">Con</Text>
                     </View>
                     <View className="flex-1 items-center">
-                      <Text className="font-bold text-content-secondary">
+                      <Text className="font-bold text-text-secondary">
                         {tempoBreakdown.pauseBottom.toFixed(1)}s
                       </Text>
-                      <Text className="mt-1 text-xs text-content-muted">Bot</Text>
+                      <Text className="mt-1 text-xs text-text-disabled">Bot</Text>
                     </View>
                   </HStack>
                 </View>
@@ -154,7 +155,7 @@ export function SetSummaryModal({
         <TouchableOpacity
           onPress={onClose}
           className="rounded-2xl py-5"
-          style={{ backgroundColor: colors.primary[600] }}
+          style={{ backgroundColor: t['brand-primary-dark'] }}
           activeOpacity={0.8}
         >
           <Text className="text-center text-lg font-bold text-white">Continue</Text>

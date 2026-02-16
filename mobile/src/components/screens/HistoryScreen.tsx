@@ -16,10 +16,11 @@ import {
   Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, CardContent, VStack, Metric, MetricGroup, EmptyState } from '@titan-design/react-ui';
+import { Card, CardContent, VStack, Metric, MetricGroup, EmptyState, getSemanticColors, alpha } from '@titan-design/react-ui';
 import { getSessionRepository } from '@/data/provider';
 import type { StoredExerciseSession } from '@/data/exercise-session';
-import { colors } from '@/theme';
+
+const t = getSemanticColors('dark');
 
 /**
  * Format large numbers for display.
@@ -111,7 +112,7 @@ export function HistoryScreen() {
         <RefreshControl
           refreshing={isLoading}
           onRefresh={handleRefresh}
-          tintColor={colors.primary[500]}
+          tintColor={t['brand-primary']}
         />
       }
     >
@@ -119,7 +120,7 @@ export function HistoryScreen() {
         {/* Aggregate Stats */}
         <Card elevation={1} style={{ marginBottom: 24 }}>
           <CardContent className="p-6">
-            <Text className="mb-4 font-bold text-content-secondary">All Time Stats</Text>
+            <Text className="mb-4 font-bold text-text-secondary">All Time Stats</Text>
             <MetricGroup>
               <Metric value={String(aggregateStats.totalSets)} label="Sets" />
               <Metric value={formatNumber(aggregateStats.totalReps)} label="Total Reps" />
@@ -129,7 +130,7 @@ export function HistoryScreen() {
         </Card>
 
         {/* Session List */}
-        <Text className="mb-4 text-lg font-bold text-content-primary">Past Sessions</Text>
+        <Text className="mb-4 text-lg font-bold text-text-primary">Past Sessions</Text>
 
         {sessions.length === 0 ? (
           <EmptyState
@@ -152,7 +153,7 @@ export function HistoryScreen() {
 
         {/* Tip */}
         {sessions.length > 0 && (
-          <Text className="mt-6 text-center text-xs text-content-muted">
+          <Text className="mt-6 text-center text-xs text-text-disabled">
             Long press a session to delete it
           </Text>
         )}
@@ -191,32 +192,32 @@ function SessionListItem({
           <View className="flex-row items-center">
             <View
               className="mr-4 h-12 w-12 items-center justify-center rounded-full"
-              style={{ backgroundColor: colors.primary[600] + '20' }}
+              style={{ backgroundColor: alpha(t['brand-primary-dark'], 0.12) }}
             >
               <Ionicons
                 name={isDiscovery ? 'compass' : 'fitness'}
                 size={24}
-                color={colors.primary[500]}
+                color={t['brand-primary']}
               />
             </View>
             <View className="flex-1">
-              <Text className="font-semibold text-content-primary">
+              <Text className="font-semibold text-text-primary">
                 {session.exerciseName ?? 'Exercise'}
               </Text>
-              <Text className="text-sm text-content-muted">
+              <Text className="text-sm text-text-disabled">
                 {formattedDate} • {isDiscovery ? 'Discovery' : 'Training'}
               </Text>
             </View>
             <View className="items-end">
-              <Text className="text-base font-bold" style={{ color: colors.primary[500] }}>
+              <Text className="text-base font-bold text-brand-primary">
                 {session.completedSets.length} sets
               </Text>
-              <Text className="text-sm text-content-muted">{totalReps} reps</Text>
+              <Text className="text-sm text-text-disabled">{totalReps} reps</Text>
             </View>
             <Ionicons
               name="chevron-forward"
               size={20}
-              color={colors.content.muted}
+              color={t['text-disabled']}
               style={{ marginLeft: 8 }}
             />
           </View>
@@ -251,17 +252,17 @@ function SessionDetailModal({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View className="flex-1" style={{ backgroundColor: colors.surface.background }}>
+      <View className="flex-1" style={{ backgroundColor: t['background-default'] }}>
         {/* Header */}
         <View
           className="flex-row items-center justify-between border-b px-5 py-5"
-          style={{ backgroundColor: colors.surface.elevated, borderColor: colors.surface.light }}
+          style={{ backgroundColor: t['surface-elevated'], borderColor: t['border-strong'] }}
         >
           <View>
-            <Text className="text-xl font-bold text-content-primary">
+            <Text className="text-xl font-bold text-text-primary">
               {session.exerciseName ?? 'Exercise'}
             </Text>
-            <Text className="text-content-muted">
+            <Text className="text-text-disabled">
               {new Date(session.startTime).toLocaleDateString()} •{' '}
               {isDiscovery ? 'Discovery' : 'Training'}
             </Text>
@@ -269,9 +270,9 @@ function SessionDetailModal({
           <TouchableOpacity
             onPress={onClose}
             className="h-10 w-10 items-center justify-center rounded-full"
-            style={{ backgroundColor: colors.surface.dark }}
+            style={{ backgroundColor: t['background-subtle'] }}
           >
-            <Ionicons name="close" size={22} color={colors.text.secondary} />
+            <Ionicons name="close" size={22} color={t['text-secondary']} />
           </TouchableOpacity>
         </View>
 
@@ -290,7 +291,7 @@ function SessionDetailModal({
           {/* Set breakdown */}
           <Card elevation={1} className="mb-4">
             <CardContent className="p-6">
-              <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-content-muted">
+              <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-text-disabled">
                 Set Breakdown
               </Text>
               {session.completedSets.map((set, i) => {
@@ -307,17 +308,17 @@ function SessionDetailModal({
                     <View className="flex-row items-center">
                       <View
                         className="mr-4 h-9 w-9 items-center justify-center rounded-full"
-                        style={{ backgroundColor: colors.surface.dark }}
+                        style={{ backgroundColor: t['background-subtle'] }}
                       >
-                        <Text className="font-bold text-content-secondary">{i + 1}</Text>
+                        <Text className="font-bold text-text-secondary">{i + 1}</Text>
                       </View>
                       <View>
-                        <Text className="font-medium text-content-primary">
+                        <Text className="font-medium text-text-primary">
                           {set.weight} lbs × {set.reps.length}
                           {planned && (
                             <Text
                               style={{
-                                color: repsDelta >= 0 ? colors.success.DEFAULT : colors.danger.light,
+                                color: repsDelta >= 0 ? t['status-success'] : t['status-error'],
                               }}
                             >
                               {' '}
@@ -326,7 +327,7 @@ function SessionDetailModal({
                             </Text>
                           )}
                         </Text>
-                        <Text className="text-xs text-content-muted">
+                        <Text className="text-xs text-text-disabled">
                           {set.meanVelocity.toFixed(2)} m/s • RPE {set.estimatedRPE}
                         </Text>
                       </View>
@@ -345,10 +346,10 @@ function SessionDetailModal({
                   <Ionicons
                     name="information-circle"
                     size={20}
-                    color={colors.content.muted}
+                    color={t['text-disabled']}
                     style={{ marginRight: 8 }}
                   />
-                  <Text className="flex-1 text-content-muted">
+                  <Text className="flex-1 text-text-disabled">
                     Session ended: {formatTerminationReason(session.terminationReason)}
                   </Text>
                 </View>

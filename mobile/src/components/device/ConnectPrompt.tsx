@@ -9,10 +9,11 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useConnectionStore, selectIsConnected, selectBleEnvironment } from '@/stores';
-import { colors } from '@/theme';
 import { SCAN_DURATION, SCAN_INTERVAL } from '@/config';
-import { Card, CardContent, VStack, Surface, ListItem, ListItemContent, ListItemTrailing } from '@titan-design/react-ui';
+import { Card, CardContent, VStack, Surface, ListItem, ListItemContent, ListItemTrailing, getSemanticColors, alpha } from '@titan-design/react-ui';
 import type { DiscoveredDevice } from '@/domain/device';
+
+const t = getSemanticColors('dark');
 
 export interface ConnectPromptProps {
   /** Optional subtitle/message */
@@ -141,8 +142,8 @@ export function ConnectPrompt({
   if (isRestoring) {
     return (
       <View className="flex-1 items-center justify-center bg-surface-400 p-6">
-        <ActivityIndicator size="large" color={colors.primary[500]} />
-        <Text className="mt-4 text-content-secondary">Restoring connection...</Text>
+        <ActivityIndicator size="large" color={t['brand-primary']} />
+        <Text className="mt-4 text-text-secondary">Restoring connection...</Text>
       </View>
     );
   }
@@ -157,8 +158,8 @@ export function ConnectPrompt({
         {/* Header with scan/connect button */}
         <View className="mb-4 flex-row items-center justify-between">
           <View className="flex-row items-center">
-            <Ionicons name="bluetooth-outline" size={24} color={colors.text.muted} />
-            <Text className="ml-3 text-lg font-bold text-content-primary">Voltras</Text>
+            <Ionicons name="bluetooth-outline" size={24} color={t['text-disabled']} />
+            <Text className="ml-3 text-lg font-bold text-text-primary">Voltras</Text>
           </View>
           {bleSupported && (
             <TouchableOpacity
@@ -168,14 +169,14 @@ export function ConnectPrompt({
               style={{
                 backgroundColor:
                   isScanning || connectingDeviceId
-                    ? colors.primary[500] + '20'
-                    : colors.surface.dark,
+                    ? alpha(t['brand-primary'], 0.12)
+                    : t['background-subtle'],
               }}
               activeOpacity={0.7}
             >
               {isScanning || connectingDeviceId ? (
                 <>
-                  <ActivityIndicator size="small" color={colors.primary[500]} />
+                  <ActivityIndicator size="small" color={t['brand-primary']} />
                   <Text className="ml-2 text-sm font-medium text-primary-500">
                     {connectingDeviceId ? 'Connecting' : 'Scanning'}
                   </Text>
@@ -185,9 +186,9 @@ export function ConnectPrompt({
                   <Ionicons
                     name={requiresUserGesture ? 'add' : 'refresh'}
                     size={16}
-                    color={colors.text.secondary}
+                    color={t['text-secondary']}
                   />
-                  <Text className="ml-2 text-sm font-medium text-content-secondary">
+                  <Text className="ml-2 text-sm font-medium text-text-secondary">
                     {requiresUserGesture
                       ? connectedDevices.length > 0
                         ? 'Add Another'
@@ -204,19 +205,19 @@ export function ConnectPrompt({
         {warningMessage && (
           <View
             className="mb-4 flex-row items-start rounded-xl p-4"
-            style={{ backgroundColor: colors.warning.DEFAULT + '15' }}
+            style={{ backgroundColor: alpha(t['status-warning'], 0.08) }}
           >
             <Ionicons
               name="warning"
               size={20}
-              color={colors.warning.DEFAULT}
+              color={t['status-warning']}
               style={{ marginTop: 2 }}
             />
             <View className="ml-3 flex-1">
-              <Text className="mb-1 font-semibold" style={{ color: colors.warning.DEFAULT }}>
+              <Text className="mb-1 font-semibold" style={{ color: t['status-warning'] }}>
                 BLE Warning
               </Text>
-              <Text className="text-xs leading-5" style={{ color: colors.text.secondary }}>
+              <Text className="text-xs leading-5" style={{ color: t['text-secondary'] }}>
                 {warningMessage}
               </Text>
             </View>
@@ -225,13 +226,13 @@ export function ConnectPrompt({
 
         {/* Subtitle - only show if BLE is supported and not connected */}
         {bleSupported && !isConnected && (
-          <Text className="mb-4 text-sm text-content-tertiary">{subtitle}</Text>
+          <Text className="mb-4 text-sm text-text-tertiary">{subtitle}</Text>
         )}
 
         {/* Connected Devices */}
         {connectedDevices.length > 0 && (
           <View className="mb-4">
-            <Text className="mb-2 text-xs font-medium uppercase tracking-wide text-content-muted">
+            <Text className="mb-2 text-xs font-medium uppercase tracking-wide text-text-disabled">
               Connected
             </Text>
             <VStack gap={1}>
@@ -240,15 +241,15 @@ export function ConnectPrompt({
                   <ListItem>
                     <View
                       className="mr-3 items-center justify-center rounded-xl"
-                      style={{ width: 48, height: 48, backgroundColor: colors.success.DEFAULT + '20' }}
+                      style={{ width: 48, height: 48, backgroundColor: alpha(t['status-success'], 0.12) }}
                     >
-                      <Ionicons name="checkmark-circle" size={24} color={colors.success.DEFAULT} />
+                      <Ionicons name="checkmark-circle" size={24} color={t['status-success']} />
                     </View>
                     <ListItemContent title={device.name} subtitle="Connected" />
                     <ListItemTrailing>
                       <View
                         className="h-2 w-2 rounded-full"
-                        style={{ backgroundColor: colors.success.DEFAULT }}
+                        style={{ backgroundColor: t['status-success'] }}
                       />
                     </ListItemTrailing>
                   </ListItem>
@@ -262,7 +263,7 @@ export function ConnectPrompt({
         {!requiresUserGesture && discoveredDevices.length > 0 && (
           <View>
             {connectedDevices.length > 0 && (
-              <Text className="mb-2 text-xs font-medium uppercase tracking-wide text-content-muted">
+              <Text className="mb-2 text-xs font-medium uppercase tracking-wide text-text-disabled">
                 Available
               </Text>
             )}
@@ -281,16 +282,16 @@ export function ConnectPrompt({
                     <ListItem onPress={() => handleConnect(device)} disabled={connectingDeviceId !== null}>
                       <View
                         className="mr-3 items-center justify-center rounded-xl"
-                        style={{ width: 48, height: 48, backgroundColor: colors.surface.card }}
+                        style={{ width: 48, height: 48, backgroundColor: t['surface-elevated'] }}
                       >
-                        <Ionicons name="hardware-chip-outline" size={24} color={colors.primary[500]} />
+                        <Ionicons name="hardware-chip-outline" size={24} color={t['brand-primary']} />
                       </View>
                       <ListItemContent title={device.name || 'Voltra'} subtitle={device.id} />
                       <ListItemTrailing>
                         {isThisConnecting ? (
-                          <ActivityIndicator size="small" color={colors.primary[500]} />
+                          <ActivityIndicator size="small" color={t['brand-primary']} />
                         ) : (
-                          <Ionicons name="chevron-forward" size={20} color={colors.text.tertiary} />
+                          <Ionicons name="chevron-forward" size={20} color={t['text-tertiary']} />
                         )}
                       </ListItemTrailing>
                     </ListItem>
@@ -304,8 +305,8 @@ export function ConnectPrompt({
         {/* Empty state - scanning (native only, web shows connecting state in button) */}
         {!requiresUserGesture && discoveredDevices.length === 0 && isScanning && (
           <View className="items-center py-6">
-            <ActivityIndicator size="large" color={colors.primary[500]} />
-            <Text className="mt-3 text-content-secondary">Looking for Voltras...</Text>
+            <ActivityIndicator size="large" color={t['brand-primary']} />
+            <Text className="mt-3 text-text-secondary">Looking for Voltras...</Text>
           </View>
         )}
 
@@ -316,17 +317,17 @@ export function ConnectPrompt({
           !isScanning &&
           hasScanned && (
             <View className="items-center py-6">
-              <Ionicons name="bluetooth-outline" size={36} color={colors.text.muted} />
-              <Text className="mt-3 text-center text-sm text-content-muted">No Voltras found</Text>
-              <Text className="mt-1 text-xs text-content-muted">Will scan again automatically</Text>
+              <Ionicons name="bluetooth-outline" size={36} color={t['text-disabled']} />
+              <Text className="mt-3 text-center text-sm text-text-disabled">No Voltras found</Text>
+              <Text className="mt-1 text-xs text-text-disabled">Will scan again automatically</Text>
             </View>
           )}
 
         {/* Initial state - no devices connected yet */}
         {connectedDevices.length === 0 && !isScanning && !connectingDeviceId && !hasScanned && (
           <View className="items-center py-6">
-            <Ionicons name="bluetooth-outline" size={36} color={colors.text.muted} />
-            <Text className="mt-3 text-sm text-content-muted">
+            <Ionicons name="bluetooth-outline" size={36} color={t['text-disabled']} />
+            <Text className="mt-3 text-sm text-text-disabled">
               {requiresUserGesture
                 ? 'Click Connect to pair your Voltra'
                 : 'Waiting to scan...'}
@@ -337,7 +338,7 @@ export function ConnectPrompt({
         {/* Web: Prompt to add more devices after first connection */}
         {requiresUserGesture && connectedDevices.length > 0 && !connectingDeviceId && (
           <View className="items-center py-4">
-            <Text className="text-xs text-content-muted">
+            <Text className="text-xs text-text-disabled">
               Click "Add Another" to connect additional devices
             </Text>
           </View>
@@ -347,14 +348,14 @@ export function ConnectPrompt({
         {error && (
           <View
             className="mt-2 flex-row items-center rounded-xl p-3"
-            style={{ backgroundColor: colors.danger.DEFAULT + '15' }}
+            style={{ backgroundColor: alpha(t['status-error'], 0.08) }}
           >
-            <Ionicons name="alert-circle" size={18} color={colors.danger.DEFAULT} />
-            <Text className="ml-2 flex-1 text-xs" style={{ color: colors.danger.light }}>
+            <Ionicons name="alert-circle" size={18} color={t['status-error']} />
+            <Text className="ml-2 flex-1 text-xs" style={{ color: t['status-error'] }}>
               {error}
             </Text>
             <TouchableOpacity onPress={() => setError(null)}>
-              <Ionicons name="close" size={16} color={colors.text.muted} />
+              <Ionicons name="close" size={16} color={t['text-disabled']} />
             </TouchableOpacity>
           </View>
         )}

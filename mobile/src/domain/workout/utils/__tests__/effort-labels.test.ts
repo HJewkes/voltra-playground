@@ -113,25 +113,25 @@ describe('getEffortBar()', () => {
 // =============================================================================
 
 describe('getRPEColor()', () => {
-  it('returns green for RPE 6 and below', () => {
-    expect(getRPEColor(5)).toBe('#22c55e');
-    expect(getRPEColor(6)).toBe('#22c55e');
+  it('returns success (teal) for RPE 6 and below', () => {
+    expect(getRPEColor(5)).toBe('#14B8A6');
+    expect(getRPEColor(6)).toBe('#14B8A6');
   });
 
-  it('returns lime for RPE 7', () => {
-    expect(getRPEColor(7)).toBe('#84cc16');
+  it('returns improve (green) for RPE 7', () => {
+    expect(getRPEColor(7)).toBe('#4caf50');
   });
 
-  it('returns yellow for RPE 8', () => {
-    expect(getRPEColor(8)).toBe('#eab308');
+  it('returns warning (amber) for RPE 8', () => {
+    expect(getRPEColor(8)).toBe('#FFB020');
   });
 
-  it('returns orange for RPE 9', () => {
-    expect(getRPEColor(9)).toBe('#f97316');
+  it('returns brand-primary (orange) for RPE 9', () => {
+    expect(getRPEColor(9)).toBe('#FF7900');
   });
 
-  it('returns red for RPE 10', () => {
-    expect(getRPEColor(10)).toBe('#ef4444');
+  it('returns error (red) for RPE 10', () => {
+    expect(getRPEColor(10)).toBe('#D14343');
   });
 });
 

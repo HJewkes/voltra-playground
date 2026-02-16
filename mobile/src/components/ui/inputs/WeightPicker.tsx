@@ -8,7 +8,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, type StyleProp, type ViewStyle } from 'react-native';
 import Slider from '@react-native-community/slider';
-import { colors } from '@/theme';
+import { getSemanticColors } from '@titan-design/react-ui';
+
+const t = getSemanticColors('dark');
 
 export interface WeightPickerProps {
   /** Current weight value */
@@ -80,10 +82,10 @@ export function WeightPicker({
     <View style={style}>
       {/* Current value display */}
       <View className="mb-4 items-center">
-        <Text className="text-5xl font-bold" style={{ color: colors.primary[500] }}>
+        <Text className="text-5xl font-bold" style={{ color: t['brand-primary'] }}>
           {localValue}
         </Text>
-        <Text className="text-lg text-content-tertiary">{unit}</Text>
+        <Text className="text-lg text-text-tertiary">{unit}</Text>
       </View>
 
       {/* Slider */}
@@ -95,15 +97,15 @@ export function WeightPicker({
           minimumValue={min}
           maximumValue={max}
           step={step}
-          minimumTrackTintColor={colors.primary[500]}
-          maximumTrackTintColor={colors.surface.card}
-          thumbTintColor={colors.primary[500]}
+          minimumTrackTintColor={t['brand-primary']}
+          maximumTrackTintColor={t['surface-elevated']}
+          thumbTintColor={t['brand-primary']}
         />
 
         {/* Min/Max labels */}
         <View className="mt-1 flex-row justify-between">
-          <Text className="text-xs text-content-muted">{min}</Text>
-          <Text className="text-xs text-content-muted">{max}</Text>
+          <Text className="text-xs text-text-disabled">{min}</Text>
+          <Text className="text-xs text-text-disabled">{max}</Text>
         </View>
       </View>
     </View>
