@@ -93,7 +93,7 @@ export function ExerciseScreen({
 
   // Subscribe to recording state
   const repCount = useStore(recordingStore, (s) => s.repCount);
-  const lastRep = useStore(recordingStore, (s) => s.lastRep);
+  const lastRepPeakVelocity = useStore(recordingStore, (s) => s.lastRepPeakVelocity);
   const lastSet = useStore(recordingStore, (s) => s.lastSet);
   const _recordingUIState = useStore(recordingStore, (s) => s.uiState);
 
@@ -274,7 +274,7 @@ export function ExerciseScreen({
                 restCountdown={restCountdown}
                 startCountdown={startCountdown}
                 repCount={repCount}
-                lastRep={lastRep}
+                lastRepPeakVelocity={lastRepPeakVelocity}
                 onSkipRest={handleSkipRest}
               />
 

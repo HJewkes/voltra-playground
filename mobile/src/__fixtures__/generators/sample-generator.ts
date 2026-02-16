@@ -4,7 +4,14 @@
  * Generates realistic WorkoutSamples and sample streams for testing and replay.
  */
 
-import { type WorkoutSample, MovementPhase, createSample } from '@/domain/workout';
+import { type WorkoutSample, MovementPhase } from '@voltras/workout-analytics';
+
+function createSample(
+  sequence: number, timestamp: number, phase: MovementPhase,
+  position: number, velocity: number, force: number
+): WorkoutSample {
+  return { sequence, timestamp, phase, position, velocity, force };
+}
 
 // =============================================================================
 // Types

@@ -39,7 +39,7 @@ import {
   type ReadinessEstimate,
   type FatigueEstimate,
 } from '@/domain/workout/metrics/types';
-import type { Set } from '@/domain/workout/models/set';
+import type { CompletedSet } from '@/domain/workout/models/completed-set';
 import { setBuilder, type SetTargets } from './set-builder';
 
 // =============================================================================
@@ -97,7 +97,7 @@ export interface PlanningContextTargets {
   exerciseType?: 'compound' | 'isolation';
   sessionMetrics?: SessionMetrics | SessionMetricsTargets;
   historicalMetrics?: HistoricalMetrics | HistoricalMetricsTargets;
-  completedSets?: Set[];
+  completedSets?: CompletedSet[];
   completedSetTargets?: SetTargets[];
   originalPlanSetCount?: number;
   overrides?: PlanningOverrides;
@@ -532,7 +532,7 @@ class PlanningContextBuilder {
   }
 
   /** Set completed sets. */
-  completedSets(sets: Set[]): this {
+  completedSets(sets: CompletedSet[]): this {
     this.targets.completedSets = sets;
     return this;
   }
@@ -616,7 +616,7 @@ class PlanningContextBuilder {
     }
 
     // Resolve completed sets
-    let completedSets: Set[] = [];
+    let completedSets: CompletedSet[] = [];
     if (this.targets.completedSets) {
       completedSets = this.targets.completedSets;
     } else if (this.targets.completedSetTargets) {

@@ -2,27 +2,44 @@
  * Exercise Session Converters
  *
  * Conversion functions between domain models and storage schemas.
- * These adapters create a clean boundary between domain logic and persistence.
+ * Supports both the new schema (v2: per-phase samples) and legacy schema
+ * (v1: StoredRep with pre-computed metrics).
  */
 
-import type {
-  Set,
-  Rep,
-  StoredRep,
-  ExerciseSession,
-  ExercisePlan,
-  PlannedSet,
-  WorkoutSample,
+import {
+  type CompletedSet,
+  type ExerciseSession,
+  type ExercisePlan,
+  type PlannedSet,
+  createCompletedSet,
 } from '@/domain/workout';
+import {
+  type Set as AnalyticsSet,
+  type WorkoutSample,
+  type Rep as AnalyticsRep,
+  createSet,
+  addSampleToSet,
+  completeSet,
+  getSetMeanVelocity,
+  getSetVelocityLossPct,
+  estimateSetRIR,
+  getRepSamples,
+} from '@voltras/workout-analytics';
 import { EXERCISE_CATALOG, createExercise } from '@/domain/exercise';
 import { isDebugTelemetryEnabled } from '@/data/debug-config';
 import type {
   StoredExerciseSession,
   StoredExercisePlan,
   StoredSessionSet,
+  StoredRep,
   ExerciseSessionSummary,
   TerminationReason,
+  LegacyStoredRep,
+  LegacyStoredSessionSet,
 } from './exercise-session-schema';
+
+// Current schema version
+const SCHEMA_VERSION = 2;
 
 // =============================================================================
 // Domain → Storage
@@ -30,10 +47,6 @@ import type {
 
 /**
  * Convert domain ExerciseSession to storage format.
- * @param session - The domain ExerciseSession
- * @param status - Session status
- * @param terminationReason - Optional termination reason
- * @param rawSamplesForLastSet - Optional raw samples to attach to the last set (debug mode)
  */
 export function toStoredExerciseSession(
   session: ExerciseSession,
@@ -54,12 +67,12 @@ export function toStoredExerciseSession(
       toStoredSessionSet(
         set,
         index,
-        // Only pass raw samples for the last set (the one just completed)
         index === lastSetIndex ? rawSamplesForLastSet : undefined
       )
     ),
     status,
     terminationReason,
+    schemaVersion: SCHEMA_VERSION,
   };
 }
 
@@ -81,7 +94,6 @@ export function toStoredPlan(plan: ExercisePlan): StoredExercisePlan {
  * Convert PlannedSet to storage format.
  */
 function toStoredPlannedSet(set: PlannedSet): PlannedSet {
-  // PlannedSet is already a plain object, just ensure we copy it
   return {
     setNumber: set.setNumber,
     weight: set.weight,
@@ -95,31 +107,30 @@ function toStoredPlannedSet(set: PlannedSet): PlannedSet {
 }
 
 /**
- * Convert domain Set to StoredSessionSet.
- * @param set - The domain Set object
- * @param setIndex - Index of the set within the session
- * @param rawSamples - Optional raw WorkoutSamples (only included if debug telemetry enabled)
+ * Convert CompletedSet to StoredSessionSet.
  */
 export function toStoredSessionSet(
-  set: Set,
+  set: CompletedSet,
   setIndex: number,
   rawSamples?: WorkoutSample[]
 ): StoredSessionSet {
+  const analyticsSet = set.data;
+  const rirEstimate = estimateSetRIR(analyticsSet);
+
   const stored: StoredSessionSet = {
     setIndex,
     weight: set.weight,
     chains: set.chains,
     eccentric: set.eccentricOffset,
-    reps: set.reps.map(toStoredRep),
+    reps: analyticsSet.reps.map((rep) => toStoredRep(rep)),
     startTime: set.timestamp.start,
-    endTime: set.timestamp.end ?? Date.now(),
-    meanVelocity: set.metrics.velocity.concentricBaseline,
-    estimatedRPE: set.metrics.effort.rpe,
-    estimatedRIR: set.metrics.effort.rir,
-    velocityLossPercent: Math.abs(set.metrics.velocity.concentricDelta),
+    endTime: set.timestamp.end,
+    meanVelocity: getSetMeanVelocity(analyticsSet),
+    estimatedRPE: rirEstimate.rpe,
+    estimatedRIR: rirEstimate.rir,
+    velocityLossPercent: Math.abs(getSetVelocityLossPct(analyticsSet)),
   };
 
-  // Only include raw samples if debug telemetry is enabled
   if (rawSamples && isDebugTelemetryEnabled()) {
     stored.rawSamples = rawSamples;
   }
@@ -128,13 +139,13 @@ export function toStoredSessionSet(
 }
 
 /**
- * Convert Rep to StoredRep for persistence.
+ * Convert library Rep to StoredRep (per-phase samples).
  */
-function toStoredRep(rep: Rep): StoredRep {
+function toStoredRep(rep: AnalyticsRep): StoredRep {
   return {
     repNumber: rep.repNumber,
-    timestamp: rep.timestamp,
-    metrics: rep.metrics,
+    concentric: { samples: [...rep.concentric.samples] },
+    eccentric: { samples: [...rep.eccentric.samples] },
   };
 }
 
@@ -144,9 +155,9 @@ function toStoredRep(rep: Rep): StoredRep {
 
 /**
  * Convert storage format back to domain ExerciseSession.
+ * Handles both v2 (new) and v1 (legacy) schema formats.
  */
 export function fromStoredExerciseSession(stored: StoredExerciseSession): ExerciseSession {
-  // Look up or create exercise
   const exercise =
     EXERCISE_CATALOG[stored.exerciseId] ??
     createExercise({
@@ -154,12 +165,17 @@ export function fromStoredExerciseSession(stored: StoredExerciseSession): Exerci
       name: stored.exerciseName ?? stored.exerciseId,
     });
 
+  const isLegacy = !stored.schemaVersion || stored.schemaVersion < SCHEMA_VERSION;
+  const completedSets = isLegacy
+    ? stored.completedSets.map((s) => fromLegacyStoredSessionSet(s as unknown as LegacyStoredSessionSet))
+    : stored.completedSets.map(fromStoredSessionSet);
+
   return {
     id: stored.id,
     exercise,
     plan: fromStoredPlan(stored.plan),
-    completedSets: stored.completedSets.map(fromStoredSessionSet),
-    restEndsAt: null, // Not persisted
+    completedSets,
+    restEndsAt: null,
     startedAt: stored.startTime,
   };
 }
@@ -179,142 +195,74 @@ export function fromStoredPlan(stored: StoredExercisePlan): ExercisePlan {
 }
 
 /**
- * Convert StoredSessionSet to domain Set.
+ * Convert StoredSessionSet (v2) to CompletedSet.
+ * Reconstructs library Set from stored per-phase samples.
  */
-export function fromStoredSessionSet(stored: StoredSessionSet): Set {
-  const reps = stored.reps.map(fromStoredRep);
+export function fromStoredSessionSet(stored: StoredSessionSet): CompletedSet {
+  // Reconstruct library Set by replaying samples
+  let analyticsSet = createSet();
 
-  // Calculate total duration
-  const duration = (stored.endTime - stored.startTime) / 1000;
+  for (const storedRep of stored.reps) {
+    // Play concentric samples
+    for (const sample of storedRep.concentric.samples) {
+      analyticsSet = addSampleToSet(analyticsSet, sample);
+    }
+    // Play eccentric samples
+    for (const sample of storedRep.eccentric.samples) {
+      analyticsSet = addSampleToSet(analyticsSet, sample);
+    }
+  }
 
-  // Calculate time under tension from reps
-  const timeUnderTension = reps.reduce((sum, rep) => {
-    return sum + rep.metrics.concentricDuration + rep.metrics.eccentricDuration;
-  }, 0);
+  analyticsSet = completeSet(analyticsSet);
 
-  return {
-    id: `set_${stored.startTime}_${stored.setIndex}`,
-    exerciseId: '', // Will be set from parent session
+  return createCompletedSet(analyticsSet, {
+    exerciseId: '',
     weight: stored.weight,
     chains: stored.chains,
     eccentricOffset: stored.eccentric,
-    reps,
-    timestamp: {
-      start: stored.startTime,
-      end: stored.endTime,
-    },
-    metrics: {
-      repCount: reps.length,
-      totalDuration: duration,
-      timeUnderTension,
-      velocity: {
-        concentricBaseline: stored.meanVelocity,
-        eccentricBaseline: 0,
-        concentricLast:
-          reps.length > 0
-            ? reps[reps.length - 1].metrics.concentricMeanVelocity
-            : stored.meanVelocity,
-        eccentricLast: 0,
-        concentricDelta: -stored.velocityLossPercent,
-        eccentricDelta: 0,
-        concentricByRep: reps.map((r) => r.metrics.concentricMeanVelocity),
-        eccentricByRep: reps.map((r) => r.metrics.eccentricMeanVelocity),
-      },
-      fatigue: {
-        fatigueIndex: stored.velocityLossPercent,
-        eccentricControlScore: 100,
-        formWarning: null,
-      },
-      effort: {
-        rpe: stored.estimatedRPE,
-        rir: stored.estimatedRIR,
-        confidence: 'medium',
-      },
-    },
-  };
+    startTime: stored.startTime,
+    endTime: stored.endTime,
+  });
 }
 
 /**
- * Convert StoredRep to domain Rep.
- * Note: Phase objects are reconstructed with minimal data since storage doesn't preserve them.
+ * Convert LegacyStoredSessionSet (v1) to CompletedSet.
+ * Legacy format has pre-computed metrics but no raw phase samples,
+ * so we create a minimal CompletedSet with an empty analytics Set.
+ * Summary values are preserved but full analytics are limited.
  */
-function fromStoredRep(stored: StoredRep): Rep {
-  // Create placeholder phases - we don't have the raw sample data in storage
-  const emptyPhase = (type: number) => ({
-    type,
-    timestamp: stored.timestamp,
-    samples: [],
-    metrics: {
-      duration: stored.metrics.concentricDuration,
-      meanVelocity: stored.metrics.concentricMeanVelocity,
-      peakVelocity: stored.metrics.concentricPeakVelocity,
-      meanForce: 0,
-      peakForce: stored.metrics.peakForce,
-      startPosition: 0,
-      endPosition: stored.metrics.rangeOfMotion,
-    },
-  });
+export function fromLegacyStoredSessionSet(stored: LegacyStoredSessionSet): CompletedSet {
+  // If raw samples are available (debug mode), reconstruct fully
+  if (stored.rawSamples && stored.rawSamples.length > 0) {
+    let analyticsSet = createSet();
+    for (const sample of stored.rawSamples) {
+      analyticsSet = addSampleToSet(analyticsSet, sample);
+    }
+    analyticsSet = completeSet(analyticsSet);
 
-  return {
-    repNumber: stored.repNumber,
-    timestamp: stored.timestamp,
-    // Reconstruct phases with available metrics (MovementPhase: 0=HOLD, 1=CONCENTRIC, 2=ECCENTRIC)
-    concentric: {
-      ...emptyPhase(1),
-      metrics: {
-        duration: stored.metrics.concentricDuration,
-        meanVelocity: stored.metrics.concentricMeanVelocity,
-        peakVelocity: stored.metrics.concentricPeakVelocity,
-        meanForce: 0,
-        peakForce: stored.metrics.peakForce,
-        startPosition: 0,
-        endPosition: stored.metrics.rangeOfMotion,
-      },
-    },
-    eccentric: {
-      ...emptyPhase(2),
-      metrics: {
-        duration: stored.metrics.eccentricDuration,
-        meanVelocity: stored.metrics.eccentricMeanVelocity,
-        peakVelocity: stored.metrics.eccentricPeakVelocity,
-        meanForce: 0,
-        peakForce: 0,
-        startPosition: stored.metrics.rangeOfMotion,
-        endPosition: 0,
-      },
-    },
-    holdAtTop:
-      stored.metrics.topPauseTime > 0
-        ? {
-            ...emptyPhase(0),
-            metrics: {
-              duration: stored.metrics.topPauseTime,
-              meanVelocity: 0,
-              peakVelocity: 0,
-              meanForce: 0,
-              peakForce: 0,
-              startPosition: stored.metrics.rangeOfMotion,
-              endPosition: stored.metrics.rangeOfMotion,
-            },
-          }
-        : null,
-    holdAtBottom:
-      stored.metrics.bottomPauseTime > 0
-        ? {
-            ...emptyPhase(0),
-            metrics: {
-              duration: stored.metrics.bottomPauseTime,
-              meanVelocity: 0,
-              peakVelocity: 0,
-              meanForce: 0,
-              peakForce: 0,
-              startPosition: 0,
-              endPosition: 0,
-            },
-          }
-        : null,
-    metrics: stored.metrics,
-  };
+    return createCompletedSet(analyticsSet, {
+      exerciseId: '',
+      weight: stored.weight,
+      chains: stored.chains,
+      eccentricOffset: stored.eccentric,
+      startTime: stored.startTime,
+      endTime: stored.endTime,
+    });
+  }
+
+  // No raw samples - create empty analytics set (legacy data)
+  // Summary values (meanVelocity, RPE, RIR) are stored on StoredSessionSet
+  // and can be read directly for list/summary displays
+  const emptySet = createSet();
+
+  return createCompletedSet(emptySet, {
+    exerciseId: '',
+    weight: stored.weight,
+    chains: stored.chains,
+    eccentricOffset: stored.eccentric,
+    startTime: stored.startTime,
+    endTime: stored.endTime,
+  });
 }
 
 // =============================================================================
@@ -325,7 +273,7 @@ function fromStoredRep(stored: StoredRep): Rep {
  * Convert a StoredExerciseSession to a lightweight summary for list display.
  */
 export function toExerciseSessionSummary(session: StoredExerciseSession): ExerciseSessionSummary {
-  const totalReps = session.completedSets.reduce((sum, set) => sum + set.reps.length, 0);
+  const totalReps = session.completedSets.reduce((sum, set) => set.reps.length + sum, 0);
 
   return {
     id: session.id,

@@ -1,3 +1,4 @@
+const path = require("path");
 const { getDefaultConfig } = require("expo/metro-config");
 const { withNativeWind } = require("nativewind/metro");
 
@@ -9,6 +10,13 @@ config.resolver.unstable_conditionNames = [
   'browser',
   'require', 
   'react-native',
+];
+
+// Support local symlinked @voltras/node-sdk
+const sdkPath = path.resolve(__dirname, "../../voltra-node-sdk");
+config.watchFolders = [sdkPath];
+config.resolver.nodeModulesPaths = [
+  path.resolve(__dirname, "node_modules"),
 ];
 
 module.exports = withNativeWind(config, { input: "./global.css" });

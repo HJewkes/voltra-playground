@@ -5,9 +5,7 @@
  * The SDK exposes raw TelemetryFrame; this converts to WorkoutSample.
  */
 import type { TelemetryFrame } from '@voltras/node-sdk';
-import type { WorkoutSample } from '@/domain/workout/models/sample';
-import { createSample } from '@/domain/workout/models/sample';
-import { MovementPhase } from '@/domain/workout/models/types';
+import { type WorkoutSample, MovementPhase } from '@voltras/workout-analytics';
 
 /** Voltra position range (0 = rest, ~600 = full extension) */
 const VOLTRA_MAX_POSITION = 600;
@@ -32,14 +30,14 @@ export function toWorkoutSample(frame: TelemetryFrame): WorkoutSample {
 
   const scaledVelocity = frame.velocity / VELOCITY_SCALE;
 
-  return createSample(
-    frame.sequence, // Pass through sequence for drop detection
-    frame.timestamp,
+  return {
+    sequence: frame.sequence,
+    timestamp: frame.timestamp,
     phase,
-    frame.position / VOLTRA_MAX_POSITION, // Normalize to 0-1
-    scaledVelocity, // Convert raw encoder to m/s
-    Math.abs(frame.force) // Absolute force in lbs
-  );
+    position: frame.position / VOLTRA_MAX_POSITION, // Normalize to 0-1
+    velocity: scaledVelocity, // Convert raw encoder to m/s
+    force: Math.abs(frame.force), // Absolute force in lbs
+  };
 }
 
 /**

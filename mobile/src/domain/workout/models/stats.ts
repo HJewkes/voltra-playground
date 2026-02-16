@@ -2,17 +2,18 @@
  * Workout Stats Model
  *
  * Aggregate statistics computed from rep data during a recording session.
- * Hardware-agnostic - works with Rep models from any device.
+ * Uses library's Rep type and analytics functions.
  */
 
-import type { Rep } from './rep';
+import type { Rep } from '@voltras/workout-analytics';
+import { getRepPeakForce, getRepDuration } from '@voltras/workout-analytics';
 
 /**
  * Aggregate statistics for a workout set/recording.
  */
 export interface WorkoutStats {
-  /** All completed reps in the set */
-  reps: Rep[];
+  /** Number of completed reps */
+  repCount: number;
 
   /** Recording start time (ms since epoch) */
   startTime: number;
@@ -22,10 +23,6 @@ export interface WorkoutStats {
 
   /** Weight used (lbs, null if not set) */
   weightLbs: number | null;
-
-  // Computed aggregates
-  /** Number of completed reps */
-  repCount: number;
 
   /** Total recording duration (seconds) */
   totalDuration: number;
@@ -45,14 +42,9 @@ export interface WorkoutStats {
 
 /**
  * Compute workout stats from rep data.
- *
- * @param reps - Completed reps
- * @param startTime - Recording start time (ms since epoch)
- * @param weightLbs - Weight used (lbs)
- * @returns Computed workout statistics
  */
 export function computeWorkoutStats(
-  reps: Rep[],
+  reps: readonly Rep[],
   startTime: number | null,
   weightLbs: number | null
 ): WorkoutStats {
@@ -61,21 +53,22 @@ export function computeWorkoutStats(
   const totalDuration = (now - start) / 1000;
 
   const avgPeakForce =
-    reps.length > 0 ? reps.reduce((sum, r) => sum + r.metrics.peakForce, 0) / reps.length : 0;
+    reps.length > 0 ? reps.reduce((sum, r) => sum + getRepPeakForce(r), 0) / reps.length : 0;
 
-  const maxPeakForce = reps.length > 0 ? Math.max(...reps.map((r) => r.metrics.peakForce)) : 0;
+  const maxPeakForce =
+    reps.length > 0 ? Math.max(...reps.map((r) => getRepPeakForce(r))) : 0;
 
+  const durations = reps.map((r) => getRepDuration(r));
   const avgRepDuration =
-    reps.length > 0 ? reps.reduce((sum, r) => sum + r.metrics.totalDuration, 0) / reps.length : 0;
+    reps.length > 0 ? durations.reduce((sum, d) => sum + d, 0) / reps.length : 0;
 
-  const timeUnderTension = reps.reduce((sum, r) => sum + r.metrics.totalDuration, 0);
+  const timeUnderTension = durations.reduce((sum, d) => sum + d, 0);
 
   return {
-    reps: [...reps],
+    repCount: reps.length,
     startTime: start,
     endTime: now,
     weightLbs,
-    repCount: reps.length,
     totalDuration,
     avgPeakForce,
     maxPeakForce,
@@ -89,11 +82,10 @@ export function computeWorkoutStats(
  */
 export function createEmptyWorkoutStats(): WorkoutStats {
   return {
-    reps: [],
+    repCount: 0,
     startTime: Date.now(),
     endTime: null,
     weightLbs: null,
-    repCount: 0,
     totalDuration: 0,
     avgPeakForce: 0,
     maxPeakForce: 0,

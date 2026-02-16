@@ -6,12 +6,21 @@
 
 import React from 'react';
 import { View, Text, ScrollView } from 'react-native';
-import { getEffortLabel, getRPEColor, type Set } from '@/domain/workout';
+import { getEffortLabel, getRPEColor, type CompletedSet } from '@/domain/workout';
+import {
+  getSetMeanVelocity,
+  getSetVelocityLossPct,
+  estimateSetRIR,
+  getRepPeakForce,
+  getRepPeakVelocity,
+  getPhaseMovementDuration,
+  getPhaseHoldDuration,
+} from '@voltras/workout-analytics';
 import { BottomSheet, Stack, Surface, StatDisplay, ActionButton, InfoRow } from '@/components';
 import { colors } from '@/theme';
 
 export interface WorkoutDetailModalProps {
-  workout: Set | null;
+  workout: CompletedSet | null;
   visible: boolean;
   onClose: () => void;
 }
@@ -20,9 +29,8 @@ export interface WorkoutDetailModalProps {
  * WorkoutDetailModal - displays detailed set information.
  */
 export function WorkoutDetailModal({ workout, visible, onClose }: WorkoutDetailModalProps) {
-  const getSetRPE = (s: Set): number => {
-    return Math.round(s.metrics?.effort.rpe ?? 0);
-  };
+  const rirEstimate = workout ? estimateSetRIR(workout.data) : null;
+  const rpe = rirEstimate ? Math.round(rirEstimate.rpe) : 0;
 
   return (
     <BottomSheet visible={visible} onClose={onClose} title={workout?.exerciseName || 'Set Details'}>
@@ -36,7 +44,7 @@ export function WorkoutDetailModal({ workout, visible, onClose }: WorkoutDetailM
           <Surface elevation="inset" radius="lg" border={false} style={{ marginBottom: 20 }}>
             <Stack direction="row" justify="space-around" style={{ padding: 20 }}>
               <StatDisplay
-                value={workout.reps?.length ?? 0}
+                value={workout.data.reps.length}
                 label="Reps"
                 size="sm"
                 color={colors.primary[500]}
@@ -45,38 +53,33 @@ export function WorkoutDetailModal({ workout, visible, onClose }: WorkoutDetailM
               <StatDisplay value={workout.weight} label="lbs" size="sm" />
               <View className="w-px bg-surface-100" />
               <StatDisplay
-                value={getSetRPE(workout) || '—'}
+                value={rpe || '—'}
                 label="RPE"
                 size="sm"
-                color={getRPEColor(getSetRPE(workout) || 5)}
+                color={getRPEColor(rpe || 5)}
               />
             </Stack>
           </Surface>
 
           {/* Analytics */}
-          {workout.metrics && (
+          {workout.data.reps.length > 0 && (
             <View className="mb-5">
               <Text className="mb-3 font-bold text-content-secondary">Analytics</Text>
               <Surface elevation="inset" radius="lg" border={false}>
                 <View className="p-5">
                   <InfoRow
                     label="Effort"
-                    value={getEffortLabel(workout.metrics.effort.rpe)}
+                    value={getEffortLabel(rirEstimate?.rpe ?? 5)}
                     showBorder
                   />
                   <InfoRow
                     label="Velocity Loss"
-                    value={`${Math.abs(workout.metrics.velocity.concentricDelta).toFixed(0)}%`}
-                    showBorder
-                  />
-                  <InfoRow
-                    label="Time Under Tension"
-                    value={`${workout.metrics.timeUnderTension.toFixed(1)}s`}
+                    value={`${Math.abs(getSetVelocityLossPct(workout.data)).toFixed(0)}%`}
                     showBorder
                   />
                   <InfoRow
                     label="Avg Velocity"
-                    value={`${workout.metrics.velocity.concentricBaseline.toFixed(2)} m/s`}
+                    value={`${getSetMeanVelocity(workout.data).toFixed(2)} m/s`}
                   />
                 </View>
               </Surface>
@@ -84,24 +87,23 @@ export function WorkoutDetailModal({ workout, visible, onClose }: WorkoutDetailM
           )}
 
           {/* Per-Rep Data */}
-          {workout.reps && workout.reps.length > 0 && (
+          {workout.data.reps.length > 0 && (
             <View className="mb-5">
               <Text className="mb-3 font-bold text-content-secondary">Per-Rep Breakdown</Text>
               <Surface elevation="inset" radius="lg" border={false}>
                 <View className="p-4">
-                  {workout.reps.map((rep, index) => {
-                    const { metrics } = rep;
-                    const tempo = `${metrics.eccentricDuration.toFixed(1)}-${metrics.concentricDuration.toFixed(1)}s`;
-                    const duration =
-                      metrics.eccentricDuration +
-                      metrics.concentricDuration +
-                      metrics.topPauseTime +
-                      metrics.bottomPauseTime;
+                  {workout.data.reps.map((rep, index) => {
+                    const eccDuration = getPhaseMovementDuration(rep.eccentric);
+                    const conDuration = getPhaseMovementDuration(rep.concentric);
+                    const topPause = getPhaseHoldDuration(rep.concentric);
+                    const bottomPause = getPhaseHoldDuration(rep.eccentric);
+                    const tempo = `${eccDuration.toFixed(1)}-${conDuration.toFixed(1)}s`;
+                    const duration = eccDuration + conDuration + topPause + bottomPause;
 
                     return (
                       <View
                         key={index}
-                        className={`py-3 ${index < workout.reps!.length - 1 ? 'border-b border-surface-100' : ''}`}
+                        className={`py-3 ${index < workout.data.reps.length - 1 ? 'border-b border-surface-100' : ''}`}
                       >
                         <View className="mb-1 flex-row justify-between">
                           <Text className="font-bold text-content-primary">
@@ -111,10 +113,10 @@ export function WorkoutDetailModal({ workout, visible, onClose }: WorkoutDetailM
                         </View>
                         <View className="flex-row justify-between">
                           <Text className="text-xs text-content-muted">
-                            Force: {Math.round(metrics.peakForce)}
+                            Force: {Math.round(getRepPeakForce(rep))}
                           </Text>
                           <Text className="text-xs text-content-muted">
-                            Vel: {metrics.concentricPeakVelocity.toFixed(2)}
+                            Vel: {getRepPeakVelocity(rep).toFixed(2)}
                           </Text>
                           <Text className="text-xs text-content-muted">
                             Dur: {duration.toFixed(1)}s

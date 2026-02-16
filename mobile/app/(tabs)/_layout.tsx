@@ -50,6 +50,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="modes"
+        options={{
+          title: 'Modes',
+          tabBarIcon: ({ color, focused, size }) => (
+            <Ionicons name={focused ? 'options' : 'options-outline'} size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="history"
         options={{
           title: 'History',

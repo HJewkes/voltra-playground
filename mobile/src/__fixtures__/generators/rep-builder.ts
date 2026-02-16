@@ -23,7 +23,7 @@
  *   .build()
  */
 
-import type { Rep } from '@/domain/workout/models/rep';
+import type { WorkoutSample } from '@voltras/workout-analytics';
 import {
   generateRepFromTargets,
   deepMerge,
@@ -271,12 +271,12 @@ class RepBuilder {
   // Build Methods
   // ===========================================================================
 
-  /** Build the Rep object. Returns just the Rep (samples discarded). */
-  build(): Rep {
-    return this.buildWithSamples().rep;
+  /** Build samples for a rep. Returns just the samples array. */
+  build(): WorkoutSample[] {
+    return this.buildWithSamples().samples;
   }
 
-  /** Build the Rep with samples. Returns GeneratedRep with rep, samples, and metadata. */
+  /** Build samples with timing metadata. */
   buildWithSamples(): GeneratedRep {
     // Merge behavior preset with explicit targets
     let finalTargets = this.targets;

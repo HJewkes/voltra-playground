@@ -24,7 +24,7 @@ import {
   type ReadinessEstimate,
   type FatigueEstimate,
 } from '@/domain/workout/metrics/types';
-import type { Set } from '@/domain/workout/models/set';
+import type { CompletedSet } from '@/domain/workout/models/completed-set';
 
 // =============================================================================
 // Planning Context Generators
@@ -40,7 +40,7 @@ export interface GeneratePlanningContextOptions {
   exerciseType?: 'compound' | 'isolation';
   sessionMetrics?: SessionMetrics | Partial<GenerateSessionMetricsOptions>;
   historicalMetrics?: HistoricalMetrics | Partial<GenerateHistoricalMetricsOptions>;
-  completedSets?: Set[];
+  completedSets?: CompletedSet[];
   originalPlanSetCount?: number;
   overrides?: PlanningOverrides;
   isDiscovery?: boolean;

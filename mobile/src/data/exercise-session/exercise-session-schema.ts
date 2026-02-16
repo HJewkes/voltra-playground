@@ -2,15 +2,16 @@
  * Exercise Session Storage Schema
  *
  * Defines the storage format for exercise sessions.
- * This is the unified storage replacing both set and discovery storage.
+ * Stores raw sample data per phase so the library's Set can be reconstructed.
  *
  * Key design decisions:
- * - Stores full ExercisePlan for plan vs actual comparison
- * - Stores StoredSessionSet[] for rich analytics
+ * - Stores per-rep phase samples for full analytics reconstruction
+ * - Summary fields (meanVelocity, RPE, RIR) stored for quick access
  * - velocityProfile and recommendation are NOT stored (derived on demand)
  */
 
-import type { PlannedSet, PlanSource, WorkoutSample, StoredRep } from '@/domain/workout';
+import type { PlannedSet, PlanSource } from '@/domain/workout';
+import type { WorkoutSample } from '@voltras/workout-analytics';
 import type { TrainingGoal } from '@/domain/planning';
 
 /**
@@ -30,8 +31,26 @@ export type TerminationReason =
 export type SessionStatus = 'in_progress' | 'completed' | 'abandoned';
 
 /**
+ * Stored phase sample aggregates - lightweight storage for reconstructing
+ * library Phase objects. Stores the raw samples so the library can rebuild.
+ */
+export interface StoredPhaseAggregates {
+  /** Raw workout samples for this phase */
+  samples: WorkoutSample[];
+}
+
+/**
+ * Stored rep with per-phase sample data.
+ * The library's Rep can be reconstructed from these samples.
+ */
+export interface StoredRep {
+  repNumber: number;
+  concentric: StoredPhaseAggregates;
+  eccentric: StoredPhaseAggregates;
+}
+
+/**
  * A stored set within an exercise session.
- * Reuses existing StoredRep format.
  */
 export interface StoredSessionSet {
   /** Set index (0-based) */
@@ -46,7 +65,7 @@ export interface StoredSessionSet {
   /** Eccentric adjustment (if used) */
   eccentric?: number;
 
-  /** Rep data with phase-specific metrics */
+  /** Rep data with phase samples for reconstruction */
   reps: StoredRep[];
 
   /** Unix timestamp when set started */
@@ -55,23 +74,63 @@ export interface StoredSessionSet {
   /** Unix timestamp when set ended */
   endTime: number;
 
-  /** Mean concentric velocity for the set */
+  /** Summary: Mean concentric velocity for the set */
   meanVelocity: number;
 
-  /** Estimated RPE */
+  /** Summary: Estimated RPE */
   estimatedRPE: number;
 
-  /** Estimated RIR */
+  /** Summary: Estimated RIR */
   estimatedRIR: number;
 
-  /** Velocity loss from first to last rep (percentage) */
+  /** Summary: Velocity loss from first to last rep (percentage) */
   velocityLossPercent: number;
 
   /**
    * Raw workout samples for the entire set (debug mode only).
    * Contains full sample stream for replay and debugging.
-   * Only populated when debug telemetry is enabled.
    */
+  rawSamples?: WorkoutSample[];
+}
+
+/**
+ * Legacy stored rep format (pre-migration).
+ * Used for backward-compatible loading.
+ */
+export interface LegacyStoredRep {
+  repNumber: number;
+  timestamp: { start: number; end: number };
+  metrics: {
+    totalDuration: number;
+    concentricDuration: number;
+    eccentricDuration: number;
+    topPauseTime: number;
+    bottomPauseTime: number;
+    tempo: string;
+    concentricMeanVelocity: number;
+    concentricPeakVelocity: number;
+    eccentricMeanVelocity: number;
+    eccentricPeakVelocity: number;
+    peakForce: number;
+    rangeOfMotion: number;
+  };
+}
+
+/**
+ * Legacy stored session set format (pre-migration).
+ */
+export interface LegacyStoredSessionSet {
+  setIndex: number;
+  weight: number;
+  chains?: number;
+  eccentric?: number;
+  reps: LegacyStoredRep[];
+  startTime: number;
+  endTime: number;
+  meanVelocity: number;
+  estimatedRPE: number;
+  estimatedRIR: number;
+  velocityLossPercent: number;
   rawSamples?: WorkoutSample[];
 }
 
@@ -91,9 +150,7 @@ export interface StoredExercisePlan {
  * A stored exercise session.
  *
  * Note: velocityProfile and recommendation are NOT stored.
- * They are derived on demand from completedSets via:
- *   - buildLoadVelocityProfile(completedSets)
- *   - generateWorkingWeightRecommendation(profile, goal)
+ * They are derived on demand from completedSets.
  */
 export interface StoredExerciseSession {
   /** Unique session identifier */
@@ -122,6 +179,9 @@ export interface StoredExerciseSession {
 
   /** Why the session ended (only set when status is completed) */
   terminationReason?: TerminationReason;
+
+  /** Schema version for migration support */
+  schemaVersion?: number;
 
   /** Optional notes */
   notes?: string;

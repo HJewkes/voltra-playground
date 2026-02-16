@@ -9,11 +9,20 @@
  * // Results in: warmup 95x10, warmup 140x5, working 185x10 x3
  */
 
-import type { TempoTarget } from './set';
 import { type TrainingGoal } from '@/domain/planning/types';
 
 // Re-export for convenience
 export { TrainingGoal } from '@/domain/planning/types';
+
+/**
+ * Tempo target for a set - time in seconds for each phase.
+ */
+export interface TempoTarget {
+  concentric: number;
+  eccentric: number;
+  pauseTop: number;
+  pauseBottom: number;
+}
 
 /**
  * Source of plan generation.

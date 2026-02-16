@@ -72,8 +72,12 @@ describe('Session Generator', () => {
       });
 
       // First rep should have higher velocity than last rep
-      const firstRepVelocity = set.reps[0].metrics.concentricMeanVelocity;
-      const lastRepVelocity = set.reps[set.reps.length - 1].metrics.concentricMeanVelocity;
+      // StoredRep stores per-phase samples; compute mean velocity from concentric samples
+      const meanVelocity = (samples: { velocity: number }[]) =>
+        samples.reduce((sum, s) => sum + s.velocity, 0) / samples.length;
+
+      const firstRepVelocity = meanVelocity(set.reps[0].concentric.samples);
+      const lastRepVelocity = meanVelocity(set.reps[set.reps.length - 1].concentric.samples);
 
       expect(firstRepVelocity).toBeGreaterThan(lastRepVelocity);
     });

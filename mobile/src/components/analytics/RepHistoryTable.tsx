@@ -2,26 +2,28 @@
  * RepHistoryTable
  *
  * A table showing rep-by-rep breakdown with tempo, velocity, and force.
- * Uses phase-specific velocities from the Rep model.
+ * Uses library functions for per-rep analytics.
  */
 
 import React from 'react';
 import { View, Text } from 'react-native';
 import { colors } from '@/theme';
-import type { Rep } from '@/domain/workout';
+import type { Rep } from '@voltras/workout-analytics';
+import {
+  getRepPeakVelocity,
+  getRepPeakForce,
+  getRepTempo,
+  getPhaseMovementDuration,
+  getPhaseHoldDuration,
+} from '@voltras/workout-analytics';
 
 export interface RepHistoryTableProps {
-  /** Array of reps with phase-specific metrics */
-  reps: Rep[];
+  /** Array of reps from library Set */
+  reps: readonly Rep[];
 }
 
 /**
  * RepHistoryTable component - rep-by-rep breakdown.
- *
- * @example
- * ```tsx
- * <RepHistoryTable reps={workoutReps} />
- * ```
  */
 export function RepHistoryTable({ reps }: RepHistoryTableProps) {
   if (reps.length === 0) return null;
@@ -39,8 +41,11 @@ export function RepHistoryTable({ reps }: RepHistoryTableProps) {
       {/* Rep rows */}
       {reps.map((rep, index) => {
         const isLatest = index === reps.length - 1;
-        const { metrics } = rep;
-        const tempo = `${metrics.eccentricDuration.toFixed(1)}-${metrics.topPauseTime.toFixed(1)}-${metrics.concentricDuration.toFixed(1)}-${metrics.bottomPauseTime.toFixed(1)}`;
+        const eccDuration = getPhaseMovementDuration(rep.eccentric);
+        const conDuration = getPhaseMovementDuration(rep.concentric);
+        const topPause = getPhaseHoldDuration(rep.concentric);
+        const bottomPause = getPhaseHoldDuration(rep.eccentric);
+        const tempo = `${eccDuration.toFixed(1)}-${topPause.toFixed(1)}-${conDuration.toFixed(1)}-${bottomPause.toFixed(1)}`;
 
         return (
           <View
@@ -69,15 +74,15 @@ export function RepHistoryTable({ reps }: RepHistoryTableProps) {
               <Text className="font-mono text-sm text-content-primary">{tempo}</Text>
               <View className="mt-1 flex-row gap-2">
                 <Text className="text-xs" style={{ color: colors.info.DEFAULT }}>
-                  E:{metrics.eccentricDuration.toFixed(1)}
+                  E:{eccDuration.toFixed(1)}
                 </Text>
-                {metrics.topPauseTime > 0.1 && (
+                {topPause > 0.1 && (
                   <Text className="text-xs" style={{ color: colors.warning.DEFAULT }}>
-                    P:{metrics.topPauseTime.toFixed(1)}
+                    P:{topPause.toFixed(1)}
                   </Text>
                 )}
                 <Text className="text-xs" style={{ color: colors.success.DEFAULT }}>
-                  C:{metrics.concentricDuration.toFixed(1)}
+                  C:{conDuration.toFixed(1)}
                 </Text>
               </View>
             </View>
@@ -85,10 +90,10 @@ export function RepHistoryTable({ reps }: RepHistoryTableProps) {
               className="w-16 text-right font-bold"
               style={{ color: isLatest ? colors.primary[500] : colors.text.primary }}
             >
-              {metrics.concentricPeakVelocity.toFixed(2)}
+              {getRepPeakVelocity(rep).toFixed(2)}
             </Text>
             <Text className="w-16 text-right text-content-secondary">
-              {metrics.peakForce.toFixed(0)}
+              {getRepPeakForce(rep).toFixed(0)}
             </Text>
           </View>
         );

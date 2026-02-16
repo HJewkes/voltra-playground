@@ -11,6 +11,8 @@ export { Surface } from './layout';
 export type { SurfaceProps } from './layout';
 export { Stack, HStack, VStack } from './layout';
 export type { StackProps } from './layout';
+export { Section } from './layout';
+export type { SectionProps } from './layout';
 
 // Feedback
 export { Banner } from './feedback';

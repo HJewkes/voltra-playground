@@ -23,6 +23,9 @@ export {
   type VoltraManagerOptions,
   type VoltraManagerEvent,
   type VoltraClientEvent,
+  // Training modes
+  TrainingMode,
+  TrainingModeNames,
   // Errors
   ConnectionError,
   AuthenticationError,

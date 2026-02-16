@@ -8,10 +8,11 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { Card, Stack, ListItem } from '@/components';
 import { colors } from '@/theme';
-import type { Set } from '@/domain/workout';
+import type { CompletedSet } from '@/domain/workout';
+import { estimateSetRIR } from '@voltras/workout-analytics';
 
 export interface WorkoutListItemProps {
-  workout: Set;
+  workout: CompletedSet;
   onPress: () => void;
   onLongPress: () => void;
 }
@@ -30,8 +31,9 @@ function getRPEBadgeStyle(rpe: number | undefined) {
  * WorkoutListItem - displays a single workout entry.
  */
 export function WorkoutListItem({ workout, onPress, onLongPress }: WorkoutListItemProps) {
-  const avgRPE = Math.round(workout.metrics?.effort.rpe ?? 0);
-  const repCount = workout.reps?.length ?? 0;
+  const rirEstimate = estimateSetRIR(workout.data);
+  const avgRPE = Math.round(rirEstimate.rpe);
+  const repCount = workout.data.reps.length;
   const formattedDate = new Date(workout.timestamp.start).toLocaleDateString();
   const badgeStyle = getRPEBadgeStyle(avgRPE);
 

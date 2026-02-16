@@ -12,8 +12,8 @@ import {
   createPlanningContext,
   type HistoricalMetrics,
 } from '../types';
-import type { Set } from '@/domain/workout/models/set';
-import { repBuilder, historicalMetricsBuilder } from '@/__fixtures__/generators';
+import { mockCompletedSet } from '@/__fixtures__/generators/mock-helpers';
+import { historicalMetricsBuilder } from '@/__fixtures__/generators';
 
 // =============================================================================
 // Test Helpers
@@ -46,50 +46,9 @@ function createMockSet(
     repCount?: number;
     velocity?: number;
   } = {}
-): Set {
+) {
   const { weight = 100, repCount = 8, velocity = 0.5 } = options;
-
-  const reps = Array.from({ length: repCount }, (_, i) =>
-    repBuilder()
-      .concentric({ meanVelocity: velocity, peakVelocity: velocity + 0.15, peakForce: 150 })
-      .eccentric({ meanVelocity: velocity * 0.5, peakVelocity: velocity * 0.6 })
-      .repNumber(i + 1)
-      .build()
-  );
-
-  return {
-    id: `set_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-    exerciseId: 'test_exercise',
-    exerciseName: 'Test Exercise',
-    weight,
-    reps,
-    timestamp: { start: Date.now() - 60000, end: Date.now() },
-    metrics: {
-      repCount,
-      totalDuration: repCount * 2.5,
-      timeUnderTension: repCount * 2.3,
-      velocity: {
-        concentricBaseline: velocity,
-        eccentricBaseline: velocity * 0.5,
-        concentricLast: velocity - 0.05,
-        eccentricLast: velocity * 0.55,
-        concentricDelta: -10,
-        eccentricDelta: 10,
-        concentricByRep: Array.from({ length: repCount }, () => velocity),
-        eccentricByRep: Array.from({ length: repCount }, () => velocity * 0.5),
-      },
-      fatigue: {
-        fatigueIndex: 15,
-        eccentricControlScore: 90,
-        formWarning: null,
-      },
-      effort: {
-        rir: 2,
-        rpe: 8,
-        confidence: 'medium',
-      },
-    },
-  };
+  return mockCompletedSet({ weight, repCount, startVelocity: velocity });
 }
 
 // =============================================================================

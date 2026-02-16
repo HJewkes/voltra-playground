@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/theme';
 import { Card, Surface, Stack } from '@/components/ui';
 import type { ExerciseSession, TerminationReason } from '@/domain/workout';
+import { getSetMeanVelocity, estimateSetRIR } from '@voltras/workout-analytics';
 
 export interface ExerciseSessionSummaryCardProps {
   /** The completed session */
@@ -62,8 +63,11 @@ export function ExerciseSessionSummaryCard({
   onDone,
   style,
 }: ExerciseSessionSummaryCardProps) {
-  const totalReps = session.completedSets.reduce((sum, s) => sum + s.reps.length, 0);
-  const totalVolume = session.completedSets.reduce((sum, s) => sum + s.weight * s.reps.length, 0);
+  const totalReps = session.completedSets.reduce((sum, s) => sum + s.data.reps.length, 0);
+  const totalVolume = session.completedSets.reduce(
+    (sum, s) => sum + s.weight * s.data.reps.length,
+    0
+  );
 
   const termDisplay = getTerminationDisplay(terminationReason);
 
@@ -129,7 +133,9 @@ export function ExerciseSessionSummaryCard({
         </Text>
         {session.completedSets.map((set, i) => {
           const planned = session.plan.sets[i];
-          const repsDelta = planned ? set.reps.length - planned.targetReps : 0;
+          const repsDelta = planned ? set.data.reps.length - planned.targetReps : 0;
+          const meanVel = getSetMeanVelocity(set.data);
+          const rirEstimate = estimateSetRIR(set.data);
 
           return (
             <View
@@ -147,7 +153,7 @@ export function ExerciseSessionSummaryCard({
                 </View>
                 <View>
                   <Text className="font-medium text-content-primary">
-                    {set.weight} lbs × {set.reps.length}
+                    {set.weight} lbs × {set.data.reps.length}
                     {planned && (
                       <Text
                         style={{
@@ -161,8 +167,7 @@ export function ExerciseSessionSummaryCard({
                     )}
                   </Text>
                   <Text className="text-xs text-content-muted">
-                    {set.metrics.velocity.concentricBaseline.toFixed(2)} m/s • RPE{' '}
-                    {set.metrics.effort.rpe}
+                    {meanVel.toFixed(2)} m/s • RPE {rirEstimate.rpe.toFixed(1)}
                   </Text>
                 </View>
               </View>

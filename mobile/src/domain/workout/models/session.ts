@@ -12,7 +12,7 @@
  * - Simpler, less state to sync, no stale derived data
  */
 
-import type { Set } from './set';
+import type { CompletedSet } from './completed-set';
 import type { Exercise } from '@/domain/exercise';
 import type { ExercisePlan, PlannedSet } from './plan';
 
@@ -41,7 +41,7 @@ export interface ExerciseSession {
   plan: ExercisePlan;
 
   /** Actual sets performed - index matches plan.sets index */
-  completedSets: Set[];
+  completedSets: CompletedSet[];
 
   /** Rest state - timestamp when rest ends (null if not resting) */
   restEndsAt: number | null;
@@ -128,14 +128,14 @@ export function isDiscoverySession(session: ExerciseSession): boolean {
  * Get total completed volume (weight × reps).
  */
 export function getCompletedVolume(session: ExerciseSession): number {
-  return session.completedSets.reduce((total, set) => total + set.weight * set.reps.length, 0);
+  return session.completedSets.reduce((total, set) => total + set.weight * set.data.reps.length, 0);
 }
 
 /**
  * Get total completed reps.
  */
 export function getTotalReps(session: ExerciseSession): number {
-  return session.completedSets.reduce((total, set) => total + set.reps.length, 0);
+  return session.completedSets.reduce((total, set) => total + set.data.reps.length, 0);
 }
 
 // =============================================================================
@@ -145,7 +145,7 @@ export function getTotalReps(session: ExerciseSession): number {
 /**
  * Add a completed set to the session.
  */
-export function addCompletedSet(session: ExerciseSession, set: Set): ExerciseSession {
+export function addCompletedSet(session: ExerciseSession, set: CompletedSet): ExerciseSession {
   return {
     ...session,
     completedSets: [...session.completedSets, set],
@@ -181,7 +181,7 @@ export function clearRest(session: ExerciseSession): ExerciseSession {
  */
 export interface SetComparison {
   planned: PlannedSet;
-  actual: Set;
+  actual: CompletedSet;
   repsDelta: number; // positive = exceeded, negative = missed
   weightDelta: number; // positive = heavier, negative = lighter
 }
@@ -201,7 +201,7 @@ export function compareSetAtIndex(
   return {
     planned,
     actual,
-    repsDelta: actual.reps.length - planned.targetReps,
+    repsDelta: actual.data.reps.length - planned.targetReps,
     weightDelta: actual.weight - planned.weight,
   };
 }

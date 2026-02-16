@@ -1,20 +1,15 @@
 /**
  * LiveMetrics
  *
- * Live workout metrics display that consumes domain objects (SetMetrics, WorkoutSample).
- * Provides both a presentational view and a connected version.
+ * Live workout metrics display showing RPE, RIR, velocity loss, and
+ * real-time force/velocity readings. Consumes primitives from recording store.
  */
 
 import React from 'react';
 import { View, Text, type StyleProp, type ViewStyle } from 'react-native';
 import { useStore } from 'zustand';
-import {
-  type SetMetrics,
-  type WorkoutSample,
-  MovementPhase,
-  getEffortLabel,
-  getRIRDescription,
-} from '@/domain/workout';
+import { type WorkoutSample, MovementPhase } from '@voltras/workout-analytics';
+import { getEffortLabel, getRIRDescription } from '@/domain/workout';
 import type { RecordingStoreApi } from '@/stores';
 import { Card, Stack, Surface } from '@/components/ui';
 import { PhaseIndicator } from './PhaseIndicator';
@@ -25,8 +20,14 @@ import { colors, getRPEColor } from '@/theme';
 // =============================================================================
 
 export interface LiveMetricsViewProps {
-  /** Set metrics containing RPE, RIR, velocity data */
-  metrics: SetMetrics;
+  /** Current rep count */
+  repCount: number;
+  /** Estimated RPE */
+  rpe: number;
+  /** Estimated RIR */
+  rir: number;
+  /** Velocity loss percentage (0-100, always positive) */
+  velocityLossPct: number;
   /** Current workout sample for phase/position/velocity display */
   currentSample?: WorkoutSample | null;
   /** Current weight in lbs */
@@ -39,21 +40,17 @@ export interface LiveMetricsViewProps {
 
 /**
  * LiveMetricsView - presentational component showing live workout metrics.
- *
- * Accepts domain objects directly (SetMetrics, WorkoutSample).
  */
 export function LiveMetricsView({
-  metrics,
+  repCount,
+  rpe,
+  rir,
+  velocityLossPct,
   currentSample,
   weight,
   statusMessage,
   compact = false,
 }: LiveMetricsViewProps) {
-  const { repCount, effort, velocity } = metrics;
-  const rpe = effort.rpe;
-  const rir = effort.rir;
-  const velocityLoss = Math.abs(velocity.concentricDelta);
-
   const rpeColor = getRPEColor(rpe);
   const _effortLabel = getEffortLabel(rpe);
   const _rirDescription = getRIRDescription(rir);
@@ -77,7 +74,9 @@ export function LiveMetricsView({
 
         <View className="flex-row items-center">
           <Text className="text-xs text-zinc-400">VL</Text>
-          <Text className="ml-2 text-lg font-bold text-white">{velocityLoss.toFixed(0)}%</Text>
+          <Text className="ml-2 text-lg font-bold text-white">
+            {velocityLossPct.toFixed(0)}%
+          </Text>
         </View>
       </View>
     );
@@ -163,8 +162,8 @@ export function LiveMetricsView({
         <Surface elevation="inset" radius="lg" border={false} style={{ flex: 1, padding: 16 }}>
           <Text className="mb-1 text-xs font-medium text-content-muted">Vel Loss</Text>
           <Text className="text-2xl font-bold" style={{ color: rpeColor }}>
-            {velocityLoss > 0 ? '-' : ''}
-            {Math.round(velocityLoss)}%
+            {velocityLossPct > 0 ? '-' : ''}
+            {Math.round(velocityLossPct)}%
           </Text>
         </Surface>
       </Stack>
@@ -175,9 +174,9 @@ export function LiveMetricsView({
           <View
             className="h-full rounded-full"
             style={{
-              width: `${Math.min(velocityLoss, 50) * 2}%`,
+              width: `${Math.min(velocityLossPct, 50) * 2}%`,
               backgroundColor:
-                velocityLoss > 30 ? '#ef4444' : velocityLoss > 20 ? '#eab308' : '#22c55e',
+                velocityLossPct > 30 ? '#ef4444' : velocityLossPct > 20 ? '#eab308' : '#22c55e',
             }}
           />
         </View>
@@ -209,24 +208,21 @@ export interface LiveMetricsProps {
 
 /**
  * LiveMetrics - connected component that subscribes to recording store.
- *
- * @example
- * ```tsx
- * <LiveMetrics
- *   store={recordingStore}
- *   currentSample={currentSample}
- *   weight={100}
- * />
- * ```
  */
 export function LiveMetrics({ store, currentSample, weight, compact, style }: LiveMetricsProps) {
-  const metrics = useStore(store, (s) => s.setMetrics);
+  const repCount = useStore(store, (s) => s.repCount);
+  const rpe = useStore(store, (s) => s.rpe);
+  const rir = useStore(store, (s) => s.rir);
+  const velocityLoss = useStore(store, (s) => s.velocityLoss);
   const liveMessage = useStore(store, (s) => s.liveMessage);
 
   return (
     <View style={style}>
       <LiveMetricsView
-        metrics={metrics}
+        repCount={repCount}
+        rpe={rpe}
+        rir={rir}
+        velocityLossPct={velocityLoss}
         currentSample={currentSample}
         weight={weight}
         statusMessage={liveMessage}

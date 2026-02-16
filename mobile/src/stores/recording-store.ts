@@ -2,42 +2,37 @@
  * Recording Store
  *
  * Manages state and analytics for a single recording session (set).
- * Processes WorkoutSamples into Rep and SetMetrics.
+ * Processes WorkoutSamples through @voltras/workout-analytics pipeline.
  *
  * Responsibilities:
- * - Receive hardware-agnostic WorkoutSamples (converted from device frames by caller)
- * - Detect rep boundaries using workout domain's RepDetector
- * - Aggregate phases and reps using workout aggregators
- * - Compute and track SetMetrics with fatigue analysis
- * - Build domain Set when recording stops
- *
- * This store is hardware-agnostic - it only uses workout domain models.
- * The caller (e.g., WorkoutScreen) handles conversion from device-specific frames.
+ * - Receive hardware-agnostic WorkoutSamples
+ * - Feed samples to library's addSampleToSet (handles rep detection + aggregation)
+ * - Compute live metrics via library functions
+ * - Build CompletedSet when recording stops
  */
 
 import { createStore, type StoreApi } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
-// Domain imports - Workout
+// Library imports
 import {
-  RepDetector,
-  type RepBoundary,
-  type Rep,
-  type Set,
-  type SetMetrics,
-  type TempoTarget,
+  type Set as AnalyticsSet,
   type WorkoutSample,
-  aggregatePhase,
-  aggregateRep,
-  aggregateSet,
-  createEmptySetMetrics,
+  type Rep,
+  createSet,
+  addSampleToSet,
+  completeSet,
+  getSetVelocityLossPct,
+  getSetRepVelocities,
+  getSetMeanVelocity,
+  estimateSetRIR,
+  getRepPeakVelocity,
   MovementPhase,
-} from '@/domain/workout';
+} from '@voltras/workout-analytics';
 
-// Training domain
+// App imports
+import { type CompletedSet, createCompletedSet } from '@/domain/workout';
 import { getLiveEffortMessage } from '@/domain/workout';
-
-// Data provider
 import { isDebugTelemetryEnabled } from '@/data/provider';
 
 // =============================================================================
@@ -46,7 +41,6 @@ import { isDebugTelemetryEnabled } from '@/data/provider';
 
 /**
  * Generic UI state for recording components.
- * Used by recording UI components to show appropriate displays.
  */
 export type RecordingUIState =
   | 'idle' // Not recording, ready to start
@@ -65,15 +59,11 @@ export interface RecordingState {
   weight: number;
   startTime: number | null;
 
-  // Rep data (computed from frames via RepDetector + aggregators)
-  reps: Rep[];
-  lastRep: Rep | null;
+  // Rep data (from library's Set)
   repCount: number;
+  lastRepPeakVelocity: number | null;
 
-  // Set metrics (computed from reps via set-aggregator)
-  setMetrics: SetMetrics;
-
-  // Derived analytics (for UI convenience)
+  // Live metrics (computed from library functions)
   velocityLoss: number;
   rpe: number;
   rir: number;
@@ -85,20 +75,18 @@ export interface RecordingState {
   // Debug telemetry - all samples for replay (only populated when debug enabled)
   allSamples: WorkoutSample[];
 
-  // Post-recording - domain Set for UI to display summary
-  lastSet: Set | null;
+  // Post-recording - CompletedSet for UI to display summary
+  lastSet: CompletedSet | null;
 
   // Actions
   setUIState: (state: RecordingUIState) => void;
   startRecording: (exerciseId?: string, exerciseName?: string) => void;
-  stopRecording: (weight: number) => Set | null;
+  stopRecording: (weight: number) => CompletedSet | null;
   processSample: (sample: WorkoutSample) => void;
-  setTargetTempo: (tempo: TempoTarget | null) => void;
   reset: () => void;
 
-  // Internal
-  _repDetector: RepDetector;
-  _targetTempo: TempoTarget | null;
+  // Internal - library set (not for UI consumption)
+  _analyticsSet: AnalyticsSet;
 }
 
 // =============================================================================
@@ -113,10 +101,8 @@ function createInitialState(): Pick<
   | 'exerciseName'
   | 'weight'
   | 'startTime'
-  | 'reps'
-  | 'lastRep'
   | 'repCount'
-  | 'setMetrics'
+  | 'lastRepPeakVelocity'
   | 'velocityLoss'
   | 'rpe'
   | 'rir'
@@ -132,10 +118,8 @@ function createInitialState(): Pick<
     exerciseName: 'Workout',
     weight: 0,
     startTime: null,
-    reps: [],
-    lastRep: null,
     repCount: 0,
-    setMetrics: createEmptySetMetrics(),
+    lastRepPeakVelocity: null,
     velocityLoss: 0,
     rpe: 5,
     rir: 6,
@@ -154,8 +138,7 @@ function createInitialState(): Pick<
  * Create a recording store for managing single-set analytics.
  */
 export function createRecordingStore(): RecordingStoreApi {
-  const repDetector = new RepDetector();
-  let targetTempo: TempoTarget | null = null;
+  let analyticsSet = createSet();
 
   const store = createStore<RecordingState>()(
     devtools(
@@ -163,8 +146,7 @@ export function createRecordingStore(): RecordingStoreApi {
         ...createInitialState(),
 
         // Internal state
-        _repDetector: repDetector,
-        _targetTempo: null,
+        _analyticsSet: createSet(),
 
         // =======================================================================
         // Actions
@@ -175,7 +157,7 @@ export function createRecordingStore(): RecordingStoreApi {
         },
 
         startRecording: (exerciseId?: string, exerciseName?: string) => {
-          repDetector.reset();
+          analyticsSet = createSet();
           set({
             ...createInitialState(),
             uiState: 'recording',
@@ -183,32 +165,31 @@ export function createRecordingStore(): RecordingStoreApi {
             exerciseId: exerciseId ?? null,
             exerciseName: exerciseName ?? 'Workout',
             startTime: Date.now(),
+            _analyticsSet: analyticsSet,
           });
         },
 
         stopRecording: (weight: number) => {
           const state = get();
-          if (!state.isRecording || state.reps.length === 0) {
+          if (!state.isRecording || analyticsSet.reps.length === 0) {
             set({ uiState: 'idle', isRecording: false });
             return null;
           }
 
+          // Finalize the set (trim trailing idle samples)
+          const finalSet = completeSet(analyticsSet);
+
           const endTime = Date.now();
           const startTime = state.startTime ?? endTime;
 
-          // Build domain Set
-          const completedSet: Set = {
-            id: `set-${Date.now()}`,
+          // Build CompletedSet with app metadata
+          const completedSet = createCompletedSet(finalSet, {
             exerciseId: state.exerciseId ?? 'unknown',
             exerciseName: state.exerciseName,
             weight,
-            reps: state.reps,
-            timestamp: {
-              start: startTime,
-              end: endTime,
-            },
-            metrics: state.setMetrics,
-          };
+            startTime,
+            endTime,
+          });
 
           set({
             uiState: 'idle',
@@ -228,40 +209,36 @@ export function createRecordingStore(): RecordingStoreApi {
             set({ allSamples: [...currentSamples, sample] });
           }
 
-          // Run through rep detector
-          const boundary = repDetector.processSample(sample);
+          // Feed sample through library pipeline
+          const prevRepCount = analyticsSet.reps.length;
+          analyticsSet = addSampleToSet(analyticsSet, sample);
+          const newRepCount = analyticsSet.reps.length;
 
-          if (boundary) {
-            // Rep completed - aggregate and update state
-            const rep = aggregateRepFromBoundary(boundary);
-            const newReps = [...get().reps, rep];
+          // New rep completed - update metrics
+          if (newRepCount > prevRepCount) {
+            const lastRep = analyticsSet.reps.at(-1)!;
 
-            // Recompute set metrics
-            const newSetMetrics = aggregateSet(newReps, targetTempo);
+            // Compute live metrics from library
+            const velocityLoss = getSetVelocityLossPct(analyticsSet);
+            const rirEstimate = estimateSetRIR(analyticsSet);
+            const velocityTrend = [...getSetRepVelocities(analyticsSet)];
 
-            // Update state
             set({
-              reps: newReps,
-              lastRep: rep,
-              repCount: newReps.length,
-              setMetrics: newSetMetrics,
-              velocityLoss: Math.abs(newSetMetrics.velocity.concentricDelta),
-              rpe: newSetMetrics.effort.rpe,
-              rir: newSetMetrics.effort.rir,
-              velocityTrend: newReps.map((r) => r.metrics.concentricMeanVelocity),
-              liveMessage: getLiveEffortMessage(newSetMetrics.effort.rpe, newReps.length),
+              repCount: newRepCount,
+              lastRepPeakVelocity: getRepPeakVelocity(lastRep),
+              velocityLoss: Math.abs(velocityLoss),
+              rpe: rirEstimate.rpe,
+              rir: rirEstimate.rir,
+              velocityTrend,
+              liveMessage: getLiveEffortMessage(rirEstimate.rpe, newRepCount),
+              _analyticsSet: analyticsSet,
             });
           }
         },
 
-        setTargetTempo: (tempo: TempoTarget | null) => {
-          targetTempo = tempo;
-          set({ _targetTempo: tempo });
-        },
-
         reset: () => {
-          repDetector.reset();
-          set(createInitialState());
+          analyticsSet = createSet();
+          set({ ...createInitialState(), _analyticsSet: analyticsSet });
         },
       }),
       { name: 'recording-store' }
@@ -269,38 +246,6 @@ export function createRecordingStore(): RecordingStoreApi {
   );
 
   return store;
-}
-
-// =============================================================================
-// Helpers
-// =============================================================================
-
-/**
- * Aggregate a rep from a RepBoundary (detected by RepDetector).
- */
-function aggregateRepFromBoundary(boundary: RepBoundary): Rep {
-  const { phaseSamples, repNumber } = boundary;
-
-  // Aggregate phases
-  const concentricPhase = aggregatePhase(MovementPhase.CONCENTRIC, phaseSamples.concentric);
-  const eccentricPhase = aggregatePhase(MovementPhase.ECCENTRIC, phaseSamples.eccentric);
-  const holdAtTopPhase =
-    phaseSamples.holdAtTop.length > 0
-      ? aggregatePhase(MovementPhase.HOLD, phaseSamples.holdAtTop)
-      : null;
-  const holdAtBottomPhase =
-    phaseSamples.holdAtBottom.length > 0
-      ? aggregatePhase(MovementPhase.HOLD, phaseSamples.holdAtBottom)
-      : null;
-
-  // Aggregate rep from phases
-  return aggregateRep(
-    repNumber,
-    concentricPhase,
-    eccentricPhase,
-    holdAtTopPhase,
-    holdAtBottomPhase
-  );
 }
 
 // =============================================================================

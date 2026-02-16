@@ -8,19 +8,22 @@
  * Example: toFailure = ['normal', 'normal', 'normal', 'fatiguing', 'fatiguing', 'grinding', 'grinding', 'failed']
  */
 
-import { v4 as uuid } from 'uuid';
 import {
   type WorkoutSample,
-  type Set,
-  type Rep,
   MovementPhase,
-  createSample,
-  RepDetector,
-  aggregatePhase,
-  aggregateRep,
-  aggregateSet,
-} from '@/domain/workout';
+  createSet,
+  addSampleToSet,
+  completeSet,
+} from '@voltras/workout-analytics';
+import { createCompletedSet, type CompletedSet } from '@/domain/workout';
 import { type RepBehavior, type RepBehaviorOptions, generateRepSamples } from './rep-behaviors';
+
+function makeSample(
+  sequence: number, timestamp: number, phase: MovementPhase,
+  position: number, velocity: number, force: number
+): WorkoutSample {
+  return { sequence, timestamp, phase, position, velocity, force };
+}
 
 // =============================================================================
 // Types
@@ -55,8 +58,8 @@ export interface GenerateSetOptions {
 export interface SetFromBehaviorsResult {
   /** All samples from the set */
   samples: WorkoutSample[];
-  /** The processed Set object (only if processWithAggregators: true) */
-  set?: Set;
+  /** The processed CompletedSet object (only if processWithAggregators: true) */
+  set?: CompletedSet;
   /** Number of completed reps (failed reps don't count) */
   completedRepCount: number;
   /** The rep behaviors that were used */
@@ -160,7 +163,7 @@ export function generateSetFromBehaviors(
   const idleDuration = 300; // ms
   const idleSamples = Math.floor((idleDuration / 1000) * sampleRate);
   for (let i = 0; i < idleSamples; i++) {
-    samples.push(createSample(currentSequence++, currentTime, MovementPhase.IDLE, 0, 0, 0));
+    samples.push(makeSample(currentSequence++, currentTime, MovementPhase.IDLE, 0, 0, 0));
     currentTime += 1000 / sampleRate;
   }
 
@@ -188,19 +191,19 @@ export function generateSetFromBehaviors(
       const restDuration = 400; // ms
       const restSamples = Math.floor((restDuration / 1000) * sampleRate);
       for (let i = 0; i < restSamples; i++) {
-        samples.push(createSample(currentSequence++, currentTime, MovementPhase.IDLE, 0, 0, 0));
+        samples.push(makeSample(currentSequence++, currentTime, MovementPhase.IDLE, 0, 0, 0));
         currentTime += 1000 / sampleRate;
       }
     }
   }
 
   // Final idle sample
-  samples.push(createSample(currentSequence++, currentTime, MovementPhase.IDLE, 0, 0, 0));
+  samples.push(makeSample(currentSequence++, currentTime, MovementPhase.IDLE, 0, 0, 0));
 
-  // Optionally process through aggregators
-  let set: Set | undefined;
+  // Optionally process through library pipeline
+  let set: CompletedSet | undefined;
   if (processWithAggregators) {
-    set = processSetThroughAggregators(samples, {
+    set = processSetThroughPipeline(samples, {
       exerciseId,
       exerciseName,
       weight,
@@ -264,71 +267,24 @@ interface ProcessSetOptions {
 }
 
 /**
- * Process samples through RepDetector and aggregators to produce a Set.
+ * Process samples through the library's set pipeline to produce a CompletedSet.
  */
-function processSetThroughAggregators(samples: WorkoutSample[], options: ProcessSetOptions): Set {
+function processSetThroughPipeline(samples: WorkoutSample[], options: ProcessSetOptions): CompletedSet {
   const { exerciseId, exerciseName, weight, startTime } = options;
 
-  // Use RepDetector to find rep boundaries
-  const detector = new RepDetector();
-  const reps: Rep[] = [];
-
+  let analyticsSet = createSet();
   for (const sample of samples) {
-    const boundary = detector.processSample(sample);
-    if (boundary) {
-      // Convert boundary to Rep using aggregators
-      const rep = boundaryToRep(boundary);
-      reps.push(rep);
-    }
+    analyticsSet = addSampleToSet(analyticsSet, sample);
   }
+  analyticsSet = completeSet(analyticsSet);
 
-  // Determine end time
   const endTime = samples.length > 0 ? samples[samples.length - 1].timestamp : startTime;
 
-  // Compute set metrics using aggregateSet (takes reps[], targetTempo, config)
-  const metrics = aggregateSet(reps, null);
-
-  // Create the full Set with metrics
-  const set: Set = {
-    id: uuid(),
+  return createCompletedSet(analyticsSet, {
     exerciseId,
     exerciseName,
     weight,
-    reps,
-    timestamp: { start: startTime, end: endTime },
-    metrics,
-  };
-
-  return set;
-}
-
-/**
- * Convert a RepBoundary from RepDetector to a Rep object.
- */
-function boundaryToRep(boundary: {
-  repNumber: number;
-  samples: WorkoutSample[];
-  phaseSamples: {
-    concentric: WorkoutSample[];
-    eccentric: WorkoutSample[];
-    holdAtTop: WorkoutSample[];
-    holdAtBottom: WorkoutSample[];
-  };
-  startTime: number;
-  endTime: number;
-}): Rep {
-  // Aggregate phases
-  const concentric = aggregatePhase(MovementPhase.CONCENTRIC, boundary.phaseSamples.concentric);
-  const eccentric = aggregatePhase(MovementPhase.ECCENTRIC, boundary.phaseSamples.eccentric);
-  const holdAtTop =
-    boundary.phaseSamples.holdAtTop.length > 0
-      ? aggregatePhase(MovementPhase.HOLD, boundary.phaseSamples.holdAtTop)
-      : null;
-  const holdAtBottom =
-    boundary.phaseSamples.holdAtBottom.length > 0
-      ? aggregatePhase(MovementPhase.HOLD, boundary.phaseSamples.holdAtBottom)
-      : null;
-
-  // Aggregate rep
-  return aggregateRep(boundary.repNumber, concentric, eccentric, holdAtTop, holdAtBottom);
+    startTime,
+    endTime,
+  });
 }

@@ -9,7 +9,8 @@ import React from 'react';
 import { View, Text, type StyleProp, type ViewStyle } from 'react-native';
 import { colors } from '@/theme';
 import { Card, ProgressBar } from '@/components/ui';
-import type { PlannedSet, Set } from '@/domain/workout';
+import type { PlannedSet, CompletedSet } from '@/domain/workout';
+import { getSetMeanVelocity } from '@voltras/workout-analytics';
 
 export interface ExerciseSessionProgressProps {
   /** Exercise name */
@@ -17,7 +18,7 @@ export interface ExerciseSessionProgressProps {
   /** Planned sets */
   plannedSets: PlannedSet[];
   /** Completed sets */
-  completedSets: Set[];
+  completedSets: CompletedSet[];
   /** Current set index (0-based) */
   currentSetIndex: number;
   /** Whether this is a discovery session */
@@ -106,7 +107,7 @@ export function ExerciseSessionProgress({
                 {/* Completed stats */}
                 {completed && (
                   <Text className="text-xs text-content-muted">
-                    {completed.metrics.velocity.concentricBaseline.toFixed(2)} m/s
+                    {getSetMeanVelocity(completed.data).toFixed(2)} m/s
                   </Text>
                 )}
 

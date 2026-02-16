@@ -19,7 +19,7 @@ import {
   type ExerciseSession,
   type ExercisePlan,
   type PlannedSet,
-  type Set,
+  type CompletedSet,
 } from '@/domain/workout';
 import { type Exercise, createExercise, MuscleGroup } from '@/domain/exercise';
 import { TrainingGoal } from '@/domain/planning';
@@ -73,7 +73,7 @@ export interface SessionFromCompositionResult {
   /** The plan that was created */
   plan: ExercisePlan;
   /** All completed sets */
-  completedSets: Set[];
+  completedSets: CompletedSet[];
   /** Total reps completed across all sets */
   totalReps: number;
   /** Total volume (weight × reps) */
@@ -203,7 +203,7 @@ export function generateSessionFromComposition(
   };
 
   // Generate completed sets
-  const completedSets: Set[] = [];
+  const completedSets: CompletedSet[] = [];
   let currentTime = startTime;
   let totalReps = 0;
   let totalVolume = 0;
@@ -223,8 +223,9 @@ export function generateSessionFromComposition(
 
     if (set) {
       completedSets.push(set);
-      totalReps += completedRepCount;
-      totalVolume += plannedSet.weight * completedRepCount;
+      const actualReps = set.data.reps.length;
+      totalReps += actualReps;
+      totalVolume += set.weight * actualReps;
     }
 
     // Advance time by set duration + rest

@@ -8,6 +8,9 @@
 # Console log captures
 /captures/
 
+# Private research and test data
+/research/
+
 # =============================================================================
 # Mobile (React Native / Expo)
 # =============================================================================

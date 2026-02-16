@@ -1,24 +1,29 @@
 /**
  * Load-Velocity Profile Builder
  *
- * Builds and analyzes load-velocity profiles for 1RM estimation
- * and training zone recommendations. Used by weight discovery and
- * ongoing workout analytics.
+ * App-level wrapper around @voltras/workout-analytics profile functions.
+ * The core regression and prediction logic is delegated to the library.
  *
- * The load-velocity relationship is approximately linear, allowing us to:
- * 1. Extrapolate 1RM from 2-3 submaximal data points
- * 2. Predict velocity at any given %1RM
- * 3. Recommend working weights for specific training goals
+ * This module adds app-specific concerns:
+ * - `exerciseId` and `createdAt` on profiles
+ * - `weight`-based data points (library uses `load`)
+ * - Training goal-aware recommendation generation
+ * - Warmup set generation
  */
+
+import {
+  buildProfile as libBuildProfile,
+  estimateE1RMFromReps,
+  type LoadVelocityDataPoint as LibraryDataPoint,
+  type LoadVelocityProfile as LibraryProfile,
+} from '@voltras/workout-analytics';
 
 import {
   MINIMUM_VELOCITY_THRESHOLD,
   TRAINING_ZONES,
   REP_RANGES,
-  PROFILE_CONFIDENCE_REQUIREMENTS,
   estimatePercent1RMFromVelocity,
 } from '@/domain/vbt/constants';
-// Import directly from types to avoid circular dependency with planning/strategies
 import { TrainingGoal } from '@/domain/planning/types';
 
 // =============================================================================
@@ -54,25 +59,12 @@ export interface LoadVelocityProfile {
 }
 
 export interface WorkingWeightRecommendation {
-  /** Recommended working weight */
   workingWeight: number;
-
-  /** Target rep range */
   repRange: [number, number];
-
-  /** Recommended warmup sets */
   warmupSets: WarmupSet[];
-
-  /** Confidence in recommendation */
   confidence: 'high' | 'medium' | 'low';
-
-  /** Human-readable explanation */
   explanation: string;
-
-  /** The profile used to generate this */
   profile: LoadVelocityProfile;
-
-  /** Estimated 1RM from the profile */
   estimated1RM: number;
 }
 
@@ -84,82 +76,61 @@ export interface WarmupSet {
 }
 
 // =============================================================================
-// Profile Builder
+// Internal Helpers
+// =============================================================================
+
+/** Convert app data point (weight) to library data point (load). */
+function toLibraryPoint(dp: LoadVelocityDataPoint): LibraryDataPoint {
+  return { load: dp.weight, velocity: dp.velocity, timestamp: dp.timestamp };
+}
+
+/** Convert library profile to app profile with metadata. */
+function toAppProfile(
+  libProfile: LibraryProfile,
+  exerciseId: string,
+  originalPoints: LoadVelocityDataPoint[]
+): LoadVelocityProfile {
+  return {
+    exerciseId,
+    dataPoints: [...originalPoints],
+    slope: libProfile.slope,
+    intercept: libProfile.intercept,
+    rSquared: libProfile.rSquared,
+    estimated1RM: Math.round(libProfile.estimated1RM / 5) * 5,
+    confidence: libProfile.confidence,
+    mvt: libProfile.mvt,
+    createdAt: Date.now(),
+  };
+}
+
+// =============================================================================
+// Profile Builder (delegates to library)
 // =============================================================================
 
 /**
  * Build a load-velocity profile from data points.
- * Uses linear regression to model the relationship.
+ * Regression is performed by @voltras/workout-analytics.
  */
 export function buildLoadVelocityProfile(
   exerciseId: string,
   dataPoints: LoadVelocityDataPoint[]
 ): LoadVelocityProfile {
-  const n = dataPoints.length;
-
-  if (n === 0) {
+  if (dataPoints.length === 0) {
     return createEmptyProfile(exerciseId);
   }
 
-  const weights = dataPoints.map((p) => p.weight);
-  const velocities = dataPoints.map((p) => p.velocity);
+  const libraryPoints = dataPoints.map(toLibraryPoint);
+  const libProfile = libBuildProfile(libraryPoints, MINIMUM_VELOCITY_THRESHOLD);
 
-  // Calculate means
-  const meanWeight = weights.reduce((a, b) => a + b, 0) / n;
-  const meanVelocity = velocities.reduce((a, b) => a + b, 0) / n;
-
-  // Calculate slope and intercept via linear regression
-  let numerator = 0;
-  let denominator = 0;
-
-  for (let i = 0; i < n; i++) {
-    numerator += (weights[i] - meanWeight) * (velocities[i] - meanVelocity);
-    denominator += (weights[i] - meanWeight) ** 2;
-  }
-
-  const slope = denominator !== 0 ? numerator / denominator : 0;
-  const intercept = meanVelocity - slope * meanWeight;
-
-  // Calculate R-squared (goodness of fit)
-  let ssRes = 0;
-  let ssTot = 0;
-
-  for (let i = 0; i < n; i++) {
-    const predicted = slope * weights[i] + intercept;
-    ssRes += (velocities[i] - predicted) ** 2;
-    ssTot += (velocities[i] - meanVelocity) ** 2;
-  }
-
-  const rSquared = ssTot !== 0 ? Math.max(0, 1 - ssRes / ssTot) : 0;
-
-  // Estimate 1RM (weight where velocity = MVT)
-  // MVT = slope * weight + intercept
-  // weight = (MVT - intercept) / slope
-  const mvt = MINIMUM_VELOCITY_THRESHOLD;
-  let estimated1RM = slope !== 0 ? Math.round((mvt - intercept) / slope / 5) * 5 : 0;
+  const appProfile = toAppProfile(libProfile, exerciseId, dataPoints);
 
   // Ensure estimated 1RM is at least as high as the heaviest tested weight
-  estimated1RM = Math.max(estimated1RM, Math.max(...weights));
+  const maxWeight = Math.max(...dataPoints.map((p) => p.weight));
+  appProfile.estimated1RM = Math.max(appProfile.estimated1RM, maxWeight);
 
-  // Determine confidence
-  const confidence = determineConfidence(dataPoints, rSquared);
-
-  return {
-    exerciseId,
-    dataPoints: [...dataPoints],
-    slope,
-    intercept,
-    rSquared,
-    estimated1RM,
-    confidence,
-    mvt,
-    createdAt: Date.now(),
-  };
+  return appProfile;
 }
 
-/**
- * Create an empty profile for an exercise with no data.
- */
 function createEmptyProfile(exerciseId: string): LoadVelocityProfile {
   return {
     exerciseId,
@@ -174,42 +145,8 @@ function createEmptyProfile(exerciseId: string): LoadVelocityProfile {
   };
 }
 
-/**
- * Determine profile confidence based on data quality.
- */
-function determineConfidence(
-  dataPoints: LoadVelocityDataPoint[],
-  rSquared: number
-): 'high' | 'medium' | 'low' {
-  const n = dataPoints.length;
-
-  if (n < 2) return 'low';
-
-  // Check weight spread
-  const weights = dataPoints.map((p) => p.weight);
-  const minWeight = Math.min(...weights);
-  const maxWeight = Math.max(...weights);
-  const weightSpread = minWeight > 0 ? (maxWeight - minWeight) / minWeight : 0;
-
-  // Check velocity spread
-  const velocities = dataPoints.map((p) => p.velocity);
-  const velocitySpread = Math.max(...velocities) - Math.min(...velocities);
-
-  const { high, medium } = PROFILE_CONFIDENCE_REQUIREMENTS;
-
-  if (n >= high.minPoints && rSquared >= high.minRSquared && weightSpread >= high.minWeightSpread) {
-    return 'high';
-  }
-
-  if (n >= medium.minPoints && rSquared >= medium.minRSquared && velocitySpread >= 0.15) {
-    return 'medium';
-  }
-
-  return 'low';
-}
-
 // =============================================================================
-// Profile Utilities
+// Profile Utilities (delegate to library)
 // =============================================================================
 
 /**
@@ -231,7 +168,6 @@ export function estimateWeightForVelocity(
   targetVelocity: number
 ): number {
   if (profile.slope === 0 || profile.slope >= 0) {
-    // Invalid slope (velocity should decrease with weight)
     return 0;
   }
 
@@ -241,9 +177,10 @@ export function estimateWeightForVelocity(
 
 /**
  * Predict velocity at a given weight using the profile.
+ * Uses the linear equation: velocity = slope * weight + intercept
  */
 export function predictVelocityAtWeight(profile: LoadVelocityProfile, weight: number): number {
-  return profile.slope * weight + profile.intercept;
+  return Math.max(0, profile.slope * weight + profile.intercept);
 }
 
 /**
@@ -258,7 +195,7 @@ export function addDataPointToProfile(
 }
 
 // =============================================================================
-// Recommendation Generation
+// Recommendation Generation (app-specific)
 // =============================================================================
 
 /**
@@ -271,13 +208,8 @@ export function generateWorkingWeightRecommendation(
   const targetZone = TRAINING_ZONES[goal];
   const repRange = REP_RANGES[goal];
 
-  // Calculate working weight at optimal %1RM for goal
   const workingWeight = estimateWeightForPercent1RM(profile, targetZone.optimal);
-
-  // Generate warmup sets
   const warmupSets = generateWarmupSets(profile.estimated1RM, workingWeight);
-
-  // Generate explanation
   const explanation = generateExplanation(profile, workingWeight, goal);
 
   return {
@@ -318,13 +250,9 @@ export function generateWarmupSets(estimated1RM: number, workingWeight: number):
     },
   ];
 
-  // Filter out sets that are too light or at/above working weight
   return warmupSets.filter((s) => s.weight >= 5 && s.weight < workingWeight);
 }
 
-/**
- * Generate human-readable explanation for recommendations.
- */
 function generateExplanation(
   profile: LoadVelocityProfile,
   workingWeight: number,
@@ -353,20 +281,20 @@ function generateExplanation(
 }
 
 // =============================================================================
-// 1RM Estimation Utilities
+// 1RM Estimation (delegates to library)
 // =============================================================================
 
 /**
- * Estimate 1RM from a single set (using Epley formula as fallback).
+ * Estimate 1RM from a single set.
+ * Uses velocity-based estimation when available, falls back to Epley formula.
  */
 export function estimate1RMFromSet(weight: number, reps: number, velocity?: number): number {
   if (velocity && velocity > 0) {
-    // Use velocity-based estimation
     const percent = estimatePercent1RMFromVelocity(velocity);
     return Math.round(weight / (percent / 100) / 5) * 5;
   }
 
-  // Fallback to Epley formula
-  if (reps === 1) return weight;
-  return Math.round((weight * (1 + reps / 30)) / 5) * 5;
+  // Delegate to library's Epley-based estimation
+  const estimate = estimateE1RMFromReps(weight, reps);
+  return Math.round(estimate.e1RM / 5) * 5;
 }

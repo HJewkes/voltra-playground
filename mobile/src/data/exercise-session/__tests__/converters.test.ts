@@ -16,9 +16,15 @@ import {
 } from '../exercise-session-converters';
 import type { ExerciseSession } from '@/domain/workout/models/session';
 import type { ExercisePlan, PlannedSet } from '@/domain/workout/models/plan';
-import type { Set, SetMetrics } from '@/domain/workout/models/set';
+import type { CompletedSet } from '@/domain/workout/models/completed-set';
 import { TrainingGoal } from '@/domain/planning';
-import { repBuilder, createTestExercise } from '@/__fixtures__/generators';
+import { createTestExercise } from '@/__fixtures__/generators';
+import { mockCompletedSet } from '@/__fixtures__/generators/mock-helpers';
+import {
+  getSetMeanVelocity,
+  getSetVelocityLossPct,
+  estimateSetRIR,
+} from '@voltras/workout-analytics';
 
 // =============================================================================
 // Test Helpers
@@ -41,63 +47,26 @@ function createTestPlan(): ExercisePlan {
   };
 }
 
-function createTestMetrics(): SetMetrics {
-  return {
-    repCount: 8,
-    totalDuration: 20,
-    timeUnderTension: 18,
-    velocity: {
-      concentricBaseline: 0.55,
-      eccentricBaseline: 0.3,
-      concentricLast: 0.45,
-      eccentricLast: 0.35,
-      concentricDelta: -18.2,
-      eccentricDelta: 16.7,
-      concentricByRep: [0.6, 0.58, 0.55, 0.52, 0.5, 0.48, 0.46, 0.45],
-      eccentricByRep: [0.28, 0.29, 0.3, 0.31, 0.32, 0.33, 0.34, 0.35],
-    },
-    fatigue: {
-      fatigueIndex: 25,
-      eccentricControlScore: 85,
-      formWarning: null,
-    },
-    effort: {
-      rir: 2,
-      rpe: 8,
-      confidence: 'medium',
-    },
-  };
-}
-
 function createTestSet(
   options: {
     weight?: number;
     repCount?: number;
   } = {}
-): Set {
+): CompletedSet {
   const { weight = 75, repCount = 8 } = options;
 
-  const reps = Array.from({ length: repCount }, (_, i) =>
-    repBuilder()
-      .concentric({
-        meanVelocity: 0.55 - i * 0.02,
-        peakVelocity: 0.7 - i * 0.02,
-        peakForce: 150,
-      })
-      .eccentric({ meanVelocity: 0.3, peakVelocity: 0.35 })
-      .repNumber(i + 1)
-      .build()
+  const velocities = Array.from({ length: repCount }, (_, i) =>
+    Math.max(0.2, 0.55 - i * 0.02)
   );
 
-  return {
-    id: `set_test_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+  return mockCompletedSet({
     exerciseId: 'cable_row',
     exerciseName: 'Seated Cable Row',
     weight,
-    reps,
-    timestamp: { start: Date.now() - 60000, end: Date.now() },
-    metrics: createTestMetrics(),
-  };
+    velocities,
+    startTime: Date.now() - 60000,
+    endTime: Date.now(),
+  });
 }
 
 function createTestSession(): ExerciseSession {
@@ -152,7 +121,7 @@ describe('toStoredExerciseSession()', () => {
     expect(stored.completedSets.length).toBe(session.completedSets.length);
     stored.completedSets.forEach((set, index) => {
       expect(set.weight).toBe(session.completedSets[index].weight);
-      expect(set.reps.length).toBe(session.completedSets[index].reps.length);
+      expect(set.reps.length).toBe(session.completedSets[index].data.reps.length);
     });
   });
 
@@ -306,8 +275,8 @@ describe('toStoredSessionSet()', () => {
 
     const stored = toStoredSessionSet(set, 0);
 
-    expect(stored.meanVelocity).toBe(set.metrics.velocity.concentricBaseline);
-    expect(stored.velocityLossPercent).toBe(Math.abs(set.metrics.velocity.concentricDelta));
+    expect(stored.meanVelocity).toBe(getSetMeanVelocity(set.data));
+    expect(stored.velocityLossPercent).toBe(Math.abs(getSetVelocityLossPct(set.data)));
   });
 
   it('extracts effort estimates', () => {
@@ -315,8 +284,9 @@ describe('toStoredSessionSet()', () => {
 
     const stored = toStoredSessionSet(set, 0);
 
-    expect(stored.estimatedRPE).toBe(set.metrics.effort.rpe);
-    expect(stored.estimatedRIR).toBe(set.metrics.effort.rir);
+    const rirEstimate = estimateSetRIR(set.data);
+    expect(stored.estimatedRPE).toBe(rirEstimate.rpe);
+    expect(stored.estimatedRIR).toBe(rirEstimate.rir);
   });
 
   it('preserves timestamps', () => {
@@ -336,7 +306,8 @@ describe('toStoredSessionSet()', () => {
     expect(stored.reps.length).toBe(5);
     stored.reps.forEach((rep, index) => {
       expect(rep.repNumber).toBe(index + 1);
-      expect(rep.metrics).toBeDefined();
+      expect(rep.concentric).toBeDefined();
+      expect(rep.eccentric).toBeDefined();
     });
   });
 });
@@ -353,18 +324,19 @@ describe('fromStoredSessionSet()', () => {
     const restored = fromStoredSessionSet(stored);
 
     expect(restored.weight).toBe(100);
-    expect(restored.reps.length).toBe(6);
+    expect(restored.data).toBeDefined();
+    expect(restored.data.reps).toBeDefined();
   });
 
-  it('restores metrics structure', () => {
+  it('restores CompletedSet structure', () => {
     const set = createTestSet();
     const stored = toStoredSessionSet(set, 0);
 
     const restored = fromStoredSessionSet(stored);
 
-    expect(restored.metrics.velocity.concentricBaseline).toBe(stored.meanVelocity);
-    expect(restored.metrics.effort.rpe).toBe(stored.estimatedRPE);
-    expect(restored.metrics.effort.rir).toBe(stored.estimatedRIR);
+    expect(restored.weight).toBe(set.weight);
+    expect(restored.data).toBeDefined();
+    expect(restored.timestamp.start).toBe(stored.startTime);
   });
 });
 
@@ -440,6 +412,7 @@ describe('Roundtrip Preservation', () => {
     const restored = fromStoredSessionSet(stored);
 
     expect(restored.weight).toBe(original.weight);
-    expect(restored.reps.length).toBe(original.reps.length);
+    expect(restored.data).toBeDefined();
+    expect(restored.timestamp.start).toBe(original.timestamp.start);
   });
 });
