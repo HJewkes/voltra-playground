@@ -7,15 +7,10 @@
 
 import React from 'react';
 import { View, Text } from 'react-native';
-import { OptionSelector, WeightPicker } from '@/components/ui';
-import type { Option } from '@/components/ui';
+import { RadioGroup, Radio } from '@titan-design/react-ui';
+import { WeightPicker } from '@/components/ui';
 
 type ChainType = 'normal' | 'inverse';
-
-const CHAIN_OPTIONS: Option<ChainType>[] = [
-  { value: 'normal', label: 'Normal Chains', icon: 'link-outline' },
-  { value: 'inverse', label: 'Inverse Chains', icon: 'swap-vertical-outline' },
-];
 
 interface ChainsSelectorProps {
   chains: number;
@@ -55,12 +50,14 @@ export function ChainsSelector({
   return (
     <View>
       {/* Chain type toggle */}
-      <OptionSelector
-        options={CHAIN_OPTIONS}
-        selected={activeType}
-        onSelect={handleTypeChange}
+      <RadioGroup
+        value={activeType}
+        onChange={(v) => handleTypeChange(v as ChainType)}
         gap="sm"
-      />
+      >
+        <Radio value="normal">Normal Chains</Radio>
+        <Radio value="inverse">Inverse Chains</Radio>
+      </RadioGroup>
 
       {/* Weight picker for active chain type */}
       <View className="mt-4">

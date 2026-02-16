@@ -6,7 +6,8 @@
 
 import React from 'react';
 import { View, Text } from 'react-native';
-import { Card, Stack, ListItem } from '@/components';
+import { Stack, ListItem } from '@/components';
+import { Card, CardContent } from '@titan-design/react-ui';
 import { colors } from '@/theme';
 import type { CompletedSet } from '@/domain/workout';
 import { estimateSetRIR } from '@voltras/workout-analytics';
@@ -38,7 +39,7 @@ export function WorkoutListItem({ workout, onPress, onLongPress }: WorkoutListIt
   const badgeStyle = getRPEBadgeStyle(avgRPE);
 
   return (
-    <Card elevation={1} padding="none" marginBottom={false}>
+    <Card elevation={1}>
       <ListItem
         icon="fitness"
         iconColor={colors.primary[500]}

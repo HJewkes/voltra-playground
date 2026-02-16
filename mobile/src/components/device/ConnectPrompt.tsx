@@ -11,7 +11,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useConnectionStore, selectIsConnected, selectBleEnvironment } from '@/stores';
 import { colors } from '@/theme';
 import { SCAN_DURATION, SCAN_INTERVAL } from '@/config';
-import { Card, Stack, Surface, ListItem } from '@/components/ui';
+import { Stack, Surface, ListItem } from '@/components/ui';
+import { Card, CardContent } from '@titan-design/react-ui';
 import type { DiscoveredDevice } from '@/domain/device';
 
 export interface ConnectPromptProps {
@@ -151,10 +152,9 @@ export function ConnectPrompt({
     <View className="flex-1 items-center justify-center bg-surface-400 p-6">
       <Card
         elevation={1}
-        padding="lg"
-        marginBottom={false}
         style={{ maxWidth: 400, width: '100%' }}
       >
+        <CardContent className="p-6">
         {/* Header with scan/connect button */}
         <View className="mb-4 flex-row items-center justify-between">
           <View className="flex-row items-center">
@@ -360,6 +360,7 @@ export function ConnectPrompt({
             </TouchableOpacity>
           </View>
         )}
+        </CardContent>
       </Card>
     </View>
   );

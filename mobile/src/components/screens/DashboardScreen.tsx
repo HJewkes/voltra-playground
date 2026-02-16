@@ -9,8 +9,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { Link } from 'expo-router';
 import { useConnectionStore } from '@/stores';
-import { Card, Stack, LinkCard, StatsRow, ListItem, EmptyState } from '@/components/ui';
-import { Alert, AlertTitle, AlertDescription } from '@titan-design/react-ui';
+import { Stack, LinkCard, StatsRow, ListItem, EmptyState } from '@/components/ui';
+import { Card, CardContent, Alert, AlertTitle, AlertDescription } from '@titan-design/react-ui';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/theme';
 import { getSessionRepository } from '@/data/provider';
 import type { StoredExerciseSession } from '@/data/exercise-session';
@@ -130,14 +131,16 @@ export function DashboardScreen() {
         {/* Weekly Stats */}
         <Text className="mb-4 text-lg font-bold text-content-primary">This Week</Text>
 
-        <Card elevation={1} padding="lg" style={{ marginBottom: 24 }}>
-          <StatsRow
-            stats={[
-              { value: weeklyStats.setCount, label: 'Sets' },
-              { value: weeklyStats.totalReps, label: 'Total Reps' },
-              { value: formatVolume(weeklyStats.totalVolume), label: 'Volume' },
-            ]}
-          />
+        <Card elevation={1} style={{ marginBottom: 24 }}>
+          <CardContent className="p-6">
+            <StatsRow
+              stats={[
+                { value: weeklyStats.setCount, label: 'Sets' },
+                { value: weeklyStats.totalReps, label: 'Total Reps' },
+                { value: formatVolume(weeklyStats.totalVolume), label: 'Volume' },
+              ]}
+            />
+          </CardContent>
         </Card>
 
         {/* Recent Sessions */}
@@ -145,9 +148,9 @@ export function DashboardScreen() {
           <RecentSessionsSection sessions={displaySessions} />
         ) : (
           <EmptyState
-            icon="barbell-outline"
+            icon={(props) => <Ionicons name="barbell-outline" size={props.size} />}
             title="No sessions yet"
-            subtitle="Start your first workout to see your progress here"
+            description="Start your first workout to see your progress here"
           />
         )}
       </View>
@@ -164,7 +167,7 @@ function RecentSessionsSection({ sessions }: { sessions: RecentSessionDisplay[] 
     <>
       <Text className="mb-4 text-lg font-bold text-content-primary">Recent Sessions</Text>
 
-      <Card elevation={1} padding="none" className="overflow-hidden">
+      <Card elevation={1} className="mb-4 overflow-hidden">
         {sessions.map((session, index) => {
           const formattedDate = new Date(session.date).toLocaleDateString();
 

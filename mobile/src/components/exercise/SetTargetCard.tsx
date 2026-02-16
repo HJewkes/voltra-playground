@@ -9,7 +9,8 @@ import React from 'react';
 import { View, Text, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/theme';
-import { Card, Surface, Stack } from '@/components/ui';
+import { Surface, Stack } from '@/components/ui';
+import { Card, CardContent } from '@titan-design/react-ui';
 import type { PlannedSet } from '@/domain/workout';
 
 export interface SetTargetCardProps {
@@ -36,7 +37,8 @@ export function SetTargetCard({
   style,
 }: SetTargetCardProps) {
   return (
-    <Card elevation={2} padding="lg" style={style}>
+    <Card elevation={2} className="mb-4" style={style}>
+      <CardContent className="p-6">
       {/* Header */}
       <View className="mb-4 flex-row items-center justify-between">
         <Text className="font-semibold text-content-muted">
@@ -99,6 +101,7 @@ export function SetTargetCard({
           ? 'Complete all reps with good form. Stop if weight feels too heavy.'
           : 'Press START when ready to begin recording.'}
       </Text>
+      </CardContent>
     </Card>
   );
 }

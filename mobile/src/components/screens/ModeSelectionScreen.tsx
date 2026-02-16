@@ -8,26 +8,24 @@
 import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useStore } from 'zustand';
+import { RadioGroup, Radio } from '@titan-design/react-ui';
 import { useConnectionStore, selectIsConnected } from '@/stores';
 import { TrainingMode } from '@/domain/device';
 import { Section } from '@/components/ui/layout';
-import { Surface, OptionSelector } from '@/components/ui';
+import { Surface } from '@/components/ui';
 import { ConnectionGuard } from '@/components/device';
 import { WeightTrainingConfig } from '@/components/mode';
-import type { Option } from '@/components/ui';
-import type { Ionicons } from '@expo/vector-icons';
 
-// Mode options with icons
-const MODE_OPTIONS: Option<TrainingMode>[] = [
-  { value: TrainingMode.Idle, label: 'Idle', icon: 'pause-circle-outline' as keyof typeof Ionicons.glyphMap },
-  { value: TrainingMode.WeightTraining, label: 'Weight', icon: 'barbell-outline' as keyof typeof Ionicons.glyphMap },
-  { value: TrainingMode.ResistanceBand, label: 'Band', icon: 'fitness-outline' as keyof typeof Ionicons.glyphMap },
-  { value: TrainingMode.Rowing, label: 'Rowing', icon: 'boat-outline' as keyof typeof Ionicons.glyphMap },
-  { value: TrainingMode.Damper, label: 'Damper', icon: 'speedometer-outline' as keyof typeof Ionicons.glyphMap },
-  { value: TrainingMode.CustomCurves, label: 'Custom', icon: 'analytics-outline' as keyof typeof Ionicons.glyphMap },
-  { value: TrainingMode.Isokinetic, label: 'Isokinetic', icon: 'repeat-outline' as keyof typeof Ionicons.glyphMap },
-  { value: TrainingMode.Isometric, label: 'Isometric', icon: 'lock-closed-outline' as keyof typeof Ionicons.glyphMap },
-];
+const MODE_OPTIONS = [
+  { value: TrainingMode.Idle, label: 'Idle' },
+  { value: TrainingMode.WeightTraining, label: 'Weight' },
+  { value: TrainingMode.ResistanceBand, label: 'Band' },
+  { value: TrainingMode.Rowing, label: 'Rowing' },
+  { value: TrainingMode.Damper, label: 'Damper' },
+  { value: TrainingMode.CustomCurves, label: 'Custom' },
+  { value: TrainingMode.Isokinetic, label: 'Isokinetic' },
+  { value: TrainingMode.Isometric, label: 'Isometric' },
+] as const;
 
 function ModeSelectionContent() {
   const voltraStore = useConnectionStore((s) => s.getPrimaryDevice());
@@ -42,13 +40,18 @@ function ModeSelectionContent() {
         <Section title="Training Mode">
           <Surface elevation={1} radius="lg" border={false}>
             <View className="p-4">
-              <OptionSelector
-                options={MODE_OPTIONS}
-                selected={mode}
-                onSelect={setMode}
-                direction="column"
+              <RadioGroup
+                value={String(mode)}
+                onChange={(v) => setMode(v as TrainingMode)}
+                orientation="vertical"
                 gap="sm"
-              />
+              >
+                {MODE_OPTIONS.map((opt) => (
+                  <Radio key={String(opt.value)} value={String(opt.value)}>
+                    {opt.label}
+                  </Radio>
+                ))}
+              </RadioGroup>
             </View>
           </Surface>
         </Section>

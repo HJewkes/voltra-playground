@@ -18,7 +18,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { TrainingGoal, type DiscoveryRecommendation } from '@/domain/planning';
 import { getExerciseName } from '@/domain/exercise';
 import { colors, getConfidenceColor } from '@/theme';
-import { Card, Stack, Surface } from '../ui';
+import { Stack, Surface } from '../ui';
+import { Card, CardContent } from '@titan-design/react-ui';
 
 type WeightRecommendation = DiscoveryRecommendation;
 
@@ -99,76 +100,82 @@ export function RecommendationCard({
       </View>
 
       {/* Main recommendation */}
-      <Card elevation={1} padding="lg">
-        <Text className="mb-2 text-sm font-medium text-content-muted">
-          {exerciseId ? getExerciseName(exerciseId) : 'Exercise'} • {GOAL_LABELS[goal]}
-        </Text>
-
-        <View className="mb-5 flex-row items-baseline">
-          <Text className="text-6xl font-bold" style={{ color: colors.primary[500] }}>
-            {recommendation.workingWeight}
+      <Card elevation={1} className="mb-4">
+        <CardContent className="p-6">
+          <Text className="mb-2 text-sm font-medium text-content-muted">
+            {exerciseId ? getExerciseName(exerciseId) : 'Exercise'} • {GOAL_LABELS[goal]}
           </Text>
-          <Text className="ml-2 text-2xl text-content-muted">lbs</Text>
-        </View>
 
-        <Surface elevation="inset" radius="lg" border={false}>
-          <Stack direction="row" justify="space-between" style={{ padding: 16 }}>
-            <View className="flex-1 items-center">
-              <Text className="text-sm text-content-muted">Rep Range</Text>
-              <Text className="mt-1 text-lg font-bold text-content-primary">
-                {recommendation.repRange[0]}-{recommendation.repRange[1]}
-              </Text>
-            </View>
-            <View className="w-px bg-surface-100" />
-            <View className="flex-1 items-center">
-              <Text className="text-sm text-content-muted">Confidence</Text>
-              <Text
-                className="mt-1 text-lg font-bold"
-                style={{ color: getConfidenceColor(recommendation.confidence) }}
-              >
-                {recommendation.confidence.charAt(0).toUpperCase() +
-                  recommendation.confidence.slice(1)}
-              </Text>
-            </View>
-          </Stack>
-        </Surface>
+          <View className="mb-5 flex-row items-baseline">
+            <Text className="text-6xl font-bold" style={{ color: colors.primary[500] }}>
+              {recommendation.workingWeight}
+            </Text>
+            <Text className="ml-2 text-2xl text-content-muted">lbs</Text>
+          </View>
+
+          <Surface elevation="inset" radius="lg" border={false}>
+            <Stack direction="row" justify="space-between" style={{ padding: 16 }}>
+              <View className="flex-1 items-center">
+                <Text className="text-sm text-content-muted">Rep Range</Text>
+                <Text className="mt-1 text-lg font-bold text-content-primary">
+                  {recommendation.repRange[0]}-{recommendation.repRange[1]}
+                </Text>
+              </View>
+              <View className="w-px bg-surface-100" />
+              <View className="flex-1 items-center">
+                <Text className="text-sm text-content-muted">Confidence</Text>
+                <Text
+                  className="mt-1 text-lg font-bold"
+                  style={{ color: getConfidenceColor(recommendation.confidence) }}
+                >
+                  {recommendation.confidence.charAt(0).toUpperCase() +
+                    recommendation.confidence.slice(1)}
+                </Text>
+              </View>
+            </Stack>
+          </Surface>
+        </CardContent>
       </Card>
 
       {/* Analysis */}
-      <Card elevation={1} padding="lg">
-        <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-content-muted">
-          Analysis
-        </Text>
-        <Text className="leading-6 text-content-secondary">{recommendation.explanation}</Text>
+      <Card elevation={1} className="mb-4">
+        <CardContent className="p-6">
+          <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-content-muted">
+            Analysis
+          </Text>
+          <Text className="leading-6 text-content-secondary">{recommendation.explanation}</Text>
+        </CardContent>
       </Card>
 
       {/* Warmup sequence */}
       {recommendation.warmupSets && recommendation.warmupSets.length > 0 && (
-        <Card elevation={1} padding="lg">
-          <Text className="mb-4 text-xs font-bold uppercase tracking-wider text-content-muted">
-            Recommended Warmup
-          </Text>
-          {recommendation.warmupSets.map((set, i: number) => (
-            <View
-              key={i}
-              className={`flex-row items-center justify-between py-3 ${
-                i < recommendation.warmupSets!.length - 1 ? 'border-b border-surface-100' : ''
-              }`}
-            >
-              <View className="flex-row items-center">
-                <View
-                  className="mr-4 h-9 w-9 items-center justify-center rounded-full"
-                  style={{ backgroundColor: colors.surface.dark }}
-                >
-                  <Text className="font-bold text-content-secondary">{i + 1}</Text>
+        <Card elevation={1} className="mb-4">
+          <CardContent className="p-6">
+            <Text className="mb-4 text-xs font-bold uppercase tracking-wider text-content-muted">
+              Recommended Warmup
+            </Text>
+            {recommendation.warmupSets.map((set, i: number) => (
+              <View
+                key={i}
+                className={`flex-row items-center justify-between py-3 ${
+                  i < recommendation.warmupSets!.length - 1 ? 'border-b border-surface-100' : ''
+                }`}
+              >
+                <View className="flex-row items-center">
+                  <View
+                    className="mr-4 h-9 w-9 items-center justify-center rounded-full"
+                    style={{ backgroundColor: colors.surface.dark }}
+                  >
+                    <Text className="font-bold text-content-secondary">{i + 1}</Text>
+                  </View>
+                  <Text className="font-medium text-content-primary">
+                    {set.weight} lbs × {set.reps}
+                  </Text>
                 </View>
-                <Text className="font-medium text-content-primary">
-                  {set.weight} lbs × {set.reps}
-                </Text>
+                <Text className="text-sm text-content-muted">{set.restSeconds}s rest</Text>
               </View>
-              <Text className="text-sm text-content-muted">{set.restSeconds}s rest</Text>
-            </View>
-          ))}
+            ))}
+          </CardContent>
         </Card>
       )}
 

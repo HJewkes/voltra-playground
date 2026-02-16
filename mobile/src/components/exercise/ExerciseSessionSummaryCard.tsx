@@ -9,7 +9,8 @@ import React from 'react';
 import { View, Text, TouchableOpacity, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@/theme';
-import { Card, Surface, Stack } from '@/components/ui';
+import { Surface, Stack } from '@/components/ui';
+import { Card, CardContent } from '@titan-design/react-ui';
 import type { ExerciseSession, TerminationReason } from '@/domain/workout';
 import { getSetMeanVelocity, estimateSetRIR } from '@voltras/workout-analytics';
 
@@ -97,83 +98,87 @@ export function ExerciseSessionSummaryCard({
       </View>
 
       {/* Summary stats */}
-      <Card elevation={1} padding="lg">
-        <Text className="mb-4 text-sm font-medium text-content-muted">{session.exercise.name}</Text>
+      <Card elevation={1} className="mb-4">
+        <CardContent className="p-6">
+          <Text className="mb-4 text-sm font-medium text-content-muted">{session.exercise.name}</Text>
 
-        <Surface elevation="inset" radius="lg" border={false}>
-          <Stack direction="row" justify="space-between" style={{ padding: 16 }}>
-            <View className="flex-1 items-center">
-              <Text className="text-sm text-content-muted">Sets</Text>
-              <Text className="mt-1 text-2xl font-bold text-content-primary">
-                {session.completedSets.length}
-              </Text>
-              <Text className="text-xs text-content-muted">of {session.plan.sets.length}</Text>
-            </View>
-            <View className="w-px bg-surface-100" />
-            <View className="flex-1 items-center">
-              <Text className="text-sm text-content-muted">Reps</Text>
-              <Text className="mt-1 text-2xl font-bold text-content-primary">{totalReps}</Text>
-            </View>
-            <View className="w-px bg-surface-100" />
-            <View className="flex-1 items-center">
-              <Text className="text-sm text-content-muted">Volume</Text>
-              <Text className="mt-1 text-2xl font-bold text-content-primary">
-                {(totalVolume / 1000).toFixed(1)}k
-              </Text>
-              <Text className="text-xs text-content-muted">lbs</Text>
-            </View>
-          </Stack>
-        </Surface>
+          <Surface elevation="inset" radius="lg" border={false}>
+            <Stack direction="row" justify="space-between" style={{ padding: 16 }}>
+              <View className="flex-1 items-center">
+                <Text className="text-sm text-content-muted">Sets</Text>
+                <Text className="mt-1 text-2xl font-bold text-content-primary">
+                  {session.completedSets.length}
+                </Text>
+                <Text className="text-xs text-content-muted">of {session.plan.sets.length}</Text>
+              </View>
+              <View className="w-px bg-surface-100" />
+              <View className="flex-1 items-center">
+                <Text className="text-sm text-content-muted">Reps</Text>
+                <Text className="mt-1 text-2xl font-bold text-content-primary">{totalReps}</Text>
+              </View>
+              <View className="w-px bg-surface-100" />
+              <View className="flex-1 items-center">
+                <Text className="text-sm text-content-muted">Volume</Text>
+                <Text className="mt-1 text-2xl font-bold text-content-primary">
+                  {(totalVolume / 1000).toFixed(1)}k
+                </Text>
+                <Text className="text-xs text-content-muted">lbs</Text>
+              </View>
+            </Stack>
+          </Surface>
+        </CardContent>
       </Card>
 
       {/* Set breakdown */}
-      <Card elevation={1} padding="lg">
-        <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-content-muted">
-          Set Breakdown
-        </Text>
-        {session.completedSets.map((set, i) => {
-          const planned = session.plan.sets[i];
-          const repsDelta = planned ? set.data.reps.length - planned.targetReps : 0;
-          const meanVel = getSetMeanVelocity(set.data);
-          const rirEstimate = estimateSetRIR(set.data);
+      <Card elevation={1} className="mb-4">
+        <CardContent className="p-6">
+          <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-content-muted">
+            Set Breakdown
+          </Text>
+          {session.completedSets.map((set, i) => {
+            const planned = session.plan.sets[i];
+            const repsDelta = planned ? set.data.reps.length - planned.targetReps : 0;
+            const meanVel = getSetMeanVelocity(set.data);
+            const rirEstimate = estimateSetRIR(set.data);
 
-          return (
-            <View
-              key={i}
-              className={`flex-row items-center justify-between py-3 ${
-                i < session.completedSets.length - 1 ? 'border-b border-surface-100' : ''
-              }`}
-            >
-              <View className="flex-row items-center">
-                <View
-                  className="mr-4 h-9 w-9 items-center justify-center rounded-full"
-                  style={{ backgroundColor: colors.surface.dark }}
-                >
-                  <Text className="font-bold text-content-secondary">{i + 1}</Text>
-                </View>
-                <View>
-                  <Text className="font-medium text-content-primary">
-                    {set.weight} lbs × {set.data.reps.length}
-                    {planned && (
-                      <Text
-                        style={{
-                          color: repsDelta >= 0 ? colors.success.DEFAULT : colors.danger.light,
-                        }}
-                      >
-                        {' '}
-                        ({repsDelta >= 0 ? '+' : ''}
-                        {repsDelta})
-                      </Text>
-                    )}
-                  </Text>
-                  <Text className="text-xs text-content-muted">
-                    {meanVel.toFixed(2)} m/s • RPE {rirEstimate.rpe.toFixed(1)}
-                  </Text>
+            return (
+              <View
+                key={i}
+                className={`flex-row items-center justify-between py-3 ${
+                  i < session.completedSets.length - 1 ? 'border-b border-surface-100' : ''
+                }`}
+              >
+                <View className="flex-row items-center">
+                  <View
+                    className="mr-4 h-9 w-9 items-center justify-center rounded-full"
+                    style={{ backgroundColor: colors.surface.dark }}
+                  >
+                    <Text className="font-bold text-content-secondary">{i + 1}</Text>
+                  </View>
+                  <View>
+                    <Text className="font-medium text-content-primary">
+                      {set.weight} lbs × {set.data.reps.length}
+                      {planned && (
+                        <Text
+                          style={{
+                            color: repsDelta >= 0 ? colors.success.DEFAULT : colors.danger.light,
+                          }}
+                        >
+                          {' '}
+                          ({repsDelta >= 0 ? '+' : ''}
+                          {repsDelta})
+                        </Text>
+                      )}
+                    </Text>
+                    <Text className="text-xs text-content-muted">
+                      {meanVel.toFixed(2)} m/s • RPE {rirEstimate.rpe.toFixed(1)}
+                    </Text>
+                  </View>
                 </View>
               </View>
-            </View>
-          );
-        })}
+            );
+          })}
+        </CardContent>
       </Card>
 
       {/* Action buttons */}

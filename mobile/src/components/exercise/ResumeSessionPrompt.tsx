@@ -8,7 +8,8 @@
 import React from 'react';
 import { View, Text, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Stack } from '@/components/ui';
+import { Stack } from '@/components/ui';
+import { Card, CardContent } from '@titan-design/react-ui';
 import { Button, ButtonText } from '@titan-design/react-ui';
 import { colors } from '@/theme';
 import type { StoredExerciseSession } from '@/data/exercise-session';
@@ -68,7 +69,8 @@ export function ResumeSessionPrompt({
         className="flex-1 items-center justify-center px-6"
         style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)' }}
       >
-        <Card elevation={2} padding="lg" className="w-full max-w-sm">
+        <Card elevation={2} className="w-full max-w-sm">
+          <CardContent className="p-6">
           {/* Header */}
           <View className="mb-6 items-center">
             <View
@@ -117,6 +119,7 @@ export function ResumeSessionPrompt({
               <ButtonText>Discard Session</ButtonText>
             </Button>
           </Stack>
+          </CardContent>
         </Card>
       </View>
     </Modal>

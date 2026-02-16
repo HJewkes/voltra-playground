@@ -25,7 +25,8 @@ import { type Exercise, getExercise } from '@/domain/exercise';
 import { type ExercisePlan, createStandardPlan, createDiscoveryPlan } from '@/domain/workout';
 
 // Component imports
-import { Card, Stack, WeightPicker } from '@/components/ui';
+import { Stack, WeightPicker } from '@/components/ui';
+import { Card, CardContent } from '@titan-design/react-ui';
 import { Button, ButtonText } from '@titan-design/react-ui';
 import { ExerciseSelector, GoalPicker } from '@/components/planning';
 
@@ -174,139 +175,147 @@ export function ExercisePickerScreen({ onStartSession, onBack }: ExercisePickerS
           </View>
 
           {/* Exercise selection */}
-          <Card elevation={1} padding="lg">
-            <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-content-muted">
-              Exercise
-            </Text>
-            <TouchableOpacity
-              className="flex-row items-center justify-between rounded-xl p-4"
-              style={{ backgroundColor: colors.surface.dark }}
-              onPress={() => setShowExerciseSelector(true)}
-            >
-              <Text
-                className="font-semibold"
-                style={{
-                  color: selectedExercise ? colors.content.primary : colors.content.muted,
-                }}
-              >
-                {selectedExercise?.name ?? 'Select Exercise'}
+          <Card elevation={1} className="mb-4">
+            <CardContent className="p-6">
+              <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-content-muted">
+                Exercise
               </Text>
-              <Ionicons name="chevron-forward" size={20} color={colors.content.muted} />
-            </TouchableOpacity>
+              <TouchableOpacity
+                className="flex-row items-center justify-between rounded-xl p-4"
+                style={{ backgroundColor: colors.surface.dark }}
+                onPress={() => setShowExerciseSelector(true)}
+              >
+                <Text
+                  className="font-semibold"
+                  style={{
+                    color: selectedExercise ? colors.content.primary : colors.content.muted,
+                  }}
+                >
+                  {selectedExercise?.name ?? 'Select Exercise'}
+                </Text>
+                <Ionicons name="chevron-forward" size={20} color={colors.content.muted} />
+              </TouchableOpacity>
+            </CardContent>
           </Card>
 
           {/* Standard mode settings */}
           {mode === 'standard' && (
-            <Card elevation={1} padding="lg">
-              <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-content-muted">
-                Working Set Configuration
-              </Text>
-
-              {/* Working weight */}
-              <View className="mb-4">
-                <Text className="mb-3 text-center text-sm text-content-secondary">
-                  Working Weight
+            <Card elevation={1} className="mb-4">
+              <CardContent className="p-6">
+                <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-content-muted">
+                  Working Set Configuration
                 </Text>
-                <WeightPicker
-                  value={workingWeight}
-                  onChange={setWorkingWeight}
-                  min={5}
-                  max={200}
-                  step={5}
-                />
-              </View>
 
-              {/* Sets and Reps */}
-              <Stack direction="row" gap="md">
-                <View className="flex-1">
-                  <Text className="mb-2 text-sm text-content-secondary">Sets</Text>
-                  <TextInput
-                    className="rounded-xl p-4 text-center text-lg font-bold"
-                    style={{
-                      backgroundColor: colors.surface.dark,
-                      color: colors.content.primary,
-                    }}
-                    value={workingSets}
-                    onChangeText={setWorkingSets}
-                    keyboardType="numeric"
-                  />
-                </View>
-                <View className="flex-1">
-                  <Text className="mb-2 text-sm text-content-secondary">Reps</Text>
-                  <TextInput
-                    className="rounded-xl p-4 text-center text-lg font-bold"
-                    style={{
-                      backgroundColor: colors.surface.dark,
-                      color: colors.content.primary,
-                    }}
-                    value={workingReps}
-                    onChangeText={setWorkingReps}
-                    keyboardType="numeric"
-                  />
-                </View>
-              </Stack>
-
-              {/* Warmup toggle */}
-              <TouchableOpacity
-                className="mt-4 flex-row items-center justify-between rounded-xl p-4"
-                style={{ backgroundColor: colors.surface.dark }}
-                onPress={() => setIncludeWarmups(!includeWarmups)}
-                activeOpacity={0.7}
-              >
-                <View className="flex-1">
-                  <Text className="font-semibold text-content-primary">Include Warmup Sets</Text>
-                  <Text className="mt-1 text-xs text-content-muted">
-                    Adds sets at 50% and 75% of working weight
+                {/* Working weight */}
+                <View className="mb-4">
+                  <Text className="mb-3 text-center text-sm text-content-secondary">
+                    Working Weight
                   </Text>
-                </View>
-                <View
-                  className="h-7 w-12 rounded-full p-1"
-                  style={{
-                    backgroundColor: includeWarmups ? colors.primary[500] : colors.surface.card,
-                  }}
-                >
-                  <View
-                    className="h-5 w-5 rounded-full"
-                    style={{
-                      backgroundColor: 'white',
-                      transform: [{ translateX: includeWarmups ? 20 : 0 }],
-                    }}
+                  <WeightPicker
+                    value={workingWeight}
+                    onChange={setWorkingWeight}
+                    min={5}
+                    max={200}
+                    step={5}
                   />
                 </View>
-              </TouchableOpacity>
+
+                {/* Sets and Reps */}
+                <Stack direction="row" gap="md">
+                  <View className="flex-1">
+                    <Text className="mb-2 text-sm text-content-secondary">Sets</Text>
+                    <TextInput
+                      className="rounded-xl p-4 text-center text-lg font-bold"
+                      style={{
+                        backgroundColor: colors.surface.dark,
+                        color: colors.content.primary,
+                      }}
+                      value={workingSets}
+                      onChangeText={setWorkingSets}
+                      keyboardType="numeric"
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="mb-2 text-sm text-content-secondary">Reps</Text>
+                    <TextInput
+                      className="rounded-xl p-4 text-center text-lg font-bold"
+                      style={{
+                        backgroundColor: colors.surface.dark,
+                        color: colors.content.primary,
+                      }}
+                      value={workingReps}
+                      onChangeText={setWorkingReps}
+                      keyboardType="numeric"
+                    />
+                  </View>
+                </Stack>
+
+                {/* Warmup toggle */}
+                <TouchableOpacity
+                  className="mt-4 flex-row items-center justify-between rounded-xl p-4"
+                  style={{ backgroundColor: colors.surface.dark }}
+                  onPress={() => setIncludeWarmups(!includeWarmups)}
+                  activeOpacity={0.7}
+                >
+                  <View className="flex-1">
+                    <Text className="font-semibold text-content-primary">Include Warmup Sets</Text>
+                    <Text className="mt-1 text-xs text-content-muted">
+                      Adds sets at 50% and 75% of working weight
+                    </Text>
+                  </View>
+                  <View
+                    className="h-7 w-12 rounded-full p-1"
+                    style={{
+                      backgroundColor: includeWarmups ? colors.primary[500] : colors.surface.card,
+                    }}
+                  >
+                    <View
+                      className="h-5 w-5 rounded-full"
+                      style={{
+                        backgroundColor: 'white',
+                        transform: [{ translateX: includeWarmups ? 20 : 0 }],
+                      }}
+                    />
+                  </View>
+                </TouchableOpacity>
+              </CardContent>
             </Card>
           )}
 
           {/* Discovery mode settings */}
           {mode === 'discovery' && (
             <>
-              <Card elevation={1} padding="lg">
-                <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-content-muted">
-                  Training Goal
-                </Text>
-                <GoalPicker selected={goal} onSelect={setGoal} />
+              <Card elevation={1} className="mb-4">
+                <CardContent className="p-6">
+                  <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-content-muted">
+                    Training Goal
+                  </Text>
+                  <GoalPicker selected={goal} onSelect={setGoal} />
+                </CardContent>
               </Card>
 
-              <Card elevation={1} padding="lg">
-                <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-content-muted">
-                  Estimated Max (Optional)
-                </Text>
-                <Text className="mb-3 text-sm text-content-muted">
-                  If you have an idea of your max, enter it here. This helps us start at the right
-                  weight and save time.
-                </Text>
-                <TextInput
-                  className="rounded-xl p-4 text-lg font-bold"
-                  style={{
-                    backgroundColor: colors.surface.dark,
-                    color: colors.content.primary,
-                  }}
-                  value={estimatedMax}
-                  onChangeText={setEstimatedMax}
-                  keyboardType="numeric"
-                  placeholder="e.g., 200"
-                  placeholderTextColor={colors.content.muted}
-                />
+              <Card elevation={1} className="mb-4">
+                <CardContent className="p-6">
+                  <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-content-muted">
+                    Estimated Max (Optional)
+                  </Text>
+                  <Text className="mb-3 text-sm text-content-muted">
+                    If you have an idea of your max, enter it here. This helps us start at the right
+                    weight and save time.
+                  </Text>
+                  <TextInput
+                    className="rounded-xl p-4 text-lg font-bold"
+                    style={{
+                      backgroundColor: colors.surface.dark,
+                      color: colors.content.primary,
+                    }}
+                    value={estimatedMax}
+                    onChangeText={setEstimatedMax}
+                    keyboardType="numeric"
+                    placeholder="e.g., 200"
+                    placeholderTextColor={colors.content.muted}
+                  />
+                </CardContent>
               </Card>
             </>
           )}
@@ -314,28 +323,31 @@ export function ExercisePickerScreen({ onStartSession, onBack }: ExercisePickerS
           {/* Info card - only for discovery mode */}
           {mode === 'discovery' && (
             <Card
-              elevation={0}
-              padding="md"
+              variant="filled"
+              elevation={1}
+              className="mb-4"
               style={{
                 backgroundColor: colors.primary[500] + '10',
                 borderWidth: 1,
                 borderColor: colors.primary[500] + '30',
               }}
             >
-              <View className="flex-row items-start">
-                <Ionicons
-                  name="information-circle"
-                  size={20}
-                  color={colors.primary[500]}
-                  style={{ marginRight: 8, marginTop: 2 }}
-                />
-                <View className="flex-1">
-                  <Text className="text-sm text-content-secondary">
-                    Discovery mode will guide you through increasing weights to find your optimal
-                    working weight. The session will automatically stop when you reach your limit.
-                  </Text>
+              <CardContent>
+                <View className="flex-row items-start">
+                  <Ionicons
+                    name="information-circle"
+                    size={20}
+                    color={colors.primary[500]}
+                    style={{ marginRight: 8, marginTop: 2 }}
+                  />
+                  <View className="flex-1">
+                    <Text className="text-sm text-content-secondary">
+                      Discovery mode will guide you through increasing weights to find your optimal
+                      working weight. The session will automatically stop when you reach your limit.
+                    </Text>
+                  </View>
                 </View>
-              </View>
+              </CardContent>
             </Card>
           )}
         </ScrollView>
