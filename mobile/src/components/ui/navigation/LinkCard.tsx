@@ -9,7 +9,6 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { Link, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, CardContent } from '@titan-design/react-ui';
-import { colors } from '@/theme';
 
 export interface LinkCardProps {
   /** Navigation target (expo-router href) */

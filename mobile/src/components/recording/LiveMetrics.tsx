@@ -9,12 +9,11 @@ import React from 'react';
 import { View, Text, type StyleProp, type ViewStyle } from 'react-native';
 import { useStore } from 'zustand';
 import { type WorkoutSample, MovementPhase } from '@voltras/workout-analytics';
-import { getEffortLabel, getRIRDescription } from '@/domain/workout';
+import { getEffortLabel, getRIRDescription, getRPEColor } from '@/domain/workout';
 import type { RecordingStoreApi } from '@/stores';
 import { Card, CardContent, HStack, Surface } from '@titan-design/react-ui';
 import { PhaseIndicator } from './PhaseIndicator';
 import { colors } from '@/theme';
-import { getRPEColor } from '@/domain/workout';
 
 // =============================================================================
 // View Component (Presentational)

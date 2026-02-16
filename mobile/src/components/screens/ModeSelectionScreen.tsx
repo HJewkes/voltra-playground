@@ -9,7 +9,7 @@ import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useStore } from 'zustand';
 import { RadioGroup, Radio, Surface, Section, SectionHeader, SectionContent } from '@titan-design/react-ui';
-import { useConnectionStore, selectIsConnected } from '@/stores';
+import { useConnectionStore } from '@/stores';
 import { TrainingMode } from '@/domain/device';
 import { ConnectionGuard } from '@/components/device';
 import { WeightTrainingConfig } from '@/components/mode';
@@ -42,7 +42,7 @@ function ModeSelectionContent() {
               <View className="p-4">
                 <RadioGroup
                   value={String(mode)}
-                  onChange={(v) => setMode(v as TrainingMode)}
+                  onChange={(v) => setMode(Number(v) as TrainingMode)}
                   orientation="vertical"
                   gap="sm"
                 >
