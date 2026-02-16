@@ -7,7 +7,8 @@
 
 import React, { useCallback } from 'react';
 import { View, Text, ScrollView } from 'react-native';
-import { Surface, InfoRow, ErrorBanner } from '@/components/ui';
+import { Surface, InfoRow } from '@/components/ui';
+import { Alert, AlertDescription } from '@titan-design/react-ui';
 import { ConnectionBanner, DeviceList } from '@/components/device';
 import { DevToolsSection } from '@/components/settings';
 import { useConnectionStore, selectBleEnvironment } from '@/stores';
@@ -93,7 +94,9 @@ export function SettingsScreen() {
 
         {/* Error Banner */}
         {error && (
-          <ErrorBanner message={error} onDismiss={clearError} style={{ marginVertical: 16 }} />
+          <Alert status="error" variant="subtle" onClose={clearError} className="my-4">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
 
         {/* Dev Tools (DEV only) */}

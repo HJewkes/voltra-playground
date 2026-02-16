@@ -16,9 +16,6 @@ export type { StatusIndicatorProps } from './StatusIndicator';
 export { ListItem } from './ListItem';
 export type { ListItemProps } from './ListItem';
 
-export { Badge } from './Badge';
-export type { BadgeProps } from './Badge';
-
 export { IconBox } from './IconBox';
 export type { IconBoxProps } from './IconBox';
 

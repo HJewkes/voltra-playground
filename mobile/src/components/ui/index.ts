@@ -15,14 +15,10 @@ export { Section } from './layout';
 export type { SectionProps } from './layout';
 
 // Feedback
-export { Banner } from './feedback';
-export type { BannerProps, BannerVariant } from './feedback';
 export { EmptyState } from './feedback';
 export type { EmptyStateProps } from './feedback';
 export { LoadingState } from './feedback';
 export type { LoadingStateProps } from './feedback';
-export { ErrorBanner } from './feedback';
-export type { ErrorBannerProps } from './feedback';
 export { ProgressBar } from './feedback';
 export type { ProgressBarProps } from './feedback';
 

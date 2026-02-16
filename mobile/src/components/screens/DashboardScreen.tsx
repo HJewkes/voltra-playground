@@ -9,7 +9,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { Link } from 'expo-router';
 import { useConnectionStore } from '@/stores';
-import { Card, Stack, Banner, LinkCard, StatsRow, ListItem, EmptyState } from '@/components/ui';
+import { Card, Stack, LinkCard, StatsRow, ListItem, EmptyState } from '@/components/ui';
+import { Alert, AlertTitle, AlertDescription } from '@titan-design/react-ui';
 import { colors } from '@/theme';
 import { getSessionRepository } from '@/data/provider';
 import type { StoredExerciseSession } from '@/data/exercise-session';
@@ -93,13 +94,16 @@ export function DashboardScreen() {
     <ScrollView className="flex-1 bg-surface-400">
       <View className="p-4">
         {/* Welcome Banner */}
-        <Banner
-          variant={isConnected ? 'success' : 'primary'}
-          icon={isConnected ? 'flash' : 'fitness'}
-          title={isConnected ? `Connected to ${deviceName}` : 'Ready to Train'}
-          subtitle={isConnected ? 'Device ready for workout' : 'Connect your Voltra to start'}
-          style={{ marginBottom: 24 }}
-        />
+        <Alert
+          status={isConnected ? 'success' : 'info'}
+          variant="solid"
+          className="mb-6 rounded-2xl"
+        >
+          <AlertTitle>{isConnected ? `Connected to ${deviceName}` : 'Ready to Train'}</AlertTitle>
+          <AlertDescription>
+            {isConnected ? 'Device ready for workout' : 'Connect your Voltra to start'}
+          </AlertDescription>
+        </Alert>
 
         {/* Quick Actions */}
         <Text className="mb-4 text-lg font-bold text-content-primary">Quick Actions</Text>
