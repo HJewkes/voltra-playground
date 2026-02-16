@@ -16,7 +16,8 @@ import {
   getPhaseMovementDuration,
   getPhaseHoldDuration,
 } from '@voltras/workout-analytics';
-import { BottomSheet, Stack, Surface, StatDisplay, ActionButton, InfoRow } from '@/components';
+import { BottomSheet, Stack, Surface, StatDisplay, InfoRow } from '@/components';
+import { Button, ButtonText } from '@titan-design/react-ui';
 import { colors } from '@/theme';
 
 export interface WorkoutDetailModalProps {
@@ -132,7 +133,9 @@ export function WorkoutDetailModal({ workout, visible, onClose }: WorkoutDetailM
         </ScrollView>
       )}
 
-      <ActionButton label="Close" variant="secondary" onPress={onClose} style={{ marginTop: 16 }} />
+      <Button variant="outline" color="primary" fullWidth onPress={onClose} className="mt-4">
+        <ButtonText>Close</ButtonText>
+      </Button>
     </BottomSheet>
   );
 }

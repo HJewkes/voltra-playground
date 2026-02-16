@@ -4,9 +4,6 @@
  * Interactive input components.
  */
 
-export { ActionButton } from './ActionButton';
-export type { ActionButtonProps } from './ActionButton';
-
 export { OptionSelector } from './OptionSelector';
 export type { OptionSelectorProps, Option } from './OptionSelector';
 

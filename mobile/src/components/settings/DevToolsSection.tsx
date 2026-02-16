@@ -8,7 +8,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, Switch, Alert, FlatList, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Surface, ActionButton, Stack } from '@/components/ui';
+import { Surface, Stack } from '@/components/ui';
+import { Button, ButtonText } from '@titan-design/react-ui';
 import { colors } from '@/theme';
 import {
   getSessionRepository,
@@ -169,22 +170,32 @@ export function DevToolsSection() {
           {/* Seed / Clear Buttons */}
           <View className="flex-row gap-3">
             <View className="flex-1">
-              <ActionButton
-                label={isSeeding ? 'Seeding...' : 'Seed Data'}
-                variant="secondary"
+              <Button
+                variant="outline"
+                color="primary"
+                fullWidth
                 onPress={handleSeed}
-                disabled={isSeeding}
-                icon="cloud-download"
-              />
+                isDisabled={isSeeding}
+                isLoading={isSeeding}
+                loadingText="Seeding..."
+              >
+                <Ionicons name="cloud-download" size={20} color="#f97316" style={{ marginRight: 8 }} />
+                <ButtonText>Seed Data</ButtonText>
+              </Button>
             </View>
             <View className="flex-1">
-              <ActionButton
-                label={isClearing ? 'Clearing...' : 'Clear Data'}
-                variant="secondary"
+              <Button
+                variant="outline"
+                color="primary"
+                fullWidth
                 onPress={handleClear}
-                disabled={isClearing}
-                icon="trash"
-              />
+                isDisabled={isClearing}
+                isLoading={isClearing}
+                loadingText="Clearing..."
+              >
+                <Ionicons name="trash" size={20} color="#f97316" style={{ marginRight: 8 }} />
+                <ButtonText>Clear Data</ButtonText>
+              </Button>
             </View>
           </View>
 

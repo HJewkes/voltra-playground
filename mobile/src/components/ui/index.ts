@@ -27,8 +27,6 @@ export { ProgressBar } from './feedback';
 export type { ProgressBarProps } from './feedback';
 
 // Inputs
-export { ActionButton } from './inputs';
-export type { ActionButtonProps } from './inputs';
 export { OptionSelector } from './inputs';
 export type { OptionSelectorProps, Option } from './inputs';
 export { WeightPicker } from './inputs';

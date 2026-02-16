@@ -8,7 +8,8 @@
 import React from 'react';
 import { View, Text, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Stack, ActionButton } from '@/components/ui';
+import { Card, Stack } from '@/components/ui';
+import { Button, ButtonText } from '@titan-design/react-ui';
 import { colors } from '@/theme';
 import type { StoredExerciseSession } from '@/data/exercise-session';
 
@@ -107,13 +108,14 @@ export function ResumeSessionPrompt({
 
           {/* Actions */}
           <Stack gap="sm">
-            <ActionButton label="Resume Workout" variant="primary" onPress={onResume} icon="play" />
-            <ActionButton
-              label="Discard Session"
-              variant="secondary"
-              onPress={onDiscard}
-              icon="trash-outline"
-            />
+            <Button variant="solid" color="primary" fullWidth onPress={onResume} className="rounded-2xl">
+              <Ionicons name="play" size={20} color="white" style={{ marginRight: 8 }} />
+              <ButtonText>Resume Workout</ButtonText>
+            </Button>
+            <Button variant="outline" color="primary" fullWidth onPress={onDiscard} className="rounded-2xl">
+              <Ionicons name="trash-outline" size={20} color="#f97316" style={{ marginRight: 8 }} />
+              <ButtonText>Discard Session</ButtonText>
+            </Button>
           </Stack>
         </Card>
       </View>

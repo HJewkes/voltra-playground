@@ -25,7 +25,8 @@ import { type Exercise, getExercise } from '@/domain/exercise';
 import { type ExercisePlan, createStandardPlan, createDiscoveryPlan } from '@/domain/workout';
 
 // Component imports
-import { Card, Stack, ActionButton, WeightPicker } from '@/components/ui';
+import { Card, Stack, WeightPicker } from '@/components/ui';
+import { Button, ButtonText } from '@titan-design/react-ui';
 import { ExerciseSelector, GoalPicker } from '@/components/planning';
 
 // =============================================================================
@@ -341,14 +342,18 @@ export function ExercisePickerScreen({ onStartSession, onBack }: ExercisePickerS
 
         {/* Start button */}
         <View className="p-4">
-          <ActionButton
-            label={mode === 'standard' ? 'Start Session' : 'Start Discovery'}
-            icon="play"
-            variant="primary"
+          <Button
+            variant="solid"
+            color="primary"
             size="lg"
+            fullWidth
             onPress={handleStartSession}
-            disabled={!canStart}
-          />
+            isDisabled={!canStart}
+            className="rounded-2xl"
+          >
+            <Ionicons name="play" size={24} color="white" style={{ marginRight: 8 }} />
+            <ButtonText>{mode === 'standard' ? 'Start Session' : 'Start Discovery'}</ButtonText>
+          </Button>
         </View>
       </KeyboardAvoidingView>
 
