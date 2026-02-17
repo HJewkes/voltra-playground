@@ -483,15 +483,7 @@ export const selectBleEnvironment = (): BLEEnvironmentInfo => {
   return detectBLEEnvironment();
 };
 
-/** Whether running on web */
-export const selectIsWeb = () => selectBleEnvironment().isWeb;
-
 /** Whether a device is connected */
 export const selectIsConnected = (state: ConnectionStoreState) =>
   !!(state.primaryDeviceId && state.devices.has(state.primaryDeviceId));
 
-/** Name of the connected device (primary) - requires getPrimaryDevice action */
-export const selectConnectedDeviceName = (state: ConnectionStoreState) => {
-  const device = state.primaryDeviceId ? state.devices.get(state.primaryDeviceId) : null;
-  return device?.getState().deviceName ?? null;
-};
