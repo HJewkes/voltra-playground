@@ -132,7 +132,9 @@ export default tseslint.config(
       // React Native rules
       // =========================================================================
       'react-native/no-unused-styles': 'error',
-      'react-native/no-raw-text': 'error',
+      'react-native/no-raw-text': ['error', {
+        skip: ['ButtonText', 'AlertTitle', 'AlertDescription', 'CardTitle', 'DrawerTitle', 'BadgeText'],
+      }],
       'react-native/split-platform-components': 'warn',
 
       // =========================================================================

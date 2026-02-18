@@ -25,7 +25,7 @@ import type { Exercise } from '@/domain/exercise';
 import { createExercise, MuscleGroup } from '@/domain/exercise';
 import type { ExercisePlan } from '@/domain/workout/models/plan';
 import type { ExerciseSession } from '@/domain/workout/models/session';
-import type { Set } from '@/domain/workout/models/set';
+import type { CompletedSet } from '@/domain/workout';
 import { TrainingGoal } from '@/domain/planning/types';
 import { planBuilder, type PlanTargets } from './plan-builder';
 import { setBuilder, SET_PRESETS, type SetTargets, type SetPreset, type RepBehavior } from './set-builder';
@@ -58,7 +58,7 @@ export interface SessionTargets {
   exerciseId?: string;
   plan?: ExercisePlan;
   planTargets?: PlanTargets;
-  completedSets?: Set[];
+  completedSets?: CompletedSet[];
   completedSetTargets?: SetTargets[];
   restEndsAt?: number | null;
   startedAt?: number;
@@ -192,7 +192,7 @@ class SessionBuilder {
   // ===========================================================================
 
   /** Set pre-built completed sets. */
-  completedSets(sets: Set[]): this {
+  completedSets(sets: CompletedSet[]): this {
     this.targets.completedSets = sets;
     return this;
   }
@@ -319,7 +319,7 @@ class SessionBuilder {
     }
 
     // Resolve completed sets
-    let completedSets: Set[] = [];
+    let completedSets: CompletedSet[] = [];
     if (this.targets.completedSets) {
       completedSets = this.targets.completedSets;
     } else if (this.targets.completedSetTargets) {
@@ -368,7 +368,7 @@ class SessionBuilder {
     };
   }
 
-  private buildSetsFromComposition(composition: readonly SessionSetSpec[]): Set[] {
+  private buildSetsFromComposition(composition: readonly SessionSetSpec[]): CompletedSet[] {
     const workingWeight = this.targets.workingWeight ?? 100;
 
     return composition.map((spec) => {

@@ -1,16 +1,18 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@/theme';
+import { getSemanticColors } from '@titan-design/react-ui';
+
+const t = getSemanticColors('dark');
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: colors.primary[500],
-        tabBarInactiveTintColor: colors.text.tertiary,
+        tabBarActiveTintColor: t['brand-primary'],
+        tabBarInactiveTintColor: t['text-tertiary'],
         tabBarStyle: {
-          backgroundColor: colors.surface.elevated,
-          borderTopColor: colors.surface.light,
+          backgroundColor: t['surface-elevated'],
+          borderTopColor: t['border-strong'],
           borderTopWidth: 1,
           paddingTop: 8,
           height: 88,
@@ -21,9 +23,9 @@ export default function TabLayout() {
           marginTop: 4,
         },
         headerStyle: {
-          backgroundColor: colors.surface.elevated,
+          backgroundColor: t['surface-elevated'],
         },
-        headerTintColor: colors.text.primary,
+        headerTintColor: t['text-primary'],
         headerTitleStyle: {
           fontWeight: '700',
           fontSize: 18,
@@ -46,6 +48,15 @@ export default function TabLayout() {
           title: 'Exercise',
           tabBarIcon: ({ color, focused, size }) => (
             <Ionicons name={focused ? 'fitness' : 'fitness-outline'} size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="modes"
+        options={{
+          title: 'Modes',
+          tabBarIcon: ({ color, focused, size }) => (
+            <Ionicons name={focused ? 'options' : 'options-outline'} size={size} color={color} />
           ),
         }}
       />

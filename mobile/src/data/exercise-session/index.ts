@@ -10,6 +10,9 @@ export {
   type StoredExerciseSession,
   type StoredExercisePlan,
   type StoredSessionSet,
+  type StoredRep,
+  type LegacyStoredRep,
+  type LegacyStoredSessionSet,
   type ExerciseSessionSummary,
   type TerminationReason,
   type SessionStatus,
@@ -23,6 +26,7 @@ export {
   fromStoredExerciseSession,
   fromStoredPlan,
   fromStoredSessionSet,
+  fromLegacyStoredSessionSet,
   toExerciseSessionSummary,
 } from './exercise-session-converters';
 

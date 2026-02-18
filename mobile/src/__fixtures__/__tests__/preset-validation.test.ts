@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { getRepMeanVelocity } from '@voltras/workout-analytics';
 import { generateSetFromBehaviors, setPresets } from '../generators/set-compositions';
 import {
   generateSessionFromComposition,
@@ -52,7 +53,7 @@ describe('Set Preset Validation', () => {
 
       expect(set).toBeDefined();
       if (set) {
-        const velocities = set.reps.map((r) => r.metrics.concentricMeanVelocity);
+        const velocities = set.data.reps.map((r) => getRepMeanVelocity(r));
 
         // First rep should be faster than last rep
         expect(velocities[0]).toBeGreaterThan(velocities[velocities.length - 1]);
@@ -78,9 +79,10 @@ describe('Set Preset Validation', () => {
       });
 
       expect(set).toBeDefined();
-      if (set && set.reps.length >= 2) {
-        const firstRepVelocity = set.reps[0].metrics.concentricMeanVelocity;
-        const lastRepVelocity = set.reps[set.reps.length - 1].metrics.concentricMeanVelocity;
+      if (set && set.data.reps.length >= 2) {
+        const reps = set.data.reps;
+        const firstRepVelocity = getRepMeanVelocity(reps[0]);
+        const lastRepVelocity = getRepMeanVelocity(reps[reps.length - 1]);
         const velocityLoss = (firstRepVelocity - lastRepVelocity) / firstRepVelocity;
 
         // Should show meaningful velocity loss (>20%)
@@ -210,7 +212,7 @@ describe('Session Preset Validation', () => {
       expect(session.completedSets.length).toBe(3);
 
       // Later sets should have fewer reps (rep drop)
-      const repCounts = session.completedSets.map((s) => s.reps.length);
+      const repCounts = session.completedSets.map((s) => s.data.reps.length);
 
       // First two sets should be productive, last should show drop
       expect(repCounts[2]).toBeLessThan(repCounts[0]);
@@ -411,7 +413,7 @@ describe('Volume Calculations', () => {
     // Verify volume calculation
     let expectedVolume = 0;
     for (const set of session.completedSets) {
-      expectedVolume += set.weight * set.reps.length;
+      expectedVolume += set.weight * set.data.reps.length;
     }
 
     expect(totalVolume).toBe(expectedVolume);
@@ -422,7 +424,7 @@ describe('Volume Calculations', () => {
 
     let expectedReps = 0;
     for (const set of session.completedSets) {
-      expectedReps += set.reps.length;
+      expectedReps += set.data.reps.length;
     }
 
     expect(totalReps).toBe(expectedReps);

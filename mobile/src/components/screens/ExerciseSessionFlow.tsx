@@ -18,7 +18,9 @@ import type { ExercisePlan } from '@/domain/workout';
 import { ConnectPrompt } from '@/components/device';
 import { ExercisePickerScreen } from './ExercisePickerScreen';
 import { ExerciseScreen } from './ExerciseScreen';
-import { colors } from '@/theme';
+import { getSemanticColors } from '@titan-design/react-ui';
+
+const t = getSemanticColors('dark');
 
 type FlowState = 'loading' | 'picker' | 'session';
 
@@ -68,8 +70,8 @@ export function ExerciseSessionFlow() {
   if (flowState === 'loading') {
     return (
       <SafeAreaView className="bg-background flex-1 items-center justify-center">
-        <ActivityIndicator size="large" color={colors.primary[500]} />
-        <Text className="mt-4 text-content-muted">Loading...</Text>
+        <ActivityIndicator size="large" color={t['brand-primary']} />
+        <Text className="mt-4 text-text-disabled">Loading...</Text>
       </SafeAreaView>
     );
   }

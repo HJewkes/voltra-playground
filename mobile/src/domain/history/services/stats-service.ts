@@ -4,7 +4,7 @@
  * Computes aggregate statistics from set history.
  */
 
-import type { Set } from '@/domain/workout';
+import type { CompletedSet } from '@/domain/workout';
 
 /**
  * Aggregate statistics across all sets.
@@ -18,13 +18,13 @@ export interface AggregateStats {
 /**
  * Compute aggregate statistics from a list of sets.
  */
-export function computeAggregateStats(sets: Set[]): AggregateStats {
+export function computeAggregateStats(sets: CompletedSet[]): AggregateStats {
   let totalReps = 0;
   let totalVolume = 0;
 
   for (const set of sets) {
-    totalReps += set.reps.length;
-    totalVolume += set.weight * set.reps.length;
+    totalReps += set.data.reps.length;
+    totalVolume += set.weight * set.data.reps.length;
   }
 
   return {

@@ -8,7 +8,9 @@
 import React from 'react';
 import { TouchableOpacity, Text, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@/theme';
+import { getSemanticColors, alpha } from '@titan-design/react-ui';
+
+const t = getSemanticColors('dark');
 
 export interface ScanButtonProps {
   /** Whether currently scanning */
@@ -48,13 +50,13 @@ export function ScanButton({
       disabled={disabled}
       className="flex-row items-center rounded-xl px-3 py-2"
       style={{
-        backgroundColor: isScanning ? colors.primary[500] + '20' : colors.surface.dark,
+        backgroundColor: isScanning ? alpha(t['brand-primary'], 0.12) : t['background-subtle'],
       }}
       activeOpacity={0.7}
     >
       {isScanning ? (
         <>
-          <ActivityIndicator size="small" color={colors.primary[500]} />
+          <ActivityIndicator size="small" color={t['brand-primary']} />
           <Text className="ml-2 text-sm font-medium text-primary-500">{scanningLabel}</Text>
         </>
       ) : (
@@ -62,11 +64,11 @@ export function ScanButton({
           <Ionicons
             name={label === 'Connect' ? 'bluetooth' : 'refresh'}
             size={16}
-            color={disabled ? colors.text.muted : colors.text.secondary}
+            color={disabled ? t['text-disabled'] : t['text-secondary']}
           />
           <Text
             className="ml-2 text-sm font-medium"
-            style={{ color: disabled ? colors.text.muted : colors.text.secondary }}
+            style={{ color: disabled ? t['text-disabled'] : t['text-secondary'] }}
           >
             {label}
           </Text>

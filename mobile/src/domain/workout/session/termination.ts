@@ -10,8 +10,9 @@
  * - Discovery only: profile complete (enough data points with good spread)
  */
 
-import type { Set } from '../models/set';
+import type { CompletedSet } from '../models/completed-set';
 import type { ExerciseSession } from '../models/session';
+import { getSetMeanVelocity } from '@voltras/workout-analytics';
 
 /**
  * Reason why a session terminated.
@@ -65,7 +66,7 @@ export const DEFAULT_TERMINATION_CONFIG: TerminationConfig = {
  */
 export function checkTermination(
   session: ExerciseSession,
-  lastSet: Set,
+  lastSet: CompletedSet,
   config: TerminationConfig = DEFAULT_TERMINATION_CONFIG
 ): TerminationResult {
   const isDiscovery = session.plan.generatedBy === 'discovery';
@@ -110,8 +111,8 @@ export function checkTermination(
 /**
  * Check for failure (0 reps completed).
  */
-function checkFailure(lastSet: Set): TerminationResult {
-  if (lastSet.reps.length === 0) {
+function checkFailure(lastSet: CompletedSet): TerminationResult {
+  if (lastSet.data.reps.length === 0) {
     return {
       shouldTerminate: true,
       reason: 'failure',
@@ -124,8 +125,8 @@ function checkFailure(lastSet: Set): TerminationResult {
 /**
  * Check for velocity grinding (near max effort).
  */
-function checkVelocityGrinding(lastSet: Set, config: TerminationConfig): TerminationResult {
-  const meanVelocity = lastSet.metrics.velocity.concentricBaseline;
+function checkVelocityGrinding(lastSet: CompletedSet, config: TerminationConfig): TerminationResult {
+  const meanVelocity = getSetMeanVelocity(lastSet.data);
 
   if (meanVelocity < config.velocityGrindingThreshold) {
     return {
@@ -172,8 +173,8 @@ function checkJunkVolume(session: ExerciseSession, config: TerminationConfig): T
     return { shouldTerminate: false };
   }
 
-  const firstReps = firstWorkingSet.reps.length;
-  const lastReps = lastSet.reps.length;
+  const firstReps = firstWorkingSet.data.reps.length;
+  const lastReps = lastSet.data.reps.length;
 
   if (firstReps === 0) {
     return { shouldTerminate: false };
@@ -219,7 +220,7 @@ function checkProfileComplete(
   const weightSpread = (maxWeight - minWeight) / minWeight;
 
   // Check velocity spread (indicates we've covered a good range)
-  const velocities = sets.map((s) => s.metrics.velocity.concentricBaseline);
+  const velocities = sets.map((s) => getSetMeanVelocity(s.data));
   const maxVelocity = Math.max(...velocities);
   const minVelocity = Math.min(...velocities);
   const velocitySpread = maxVelocity - minVelocity;

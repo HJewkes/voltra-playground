@@ -6,12 +6,15 @@
 
 import React from 'react';
 import { View, Text } from 'react-native';
-import { Card, Stack, ListItem } from '@/components';
-import { colors } from '@/theme';
-import type { Set } from '@/domain/workout';
+import { Ionicons } from '@expo/vector-icons';
+import { Card, HStack, ListItem, ListItemContent, ListItemTrailing, getSemanticColors, alpha } from '@titan-design/react-ui';
+import type { CompletedSet } from '@/domain/workout';
+import { estimateSetRIR } from '@voltras/workout-analytics';
+
+const t = getSemanticColors('dark');
 
 export interface WorkoutListItemProps {
-  workout: Set;
+  workout: CompletedSet;
   onPress: () => void;
   onLongPress: () => void;
 }
@@ -20,37 +23,39 @@ export interface WorkoutListItemProps {
  * Get RPE badge styling.
  */
 function getRPEBadgeStyle(rpe: number | undefined) {
-  if (!rpe) return { bg: colors.surface.dark, text: colors.text.muted };
-  if (rpe <= 6) return { bg: colors.success.DEFAULT + '20', text: colors.success.DEFAULT };
-  if (rpe <= 8) return { bg: colors.warning.DEFAULT + '20', text: colors.warning.DEFAULT };
-  return { bg: colors.danger.DEFAULT + '20', text: colors.danger.DEFAULT };
+  if (!rpe) return { bg: t['background-subtle'], text: t['text-disabled'] };
+  if (rpe <= 6) return { bg: alpha(t['status-success'], 0.12), text: t['status-success'] };
+  if (rpe <= 8) return { bg: alpha(t['status-warning'], 0.12), text: t['status-warning'] };
+  return { bg: alpha(t['status-error'], 0.12), text: t['status-error'] };
 }
 
 /**
  * WorkoutListItem - displays a single workout entry.
  */
 export function WorkoutListItem({ workout, onPress, onLongPress }: WorkoutListItemProps) {
-  const avgRPE = Math.round(workout.metrics?.effort.rpe ?? 0);
-  const repCount = workout.reps?.length ?? 0;
+  const rirEstimate = estimateSetRIR(workout.data);
+  const avgRPE = Math.round(rirEstimate.rpe);
+  const repCount = workout.data.reps.length;
   const formattedDate = new Date(workout.timestamp.start).toLocaleDateString();
   const badgeStyle = getRPEBadgeStyle(avgRPE);
 
   return (
-    <Card elevation={1} padding="none" marginBottom={false}>
-      <ListItem
-        icon="fitness"
-        iconColor={colors.primary[500]}
-        title={workout.exerciseName || 'Set'}
-        subtitle={formattedDate}
-        onPress={onPress}
-        onLongPress={onLongPress}
-        trailing={
-          <Stack direction="row" gap="sm" align="center">
+    <Card elevation={1}>
+      <ListItem onPress={onPress} onLongPress={onLongPress}>
+        <View
+          className="mr-3 items-center justify-center rounded-xl"
+          style={{ width: 48, height: 48, backgroundColor: alpha(t['brand-primary'], 0.12) }}
+        >
+          <Ionicons name="fitness" size={24} color={t['brand-primary']} />
+        </View>
+        <ListItemContent title={workout.exerciseName || 'Set'} subtitle={formattedDate} />
+        <ListItemTrailing>
+          <HStack gap={2} align="center">
             <View className="mr-2 items-end">
-              <Text className="text-base font-bold" style={{ color: colors.primary[500] }}>
+              <Text className="text-base font-bold text-brand-primary">
                 {repCount} reps
               </Text>
-              <Text className="text-sm text-content-tertiary">{workout.weight} lbs</Text>
+              <Text className="text-sm text-text-tertiary">{workout.weight} lbs</Text>
             </View>
             {avgRPE > 0 && (
               <View className="rounded-lg px-3 py-1.5" style={{ backgroundColor: badgeStyle.bg }}>
@@ -59,9 +64,9 @@ export function WorkoutListItem({ workout, onPress, onLongPress }: WorkoutListIt
                 </Text>
               </View>
             )}
-          </Stack>
-        }
-      />
+          </HStack>
+        </ListItemTrailing>
+      </ListItem>
     </Card>
   );
 }

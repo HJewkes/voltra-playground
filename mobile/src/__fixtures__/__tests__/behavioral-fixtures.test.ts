@@ -1,13 +1,16 @@
 /**
  * Behavioral Fixtures Tests
  *
- * Validates that behavioral fixtures produce realistic data by running them
- * through actual domain logic (RepDetector, aggregators).
+ * Validates that behavioral fixtures produce realistic data with correct
+ * phase structures and physics parameters.
  *
  * Key validation criteria:
- * - Completed rep behaviors produce valid RepBoundary from RepDetector
- * - Failed rep behaviors do NOT produce RepBoundary (correct behavior)
+ * - Completed rep behaviors produce samples with both concentric and eccentric phases
+ * - Failed rep behaviors produce only concentric samples (no eccentric)
  * - Physics parameters match expected velocity ranges
+ * - Set compositions process correctly through the library pipeline
+ *
+ * Note: Rep detection is now internal to the @voltras/workout-analytics library.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -23,7 +26,7 @@ import {
   type RepBehavior,
 } from '../generators/rep-behaviors';
 import { generateSetFromBehaviors, setPresets, sets } from '../generators/set-compositions';
-import { RepDetector, MovementPhase } from '@/domain/workout';
+import { MovementPhase } from '@/domain/workout';
 
 // =============================================================================
 // Rep Behavior Validation
@@ -31,20 +34,12 @@ import { RepDetector, MovementPhase } from '@/domain/workout';
 
 describe('Rep Behavior Fixtures', () => {
   describe('generateExplosiveRep()', () => {
-    it('produces samples that RepDetector detects as complete rep', () => {
+    it('produces samples with concentric and eccentric phases', () => {
       const { samples } = generateExplosiveRep();
-      const detector = new RepDetector();
+      const phases = new Set(samples.map((s) => s.phase));
 
-      let boundary = null;
-      for (const sample of samples) {
-        const result = detector.processSample(sample);
-        if (result) boundary = result;
-      }
-
-      expect(boundary).not.toBeNull();
-      expect(boundary!.repNumber).toBe(1);
-      expect(boundary!.phaseSamples.concentric.length).toBeGreaterThan(0);
-      expect(boundary!.phaseSamples.eccentric.length).toBeGreaterThan(0);
+      expect(phases.has(MovementPhase.CONCENTRIC)).toBe(true);
+      expect(phases.has(MovementPhase.ECCENTRIC)).toBe(true);
     });
 
     it('has peak velocity matching explosive physics', () => {
@@ -70,18 +65,12 @@ describe('Rep Behavior Fixtures', () => {
   });
 
   describe('generateNormalRep()', () => {
-    it('produces samples that RepDetector detects as complete rep', () => {
+    it('produces samples with concentric and eccentric phases', () => {
       const { samples } = generateNormalRep();
-      const detector = new RepDetector();
+      const phases = new Set(samples.map((s) => s.phase));
 
-      let boundary = null;
-      for (const sample of samples) {
-        const result = detector.processSample(sample);
-        if (result) boundary = result;
-      }
-
-      expect(boundary).not.toBeNull();
-      expect(boundary!.repNumber).toBe(1);
+      expect(phases.has(MovementPhase.CONCENTRIC)).toBe(true);
+      expect(phases.has(MovementPhase.ECCENTRIC)).toBe(true);
     });
 
     it('has peak velocity in normal range', () => {
@@ -95,18 +84,12 @@ describe('Rep Behavior Fixtures', () => {
   });
 
   describe('generateFatiguingRep()', () => {
-    it('produces samples that RepDetector detects as complete rep', () => {
+    it('produces samples with concentric and eccentric phases', () => {
       const { samples } = generateFatiguingRep();
-      const detector = new RepDetector();
+      const phases = new Set(samples.map((s) => s.phase));
 
-      let boundary = null;
-      for (const sample of samples) {
-        const result = detector.processSample(sample);
-        if (result) boundary = result;
-      }
-
-      expect(boundary).not.toBeNull();
-      expect(boundary!.repNumber).toBe(1);
+      expect(phases.has(MovementPhase.CONCENTRIC)).toBe(true);
+      expect(phases.has(MovementPhase.ECCENTRIC)).toBe(true);
     });
 
     it('has lower peak velocity than normal rep', () => {
@@ -127,18 +110,12 @@ describe('Rep Behavior Fixtures', () => {
   });
 
   describe('generateGrindingRep()', () => {
-    it('produces samples that RepDetector detects as complete rep', () => {
+    it('produces samples with concentric and eccentric phases', () => {
       const { samples } = generateGrindingRep();
-      const detector = new RepDetector();
+      const phases = new Set(samples.map((s) => s.phase));
 
-      let boundary = null;
-      for (const sample of samples) {
-        const result = detector.processSample(sample);
-        if (result) boundary = result;
-      }
-
-      expect(boundary).not.toBeNull();
-      expect(boundary!.repNumber).toBe(1);
+      expect(phases.has(MovementPhase.CONCENTRIC)).toBe(true);
+      expect(phases.has(MovementPhase.ECCENTRIC)).toBe(true);
     });
 
     it('has very low peak velocity', () => {
@@ -166,16 +143,10 @@ describe('Rep Behavior Fixtures', () => {
   describe('generateFailedRep()', () => {
     it('does NOT produce a complete rep (no eccentric phase)', () => {
       const { samples } = generateFailedRep();
-      const detector = new RepDetector();
+      const phases = new Set(samples.map((s) => s.phase));
 
-      let boundary = null;
-      for (const sample of samples) {
-        const result = detector.processSample(sample);
-        if (result) boundary = result;
-      }
-
-      // Failed reps should NOT complete - this is correct behavior
-      expect(boundary).toBeNull();
+      expect(phases.has(MovementPhase.CONCENTRIC)).toBe(true);
+      expect(phases.has(MovementPhase.ECCENTRIC)).toBe(false);
     });
 
     it('has no eccentric samples', () => {
@@ -205,18 +176,12 @@ describe('Rep Behavior Fixtures', () => {
   });
 
   describe('generatePartialRep()', () => {
-    it('produces samples that RepDetector detects as complete rep', () => {
+    it('produces samples with concentric and eccentric phases', () => {
       const { samples } = generatePartialRep();
-      const detector = new RepDetector();
+      const phases = new Set(samples.map((s) => s.phase));
 
-      let boundary = null;
-      for (const sample of samples) {
-        const result = detector.processSample(sample);
-        if (result) boundary = result;
-      }
-
-      expect(boundary).not.toBeNull();
-      expect(boundary!.repNumber).toBe(1);
+      expect(phases.has(MovementPhase.CONCENTRIC)).toBe(true);
+      expect(phases.has(MovementPhase.ECCENTRIC)).toBe(true);
     });
 
     it('has reduced range of motion', () => {
@@ -240,30 +205,18 @@ describe('Rep Behavior Fixtures', () => {
 
     it.each(behaviors)('generates valid samples for %s behavior', (behavior) => {
       const { samples } = generateRepSamples(behavior);
-      const detector = new RepDetector();
+      const phases = new Set(samples.map((s) => s.phase));
 
-      let boundary = null;
-      for (const sample of samples) {
-        const result = detector.processSample(sample);
-        if (result) boundary = result;
-      }
-
-      // All behaviors except 'failed' should complete
-      expect(boundary).not.toBeNull();
-      expect(boundary!.repNumber).toBe(1);
+      // All behaviors except 'failed' should have both concentric and eccentric
+      expect(phases.has(MovementPhase.CONCENTRIC)).toBe(true);
+      expect(phases.has(MovementPhase.ECCENTRIC)).toBe(true);
     });
 
-    it('failed behavior does not produce complete rep', () => {
+    it('failed behavior produces no eccentric phase', () => {
       const { samples } = generateRepSamples('failed');
-      const detector = new RepDetector();
+      const eccentricSamples = samples.filter((s) => s.phase === MovementPhase.ECCENTRIC);
 
-      let boundary = null;
-      for (const sample of samples) {
-        const result = detector.processSample(sample);
-        if (result) boundary = result;
-      }
-
-      expect(boundary).toBeNull();
+      expect(eccentricSamples.length).toBe(0);
     });
   });
 });
@@ -327,9 +280,8 @@ describe('Set Composition Fixtures', () => {
       });
 
       expect(set).toBeDefined();
-      expect(set!.reps.length).toBe(completedRepCount);
+      expect(set!.data.reps.length).toBe(completedRepCount);
       expect(set!.weight).toBe(100);
-      expect(set!.metrics).toBeDefined();
     });
   });
 
@@ -370,60 +322,5 @@ describe('Set Composition Fixtures', () => {
   });
 });
 
-// =============================================================================
-// Multiple Reps Detection
-// =============================================================================
-
-describe('Multiple Rep Detection', () => {
-  it('detects multiple consecutive reps', () => {
-    const { samples } = generateSetFromBehaviors(['normal', 'normal', 'normal']);
-    const detector = new RepDetector();
-
-    let repCount = 0;
-    for (const sample of samples) {
-      const boundary = detector.processSample(sample);
-      if (boundary) repCount++;
-    }
-
-    expect(repCount).toBe(3);
-    expect(detector.repCount).toBe(3);
-  });
-
-  it('mixed behaviors are detected correctly', () => {
-    const { samples, completedRepCount } = generateSetFromBehaviors([
-      'explosive',
-      'normal',
-      'fatiguing',
-      'grinding',
-    ]);
-    const detector = new RepDetector();
-
-    let detectedReps = 0;
-    for (const sample of samples) {
-      const boundary = detector.processSample(sample);
-      if (boundary) detectedReps++;
-    }
-
-    expect(detectedReps).toBe(completedRepCount);
-    expect(detectedReps).toBe(4);
-  });
-
-  it('handles set with failure correctly', () => {
-    const { samples, completedRepCount } = generateSetFromBehaviors([
-      'normal',
-      'normal',
-      'fatiguing',
-      'failed',
-    ]);
-    const detector = new RepDetector();
-
-    let detectedReps = 0;
-    for (const sample of samples) {
-      const boundary = detector.processSample(sample);
-      if (boundary) detectedReps++;
-    }
-
-    expect(detectedReps).toBe(3); // 3 completed, 1 failed
-    expect(completedRepCount).toBe(3);
-  });
-});
+// Note: Rep detection is now internal to the @voltras/workout-analytics library pipeline.
+// The library's createSet/addSampleToSet/completeSet functions handle rep detection internally.

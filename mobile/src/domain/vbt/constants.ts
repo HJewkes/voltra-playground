@@ -1,9 +1,11 @@
 /**
  * VBT Constants and Utility Functions
  *
- * Centralized constants for velocity zones, %1RM relationships,
- * and training goal thresholds. Used across discovery, analytics,
- * and workout planning modules.
+ * Core VBT reference data (velocity tables, %1RM estimation, velocity zones)
+ * comes from @voltras/workout-analytics.
+ *
+ * App-specific training zone constants (goal thresholds, rep ranges,
+ * discovery percentages) are defined here.
  *
  * Research basis:
  * - González-Badillo & Sánchez-Medina (2010) - Load-velocity relationship
@@ -14,44 +16,35 @@
 
 // Import directly from types to avoid circular dependency with planning/strategies
 import { TrainingGoal } from '@/domain/planning/types';
+import {
+  VELOCITY_AT_PERCENT_1RM as LIB_VELOCITY_TABLE,
+  DEFAULT_MVT,
+  estimatePercent1RMFromVelocity as libEstimatePercent1RM,
+  categorizeVelocity as libCategorizeVelocity,
+  type VelocityZone,
+} from '@voltras/workout-analytics';
 
 // =============================================================================
-// Velocity at %1RM
+// Re-exports from @voltras/workout-analytics
 // =============================================================================
 
-/**
- * Mean concentric velocity at different percentages of 1RM.
- * These are approximate values - individual variation exists.
- *
- * Use for:
- * - Estimating %1RM from observed velocity
- * - Predicting velocity at a target %1RM
- * - Building load-velocity profiles
- */
-export const VELOCITY_AT_PERCENT_1RM: Record<number, number> = {
-  100: 0.17, // Minimum velocity threshold (MVT)
-  95: 0.25,
-  90: 0.37,
-  85: 0.47,
-  80: 0.55,
-  75: 0.62,
-  70: 0.72,
-  65: 0.82,
-  60: 0.9,
-  55: 1.0,
-  50: 1.1,
-  45: 1.2,
-  40: 1.3,
-};
+/** Mean concentric velocity at different %1RM (from library). */
+export const VELOCITY_AT_PERCENT_1RM = LIB_VELOCITY_TABLE;
 
-/**
- * Minimum velocity threshold - below this, the rep is likely a max effort.
- * Also called "velocity floor" or "sticking point velocity".
- */
-export const MINIMUM_VELOCITY_THRESHOLD = 0.17;
+/** Minimum velocity threshold (0.17 m/s) from library. */
+export const MINIMUM_VELOCITY_THRESHOLD = DEFAULT_MVT;
+
+/** Estimate %1RM from mean concentric velocity (from library). */
+export const estimatePercent1RMFromVelocity = libEstimatePercent1RM;
+
+/** Categorize velocity into qualitative zones (from library). */
+export const categorizeVelocity = libCategorizeVelocity;
+
+/** Velocity zone type -- re-exported as VelocityTrend for app compatibility. */
+export type VelocityTrend = VelocityZone;
 
 // =============================================================================
-// Training Zones
+// App-Specific Training Zones
 // =============================================================================
 
 /**
@@ -89,10 +82,10 @@ export const REP_RANGES: Record<TrainingGoal, [number, number]> = {
  * Format: { min, max } as percentage loss from first rep
  */
 export const VELOCITY_LOSS_TARGETS = {
-  STRENGTH: { min: 5, max: 10 }, // Heavy, low reps, minimal fatigue
-  HYPERTROPHY: { min: 20, max: 25 }, // Moderate, metabolic stress
-  POWER: { min: 10, max: 15 }, // Explosive, minimal fatigue
-  ENDURANCE: { min: 25, max: 35 }, // High reps, sustained effort
+  STRENGTH: { min: 5, max: 10 },
+  HYPERTROPHY: { min: 20, max: 25 },
+  POWER: { min: 10, max: 15 },
+  ENDURANCE: { min: 25, max: 35 },
 } as const;
 
 // =============================================================================
@@ -100,27 +93,22 @@ export const VELOCITY_LOSS_TARGETS = {
 // =============================================================================
 
 /**
- * Velocity loss to RIR/RPE mapping.
- *
- * More conservative than barbell research due to cable characteristics:
- * - Constant tension throughout ROM
- * - Continuous motor unit engagement
- * - Earlier fatigue onset
+ * Velocity loss to RIR/RPE mapping (tuple format for app display).
  *
  * Format: [maxLossPercent, rir, rpe]
  *
- * Note: The new system uses SetMetrics.effort from domain/workout/aggregators
- * for RIR/RPE estimation based on fatigue index (combining concentric + eccentric velocity).
- * This mapping is retained as reference data for the VBT system.
+ * Note: The library provides a configurable InterpolationScheme-based mapping
+ * (DEFAULT_VELOCITY_RIR_MAP) for computation. This tuple array is retained
+ * for the app's VBT display and reference UI.
  */
 export const VELOCITY_RIR_MAP: [number, number, number][] = [
-  [10, 5.0, 5.0], // 10% loss → ~5+ RIR
+  [10, 5.0, 5.0],
   [15, 4.0, 6.0],
-  [20, 3.0, 7.0], // 20% loss → ~3 RIR (conservative)
+  [20, 3.0, 7.0],
   [25, 2.5, 7.5],
-  [30, 2.0, 8.0], // 30% loss → ~2 RIR
+  [30, 2.0, 8.0],
   [35, 1.5, 8.5],
-  [40, 1.0, 9.0], // 40% loss → ~1 RIR
+  [40, 1.0, 9.0],
   [50, 0.5, 9.5],
   [100, 0.0, 10.0],
 ];
@@ -145,27 +133,8 @@ export const PROFILE_CONFIDENCE_REQUIREMENTS = {
 } as const;
 
 // =============================================================================
-// Utility Functions
+// App-Specific Utility Functions
 // =============================================================================
-
-/**
- * Estimate %1RM from mean concentric velocity.
- */
-export function estimatePercent1RMFromVelocity(velocity: number): number {
-  // Find the closest velocity in our table
-  let closest = 50;
-  let minDiff = Infinity;
-
-  for (const [percent, v] of Object.entries(VELOCITY_AT_PERCENT_1RM)) {
-    const diff = Math.abs(velocity - v);
-    if (diff < minDiff) {
-      minDiff = diff;
-      closest = Number(percent);
-    }
-  }
-
-  return closest;
-}
 
 /**
  * Get target velocity range for a training goal.
@@ -174,21 +143,9 @@ export function getTargetVelocityForGoal(goal: TrainingGoal): { min: number; max
   const zone = TRAINING_ZONES[goal];
 
   return {
-    min: VELOCITY_AT_PERCENT_1RM[zone.max] ?? 0.45,
-    max: VELOCITY_AT_PERCENT_1RM[zone.min] ?? 0.85,
+    min: LIB_VELOCITY_TABLE[zone.max] ?? 0.45,
+    max: LIB_VELOCITY_TABLE[zone.min] ?? 0.85,
   };
-}
-
-/**
- * Categorize velocity into training quality zones.
- */
-export type VelocityTrend = 'fast' | 'moderate' | 'slow' | 'grinding';
-
-export function categorizeVelocity(velocity: number): VelocityTrend {
-  if (velocity > 0.9) return 'fast';
-  if (velocity > 0.55) return 'moderate';
-  if (velocity > 0.3) return 'slow';
-  return 'grinding';
 }
 
 /**

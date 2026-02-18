@@ -2,6 +2,8 @@
  * Session Generator
  *
  * Generates realistic StoredExerciseSession objects for testing and seeding.
+ * Produces the new storage schema format with StoredRep containing
+ * per-phase sample aggregates.
  */
 
 import { v4 as uuid } from 'uuid';
@@ -10,8 +12,10 @@ import type {
   StoredExerciseSession,
   StoredSessionSet,
   StoredExercisePlan,
+  StoredRep,
 } from '@/data/exercise-session';
-import type { PlannedSet, StoredRep, RepMetrics } from '@/domain/workout';
+import type { PlannedSet } from '@/domain/workout';
+import { type WorkoutSample, MovementPhase } from '@voltras/workout-analytics';
 import { generateSampleStream } from './sample-generator';
 
 // =============================================================================
@@ -19,82 +23,99 @@ import { generateSampleStream } from './sample-generator';
 // =============================================================================
 
 export interface GenerateSessionOptions {
-  /** Exercise ID */
   exerciseId?: string;
-  /** Exercise name */
   exerciseName?: string;
-  /** Number of sets */
   setCount?: number;
-  /** Training goal */
   goal?: TrainingGoal;
-  /** Whether this is a discovery session */
   isDiscovery?: boolean;
-  /** Days in the past to backdate */
   daysAgo?: number;
-  /** Weight in lbs */
   weight?: number;
-  /** Target reps per set */
   targetReps?: number;
-  /** Include raw samples (debug mode simulation) */
   includeRawSamples?: boolean;
 }
 
 export interface GenerateSetOptions {
-  /** Set index */
   setIndex?: number;
-  /** Weight in lbs */
   weight?: number;
-  /** Number of reps */
   repCount?: number;
-  /** Starting velocity */
   startingVelocity?: number;
-  /** Fatigue rate (velocity drop per rep) */
   fatigueRate?: number;
-  /** Include raw samples */
   includeRawSamples?: boolean;
+}
+
+// =============================================================================
+// Sample Helpers
+// =============================================================================
+
+function generatePhaseSamples(
+  phase: MovementPhase,
+  velocity: number,
+  force: number,
+  startTime: number,
+  startSequence: number,
+  sampleCount: number = 10,
+): { samples: WorkoutSample[]; endSequence: number; endTime: number } {
+  const samples: WorkoutSample[] = [];
+  const sampleInterval = phase === MovementPhase.CONCENTRIC ? 80 : 150;
+  let seq = startSequence;
+  let time = startTime;
+
+  for (let i = 0; i < sampleCount; i++) {
+    const progress = i / (sampleCount - 1 || 1);
+    const sampleVelocity = velocity * (0.7 + 0.6 * Math.sin(progress * Math.PI));
+    const position = phase === MovementPhase.CONCENTRIC ? progress : 1 - progress;
+
+    samples.push({
+      sequence: seq++,
+      timestamp: time,
+      phase,
+      position,
+      velocity: sampleVelocity,
+      force: force * (0.8 + 0.4 * progress),
+    });
+    time += sampleInterval;
+  }
+
+  return { samples, endSequence: seq, endTime: time };
 }
 
 // =============================================================================
 // Rep Generator
 // =============================================================================
 
-function generateRepMetrics(repNumber: number, velocity: number, force: number): RepMetrics {
-  const concentricDuration = 800 + Math.random() * 200;
-  const eccentricDuration = 1500 + Math.random() * 300;
-  const topPauseTime = 100 + Math.random() * 100;
-  const bottomPauseTime = 200 + Math.random() * 200;
-  const totalDuration = concentricDuration + eccentricDuration + topPauseTime + bottomPauseTime;
-
-  // Generate tempo string (ecc-pause-con-pause in seconds)
-  const eccSec = Math.round(eccentricDuration / 1000);
-  const topSec = Math.round(topPauseTime / 1000);
-  const conSec = Math.round(concentricDuration / 1000);
-  const botSec = Math.round(bottomPauseTime / 1000);
-
-  return {
-    totalDuration,
-    concentricDuration,
-    eccentricDuration,
-    topPauseTime,
-    bottomPauseTime,
-    tempo: `${eccSec}-${topSec}-${conSec}-${botSec}`,
-    concentricMeanVelocity: velocity,
-    concentricPeakVelocity: velocity * 1.3,
-    eccentricMeanVelocity: velocity * 0.5,
-    eccentricPeakVelocity: velocity * 0.7,
-    peakForce: force,
-    rangeOfMotion: 0.95 + Math.random() * 0.05,
-  };
-}
-
-function generateStoredRep(repNumber: number, velocity: number, weight: number): StoredRep {
+function generateStoredRep(
+  repNumber: number,
+  velocity: number,
+  weight: number,
+  startTime: number,
+  startSequence: number,
+): { rep: StoredRep; endTime: number; endSequence: number } {
   const force = weight * 1.5;
-  const metrics = generateRepMetrics(repNumber, velocity, force);
-  const start = Date.now();
+
+  const conc = generatePhaseSamples(
+    MovementPhase.CONCENTRIC,
+    velocity,
+    force,
+    startTime,
+    startSequence,
+  );
+
+  const ecc = generatePhaseSamples(
+    MovementPhase.ECCENTRIC,
+    velocity * 0.5,
+    force * 0.8,
+    conc.endTime,
+    conc.endSequence,
+  );
+
   return {
-    repNumber,
-    timestamp: { start, end: start + metrics.totalDuration },
-    metrics,
+    rep: {
+      repNumber,
+      concentric: { samples: conc.samples },
+      eccentric: { samples: ecc.samples },
+    },
+    endTime: ecc.endTime,
+    endSequence: ecc.endSequence,
   };
 }
 
@@ -114,10 +135,15 @@ export function generateStoredSet(options: GenerateSetOptions = {}): StoredSessi
 
   const startTime = Date.now();
   const reps: StoredRep[] = [];
+  let currentTime = startTime;
+  let currentSequence = 0;
 
   for (let i = 0; i < repCount; i++) {
     const velocity = startingVelocity - i * fatigueRate;
-    reps.push(generateStoredRep(i + 1, velocity, weight));
+    const result = generateStoredRep(i + 1, velocity, weight, currentTime, currentSequence);
+    reps.push(result.rep);
+    currentTime = result.endTime + 400;
+    currentSequence = result.endSequence;
   }
 
   const velocityLoss =
@@ -132,7 +158,7 @@ export function generateStoredSet(options: GenerateSetOptions = {}): StoredSessi
     weight,
     reps,
     startTime,
-    endTime: startTime + 30000,
+    endTime: currentTime,
     meanVelocity: startingVelocity - (repCount / 2) * fatigueRate,
     estimatedRPE: 6 + velocityLoss / 10,
     estimatedRIR: Math.max(0, 5 - velocityLoss / 10),
@@ -171,7 +197,6 @@ export function generateStoredSession(options: GenerateSessionOptions = {}): Sto
 
   const startTime = Date.now() - daysAgo * 24 * 60 * 60 * 1000;
 
-  // Generate planned sets
   const plannedSets: PlannedSet[] = [];
   for (let i = 0; i < setCount; i++) {
     plannedSets.push({
@@ -192,21 +217,19 @@ export function generateStoredSession(options: GenerateSessionOptions = {}): Sto
     generatedBy: isDiscovery ? 'discovery' : 'standard',
   };
 
-  // Generate completed sets
   const completedSets: StoredSessionSet[] = [];
   for (let i = 0; i < setCount; i++) {
     const setWeight = isDiscovery ? weight + i * 10 : weight;
-    // Simulate some fatigue across sets
     const setFatigueMultiplier = 1 - i * 0.05;
     completedSets.push(
       generateStoredSet({
         setIndex: i,
         weight: setWeight,
-        repCount: targetReps - (isDiscovery ? i : 0), // Discovery has decreasing reps
+        repCount: targetReps - (isDiscovery ? i : 0),
         startingVelocity: 0.8 * setFatigueMultiplier,
         fatigueRate: 0.03,
         includeRawSamples,
-      })
+      }),
     );
   }
 

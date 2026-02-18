@@ -1,31 +1,21 @@
 /**
  * Target-Seeking Physics Engine
  *
- * Generates WorkoutSample arrays that produce specific metrics when aggregated.
+ * Generates WorkoutSample arrays that produce specific metrics when
+ * fed through the @voltras/workout-analytics pipeline.
  *
  * Key insight: We control the sample curve shape to achieve target mean/peak values.
  * - Duration → number of samples at sample rate
  * - Peak velocity → max velocity in the curve
  * - Mean velocity → achieved by shaping the curve (bell curve, plateau, etc.)
- *
- * The engine takes RepTargets and produces Rep objects that match those targets
- * when aggregated through the standard domain aggregators.
  */
 
-import { type WorkoutSample, MovementPhase, createSample } from '@/domain/workout';
-import { aggregatePhase } from '@/domain/workout/aggregators/phase-aggregator';
-import { aggregateRep } from '@/domain/workout/aggregators/rep-aggregator';
-import type { Rep } from '@/domain/workout/models/rep';
-import type { Phase } from '@/domain/workout/models/phase';
+import { type WorkoutSample, MovementPhase } from '@voltras/workout-analytics';
 
 // =============================================================================
 // Types (internal to physics engine)
 // =============================================================================
 
-/**
- * Target metrics for a single phase.
- * Imported types should match rep-builder.ts PhaseTargets.
- */
 export interface PhaseTargets {
   duration?: number;
   meanVelocity?: number;
@@ -34,10 +24,6 @@ export interface PhaseTargets {
   peakForce?: number;
 }
 
-/**
- * Target metrics for a single rep.
- * Imported types should match rep-builder.ts RepTargets.
- */
 export interface RepTargets {
   concentric?: PhaseTargets;
   eccentric?: PhaseTargets;
@@ -47,10 +33,6 @@ export interface RepTargets {
   repNumber?: number;
 }
 
-/**
- * Resolved RepTargets with all values filled in (no optionals).
- * Used internally after applying defaults and derivations.
- */
 export interface ResolvedRepTargets {
   concentric: Required<PhaseTargets>;
   eccentric: Required<PhaseTargets> | null;
@@ -61,26 +43,20 @@ export interface ResolvedRepTargets {
 
 /**
  * Result from generating a rep with physics.
+ * Returns raw samples -- consumers feed these to the library pipeline.
  */
 export interface GeneratedRep {
-  rep: Rep;
   samples: WorkoutSample[];
   endTime: number;
   endSequence: number;
 }
 
-/**
- * Result from generating phase samples.
- */
 export interface GeneratedPhase {
   samples: WorkoutSample[];
   endTime: number;
   endSequence: number;
 }
 
-/**
- * Physics engine configuration.
- */
 export interface PhysicsConfig {
   sampleRate: number;
   startTime: number;
@@ -89,11 +65,9 @@ export interface PhysicsConfig {
 }
 
 // =============================================================================
-// Behavior Presets (duplicated for independence, or import from rep-builder)
+// Configuration
 // =============================================================================
 
-// Note: These are duplicated here to avoid circular dependencies.
-// The source of truth is in rep-builder.ts.
 const BEHAVIOR_PRESETS_INTERNAL: Record<string, RepTargets> = {
   normal: {
     concentric: { duration: 0.8, meanVelocity: 0.55, peakVelocity: 0.7, peakForce: 100 },
@@ -101,10 +75,6 @@ const BEHAVIOR_PRESETS_INTERNAL: Record<string, RepTargets> = {
     hold: { top: 0.15 },
   },
 };
-
-// =============================================================================
-// Configuration
-// =============================================================================
 
 const DEFAULT_CONFIG: PhysicsConfig = {
   sampleRate: 11,
@@ -126,12 +96,24 @@ const ECCENTRIC_VELOCITY_RATIO = 0.65;
 const MEAN_TO_PEAK_RATIO = 0.78;
 
 // =============================================================================
+// Sample Construction Helper
+// =============================================================================
+
+function makeSample(
+  sequence: number,
+  timestamp: number,
+  phase: MovementPhase,
+  position: number,
+  velocity: number,
+  force: number
+): WorkoutSample {
+  return { sequence, timestamp, phase, position, velocity, force };
+}
+
+// =============================================================================
 // Velocity Curve Generation
 // =============================================================================
 
-/**
- * Generate velocity samples for a phase that achieve target mean and peak.
- */
 export function generateVelocityCurve(
   duration: number,
   targetMean: number,
@@ -150,9 +132,6 @@ export function generateVelocityCurve(
   }
 }
 
-/**
- * Bell curve velocity profile.
- */
 export function generateBellCurve(
   numSamples: number,
   targetMean: number,
@@ -186,9 +165,6 @@ function computeBellSamples(numSamples: number, peak: number, power: number): nu
   });
 }
 
-/**
- * Spiky curve - quick peak with fast decay.
- */
 export function generateSpikyCurve(
   numSamples: number,
   targetMean: number,
@@ -223,9 +199,6 @@ export function generateSpikyCurve(
   return velocities;
 }
 
-/**
- * Plateau curve - sustained velocity.
- */
 export function generatePlateauCurve(
   numSamples: number,
   targetMean: number,
@@ -263,9 +236,6 @@ export function generatePlateauCurve(
 // Phase Sample Generation
 // =============================================================================
 
-/**
- * Generate WorkoutSample[] for a single movement phase.
- */
 export function generatePhaseSamples(
   phaseType: MovementPhase,
   targets: Required<PhaseTargets>,
@@ -297,16 +267,13 @@ export function generatePhaseSamples(
     const forceCurve = Math.sin(Math.PI * forceProgress);
     const force = meanForce + (peakForce - meanForce) * forceCurve;
 
-    samples.push(createSample(sequence++, currentTime, phaseType, position, velocity, force));
+    samples.push(makeSample(sequence++, currentTime, phaseType, position, velocity, force));
     currentTime += sampleInterval;
   }
 
   return { samples, endTime: currentTime, endSequence: sequence };
 }
 
-/**
- * Generate WorkoutSample[] for a hold phase.
- */
 export function generateHoldSamples(
   duration: number,
   position: number,
@@ -327,9 +294,7 @@ export function generateHoldSamples(
   let sequence = startSequence;
 
   for (let i = 0; i < numSamples; i++) {
-    samples.push(
-      createSample(sequence++, currentTime, MovementPhase.HOLD, position, 0, baseForce)
-    );
+    samples.push(makeSample(sequence++, currentTime, MovementPhase.HOLD, position, 0, baseForce));
     currentTime += sampleInterval;
   }
 
@@ -340,9 +305,6 @@ export function generateHoldSamples(
 // Target Resolution
 // =============================================================================
 
-/**
- * Resolve RepTargets by applying derivation rules and defaults.
- */
 export function resolveRepTargets(targets: RepTargets): ResolvedRepTargets {
   const base = deepMerge({}, BEHAVIOR_PRESETS_INTERNAL.normal) as RepTargets;
 
@@ -388,9 +350,6 @@ export function resolveRepTargets(targets: RepTargets): ResolvedRepTargets {
   };
 }
 
-/**
- * Derive concentric and eccentric targets from total targets.
- */
 export function derivePhasesFromTotal(total: PhaseTargets): {
   concentric: PhaseTargets;
   eccentric: PhaseTargets;
@@ -426,9 +385,6 @@ export function derivePhasesFromTotal(total: PhaseTargets): {
   return { concentric, eccentric };
 }
 
-/**
- * Derive missing velocity values.
- */
 export function deriveVelocities(phase: PhaseTargets): Required<PhaseTargets> {
   const result = { ...DEFAULT_PHASE_TARGETS, ...phase };
 
@@ -456,7 +412,9 @@ function fillPhaseDefaults(phase: PhaseTargets): PhaseTargets {
 // =============================================================================
 
 /**
- * Generate a Rep from targets using target-seeking physics.
+ * Generate samples for a rep from targets using target-seeking physics.
+ * Returns raw WorkoutSample[] -- feed these to the library's pipeline
+ * (createSet/addSampleToSet/completeSet) to produce Set objects.
  */
 export function generateRepFromTargets(
   targets: RepTargets,
@@ -496,7 +454,7 @@ export function generateRepFromTargets(
     currentSequence = eccentricResult.endSequence;
   }
 
-  const idleSample = createSample(currentSequence++, currentTime, MovementPhase.IDLE, 0, 0, 0);
+  const idleSample = makeSample(currentSequence++, currentTime, MovementPhase.IDLE, 0, 0, 0);
   currentTime += 1000 / fullConfig.sampleRate;
 
   const allSamples = [
@@ -506,94 +464,7 @@ export function generateRepFromTargets(
     idleSample,
   ];
 
-  const rep = aggregateSamplesToRep(allSamples, resolved.repNumber);
-
-  return { rep, samples: allSamples, endTime: currentTime, endSequence: currentSequence };
-}
-
-/**
- * Aggregate samples into a Rep using domain aggregators.
- */
-export function aggregateSamplesToRep(samples: WorkoutSample[], repNumber: number): Rep {
-  const concentricSamples = samples.filter((s) => s.phase === MovementPhase.CONCENTRIC);
-  const eccentricSamples = samples.filter((s) => s.phase === MovementPhase.ECCENTRIC);
-  const holdSamples = samples.filter((s) => s.phase === MovementPhase.HOLD);
-
-  const concentric = aggregatePhase(MovementPhase.CONCENTRIC, concentricSamples);
-
-  let eccentric: Phase;
-  if (eccentricSamples.length === 0) {
-    eccentric = {
-      type: MovementPhase.ECCENTRIC,
-      timestamp: {
-        start: concentricSamples[concentricSamples.length - 1]?.timestamp ?? 0,
-        end: concentricSamples[concentricSamples.length - 1]?.timestamp ?? 0,
-      },
-      samples: [],
-      metrics: {
-        duration: 0,
-        meanVelocity: 0,
-        peakVelocity: 0,
-        meanForce: 0,
-        peakForce: 0,
-        startPosition: concentric.metrics.endPosition,
-        endPosition: 0,
-      },
-    };
-  } else {
-    eccentric = aggregatePhase(MovementPhase.ECCENTRIC, eccentricSamples);
-  }
-
-  const holdAtTop = holdSamples.length > 0 ? aggregatePhase(MovementPhase.HOLD, holdSamples) : null;
-
-  return aggregateRep(repNumber, concentric, eccentric, holdAtTop, null);
-}
-
-// =============================================================================
-// Verification
-// =============================================================================
-
-/**
- * Verify that generated rep metrics match targets within tolerance.
- */
-export function verifyRepMetrics(
-  rep: Rep,
-  targets: ResolvedRepTargets,
-  strict: boolean = false
-): boolean {
-  const tolerance = 0.1;
-  const issues: string[] = [];
-
-  const checks = [
-    { name: 'concentric.meanVelocity', actual: rep.metrics.concentricMeanVelocity, expected: targets.concentric.meanVelocity },
-    { name: 'concentric.peakVelocity', actual: rep.metrics.concentricPeakVelocity, expected: targets.concentric.peakVelocity },
-    { name: 'concentric.duration', actual: rep.metrics.concentricDuration, expected: targets.concentric.duration },
-  ];
-
-  if (targets.eccentric) {
-    checks.push(
-      { name: 'eccentric.meanVelocity', actual: rep.metrics.eccentricMeanVelocity, expected: targets.eccentric.meanVelocity },
-      { name: 'eccentric.peakVelocity', actual: rep.metrics.eccentricPeakVelocity, expected: targets.eccentric.peakVelocity },
-      { name: 'eccentric.duration', actual: rep.metrics.eccentricDuration, expected: targets.eccentric.duration }
-    );
-  }
-
-  for (const check of checks) {
-    if (check.expected === undefined || check.expected === 0) continue;
-    const diff = Math.abs(check.actual - check.expected) / check.expected;
-    if (diff > tolerance) {
-      issues.push(`${check.name}: actual=${check.actual.toFixed(3)}, expected=${check.expected.toFixed(3)}, diff=${(diff * 100).toFixed(1)}%`);
-    }
-  }
-
-  if (issues.length > 0) {
-    const msg = `Physics target mismatch:\n${issues.join('\n')}`;
-    if (strict) throw new Error(msg);
-    else if (process.env.NODE_ENV === 'development') console.warn(msg);
-    return false;
-  }
-
-  return true;
+  return { samples: allSamples, endTime: currentTime, endSequence: currentSequence };
 }
 
 // =============================================================================

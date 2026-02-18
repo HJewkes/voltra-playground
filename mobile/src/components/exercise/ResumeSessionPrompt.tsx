@@ -8,9 +8,10 @@
 import React from 'react';
 import { View, Text, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Stack, ActionButton } from '@/components/ui';
-import { colors } from '@/theme';
+import { Card, CardContent, Button, ButtonText, VStack, getSemanticColors, alpha } from '@titan-design/react-ui';
 import type { StoredExerciseSession } from '@/data/exercise-session';
+
+const t = getSemanticColors('dark');
 
 export interface ResumeSessionPromptProps {
   /** The in-progress session to resume */
@@ -67,54 +68,57 @@ export function ResumeSessionPrompt({
         className="flex-1 items-center justify-center px-6"
         style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)' }}
       >
-        <Card elevation={2} padding="lg" className="w-full max-w-sm">
+        <Card elevation={2} className="w-full max-w-sm">
+          <CardContent className="p-6">
           {/* Header */}
           <View className="mb-6 items-center">
             <View
               className="mb-4 h-16 w-16 items-center justify-center rounded-full"
-              style={{ backgroundColor: colors.warning.DEFAULT + '20' }}
+              style={{ backgroundColor: alpha(t['status-warning'], 0.12) }}
             >
-              <Ionicons name="pause-circle" size={36} color={colors.warning.DEFAULT} />
+              <Ionicons name="pause-circle" size={36} color={t['status-warning']} />
             </View>
-            <Text className="text-center text-xl font-bold text-content-primary">
+            <Text className="text-center text-xl font-bold text-text-primary">
               Session In Progress
             </Text>
-            <Text className="mt-2 text-center text-content-muted">
+            <Text className="mt-2 text-center text-text-disabled">
               You have an unfinished workout
             </Text>
           </View>
 
           {/* Session Info */}
-          <View className="mb-6 rounded-xl p-4" style={{ backgroundColor: colors.surface.dark }}>
-            <Text className="mb-2 text-lg font-semibold text-content-primary">
+          <View className="mb-6 rounded-xl p-4" style={{ backgroundColor: t['background-subtle'] }}>
+            <Text className="mb-2 text-lg font-semibold text-text-primary">
               {session.exerciseName ?? 'Exercise'}
             </Text>
-            <Stack gap="xs">
+            <VStack gap={1}>
               <View className="flex-row justify-between">
-                <Text className="text-content-muted">Progress</Text>
-                <Text className="font-medium text-content-secondary">
+                <Text className="text-text-disabled">Progress</Text>
+                <Text className="font-medium text-text-secondary">
                   {setsCompleted} of {totalSets} sets
                 </Text>
               </View>
               <View className="flex-row justify-between">
-                <Text className="text-content-muted">Last activity</Text>
-                <Text className="font-medium text-content-secondary">
+                <Text className="text-text-disabled">Last activity</Text>
+                <Text className="font-medium text-text-secondary">
                   {formatTimeSince(lastActivity)}
                 </Text>
               </View>
-            </Stack>
+            </VStack>
           </View>
 
           {/* Actions */}
-          <Stack gap="sm">
-            <ActionButton label="Resume Workout" variant="primary" onPress={onResume} icon="play" />
-            <ActionButton
-              label="Discard Session"
-              variant="secondary"
-              onPress={onDiscard}
-              icon="trash-outline"
-            />
-          </Stack>
+          <VStack gap={2}>
+            <Button variant="solid" color="primary" fullWidth onPress={onResume} className="rounded-2xl">
+              <Ionicons name="play" size={20} color="white" style={{ marginRight: 8 }} />
+              <ButtonText>Resume Workout</ButtonText>
+            </Button>
+            <Button variant="outline" color="primary" fullWidth onPress={onDiscard} className="rounded-2xl">
+              <Ionicons name="trash-outline" size={20} color="#f97316" style={{ marginRight: 8 }} />
+              <ButtonText>Discard Session</ButtonText>
+            </Button>
+          </VStack>
+          </CardContent>
         </Card>
       </View>
     </Modal>

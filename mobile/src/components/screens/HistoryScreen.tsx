@@ -16,10 +16,11 @@ import {
   Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Stack, StatsRow, EmptyState } from '@/components/ui';
+import { Card, CardContent, VStack, Metric, MetricGroup, EmptyState, getSemanticColors, alpha } from '@titan-design/react-ui';
 import { getSessionRepository } from '@/data/provider';
 import type { StoredExerciseSession } from '@/data/exercise-session';
-import { colors } from '@/theme';
+
+const t = getSemanticColors('dark');
 
 /**
  * Format large numbers for display.
@@ -111,34 +112,34 @@ export function HistoryScreen() {
         <RefreshControl
           refreshing={isLoading}
           onRefresh={handleRefresh}
-          tintColor={colors.primary[500]}
+          tintColor={t['brand-primary']}
         />
       }
     >
       <View className="p-4">
         {/* Aggregate Stats */}
-        <Card elevation={1} padding="lg" style={{ marginBottom: 24 }}>
-          <Text className="mb-4 font-bold text-content-secondary">All Time Stats</Text>
-          <StatsRow
-            stats={[
-              { value: aggregateStats.totalSets, label: 'Sets' },
-              { value: formatNumber(aggregateStats.totalReps), label: 'Total Reps' },
-              { value: formatNumber(aggregateStats.totalVolume), label: 'Volume (lbs)' },
-            ]}
-          />
+        <Card elevation={1} style={{ marginBottom: 24 }}>
+          <CardContent className="p-6">
+            <Text className="mb-4 font-bold text-text-secondary">All Time Stats</Text>
+            <MetricGroup>
+              <Metric value={String(aggregateStats.totalSets)} label="Sets" />
+              <Metric value={formatNumber(aggregateStats.totalReps)} label="Total Reps" />
+              <Metric value={formatNumber(aggregateStats.totalVolume)} label="Volume (lbs)" />
+            </MetricGroup>
+          </CardContent>
         </Card>
 
         {/* Session List */}
-        <Text className="mb-4 text-lg font-bold text-content-primary">Past Sessions</Text>
+        <Text className="mb-4 text-lg font-bold text-text-primary">Past Sessions</Text>
 
         {sessions.length === 0 ? (
           <EmptyState
-            icon="fitness-outline"
+            icon={(props) => <Ionicons name="fitness-outline" size={props.size} />}
             title="No Sessions Yet"
-            subtitle="Complete your first session to see it here"
+            description="Complete your first session to see it here"
           />
         ) : (
-          <Stack gap="sm">
+          <VStack gap={2}>
             {sessions.map((session) => (
               <SessionListItem
                 key={session.id}
@@ -147,12 +148,12 @@ export function HistoryScreen() {
                 onLongPress={() => handleDelete(session.id)}
               />
             ))}
-          </Stack>
+          </VStack>
         )}
 
         {/* Tip */}
         {sessions.length > 0 && (
-          <Text className="mt-6 text-center text-xs text-content-muted">
+          <Text className="mt-6 text-center text-xs text-text-disabled">
             Long press a session to delete it
           </Text>
         )}
@@ -186,39 +187,41 @@ function SessionListItem({
 
   return (
     <TouchableOpacity onPress={onPress} onLongPress={onLongPress} activeOpacity={0.7}>
-      <Card elevation={1} padding="md">
-        <View className="flex-row items-center">
-          <View
-            className="mr-4 h-12 w-12 items-center justify-center rounded-full"
-            style={{ backgroundColor: colors.primary[600] + '20' }}
-          >
+      <Card elevation={1} className="mb-4">
+        <CardContent>
+          <View className="flex-row items-center">
+            <View
+              className="mr-4 h-12 w-12 items-center justify-center rounded-full"
+              style={{ backgroundColor: alpha(t['brand-primary-dark'], 0.12) }}
+            >
+              <Ionicons
+                name={isDiscovery ? 'compass' : 'fitness'}
+                size={24}
+                color={t['brand-primary']}
+              />
+            </View>
+            <View className="flex-1">
+              <Text className="font-semibold text-text-primary">
+                {session.exerciseName ?? 'Exercise'}
+              </Text>
+              <Text className="text-sm text-text-disabled">
+                {formattedDate} • {isDiscovery ? 'Discovery' : 'Training'}
+              </Text>
+            </View>
+            <View className="items-end">
+              <Text className="text-base font-bold text-brand-primary">
+                {session.completedSets.length} sets
+              </Text>
+              <Text className="text-sm text-text-disabled">{totalReps} reps</Text>
+            </View>
             <Ionicons
-              name={isDiscovery ? 'compass' : 'fitness'}
-              size={24}
-              color={colors.primary[500]}
+              name="chevron-forward"
+              size={20}
+              color={t['text-disabled']}
+              style={{ marginLeft: 8 }}
             />
           </View>
-          <View className="flex-1">
-            <Text className="font-semibold text-content-primary">
-              {session.exerciseName ?? 'Exercise'}
-            </Text>
-            <Text className="text-sm text-content-muted">
-              {formattedDate} • {isDiscovery ? 'Discovery' : 'Training'}
-            </Text>
-          </View>
-          <View className="items-end">
-            <Text className="text-base font-bold" style={{ color: colors.primary[500] }}>
-              {session.completedSets.length} sets
-            </Text>
-            <Text className="text-sm text-content-muted">{totalReps} reps</Text>
-          </View>
-          <Ionicons
-            name="chevron-forward"
-            size={20}
-            color={colors.content.muted}
-            style={{ marginLeft: 8 }}
-          />
-        </View>
+        </CardContent>
       </Card>
     </TouchableOpacity>
   );
@@ -249,17 +252,17 @@ function SessionDetailModal({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View className="flex-1" style={{ backgroundColor: colors.surface.background }}>
+      <View className="flex-1" style={{ backgroundColor: t['background-default'] }}>
         {/* Header */}
         <View
           className="flex-row items-center justify-between border-b px-5 py-5"
-          style={{ backgroundColor: colors.surface.elevated, borderColor: colors.surface.light }}
+          style={{ backgroundColor: t['surface-elevated'], borderColor: t['border-strong'] }}
         >
           <View>
-            <Text className="text-xl font-bold text-content-primary">
+            <Text className="text-xl font-bold text-text-primary">
               {session.exerciseName ?? 'Exercise'}
             </Text>
-            <Text className="text-content-muted">
+            <Text className="text-text-disabled">
               {new Date(session.startTime).toLocaleDateString()} •{' '}
               {isDiscovery ? 'Discovery' : 'Training'}
             </Text>
@@ -267,86 +270,90 @@ function SessionDetailModal({
           <TouchableOpacity
             onPress={onClose}
             className="h-10 w-10 items-center justify-center rounded-full"
-            style={{ backgroundColor: colors.surface.dark }}
+            style={{ backgroundColor: t['background-subtle'] }}
           >
-            <Ionicons name="close" size={22} color={colors.text.secondary} />
+            <Ionicons name="close" size={22} color={t['text-secondary']} />
           </TouchableOpacity>
         </View>
 
         <ScrollView className="flex-1 p-4">
           {/* Summary stats */}
-          <Card elevation={1} padding="lg">
-            <StatsRow
-              stats={[
-                { value: session.completedSets.length, label: 'Sets' },
-                { value: totalReps, label: 'Reps' },
-                { value: formatNumber(totalVolume), label: 'Volume' },
-              ]}
-            />
+          <Card elevation={1} className="mb-4">
+            <CardContent className="p-6">
+              <MetricGroup>
+                <Metric value={String(session.completedSets.length)} label="Sets" />
+                <Metric value={String(totalReps)} label="Reps" />
+                <Metric value={formatNumber(totalVolume)} label="Volume" />
+              </MetricGroup>
+            </CardContent>
           </Card>
 
           {/* Set breakdown */}
-          <Card elevation={1} padding="lg">
-            <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-content-muted">
-              Set Breakdown
-            </Text>
-            {session.completedSets.map((set, i) => {
-              const planned = session.plan.sets[i];
-              const repsDelta = planned ? set.reps.length - planned.targetReps : 0;
+          <Card elevation={1} className="mb-4">
+            <CardContent className="p-6">
+              <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-text-disabled">
+                Set Breakdown
+              </Text>
+              {session.completedSets.map((set, i) => {
+                const planned = session.plan.sets[i];
+                const repsDelta = planned ? set.reps.length - planned.targetReps : 0;
 
-              return (
-                <View
-                  key={i}
-                  className={`flex-row items-center justify-between py-3 ${
-                    i < session.completedSets.length - 1 ? 'border-b border-surface-100' : ''
-                  }`}
-                >
-                  <View className="flex-row items-center">
-                    <View
-                      className="mr-4 h-9 w-9 items-center justify-center rounded-full"
-                      style={{ backgroundColor: colors.surface.dark }}
-                    >
-                      <Text className="font-bold text-content-secondary">{i + 1}</Text>
-                    </View>
-                    <View>
-                      <Text className="font-medium text-content-primary">
-                        {set.weight} lbs × {set.reps.length}
-                        {planned && (
-                          <Text
-                            style={{
-                              color: repsDelta >= 0 ? colors.success.DEFAULT : colors.danger.light,
-                            }}
-                          >
-                            {' '}
-                            ({repsDelta >= 0 ? '+' : ''}
-                            {repsDelta})
-                          </Text>
-                        )}
-                      </Text>
-                      <Text className="text-xs text-content-muted">
-                        {set.meanVelocity.toFixed(2)} m/s • RPE {set.estimatedRPE}
-                      </Text>
+                return (
+                  <View
+                    key={i}
+                    className={`flex-row items-center justify-between py-3 ${
+                      i < session.completedSets.length - 1 ? 'border-b border-surface-100' : ''
+                    }`}
+                  >
+                    <View className="flex-row items-center">
+                      <View
+                        className="mr-4 h-9 w-9 items-center justify-center rounded-full"
+                        style={{ backgroundColor: t['background-subtle'] }}
+                      >
+                        <Text className="font-bold text-text-secondary">{i + 1}</Text>
+                      </View>
+                      <View>
+                        <Text className="font-medium text-text-primary">
+                          {set.weight} lbs × {set.reps.length}
+                          {planned && (
+                            <Text
+                              style={{
+                                color: repsDelta >= 0 ? t['status-success'] : t['status-error'],
+                              }}
+                            >
+                              {' '}
+                              ({repsDelta >= 0 ? '+' : ''}
+                              {repsDelta})
+                            </Text>
+                          )}
+                        </Text>
+                        <Text className="text-xs text-text-disabled">
+                          {set.meanVelocity.toFixed(2)} m/s • RPE {set.estimatedRPE}
+                        </Text>
+                      </View>
                     </View>
                   </View>
-                </View>
-              );
-            })}
+                );
+              })}
+            </CardContent>
           </Card>
 
           {/* Termination reason */}
           {session.terminationReason && (
-            <Card elevation={1} padding="md">
-              <View className="flex-row items-center">
-                <Ionicons
-                  name="information-circle"
-                  size={20}
-                  color={colors.content.muted}
-                  style={{ marginRight: 8 }}
-                />
-                <Text className="flex-1 text-content-muted">
-                  Session ended: {formatTerminationReason(session.terminationReason)}
-                </Text>
-              </View>
+            <Card elevation={1} className="mb-4">
+              <CardContent>
+                <View className="flex-row items-center">
+                  <Ionicons
+                    name="information-circle"
+                    size={20}
+                    color={t['text-disabled']}
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text className="flex-1 text-text-disabled">
+                    Session ended: {formatTerminationReason(session.terminationReason)}
+                  </Text>
+                </View>
+              </CardContent>
             </Card>
           )}
         </ScrollView>

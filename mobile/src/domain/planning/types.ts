@@ -20,7 +20,7 @@ import type {
   FatigueEstimate,
   StrengthEstimate,
 } from '@/domain/workout/metrics/types';
-import type { Set } from '@/domain/workout/models/set';
+import type { CompletedSet } from '@/domain/workout/models/completed-set';
 import type { PlannedSet } from '@/domain/workout/models/plan';
 
 // =============================================================================
@@ -200,7 +200,7 @@ export interface PlanningContext {
   historicalMetrics: HistoricalMetrics | null;
 
   /** Sets completed in current session */
-  completedSets: Set[];
+  completedSets: CompletedSet[];
 
   /** Original plan set count (if adapting mid-workout) */
   originalPlanSetCount?: number;

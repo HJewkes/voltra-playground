@@ -13,11 +13,11 @@
 
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-// Ionicons removed - not currently used
 import { useStore } from 'zustand';
-import { colors } from '@/theme';
+import { getSemanticColors } from '@titan-design/react-ui';
 import type { RecordingUIState, RecordingStoreApi } from '@/stores';
-import type { Rep } from '@/domain/workout';
+
+const t = getSemanticColors('dark');
 
 // =============================================================================
 // Types
@@ -38,8 +38,8 @@ export interface RecordingDisplayViewProps {
   startCountdown?: number;
   /** Current rep count */
   repCount: number;
-  /** Last completed rep */
-  lastRep: Rep | null;
+  /** Peak velocity of the last completed rep (m/s) */
+  lastRepPeakVelocity: number | null;
   /** Called to skip rest */
   onSkipRest?: () => void;
 }
@@ -51,13 +51,13 @@ export interface RecordingDisplayViewProps {
 function getStateColor(uiState: RecordingUIState): string {
   switch (uiState) {
     case 'recording':
-      return colors.success.DEFAULT;
+      return t['status-success'];
     case 'resting':
-      return colors.primary[600];
+      return t['brand-primary-dark'];
     case 'countdown':
-      return colors.warning.DEFAULT;
+      return t['status-warning'];
     default:
-      return colors.primary[500];
+      return t['brand-primary'];
   }
 }
 
@@ -143,24 +143,24 @@ function CountdownDisplay({
 function ActiveRecordingDisplay({
   repCount,
   targetReps,
-  lastRep,
+  lastRepPeakVelocity,
 }: {
   repCount: number;
   targetReps?: number;
-  lastRep: Rep | null;
+  lastRepPeakVelocity: number | null;
 }) {
   return (
     <View className="items-center">
       <Text className="mb-2 text-xl text-white/70">REPS</Text>
       <Text className="text-9xl font-bold text-white">{repCount}</Text>
       {targetReps !== undefined && <Text className="mt-2 text-3xl text-white">/ {targetReps}</Text>}
-      {lastRep && (
+      {lastRepPeakVelocity !== null && (
         <View
           className="mt-8 rounded-2xl px-8 py-4"
           style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
         >
           <Text className="text-xl font-bold text-white">
-            {lastRep.metrics.concentricPeakVelocity.toFixed(2)} m/s
+            {lastRepPeakVelocity.toFixed(2)} m/s
           </Text>
         </View>
       )}
@@ -194,7 +194,7 @@ export function RecordingDisplayView({
   restCountdown = 0,
   startCountdown = 0,
   repCount,
-  lastRep,
+  lastRepPeakVelocity,
   onSkipRest,
 }: RecordingDisplayViewProps) {
   return (
@@ -216,7 +216,11 @@ export function RecordingDisplayView({
         <CountdownDisplay countdown={startCountdown} subInstruction={subInstruction} />
       )}
       {uiState === 'recording' && (
-        <ActiveRecordingDisplay repCount={repCount} targetReps={targetReps} lastRep={lastRep} />
+        <ActiveRecordingDisplay
+          repCount={repCount}
+          targetReps={targetReps}
+          lastRepPeakVelocity={lastRepPeakVelocity}
+        />
       )}
     </View>
   );
@@ -266,7 +270,7 @@ export function RecordingDisplay({
 }: RecordingDisplayProps) {
   const uiState = useStore(store, (s) => s.uiState);
   const repCount = useStore(store, (s) => s.repCount);
-  const lastRep = useStore(store, (s) => s.lastRep);
+  const lastRepPeakVelocity = useStore(store, (s) => s.lastRepPeakVelocity);
 
   return (
     <RecordingDisplayView
@@ -277,7 +281,7 @@ export function RecordingDisplay({
       restCountdown={restCountdown}
       startCountdown={startCountdown}
       repCount={repCount}
-      lastRep={lastRep}
+      lastRepPeakVelocity={lastRepPeakVelocity}
       onSkipRest={onSkipRest}
     />
   );

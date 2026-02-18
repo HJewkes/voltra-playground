@@ -7,12 +7,13 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, Stack, LoadingState } from '@/components/ui';
-import { colors } from '@/theme';
+import { Card, CardContent, VStack, Spinner, getSemanticColors } from '@titan-design/react-ui';
 import { BLEWarning } from './BLEWarning';
 import { ScanButton } from './ScanButton';
 import { DeviceListItem } from './DeviceListItem';
 import type { DiscoveredDevice } from '@/domain/device';
+
+const t = getSemanticColors('dark');
 
 export interface DeviceListProps {
   /** List of discovered devices */
@@ -55,59 +56,69 @@ export function DeviceList({
   const scanDisabled = isScanning || !bleSupported;
 
   return (
-    <Card elevation={1} padding="lg">
-      {/* Header with scan button */}
-      <View className="mb-4 flex-row items-center justify-between">
-        <Text className="text-lg font-bold text-content-primary">Voltras</Text>
-        {bleSupported && (
-          <ScanButton
-            isScanning={isScanning}
-            disabled={scanDisabled}
-            onPress={onScan}
-            label={requiresUserGesture ? 'Connect' : 'Scan'}
-            scanningLabel={requiresUserGesture ? 'Connecting' : 'Scanning'}
-          />
-        )}
-      </View>
-
-      {/* BLE Environment Warning */}
-      {warningMessage && <BLEWarning environment={environment} message={warningMessage} />}
-
-      {/* Restoring state */}
-      {isRestoring && <LoadingState message="Restoring connection..." />}
-
-      {/* Device List */}
-      {!isRestoring && devices.length > 0 && (
-        <Stack gap="sm">
-          {devices.map((device) => (
-            <DeviceListItem
-              key={device.id}
-              device={device}
-              isConnecting={connectingDeviceId === device.id}
-              isOtherConnecting={connectingDeviceId !== null && connectingDeviceId !== device.id}
-              onSelect={() => onDeviceSelect(device)}
+    <Card elevation={1} className="mb-4">
+      <CardContent className="p-6">
+        {/* Header with scan button */}
+        <View className="mb-4 flex-row items-center justify-between">
+          <Text className="text-lg font-bold text-text-primary">Voltras</Text>
+          {bleSupported && (
+            <ScanButton
+              isScanning={isScanning}
+              disabled={scanDisabled}
+              onPress={onScan}
+              label={requiresUserGesture ? 'Connect' : 'Scan'}
+              scanningLabel={requiresUserGesture ? 'Connecting' : 'Scanning'}
             />
-          ))}
-        </Stack>
-      )}
-
-      {/* Empty state - no devices */}
-      {!isRestoring && devices.length === 0 && !isScanning && (
-        <View className="items-center py-8">
-          <Ionicons name="bluetooth-outline" size={40} color={colors.text.muted} />
-          <Text className="mt-3 text-center text-sm text-content-muted">
-            {requiresUserGesture ? 'Click to connect a device' : 'No Voltras found'}
-          </Text>
-          <Text className="mt-1 text-xs text-content-muted">
-            {requiresUserGesture ? 'Use the Scan button above' : 'Will scan again automatically'}
-          </Text>
+          )}
         </View>
-      )}
 
-      {/* Scanning state */}
-      {!isRestoring && devices.length === 0 && isScanning && (
-        <LoadingState size="large" message="Looking for Voltras..." />
-      )}
+        {/* BLE Environment Warning */}
+        {warningMessage && <BLEWarning environment={environment} message={warningMessage} />}
+
+        {/* Restoring state */}
+        {isRestoring && (
+          <View className="items-center py-6">
+            <Spinner size="lg" />
+            <Text className="mt-3 text-text-secondary">Restoring connection...</Text>
+          </View>
+        )}
+
+        {/* Device List */}
+        {!isRestoring && devices.length > 0 && (
+          <VStack gap={2}>
+            {devices.map((device) => (
+              <DeviceListItem
+                key={device.id}
+                device={device}
+                isConnecting={connectingDeviceId === device.id}
+                isOtherConnecting={connectingDeviceId !== null && connectingDeviceId !== device.id}
+                onSelect={() => onDeviceSelect(device)}
+              />
+            ))}
+          </VStack>
+        )}
+
+        {/* Empty state - no devices */}
+        {!isRestoring && devices.length === 0 && !isScanning && (
+          <View className="items-center py-8">
+            <Ionicons name="bluetooth-outline" size={40} color={t['text-disabled']} />
+            <Text className="mt-3 text-center text-sm text-text-disabled">
+              {requiresUserGesture ? 'Click to connect a device' : 'No Voltras found'}
+            </Text>
+            <Text className="mt-1 text-xs text-text-disabled">
+              {requiresUserGesture ? 'Use the Scan button above' : 'Will scan again automatically'}
+            </Text>
+          </View>
+        )}
+
+        {/* Scanning state */}
+        {!isRestoring && devices.length === 0 && isScanning && (
+          <View className="items-center py-6">
+            <Spinner size="lg" />
+            <Text className="mt-3 text-text-secondary">Looking for Voltras...</Text>
+          </View>
+        )}
+      </CardContent>
     </Card>
   );
 }

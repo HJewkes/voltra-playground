@@ -29,9 +29,4 @@ export type {
 export { useConnectionStore } from './connection-store';
 
 // Connection store selectors (use with useConnectionStore(selector))
-export {
-  selectBleEnvironment,
-  selectIsWeb,
-  selectIsConnected,
-  selectConnectedDeviceName,
-} from './connection-store';
+export { selectBleEnvironment, selectIsConnected } from './connection-store';

@@ -9,10 +9,13 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { Link } from 'expo-router';
 import { useConnectionStore } from '@/stores';
-import { Card, Stack, Banner, LinkCard, StatsRow, ListItem, EmptyState } from '@/components/ui';
-import { colors } from '@/theme';
+import { LinkCard } from '@/components/ui';
+import { HStack, Card, CardContent, Alert, AlertTitle, AlertDescription, Metric, MetricGroup, EmptyState, ListItem, ListItemContent, ListItemTrailing, ListItemDivider, getSemanticColors, alpha } from '@titan-design/react-ui';
+import { Ionicons } from '@expo/vector-icons';
 import { getSessionRepository } from '@/data/provider';
 import type { StoredExerciseSession } from '@/data/exercise-session';
+
+const t = getSemanticColors('dark');
 
 /**
  * Format volume for display.
@@ -93,47 +96,50 @@ export function DashboardScreen() {
     <ScrollView className="flex-1 bg-surface-400">
       <View className="p-4">
         {/* Welcome Banner */}
-        <Banner
-          variant={isConnected ? 'success' : 'primary'}
-          icon={isConnected ? 'flash' : 'fitness'}
-          title={isConnected ? `Connected to ${deviceName}` : 'Ready to Train'}
-          subtitle={isConnected ? 'Device ready for workout' : 'Connect your Voltra to start'}
-          style={{ marginBottom: 24 }}
-        />
+        <Alert
+          status={isConnected ? 'success' : 'info'}
+          variant="solid"
+          className="mb-6 rounded-2xl"
+        >
+          <AlertTitle>{isConnected ? `Connected to ${deviceName}` : 'Ready to Train'}</AlertTitle>
+          <AlertDescription>
+            {isConnected ? 'Device ready for workout' : 'Connect your Voltra to start'}
+          </AlertDescription>
+        </Alert>
 
         {/* Quick Actions */}
-        <Text className="mb-4 text-lg font-bold text-content-primary">Quick Actions</Text>
+        <Text className="mb-4 text-lg font-bold text-text-primary">Quick Actions</Text>
 
-        <Stack direction="row" gap="md" style={{ marginBottom: 24 }}>
+        <HStack gap={4} style={{ marginBottom: 24 }}>
           <LinkCard
             href="/(tabs)/workout"
             icon="fitness"
-            iconColor={colors.primary[500]}
-            iconBgColor={colors.primary[600] + '20'}
+            iconColor={t['brand-primary']}
+            iconBgColor={alpha(t['brand-primary-dark'], 0.12)}
             title="Start Workout"
             subtitle="Begin a new session"
           />
           <LinkCard
             href="/(tabs)/settings"
             icon={isConnected ? 'bluetooth' : 'bluetooth-outline'}
-            iconColor={isConnected ? colors.success.DEFAULT : colors.text.tertiary}
-            iconBgColor={isConnected ? colors.success.DEFAULT + '20' : colors.surface.light}
+            iconColor={isConnected ? t['status-success'] : t['text-tertiary']}
+            iconBgColor={isConnected ? alpha(t['status-success'], 0.12) : t['border-strong']}
             title={isConnected ? 'Connected' : 'Connect'}
             subtitle={isConnected ? deviceName : 'Set up device'}
           />
-        </Stack>
+        </HStack>
 
         {/* Weekly Stats */}
-        <Text className="mb-4 text-lg font-bold text-content-primary">This Week</Text>
+        <Text className="mb-4 text-lg font-bold text-text-primary">This Week</Text>
 
-        <Card elevation={1} padding="lg" style={{ marginBottom: 24 }}>
-          <StatsRow
-            stats={[
-              { value: weeklyStats.setCount, label: 'Sets' },
-              { value: weeklyStats.totalReps, label: 'Total Reps' },
-              { value: formatVolume(weeklyStats.totalVolume), label: 'Volume' },
-            ]}
-          />
+        <Card elevation={1} style={{ marginBottom: 24 }}>
+          <CardContent className="p-6">
+            <MetricGroup>
+              <Metric value={String(weeklyStats.setCount)} label="Sets" />
+              <Metric value={String(weeklyStats.totalReps)} label="Total Reps" />
+              <Metric value={formatVolume(weeklyStats.totalVolume)} label="Volume" />
+            </MetricGroup>
+          </CardContent>
         </Card>
 
         {/* Recent Sessions */}
@@ -141,9 +147,9 @@ export function DashboardScreen() {
           <RecentSessionsSection sessions={displaySessions} />
         ) : (
           <EmptyState
-            icon="barbell-outline"
+            icon={(props) => <Ionicons name="barbell-outline" size={props.size} />}
             title="No sessions yet"
-            subtitle="Start your first workout to see your progress here"
+            description="Start your first workout to see your progress here"
           />
         )}
       </View>
@@ -158,34 +164,39 @@ export function DashboardScreen() {
 function RecentSessionsSection({ sessions }: { sessions: RecentSessionDisplay[] }) {
   return (
     <>
-      <Text className="mb-4 text-lg font-bold text-content-primary">Recent Sessions</Text>
+      <Text className="mb-4 text-lg font-bold text-text-primary">Recent Sessions</Text>
 
-      <Card elevation={1} padding="none" className="overflow-hidden">
+      <Card elevation={1} className="mb-4 overflow-hidden">
         {sessions.map((session, index) => {
           const formattedDate = new Date(session.date).toLocaleDateString();
 
           return (
-            <Link key={session.id} href="/(tabs)/history" asChild>
-              <TouchableOpacity activeOpacity={0.7}>
-                <ListItem
-                  icon="fitness"
-                  iconColor={colors.primary[500]}
-                  title={session.exerciseName}
-                  subtitle={formattedDate}
-                  showBorder={index < sessions.length - 1}
-                  trailing={
-                    <View className="items-end">
-                      <Text className="text-base font-bold" style={{ color: colors.primary[500] }}>
-                        {session.setCount} sets • {session.totalReps} reps
-                      </Text>
-                      <Text className="text-sm text-content-muted">
-                        {formatVolume(session.totalVolume)} lbs
-                      </Text>
+            <React.Fragment key={session.id}>
+              <Link href="/(tabs)/history" asChild>
+                <TouchableOpacity activeOpacity={0.7}>
+                  <ListItem>
+                    <View
+                      className="mr-3 items-center justify-center rounded-xl"
+                      style={{ width: 48, height: 48, backgroundColor: alpha(t['brand-primary'], 0.12) }}
+                    >
+                      <Ionicons name="fitness" size={24} color={t['brand-primary']} />
                     </View>
-                  }
-                />
-              </TouchableOpacity>
-            </Link>
+                    <ListItemContent title={session.exerciseName} subtitle={formattedDate} />
+                    <ListItemTrailing>
+                      <View className="items-end">
+                        <Text className="text-base font-bold text-brand-primary">
+                          {session.setCount} sets • {session.totalReps} reps
+                        </Text>
+                        <Text className="text-sm text-text-disabled">
+                          {formatVolume(session.totalVolume)} lbs
+                        </Text>
+                      </View>
+                    </ListItemTrailing>
+                  </ListItem>
+                </TouchableOpacity>
+              </Link>
+              {index < sessions.length - 1 && <ListItemDivider />}
+            </React.Fragment>
           );
         })}
       </Card>

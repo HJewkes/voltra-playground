@@ -7,7 +7,8 @@
 
 import React from 'react';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
-import { ActionButton, Stack } from '@/components/ui';
+import { Ionicons } from '@expo/vector-icons';
+import { Button, ButtonText, VStack } from '@titan-design/react-ui';
 import type { ExerciseSessionUIState } from '@/stores/exercise-session-store';
 
 export interface ExerciseSessionActionButtonsProps {
@@ -42,7 +43,6 @@ export function ExerciseSessionActionButtons({
   disabled = false,
   style,
 }: ExerciseSessionActionButtonsProps) {
-  // Don't show buttons in certain states
   if (uiState === 'idle' || uiState === 'processing' || uiState === 'results') {
     return null;
   }
@@ -54,101 +54,127 @@ export function ExerciseSessionActionButtons({
         <View className="flex-row gap-2">
           {onStart && (
             <View style={{ flex: 3 }}>
-              <ActionButton
-                label="START"
-                icon="play"
-                variant="primary"
+              <Button
+                variant="solid"
+                color="primary"
                 size="lg"
+                fullWidth
                 onPress={onStart}
-                disabled={disabled}
-              />
+                isDisabled={disabled}
+                className="rounded-2xl"
+              >
+                <Ionicons name="play" size={24} color="white" style={{ marginRight: 8 }} />
+                <ButtonText>START</ButtonText>
+              </Button>
             </View>
           )}
           {onCancel && (
             <View style={{ flex: 1 }}>
-              <ActionButton
-                label=""
-                icon="close"
-                variant="secondary"
+              <Button
+                variant="outline"
+                color="primary"
                 size="lg"
+                isIconButton
+                fullWidth
                 onPress={onCancel}
-                disabled={disabled}
-              />
+                isDisabled={disabled}
+                className="rounded-2xl"
+              >
+                <Ionicons name="close" size={24} color="#f97316" />
+              </Button>
             </View>
           )}
         </View>
       )}
 
       {/* Countdown state - no actions (automatic) */}
-      {uiState === 'countdown' && (
-        <View className="h-16" /> // Placeholder to maintain layout
-      )}
+      {uiState === 'countdown' && <View className="h-16" />}
 
       {/* Recording state - manual stop + stop & save */}
       {uiState === 'recording' && (
-        <Stack gap="sm">
+        <VStack gap={2}>
           {onManualStop && (
-            <ActionButton
-              label="Done Set"
-              icon="checkmark"
-              variant="secondary"
+            <Button
+              variant="outline"
+              color="primary"
               size="lg"
+              fullWidth
               onPress={() => {
                 console.log('[ActionButtons] Done Set pressed');
                 onManualStop();
               }}
-              disabled={disabled}
-            />
+              isDisabled={disabled}
+              className="rounded-2xl"
+            >
+              <Ionicons name="checkmark" size={24} color="#f97316" style={{ marginRight: 8 }} />
+              <ButtonText>Done Set</ButtonText>
+            </Button>
           )}
           {onStopAndSave && (
-            <ActionButton
-              label="Stop & Save"
-              icon="stop"
-              variant="danger"
+            <Button
+              variant="solid"
+              color="error"
               size="md"
+              fullWidth
               onPress={onStopAndSave}
-              disabled={disabled}
-            />
+              isDisabled={disabled}
+              className="rounded-2xl"
+            >
+              <Ionicons name="stop" size={20} color="white" style={{ marginRight: 8 }} />
+              <ButtonText>Stop & Save</ButtonText>
+            </Button>
           )}
-        </Stack>
+        </VStack>
       )}
 
       {/* Preparing state - Cancel button */}
       {uiState === 'preparing' && onCancel && (
-        <ActionButton
-          label="Cancel"
-          icon="close"
-          variant="secondary"
+        <Button
+          variant="outline"
+          color="primary"
           size="md"
+          fullWidth
           onPress={onCancel}
-          disabled={disabled}
-        />
+          isDisabled={disabled}
+          className="rounded-2xl"
+        >
+          <Ionicons name="close" size={20} color="#f97316" style={{ marginRight: 8 }} />
+          <ButtonText>Cancel</ButtonText>
+        </Button>
       )}
 
       {/* Resting state - skip rest + stop & save */}
       {uiState === 'resting' && (
-        <Stack gap="sm">
+        <VStack gap={2}>
           {onSkipRest && (
-            <ActionButton
-              label="Skip Rest"
-              icon="play-forward"
-              variant="secondary"
+            <Button
+              variant="outline"
+              color="primary"
               size="lg"
+              fullWidth
               onPress={onSkipRest}
-              disabled={disabled}
-            />
+              isDisabled={disabled}
+              className="rounded-2xl"
+            >
+              <Ionicons name="play-forward" size={24} color="#f97316" style={{ marginRight: 8 }} />
+              <ButtonText>Skip Rest</ButtonText>
+            </Button>
           )}
           {onStopAndSave && (
-            <ActionButton
-              label="Stop & Save"
-              icon="stop"
-              variant="danger"
+            <Button
+              variant="solid"
+              color="error"
               size="md"
+              fullWidth
               onPress={onStopAndSave}
-              disabled={disabled}
-            />
+              isDisabled={disabled}
+              className="rounded-2xl"
+            >
+              <Ionicons name="stop" size={20} color="white" style={{ marginRight: 8 }} />
+              <ButtonText>Stop & Save</ButtonText>
+            </Button>
           )}
-        </Stack>
+        </VStack>
       )}
     </View>
   );

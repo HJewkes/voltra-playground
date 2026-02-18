@@ -5,7 +5,8 @@
  */
 
 import React from 'react';
-import { ActionButton } from '@/components/ui';
+import { Ionicons } from '@expo/vector-icons';
+import { Button, ButtonText } from '@titan-design/react-ui';
 
 export interface WorkoutControlsProps {
   /** Whether workout is active */
@@ -21,12 +22,21 @@ export interface WorkoutControlsProps {
  */
 export function WorkoutControls({ isActive, onStart, onStop }: WorkoutControlsProps) {
   return (
-    <ActionButton
-      label={isActive ? 'Stop Workout' : 'Start Workout'}
-      icon={isActive ? 'stop' : 'play'}
-      variant={isActive ? 'danger' : 'primary'}
+    <Button
+      variant="solid"
+      color={isActive ? 'error' : 'primary'}
       size="lg"
+      fullWidth
       onPress={isActive ? onStop : onStart}
-    />
+      className="rounded-2xl"
+    >
+      <Ionicons
+        name={isActive ? 'stop' : 'play'}
+        size={24}
+        color="white"
+        style={{ marginRight: 8 }}
+      />
+      <ButtonText>{isActive ? 'Stop Workout' : 'Start Workout'}</ButtonText>
+    </Button>
   );
 }

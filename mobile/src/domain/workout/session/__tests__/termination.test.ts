@@ -12,51 +12,20 @@ import {
   type TerminationReason,
 } from '../termination';
 import type { ExerciseSession } from '@/domain/workout/models/session';
-import type { Set, SetMetrics } from '@/domain/workout/models/set';
+import type { CompletedSet } from '@/domain/workout/models/completed-set';
 import type { ExercisePlan, PlannedSet } from '@/domain/workout/models/plan';
 import { createExercise, MuscleGroup } from '@/domain/exercise';
 import { TrainingGoal } from '@/domain/planning';
-import { repBuilder, setBuilder } from '@/__fixtures__/generators';
+import { setBuilder } from '@/__fixtures__/generators';
+import { mockCompletedSet } from '@/__fixtures__/generators/mock-helpers';
 
 // =============================================================================
 // Test Helpers - Direct Metric Control for Termination Logic Testing
 // =============================================================================
 
 /**
- * Create mock set metrics with specific velocity baseline.
- * For termination tests, we need direct control over the metric values.
- */
-function createMockSetMetrics(overrides: Partial<SetMetrics['velocity']> = {}): SetMetrics {
-  return {
-    repCount: 5,
-    totalDuration: 15,
-    timeUnderTension: 12,
-    velocity: {
-      concentricBaseline: overrides.concentricBaseline ?? 0.5,
-      eccentricBaseline: 0.3,
-      concentricLast: 0.45,
-      eccentricLast: 0.35,
-      concentricDelta: -10,
-      eccentricDelta: 5,
-      concentricByRep: [0.55, 0.52, 0.5, 0.48, 0.45],
-      eccentricByRep: [0.32, 0.33, 0.35, 0.34, 0.35],
-    },
-    fatigue: {
-      fatigueIndex: 20,
-      eccentricControlScore: 90,
-      formWarning: null,
-    },
-    effort: {
-      rir: 3,
-      rpe: 7,
-      confidence: 'medium',
-    },
-  };
-}
-
-/**
- * Create a mock set with specific metrics for termination logic testing.
- * Uses direct metric assignment rather than physics-based generation.
+ * Create a mock CompletedSet with specific metrics for termination logic testing.
+ * Uses mockCompletedSet for properly-typed CompletedSet objects.
  */
 function createMockSet(
   options: {
@@ -64,37 +33,15 @@ function createMockSet(
     weight?: number;
     velocityBaseline?: number;
   } = {}
-): Set {
+): CompletedSet {
   const { repCount = 5, weight = 100, velocityBaseline = 0.5 } = options;
 
-  // Generate reps using the builder for realistic rep data
-  const reps =
-    repCount > 0
-      ? Array.from({ length: repCount }, (_, i) =>
-          repBuilder()
-            .concentric({ meanVelocity: velocityBaseline, peakVelocity: velocityBaseline + 0.15 })
-            .eccentric({
-              meanVelocity: velocityBaseline * 0.5,
-              peakVelocity: velocityBaseline * 0.6,
-            })
-            .repNumber(i + 1)
-            .build()
-        )
-      : [];
-
-  // But override metrics directly for termination logic testing
-  return {
-    id: `set_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-    exerciseId: 'test_exercise',
-    exerciseName: 'Test Exercise',
+  return mockCompletedSet({
     weight,
-    reps,
-    timestamp: { start: Date.now() - 60000, end: Date.now() },
-    metrics: {
-      ...createMockSetMetrics({ concentricBaseline: velocityBaseline }),
-      repCount, // Override with actual rep count
-    },
-  };
+    repCount,
+    startVelocity: velocityBaseline,
+    velocityDeclinePerRep: 0.02,
+  });
 }
 
 function createMockPlan(
@@ -125,7 +72,7 @@ function createMockPlan(
 
 function createMockSession(
   options: {
-    completedSets?: Set[];
+    completedSets?: CompletedSet[];
     planSetCount?: number;
     isDiscovery?: boolean;
   } = {}

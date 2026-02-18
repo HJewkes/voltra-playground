@@ -23,7 +23,7 @@ import { devtools } from 'zustand/middleware';
 // Domain imports
 import type { Exercise } from '@/domain/exercise';
 import {
-  type Set,
+  type CompletedSet,
   type ExercisePlan,
   type ExerciseSession,
   type PlannedSet,
@@ -39,6 +39,9 @@ import {
   checkTermination,
   createUserStoppedTermination,
 } from '@/domain/workout';
+
+// Library analytics for computing velocity from sets
+import { getSetMeanVelocity } from '@voltras/workout-analytics';
 
 // VBT domain for profile building
 import {
@@ -124,7 +127,7 @@ export interface ExerciseSessionState {
   startFirstSet: () => void;
 
   // Actions - Recording
-  onSetCompleted: (completedSet: Set) => Promise<void>;
+  onSetCompleted: (completedSet: CompletedSet) => Promise<void>;
   manualStopRecording: () => void;
 
   // Actions - Rest period
@@ -332,7 +335,7 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
         // Recording
         // =====================================================================
 
-        onSetCompleted: async (completedSet: Set) => {
+        onSetCompleted: async (completedSet: CompletedSet) => {
           const { session } = get();
           if (!session) return;
 
@@ -661,7 +664,7 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
     // Build data points from completed sets
     const dataPoints: LoadVelocityDataPoint[] = session.completedSets.map((s) => ({
       weight: s.weight,
-      velocity: s.metrics.velocity.concentricBaseline,
+      velocity: getSetMeanVelocity(s.data),
       timestamp: s.timestamp.start,
     }));
 

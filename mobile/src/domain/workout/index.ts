@@ -1,50 +1,46 @@
 /**
- * domain/workout - Hardware-agnostic workout data models and aggregation logic.
+ * domain/workout - Workout data models and session management.
  *
- * Architecture:
- *   WorkoutSample → PhaseAggregator → Phase → RepAggregator → Rep → SetAggregator → Set
- *
- * SetMetrics uses tiered computation:
- *   Rep[] → VelocityMetrics → FatigueAnalysis → EffortEstimate
+ * Core analytics types come from @voltras/workout-analytics.
+ * App-specific types (CompletedSet, Plan, Session) are defined here.
  */
 
 // Re-export all models
 export {
-  // Types
+  // Library types (from @voltras/workout-analytics via models)
   MovementPhase,
   PhaseNames,
-  // Sample
   type WorkoutSample,
-  createSample,
-  // Phase
   type Phase,
-  type PhaseMetrics,
-  // Rep
   type Rep,
-  type RepMetrics,
-  type StoredRep,
-  createRep,
-  // Set
-  type Set,
-  type SetMetrics,
-  type VelocityMetrics,
-  type FatigueAnalysis,
-  type EffortEstimate,
+  type AnalyticsSet,
+  type LoadSettings,
+  createSet,
+  addSampleToSet,
+  completeSet,
+
+  // CompletedSet (app wrapper)
+  type CompletedSet,
+  createCompletedSet,
+
+  // Legacy (kept during migration)
   type TempoTarget,
+
   // Stats (recording session aggregates)
   type WorkoutStats,
   computeWorkoutStats,
   createEmptyWorkoutStats,
+
   // Plan
   type PlannedSet,
   type ExercisePlan,
   type PlanSource,
-  // Note: TrainingGoal moved to @/domain/planning
   createEmptyPlan,
   getCurrentSetIndex,
   getPlannedSet,
   isDiscoveryPlan,
   getPlanVolume,
+
   // Session
   type ExerciseSession,
   type SetComparison,
@@ -64,21 +60,6 @@ export {
   getAllSetComparisons,
 } from './models';
 
-// Re-export all aggregators
-export {
-  // Phase
-  aggregatePhase,
-  computePhaseMetrics,
-  // Rep
-  aggregateRep,
-  computeRepMetrics,
-  // Set
-  aggregateSet,
-  createEmptySetMetrics,
-  DEFAULT_CONFIG,
-  type SetAggregatorConfig,
-} from './aggregators';
-
 // Re-export utilities
 export {
   getEffortLabel,
@@ -87,14 +68,6 @@ export {
   getRPEColor,
   getLiveEffortMessage,
 } from './utils';
-
-// Re-export detectors
-export {
-  RepDetector,
-  type RepDetectorState,
-  type RepBoundary,
-  type PhaseSamples,
-} from './detectors';
 
 // Re-export session termination
 export {
@@ -107,7 +80,7 @@ export {
   getTerminationMessage,
 } from './session';
 
-// Re-export planners (temporary home - will move to planning domain)
+// Re-export planners
 export {
   type StandardPlanOptions,
   createStandardPlan,

@@ -5,6 +5,10 @@
  * and UI formatting for RPE/RIR values.
  */
 
+import { getSemanticColors } from '@titan-design/react-ui';
+
+const t = getSemanticColors('dark');
+
 /**
  * Get effort level description from RPE.
  */
@@ -43,11 +47,11 @@ export function getEffortBar(rpe: number, width: number = 10): string {
  * Get color for RPE value (for UI feedback).
  */
 export function getRPEColor(rpe: number): string {
-  if (rpe <= 6) return '#22c55e'; // green
-  if (rpe <= 7) return '#84cc16'; // lime
-  if (rpe <= 8) return '#eab308'; // yellow
-  if (rpe <= 9) return '#f97316'; // orange
-  return '#ef4444'; // red
+  if (rpe <= 6) return t['status-success'];
+  if (rpe <= 7) return t['result-improve'];
+  if (rpe <= 8) return t['status-warning'];
+  if (rpe <= 9) return t['brand-primary'];
+  return t['status-error'];
 }
 
 /**

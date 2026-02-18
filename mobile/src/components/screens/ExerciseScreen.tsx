@@ -18,7 +18,7 @@ import React, { useEffect, useMemo } from 'react';
 import { View, Text, ActivityIndicator, ScrollView } from 'react-native';
 import { useStore } from 'zustand';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '@/theme';
+import { getSemanticColors } from '@titan-design/react-ui';
 
 // Domain imports
 import type { Exercise } from '@/domain/exercise';
@@ -39,6 +39,8 @@ import {
   ExerciseSessionSummaryCard,
   ExerciseSessionActionButtons,
 } from '@/components/exercise';
+
+const t = getSemanticColors('dark');
 
 // =============================================================================
 // Props
@@ -93,7 +95,7 @@ export function ExerciseScreen({
 
   // Subscribe to recording state
   const repCount = useStore(recordingStore, (s) => s.repCount);
-  const lastRep = useStore(recordingStore, (s) => s.lastRep);
+  const lastRepPeakVelocity = useStore(recordingStore, (s) => s.lastRepPeakVelocity);
   const lastSet = useStore(recordingStore, (s) => s.lastSet);
   const _recordingUIState = useStore(recordingStore, (s) => s.uiState);
 
@@ -242,8 +244,8 @@ export function ExerciseScreen({
           {/* Preparing state */}
           {uiState === 'preparing' && (
             <View className="items-center">
-              <ActivityIndicator size="large" color={colors.primary[500]} />
-              <Text className="mt-4 text-content-muted">Setting weight...</Text>
+              <ActivityIndicator size="large" color={t['brand-primary']} />
+              <Text className="mt-4 text-text-disabled">Setting weight...</Text>
             </View>
           )}
 
@@ -274,7 +276,7 @@ export function ExerciseScreen({
                 restCountdown={restCountdown}
                 startCountdown={startCountdown}
                 repCount={repCount}
-                lastRep={lastRep}
+                lastRepPeakVelocity={lastRepPeakVelocity}
                 onSkipRest={handleSkipRest}
               />
 
@@ -288,8 +290,8 @@ export function ExerciseScreen({
           {/* Processing state */}
           {uiState === 'processing' && (
             <View className="items-center">
-              <ActivityIndicator size="large" color={colors.primary[500]} />
-              <Text className="mt-4 text-content-muted">Processing...</Text>
+              <ActivityIndicator size="large" color={t['brand-primary']} />
+              <Text className="mt-4 text-text-disabled">Processing...</Text>
             </View>
           )}
         </View>

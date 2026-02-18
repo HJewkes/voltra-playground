@@ -8,8 +8,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { StatusIndicator } from '@/components/ui';
-import { colors } from '@/theme';
+import { getSemanticColors, alpha } from '@titan-design/react-ui';
 
 export interface ConnectionBannerProps {
   /** Device name */
@@ -22,44 +21,46 @@ export interface ConnectionBannerProps {
  * ConnectionBanner - shows connected device with disconnect option.
  * Uses success-colored border and background to clearly indicate connected state.
  */
+const t = getSemanticColors('dark');
+
 export function ConnectionBanner({ deviceName, onDisconnect }: ConnectionBannerProps) {
   return (
     <View
       className="rounded-2xl p-4"
       style={{
-        backgroundColor: colors.success.DEFAULT + '15',
+        backgroundColor: alpha(t['status-success'], 0.08),
         borderWidth: 2,
-        borderColor: colors.success.DEFAULT,
+        borderColor: t['status-success'],
       }}
     >
       <View className="flex-row items-center">
         <View
           className="mr-4 h-14 w-14 items-center justify-center rounded-xl"
-          style={{ backgroundColor: colors.success.DEFAULT + '30' }}
+          style={{ backgroundColor: alpha(t['status-success'], 0.19) }}
         >
-          <Ionicons name="bluetooth" size={28} color={colors.success.DEFAULT} />
+          <Ionicons name="bluetooth" size={28} color={t['status-success']} />
         </View>
         <View className="flex-1">
           <View className="mb-1 flex-row items-center">
-            <StatusIndicator status="success" size="sm" />
+            <View className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: t['status-success'] }} />
             <Text
               className="ml-2 text-xs font-semibold uppercase tracking-wider"
-              style={{ color: colors.success.DEFAULT }}
+              style={{ color: t['status-success'] }}
             >
               Connected
             </Text>
           </View>
-          <Text className="text-lg font-bold text-content-primary">{deviceName}</Text>
+          <Text className="text-lg font-bold text-text-primary">{deviceName}</Text>
         </View>
       </View>
 
       <TouchableOpacity
         onPress={onDisconnect}
         className="mt-4 rounded-xl py-3"
-        style={{ backgroundColor: colors.surface.dark }}
+        style={{ backgroundColor: t['background-subtle'] }}
         activeOpacity={0.7}
       >
-        <Text className="text-center font-semibold text-content-secondary">Disconnect</Text>
+        <Text className="text-center font-semibold text-text-secondary">Disconnect</Text>
       </TouchableOpacity>
     </View>
   );

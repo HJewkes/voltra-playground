@@ -5,23 +5,32 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { Rep } from '@voltras/workout-analytics';
 import { computeWorkoutStats, createEmptyWorkoutStats } from '../stats';
-import { repBuilder } from '@/__fixtures__/generators';
+import { mockPhase } from '@/__fixtures__/generators/mock-helpers';
 
 // =============================================================================
 // Test Helpers
 // =============================================================================
 
-function createTestRep(options: { peakForce?: number; totalDuration?: number } = {}) {
+function createTestRep(options: { peakForce?: number; totalDuration?: number } = {}): Rep {
   const { peakForce = 100, totalDuration = 2.5 } = options;
+  const concentricDuration = totalDuration * 0.35;
+  const eccentricDuration = totalDuration * 0.65;
+  const concentricEndMs = concentricDuration * 1000;
 
-  // Use repBuilder with targets that approximate the desired metrics
-  // Note: peakForce comes from the concentric phase
-  return repBuilder()
-    .concentric({ peakForce, duration: totalDuration * 0.35 })
-    .eccentric({ duration: totalDuration * 0.65 })
-    .repNumber(1)
-    .build();
+  return {
+    repNumber: 1,
+    concentric: mockPhase({
+      peakForce,
+      duration: concentricDuration,
+      startTime: 0,
+    }),
+    eccentric: mockPhase({
+      duration: eccentricDuration,
+      startTime: concentricEndMs,
+    }),
+  };
 }
 
 // =============================================================================
@@ -113,14 +122,11 @@ describe('computeWorkoutStats()', () => {
       expect(stats.timeUnderTension).toBeCloseTo(9, 0);
     });
 
-    it('copies reps array', () => {
+    it('handles single rep correctly', () => {
       const reps = [createTestRep()];
       const stats = computeWorkoutStats(reps, null, null);
 
-      // Modifying original shouldn't affect stats
-      reps.push(createTestRep());
-
-      expect(stats.reps.length).toBe(1);
+      expect(stats.repCount).toBe(1);
     });
   });
 
@@ -159,12 +165,6 @@ describe('createEmptyWorkoutStats()', () => {
 
   afterEach(() => {
     vi.useRealTimers();
-  });
-
-  it('creates empty reps array', () => {
-    const stats = createEmptyWorkoutStats();
-
-    expect(stats.reps).toEqual([]);
   });
 
   it('sets startTime to current time', () => {

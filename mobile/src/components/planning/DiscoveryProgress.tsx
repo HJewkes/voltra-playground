@@ -6,8 +6,9 @@
 
 import React from 'react';
 import { View, Text, type StyleProp, type ViewStyle } from 'react-native';
-import { colors } from '@/theme';
-import { Card, ProgressBar } from '../ui';
+import { Card, CardContent, Progress, getSemanticColors } from '@titan-design/react-ui';
+
+const t = getSemanticColors('dark');
 
 export interface CompletedSet {
   weight: number;
@@ -59,42 +60,46 @@ export function DiscoveryProgress({
   return (
     <View style={style}>
       {/* Progress indicator */}
-      <Card elevation={1} padding="md" radius="lg">
-        <View className="mb-3 flex-row items-center justify-between">
-          <Text className="font-semibold text-content-secondary">Discovery Progress</Text>
-          <Text className="font-bold" style={{ color: colors.primary[500] }}>
-            Set {completedCount + 1}
+      <Card elevation={1} className="mb-4">
+        <CardContent>
+          <View className="mb-3 flex-row items-center justify-between">
+            <Text className="font-semibold text-text-secondary">Discovery Progress</Text>
+            <Text className="font-bold" style={{ color: t['brand-primary'] }}>
+              Set {completedCount + 1}
+            </Text>
+          </View>
+
+          <Progress value={progress * 100} color="primary" size="lg" />
+
+          <Text className="mt-2 text-xs text-text-disabled">
+            Device: {deviceWeight} lbs | Target: {targetWeight ?? '-'} lbs
           </Text>
-        </View>
 
-        <ProgressBar progress={progress} color={colors.primary[500]} height={8} />
-
-        <Text className="mt-2 text-xs text-content-muted">
-          Device: {deviceWeight} lbs | Target: {targetWeight ?? '-'} lbs
-        </Text>
-
-        {error && <Text className="mt-2 text-sm text-danger-light">Error: {error}</Text>}
+          {error && <Text className="mt-2 text-sm text-status-error-light">Error: {error}</Text>}
+        </CardContent>
       </Card>
 
       {/* Completed sets */}
       {completedSets.length > 0 && (
-        <Card elevation={1} padding="md" radius="lg">
-          <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-content-muted">
-            Completed
-          </Text>
-          <View className="flex-row flex-wrap gap-2">
-            {completedSets.map((set, i) => (
-              <View
-                key={i}
-                className="rounded-xl px-4 py-2"
-                style={{ backgroundColor: colors.surface.dark }}
-              >
-                <Text className="text-sm font-medium text-content-secondary">
-                  {set.weight}lbs × {set.actualReps} @ {set.meanVelocity.toFixed(2)}
-                </Text>
-              </View>
-            ))}
-          </View>
+        <Card elevation={1} className="mb-4">
+          <CardContent>
+            <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-text-disabled">
+              Completed
+            </Text>
+            <View className="flex-row flex-wrap gap-2">
+              {completedSets.map((set, i) => (
+                <View
+                  key={i}
+                  className="rounded-xl px-4 py-2"
+                  style={{ backgroundColor: t['background-subtle'] }}
+                >
+                  <Text className="text-sm font-medium text-text-secondary">
+                    {set.weight}lbs × {set.actualReps} @ {set.meanVelocity.toFixed(2)}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </CardContent>
         </Card>
       )}
     </View>

@@ -6,10 +6,10 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
-  repBuilder,
   planBuilder,
   createTestExercise,
 } from '@/__fixtures__/generators';
+import { mockCompletedSet } from '@/__fixtures__/generators/mock-helpers';
 import {
   createExerciseSession,
   getSessionCurrentSetIndex,
@@ -26,7 +26,6 @@ import {
   compareSetAtIndex,
   getAllSetComparisons,
 } from '../session';
-import type { Set } from '../set';
 
 // =============================================================================
 // Test Helpers
@@ -37,50 +36,9 @@ function createMockSet(
     weight?: number;
     repCount?: number;
   } = {}
-): Set {
+) {
   const { weight = 100, repCount = 8 } = options;
-
-  const reps = Array.from({ length: repCount }, (_, i) =>
-    repBuilder()
-      .concentric({ meanVelocity: 0.5, peakVelocity: 0.65, peakForce: 150 })
-      .eccentric({ meanVelocity: 0.3, peakVelocity: 0.35 })
-      .repNumber(i + 1)
-      .build()
-  );
-
-  return {
-    id: `set_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-    exerciseId: 'test_exercise',
-    exerciseName: 'Test Exercise',
-    weight,
-    reps,
-    timestamp: { start: Date.now() - 60000, end: Date.now() },
-    metrics: {
-      repCount,
-      totalDuration: repCount * 2.5,
-      timeUnderTension: repCount * 2.3,
-      velocity: {
-        concentricBaseline: 0.5,
-        eccentricBaseline: 0.3,
-        concentricLast: 0.45,
-        eccentricLast: 0.32,
-        concentricDelta: -10,
-        eccentricDelta: 6,
-        concentricByRep: Array.from({ length: repCount }, () => 0.5),
-        eccentricByRep: Array.from({ length: repCount }, () => 0.3),
-      },
-      fatigue: {
-        fatigueIndex: 15,
-        eccentricControlScore: 92,
-        formWarning: null,
-      },
-      effort: {
-        rir: 3,
-        rpe: 7,
-        confidence: 'medium',
-      },
-    },
-  };
+  return mockCompletedSet({ weight, repCount });
 }
 
 // =============================================================================

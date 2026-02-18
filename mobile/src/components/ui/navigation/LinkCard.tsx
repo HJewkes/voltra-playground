@@ -5,11 +5,10 @@
  */
 
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { Link, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Card } from '../layout/Card';
-import { colors, spacing, borderRadius } from '@/theme';
+import { Card, CardContent } from '@titan-design/react-ui';
 
 export interface LinkCardProps {
   /** Navigation target (expo-router href) */
@@ -54,39 +53,22 @@ export function LinkCard({
 }: LinkCardProps) {
   return (
     <Link href={href} asChild>
-      <TouchableOpacity style={fullWidth ? undefined : styles.flex}>
-        <Card elevation={1} padding="lg" marginBottom={false}>
-          <View style={[styles.iconContainer, { backgroundColor: iconBgColor }]}>
-            <Ionicons name={icon} size={28} color={iconColor} />
-          </View>
-          <Text style={styles.title}>{title}</Text>
-          {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+      <TouchableOpacity style={fullWidth ? undefined : { flex: 1 }}>
+        <Card elevation={1}>
+          <CardContent className="p-4">
+            <View
+              className="mb-4 items-center justify-center rounded-xl"
+              style={{ width: 56, height: 56, backgroundColor: iconBgColor }}
+            >
+              <Ionicons name={icon} size={28} color={iconColor} />
+            </View>
+            <Text className="text-base font-semibold text-text-primary">{title}</Text>
+            {subtitle && (
+              <Text className="mt-1 text-sm text-text-tertiary">{subtitle}</Text>
+            )}
+          </CardContent>
         </Card>
       </TouchableOpacity>
     </Link>
   );
 }
-
-const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-  },
-  iconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: borderRadius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.md,
-  },
-  title: {
-    color: colors.content.primary,
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  subtitle: {
-    color: colors.content.tertiary,
-    fontSize: 14,
-    marginTop: spacing.xs,
-  },
-});

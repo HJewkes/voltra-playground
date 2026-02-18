@@ -1,37 +1,35 @@
 /**
  * Workout models - hardware-agnostic exercise data structures.
+ *
+ * Core analytics types (Set, Rep, Phase, WorkoutSample, MovementPhase) come
+ * from @voltras/workout-analytics. App-specific types (CompletedSet, Plan,
+ * Session) are defined here.
  */
 
-// Types
-export { MovementPhase, PhaseNames } from './types';
+// Re-export library types used throughout the app
+export {
+  MovementPhase,
+  PhaseNames,
+  type WorkoutSample,
+  type Phase,
+  type Rep,
+  type Set as AnalyticsSet,
+  type LoadSettings,
+  createSet,
+  addSampleToSet,
+  completeSet,
+} from '@voltras/workout-analytics';
 
-// Sample
-export type { WorkoutSample } from './sample';
-export { createSample } from './sample';
-
-// Phase
-export type { Phase, PhaseMetrics } from './phase';
-
-// Rep
-export type { Rep, RepMetrics, StoredRep } from './rep';
-export { createRep } from './rep';
-
-// Set
-export type {
-  Set,
-  SetMetrics,
-  VelocityMetrics,
-  FatigueAnalysis,
-  EffortEstimate,
-  TempoTarget,
-} from './set';
+// CompletedSet - app wrapper around library's Set
+export type { CompletedSet } from './completed-set';
+export { createCompletedSet } from './completed-set';
 
 // Stats (recording session aggregates)
 export type { WorkoutStats } from './stats';
 export { computeWorkoutStats, createEmptyWorkoutStats } from './stats';
 
 // Plan
-export type { PlannedSet, ExercisePlan, PlanSource, TrainingGoal } from './plan';
+export type { PlannedSet, ExercisePlan, PlanSource, TrainingGoal, TempoTarget } from './plan';
 export {
   createEmptyPlan,
   getCurrentSetIndex,

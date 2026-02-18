@@ -6,8 +6,10 @@
 
 import React from 'react';
 import { Text, TouchableOpacity } from 'react-native';
-import { Card, WeightPicker } from '@/components/ui';
-import { colors } from '@/theme';
+import { WeightPicker } from '@/components/ui';
+import { Card, CardHeader, CardTitle, CardContent, getSemanticColors } from '@titan-design/react-ui';
+
+const t = getSemanticColors('dark');
 
 export interface WeightSetupCardProps {
   /** Currently selected weight */
@@ -30,28 +32,33 @@ export function WeightSetupCard({
   onSetWeight,
 }: WeightSetupCardProps) {
   return (
-    <Card elevation={1} header="Set Weight" padding="lg">
-      <WeightPicker
-        value={selectedWeight}
-        onChange={onWeightChange}
-        min={5}
-        max={200}
-        step={5}
-        style={{ marginBottom: 24 }}
-      />
+    <Card elevation={1} className="mb-4">
+      <CardHeader>
+        <CardTitle>Set Weight</CardTitle>
+      </CardHeader>
+      <CardContent className="p-6">
+        <WeightPicker
+          value={selectedWeight}
+          onChange={onWeightChange}
+          min={5}
+          max={200}
+          step={5}
+          style={{ marginBottom: 24 }}
+        />
 
-      <TouchableOpacity
-        onPress={onSetWeight}
-        className="rounded-2xl py-4"
-        style={{ backgroundColor: colors.primary[600] }}
-        activeOpacity={0.8}
-      >
-        <Text className="text-center text-lg font-bold text-white">Set Weight</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          onPress={onSetWeight}
+          className="rounded-2xl py-4"
+          style={{ backgroundColor: t['brand-primary-dark'] }}
+          activeOpacity={0.8}
+        >
+          <Text className="text-center text-lg font-bold text-white">Set Weight</Text>
+        </TouchableOpacity>
 
-      {deviceWeight > 0 && (
-        <Text className="mt-3 text-center text-content-tertiary">Current: {deviceWeight} lbs</Text>
-      )}
+        {deviceWeight > 0 && (
+          <Text className="mt-3 text-center text-text-tertiary">Current: {deviceWeight} lbs</Text>
+        )}
+      </CardContent>
     </Card>
   );
 }

@@ -182,22 +182,27 @@ function handleAdaptation(context: PlanningContext): PlanResult {
     baseRestSeconds: REST_DEFAULTS[goal],
   };
 
-  // Convert to SetPerformance for strategy functions
-  // Access metrics from the Set's metrics property
-  const velocityLoss = lastSet.metrics?.fatigue?.fatigueIndex ?? 0;
-  const estimatedRir = lastSet.metrics?.effort?.rir ?? 2;
-  const firstRepVelocity = lastSet.reps[0]?.metrics?.concentricMeanVelocity ?? 0;
-  const avgVelocity = lastSet.metrics?.velocity?.concentricBaseline ?? 0;
+  // Convert to SetPerformance for strategy functions using library analytics
+  const {
+    getSetFatigueIndex,
+    estimateSetRIR: estimateRIR,
+    getSetFirstRepVelocity: getFirstVel,
+    getSetMeanVelocity: getMeanVel,
+  } = require('@voltras/workout-analytics');
+  const fatigueIdx = getSetFatigueIndex(lastSet.data);
+  const rirEstimate = estimateRIR(lastSet.data);
+  const firstRepVelocity = getFirstVel(lastSet.data);
+  const avgVelocity = getMeanVel(lastSet.data);
 
   const lastSetPerformance: SetPerformance = {
     setNumber: completedSets.length,
-    reps: lastSet.reps.length,
+    reps: lastSet.data.reps.length,
     weight: lastSet.weight,
-    velocityLossPercent: velocityLoss,
-    estimatedRir: estimatedRir,
+    velocityLossPercent: fatigueIdx.value,
+    estimatedRir: rirEstimate.rir,
     firstRepVelocity: firstRepVelocity,
     avgVelocity: avgVelocity,
-    grindingDetected: velocityLoss > 40,
+    grindingDetected: fatigueIdx.value > 40,
   };
 
   const adjustments: PlanAdjustment[] = [];

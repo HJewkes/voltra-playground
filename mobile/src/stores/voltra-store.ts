@@ -31,6 +31,7 @@ import type {
   VoltraConnectionState,
   VoltraRecordingState,
 } from '@/domain/device';
+import { TrainingMode } from '@/domain/device';
 
 // Domain imports - Device adapter
 import { toWorkoutSample } from '@/domain/device';
@@ -58,7 +59,12 @@ export interface VoltraState {
   // Device Settings
   weight: number;
   chains: number;
+  inverseChains: number;
   eccentric: number;
+  mode: TrainingMode;
+
+  // Device Status
+  battery: number | null;
 
   // Recording State (active telemetry streaming)
   recordingState: RecordingState;
@@ -75,7 +81,9 @@ export interface VoltraState {
   // Actions - Device Control
   setWeight: (lbs: number) => Promise<void>;
   setChains: (lbs: number) => Promise<void>;
+  setInverseChains: (lbs: number) => Promise<void>;
   setEccentric: (pct: number) => Promise<void>;
+  setMode: (mode: TrainingMode) => Promise<void>;
 
   // Actions - Recording Control
   prepareWorkout: () => Promise<void>; // PREPARE + SETUP (device ready, motor off)
@@ -193,6 +201,31 @@ export function createVoltraStore(
       });
     });
     subscriptions.push(frameSub);
+
+    // Subscribe to settings updates from device notifications
+    // DeviceSettings uses protocol field names (baseWeight, trainingMode)
+    const settingsSub = client.onSettingsUpdate((settings) => {
+      set({
+        weight: settings.baseWeight ?? 0,
+        chains: settings.chains ?? 0,
+        inverseChains: settings.inverseChains ?? 0,
+        eccentric: settings.eccentric ?? 0,
+        mode: settings.trainingMode ?? TrainingMode.Idle,
+      });
+    });
+    subscriptions.push(settingsSub);
+
+    // Subscribe to battery updates
+    const batterySub = client.onBatteryUpdate((battery) => {
+      set({ battery });
+    });
+    subscriptions.push(batterySub);
+
+    // Subscribe to mode confirmation
+    const modeSub = client.onModeConfirmed((mode) => {
+      set({ mode });
+    });
+    subscriptions.push(modeSub);
   }
 
   const store = createStore<VoltraState>()(
@@ -215,10 +248,15 @@ export function createVoltraStore(
           isReconnecting: false,
           error: null,
 
-          // Settings (SDK doesn't expose settings via events, so we track locally)
+          // Settings (synced from device via onSettingsUpdate events)
           weight: client?.settings?.weight ?? 0,
           chains: client?.settings?.chains ?? 0,
+          inverseChains: client?.settings?.inverseChains ?? 0,
           eccentric: client?.settings?.eccentric ?? 0,
+          mode: client?.settings?.mode ?? TrainingMode.Idle,
+
+          // Device Status
+          battery: client?.settings?.battery ?? null,
 
           // Recording
           recordingState: client?.recordingState
@@ -285,6 +323,21 @@ export function createVoltraStore(
             }
           },
 
+          setInverseChains: async (lbs) => {
+            const currentClient = get()._client;
+            if (!currentClient) {
+              set({ error: 'Not connected' });
+              return;
+            }
+            try {
+              await currentClient.setInverseChains(lbs);
+              set({ inverseChains: lbs, error: null });
+            } catch (e: unknown) {
+              const message = e instanceof Error ? e.message : String(e);
+              set({ error: message });
+            }
+          },
+
           setEccentric: async (pct) => {
             const currentClient = get()._client;
             if (!currentClient) {
@@ -294,6 +347,21 @@ export function createVoltraStore(
             try {
               await currentClient.setEccentric(pct);
               set({ eccentric: pct, error: null });
+            } catch (e: unknown) {
+              const message = e instanceof Error ? e.message : String(e);
+              set({ error: message });
+            }
+          },
+
+          setMode: async (mode) => {
+            const currentClient = get()._client;
+            if (!currentClient) {
+              set({ error: 'Not connected' });
+              return;
+            }
+            try {
+              await currentClient.setMode(mode);
+              set({ mode, error: null });
             } catch (e: unknown) {
               const message = e instanceof Error ? e.message : String(e);
               set({ error: message });

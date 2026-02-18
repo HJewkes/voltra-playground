@@ -7,7 +7,9 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { MovementPhase, PhaseNames } from '@/domain/workout';
-import { colors } from '@/theme';
+import { getSemanticColors } from '@titan-design/react-ui';
+
+const t = getSemanticColors('dark');
 
 export interface PhaseIndicatorProps {
   /** Current movement phase */
@@ -20,13 +22,13 @@ export interface PhaseIndicatorProps {
 export function getPhaseColor(phase: MovementPhase): string {
   switch (phase) {
     case MovementPhase.CONCENTRIC:
-      return colors.success.DEFAULT;
+      return t['status-success'];
     case MovementPhase.HOLD:
-      return colors.warning.DEFAULT;
+      return t['status-warning'];
     case MovementPhase.ECCENTRIC:
-      return colors.info.DEFAULT;
+      return t['status-info'];
     default:
-      return colors.surface.light;
+      return t['border-strong'];
   }
 }
 

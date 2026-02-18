@@ -8,6 +8,7 @@
 export { DashboardScreen } from './DashboardScreen';
 export { SettingsScreen } from './SettingsScreen';
 export { HistoryScreen } from './HistoryScreen';
+export { ModeSelectionScreen } from './ModeSelectionScreen';
 
 // Exercise session screens
 export { ExerciseSessionFlow } from './ExerciseSessionFlow';

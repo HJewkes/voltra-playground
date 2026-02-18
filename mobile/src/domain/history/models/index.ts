@@ -6,4 +6,3 @@
 
 export * from './velocity-baseline';
 export * from './personal-record';
-export * from './trend-analysis';

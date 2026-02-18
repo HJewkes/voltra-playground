@@ -124,8 +124,6 @@ export {
   resolveRepTargets,
   derivePhasesFromTotal,
   deriveVelocities,
-  verifyRepMetrics,
-  aggregateSamplesToRep,
   generateVelocityCurve,
   generateBellCurve,
   generatePlateauCurve,
@@ -229,6 +227,14 @@ export {
   generateLowConfidenceProfile,
   generateHighConfidenceProfile,
 } from './planning-fixtures';
+
+// Mock helpers for test fixtures
+export {
+  mockPhase,
+  mockRep,
+  mockAnalyticsSet,
+  mockCompletedSet,
+} from './mock-helpers';
 
 // Phase stubs (deprecated - use repBuilder instead)
 export {
