@@ -17,3 +17,6 @@ export { ExerciseScreen } from './ExerciseScreen';
 export type { ExerciseScreenProps } from './ExerciseScreen';
 export { ExercisePickerScreen } from './ExercisePickerScreen';
 export type { ExercisePickerScreenProps } from './ExercisePickerScreen';
+
+// Simplified screens (MVP)
+export { SimpleExerciseScreen } from './SimpleExerciseScreen';

@@ -1,4 +1,5 @@
-import { View, Text } from 'react-native';
+import { SimpleExerciseScreen } from '@/components/screens';
+
 export default function Exercise() {
-  return <View className="flex-1 items-center justify-center bg-surface-400"><Text className="text-text-primary">Exercise Screen (TODO)</Text></View>;
+  return <SimpleExerciseScreen />;
 }
