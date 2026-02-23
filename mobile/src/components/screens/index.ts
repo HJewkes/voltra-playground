@@ -5,7 +5,8 @@
  * Each screen is a flat file, no nested components or hooks.
  */
 
-export { DashboardScreen } from './DashboardScreen';
+export { ConnectionScreen } from './ConnectionScreen';
+export { HomeScreen } from './HomeScreen';
 export { SettingsScreen } from './SettingsScreen';
 export { HistoryScreen } from './HistoryScreen';
 export { ModeSelectionScreen } from './ModeSelectionScreen';
