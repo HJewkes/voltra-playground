@@ -1,4 +1,5 @@
-import { View, Text } from 'react-native';
+import { ModeSelectionScreen } from '@/components/screens';
+
 export default function Modes() {
-  return <View className="flex-1 items-center justify-center bg-surface-400"><Text className="text-text-primary">Modes Screen (TODO)</Text></View>;
+  return <ModeSelectionScreen />;
 }
