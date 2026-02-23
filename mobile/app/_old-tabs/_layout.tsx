@@ -1,10 +1,13 @@
-import { Tabs } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { TouchableOpacity } from 'react-native';
 import { getSemanticColors } from '@titan-design/react-ui';
 
 const t = getSemanticColors('dark');
 
 export default function TabLayout() {
+  const router = useRouter();
+
   return (
     <Tabs
       screenOptions={{
@@ -36,16 +39,25 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Dashboard',
+          title: 'Home',
           tabBarIcon: ({ color, focused, size }) => (
             <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />
+          ),
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={() => router.push('/settings')}
+              style={{ marginRight: 16 }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="cog-outline" size={24} color={t['text-secondary']} />
+            </TouchableOpacity>
           ),
         }}
       />
       <Tabs.Screen
         name="workout"
         options={{
-          title: 'Exercise',
+          title: 'Workout',
           tabBarIcon: ({ color, focused, size }) => (
             <Ionicons name={focused ? 'fitness' : 'fitness-outline'} size={size} color={color} />
           ),
@@ -66,15 +78,6 @@ export default function TabLayout() {
           title: 'History',
           tabBarIcon: ({ color, focused, size }) => (
             <Ionicons name={focused ? 'time' : 'time-outline'} size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: 'Settings',
-          tabBarIcon: ({ color, focused, size }) => (
-            <Ionicons name={focused ? 'cog' : 'cog-outline'} size={size} color={color} />
           ),
         }}
       />
