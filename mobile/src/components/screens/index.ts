@@ -6,13 +6,11 @@
  */
 
 export { ConnectionScreen } from './ConnectionScreen';
-export { HomeScreen } from './HomeScreen';
 export { SettingsScreen } from './SettingsScreen';
 export { HistoryScreen } from './HistoryScreen';
 export { ModeSelectionScreen } from './ModeSelectionScreen';
 
 // Exercise session screens
-export { ExerciseSessionFlow } from './ExerciseSessionFlow';
 export { ExerciseScreen } from './ExerciseScreen';
 export type { ExerciseScreenProps } from './ExerciseScreen';
 export { ExercisePickerScreen } from './ExercisePickerScreen';
