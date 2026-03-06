@@ -5,103 +5,31 @@
  * Pure orchestration - composes device/ components and UI primitives.
  */
 
-import React, { useCallback } from 'react';
+import React from 'react';
 import { View, Text, ScrollView } from 'react-native';
-import { Alert, AlertDescription, DataRow, Surface } from '@titan-design/react-ui';
-import { ConnectionBanner, DeviceList } from '@/components/device';
+import { DataRow, Surface } from '@titan-design/react-ui';
+import { DeviceConnection } from '@/components/device';
 import { DevToolsSection } from '@/components/settings';
-import { useConnectionStore, selectBleEnvironment } from '@/stores';
-import type { DiscoveredDevice } from '@/domain/device';
+import { selectBleEnvironment } from '@/stores';
 
 /**
  * SettingsScreen - connection and app settings.
  */
 export function SettingsScreen() {
-  const {
-    // State
-    discoveredDevices,
-    isScanning,
-    isRestoring,
-    error,
-    connectingDeviceId,
-    primaryDeviceId,
-    devices,
-    // Actions
-    scan,
-    connectDevice,
-    disconnectAll,
-    clearError,
-    getPrimaryDevice,
-  } = useConnectionStore();
-
-  // BLE environment - detected fresh to avoid SSR/caching issues
-  const bleEnvironment = selectBleEnvironment();
-  const { bleSupported, warningMessage, environment, isWeb, requiresUserGesture } = bleEnvironment;
-
-  // Compute derived state locally (Zustand getters don't trigger re-renders reliably)
-  const isConnected = !!(primaryDeviceId && devices.has(primaryDeviceId));
-  const connectedDeviceName = getPrimaryDevice()?.getState().deviceName ?? null;
-
-  // Wrap actions for the DeviceList component
-  // On web, auto-connect after device is selected from browser picker
-  const handleScan = useCallback(async () => {
-    await scan();
-    if (requiresUserGesture) {
-      const devices = useConnectionStore.getState().discoveredDevices;
-      if (devices.length > 0) {
-        const device = devices[devices.length - 1]; // Most recently selected
-        await connectDevice(device);
-      }
-    }
-  }, [scan, requiresUserGesture, connectDevice]);
-  const handleConnect = useCallback(
-    (device: DiscoveredDevice) => connectDevice(device),
-    [connectDevice]
-  );
-  const handleDisconnect = useCallback(() => {
-    if (primaryDeviceId) {
-      disconnectAll();
-    }
-  }, [primaryDeviceId, disconnectAll]);
+  const { isWeb } = selectBleEnvironment();
 
   return (
     <ScrollView className="flex-1 bg-surface-400">
       <View className="p-4">
-        {/* Connected Device */}
-        {isConnected && (
-          <ConnectionBanner
-            deviceName={connectedDeviceName || 'Voltra'}
-            onDisconnect={handleDisconnect}
-          />
-        )}
-
-        {/* Device Scanner */}
-        {!isConnected && (
-          <DeviceList
-            devices={discoveredDevices}
-            isScanning={isScanning}
-            isRestoring={isRestoring}
-            connectingDeviceId={connectingDeviceId}
-            bleSupported={bleSupported}
-            environment={environment}
-            warningMessage={warningMessage}
-            requiresUserGesture={requiresUserGesture}
-            onScan={handleScan}
-            onDeviceSelect={handleConnect}
-          />
-        )}
-
-        {/* Error Banner */}
-        {error && (
-          <Alert status="error" variant="subtle" onClose={clearError} className="my-4">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+        {/* Device Connection */}
+        <View className="mb-4">
+          <DeviceConnection variant="card" />
+        </View>
 
         {/* Dev Tools (DEV only) */}
         {__DEV__ && <DevToolsSection />}
 
-        {/* App Info - inlined using primitives */}
+        {/* App Info */}
         <AppInfoSection isWeb={isWeb} />
       </View>
     </ScrollView>

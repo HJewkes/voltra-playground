@@ -4,11 +4,8 @@
  * Components for Voltra device connection, scanning, and status.
  */
 
-export { ConnectionBanner } from './ConnectionBanner';
-export type { ConnectionBannerProps } from './ConnectionBanner';
-
-export { DeviceList } from './DeviceList';
-export type { DeviceListProps } from './DeviceList';
+export { DeviceConnection } from './DeviceConnection';
+export type { DeviceConnectionProps } from './DeviceConnection';
 
 export { DeviceListItem } from './DeviceListItem';
 export type { DeviceListItemProps } from './DeviceListItem';
@@ -18,8 +15,3 @@ export type { ScanButtonProps } from './ScanButton';
 
 export { BLEWarning } from './BLEWarning';
 export type { BLEWarningProps } from './BLEWarning';
-
-export { ConnectionGuard } from './ConnectionGuard';
-
-export { ConnectPrompt } from './ConnectPrompt';
-export type { ConnectPromptProps } from './ConnectPrompt';

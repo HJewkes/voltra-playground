@@ -15,7 +15,7 @@ import { useConnectionStore } from '@/stores';
 import { getSessionRepository } from '@/data/provider';
 import type { Exercise } from '@/domain/exercise';
 import type { ExercisePlan } from '@/domain/workout';
-import { ConnectPrompt } from '@/components/device';
+import { DeviceConnection } from '@/components/device';
 import { ExercisePickerScreen } from './ExercisePickerScreen';
 import { ExerciseScreen } from './ExerciseScreen';
 import { getSemanticColors } from '@titan-design/react-ui';
@@ -61,11 +61,6 @@ export function ExerciseSessionFlow() {
     setFlowState('picker');
   }, []);
 
-  // Require device connection
-  if (!voltraStore) {
-    return <ConnectPrompt subtitle="Connect to your Voltra to start a workout" />;
-  }
-
   // Loading state
   if (flowState === 'loading') {
     return (
@@ -76,25 +71,29 @@ export function ExerciseSessionFlow() {
     );
   }
 
-  // Picker state
-  if (flowState === 'picker') {
-    return <ExercisePickerScreen onStartSession={handleStartSession} />;
-  }
+  // Guard: require device connection for picker and session
+  const content = (() => {
+    if (flowState === 'picker') {
+      return <ExercisePickerScreen onStartSession={handleStartSession} />;
+    }
+    if (flowState === 'session' && sessionExercise && sessionPlan) {
+      return (
+        <ExerciseScreen
+          exercise={sessionExercise}
+          plan={sessionPlan}
+          voltraStore={voltraStore!}
+          repository={getSessionRepository()}
+          onComplete={handleSessionComplete}
+          onNewSession={handleNewSession}
+        />
+      );
+    }
+    return null;
+  })();
 
-  // Session state
-  if (flowState === 'session' && sessionExercise && sessionPlan) {
-    return (
-      <ExerciseScreen
-        exercise={sessionExercise}
-        plan={sessionPlan}
-        voltraStore={voltraStore}
-        repository={getSessionRepository()}
-        onComplete={handleSessionComplete}
-        onNewSession={handleNewSession}
-      />
-    );
-  }
-
-  // Fallback
-  return null;
+  return (
+    <DeviceConnection variant="guard" subtitle="Connect to your Voltra to start a workout">
+      {content}
+    </DeviceConnection>
+  );
 }
