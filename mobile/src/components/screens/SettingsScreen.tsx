@@ -45,7 +45,7 @@ function AppInfoSection({ isWeb }: { isWeb: boolean }) {
     <>
       <Surface elevation={0} className="rounded-xl bg-surface-input" style={{ marginBottom: 16 }}>
         <View className="p-4">
-          <DataRow label="Version" value="0.2.0" className="border-b border-surface-200 pb-3 mb-3" />
+          <DataRow label="Version" value="1.0.0" className="border-b border-surface-200 pb-3 mb-3" />
           <DataRow label="BLE Mode" value={isWeb ? 'Web Bluetooth' : 'Native'} />
         </View>
       </Surface>
