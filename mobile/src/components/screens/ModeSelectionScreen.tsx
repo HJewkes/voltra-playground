@@ -1,23 +1,10 @@
-/**
- * ModeSelectionScreen
- *
- * Training mode selection with per-mode configuration.
- * Uses granular Zustand selectors to minimize re-renders.
- */
-
 import React, { useEffect, useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useStore } from 'zustand';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  Card,
-  CardContent,
-  Section,
-  SectionContent,
-  getSemanticColors,
-} from '@titan-design/react-ui';
+import { Card, CardContent, Section, SectionContent, getSemanticColors, alpha } from '@titan-design/react-ui';
 import { useConnectionStore, selectIsConnected } from '@/stores';
 import { TrainingMode, TrainingModeNames } from '@/domain/device';
 import { WeightTrainingConfig, BasicModeConfig } from '@/components/mode';
@@ -25,44 +12,23 @@ import type { VoltraStoreApi } from '@/stores/voltra-store';
 
 const t = getSemanticColors('dark');
 
-const MODE_DESCRIPTIONS: Record<TrainingMode, string> = {
-  [TrainingMode.Idle]: 'Standby mode',
-  [TrainingMode.WeightTraining]: 'Free weights & cables',
-  [TrainingMode.ResistanceBand]: 'Elastic resistance',
-  [TrainingMode.Rowing]: 'Row machine simulation',
-  [TrainingMode.Damper]: 'Fluid resistance',
-  [TrainingMode.CustomCurves]: 'User-defined profiles',
-  [TrainingMode.Isokinetic]: 'Constant velocity',
-  [TrainingMode.Isometric]: 'Static holds',
+type IconName = keyof typeof Ionicons.glyphMap;
+const MODE_META: Partial<Record<TrainingMode, { desc: string; icon: IconName }>> = {
+  [TrainingMode.WeightTraining]: { desc: 'Free weights & cables', icon: 'barbell-outline' },
+  [TrainingMode.ResistanceBand]: { desc: 'Elastic resistance', icon: 'fitness-outline' },
+  [TrainingMode.Rowing]: { desc: 'Row machine simulation', icon: 'boat-outline' },
+  [TrainingMode.Damper]: { desc: 'Fluid resistance', icon: 'water-outline' },
+  [TrainingMode.Isokinetic]: { desc: 'Constant velocity', icon: 'speedometer-outline' },
+  [TrainingMode.Isometric]: { desc: 'Static holds', icon: 'hand-left-outline' },
 };
 
-const MODE_LIST = [
-  TrainingMode.WeightTraining,
-  TrainingMode.ResistanceBand,
-  TrainingMode.Rowing,
-  TrainingMode.Damper,
-  TrainingMode.Isokinetic,
-  TrainingMode.Isometric,
-  TrainingMode.Idle,
-] as const;
-
+const TRAINING_MODES = Object.keys(MODE_META).map(Number) as TrainingMode[];
 const ECCENTRIC_MODES = new Set<TrainingMode>([TrainingMode.ResistanceBand]);
 
 function ModeConfig({ mode, voltraStore }: { mode: TrainingMode; voltraStore: VoltraStoreApi }) {
-  if (mode === TrainingMode.WeightTraining) {
-    return <WeightTrainingConfig voltraStore={voltraStore} />;
-  }
-
-  if (mode === TrainingMode.Idle) {
-    return null;
-  }
-
-  return (
-    <BasicModeConfig
-      voltraStore={voltraStore}
-      showEccentric={ECCENTRIC_MODES.has(mode)}
-    />
-  );
+  if (mode === TrainingMode.WeightTraining) return <WeightTrainingConfig voltraStore={voltraStore} />;
+  if (mode === TrainingMode.Idle) return null;
+  return <BasicModeConfig voltraStore={voltraStore} showEccentric={ECCENTRIC_MODES.has(mode)} />;
 }
 
 export function ModeSelectionScreen() {
@@ -73,8 +39,10 @@ export function ModeSelectionScreen() {
 
   const mode = useStore(voltraStore!, (s) => s.mode);
   const setMode = useStore(voltraStore!, (s) => s.setMode);
+  const deviceName = useStore(voltraStore!, (s) => s.deviceName) ?? 'Voltra';
 
   const [showDisconnectMenu, setShowDisconnectMenu] = useState(false);
+  const isIdle = mode === TrainingMode.Idle;
 
   useEffect(() => {
     if (!isConnected) {
@@ -87,50 +55,92 @@ export function ModeSelectionScreen() {
     await disconnectAll();
   };
 
-  const showConfig = mode !== TrainingMode.Idle;
+  const handleIdleToggle = () => {
+    setMode(isIdle ? TrainingMode.WeightTraining : TrainingMode.Idle);
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-surface-400">
-      {/* Header */}
       <View className="flex-row items-center justify-between px-4 pt-2 pb-1">
-        <Text accessibilityRole="header" className="text-lg font-semibold text-text-primary">Training Mode</Text>
-        <View className="relative">
+        <Text accessibilityRole="header" className="text-lg font-semibold text-text-primary">
+          Training Mode
+        </Text>
+        <View className="flex-row items-center gap-4">
           <TouchableOpacity
-            onPress={() => setShowDisconnectMenu((v) => !v)}
+            onPress={handleIdleToggle}
             activeOpacity={0.7}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             accessibilityRole="button"
-            accessibilityLabel="Device settings"
+            accessibilityLabel={isIdle ? 'Exit idle mode' : 'Enter idle mode'}
+            className="flex-row items-center rounded-lg px-3 py-1.5"
+            style={{ backgroundColor: isIdle ? alpha(t['brand-primary'], 0.15) : t['background-subtle'] }}
           >
-            <Ionicons name="cog-outline" size={24} color={t['text-secondary']} />
+            <Ionicons
+              name={isIdle ? 'pause-circle' : 'pause-circle-outline'}
+              size={16}
+              color={isIdle ? t['brand-primary'] : t['text-tertiary']}
+            />
+            <Text
+              className="ml-1.5 text-xs font-medium"
+              style={{ color: isIdle ? t['brand-primary'] : t['text-tertiary'] }}
+            >
+              Idle
+            </Text>
           </TouchableOpacity>
-          {showDisconnectMenu && (
-            <View className="absolute right-0 top-8 z-10 rounded-lg bg-surface-300 p-1 shadow-lg">
-              <TouchableOpacity
-                onPress={handleDisconnect}
-                className="flex-row items-center gap-2 rounded-md px-4 py-2.5"
-                activeOpacity={0.7}
-                accessibilityRole="button"
-                accessibilityLabel="Disconnect device"
-              >
-                <Ionicons name="bluetooth-outline" size={16} color={t['status-error']} />
-                <Text style={{ color: t['status-error'] }} className="text-sm font-medium">
-                  Disconnect
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
+          <View className="relative">
+            <TouchableOpacity
+              onPress={() => setShowDisconnectMenu((v) => !v)}
+              activeOpacity={0.7}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel="Device settings"
+            >
+              <Ionicons name="cog-outline" size={24} color={t['text-secondary']} />
+            </TouchableOpacity>
+            {showDisconnectMenu && (
+              <View className="absolute right-0 top-8 z-10 rounded-lg bg-surface-300 p-1 shadow-lg">
+                <TouchableOpacity
+                  onPress={handleDisconnect}
+                  className="flex-row items-center gap-2 rounded-md px-4 py-2.5"
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="Disconnect device"
+                >
+                  <Ionicons name="bluetooth-outline" size={16} color={t['status-error']} />
+                  <Text style={{ color: t['status-error'] }} className="text-sm font-medium">
+                    Disconnect
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
         </View>
       </View>
 
       <ScrollView className="flex-1">
         <View className="p-4">
-          {/* Mode grid */}
+          <View
+            className="mb-4 flex-row items-center rounded-xl p-3"
+            style={{ backgroundColor: alpha(t['status-success'], 0.08) }}
+          >
+            <View
+              className="items-center justify-center rounded-lg"
+              style={{ width: 36, height: 36, backgroundColor: alpha(t['status-success'], 0.15) }}
+            >
+              <Ionicons name="bluetooth" size={18} color={t['status-success']} />
+            </View>
+            <View className="ml-3 flex-1">
+              <Text className="text-sm font-semibold text-text-primary">{deviceName}</Text>
+              <Text className="text-xs text-text-tertiary">Connected</Text>
+            </View>
+            <View className="h-2 w-2 rounded-full" style={{ backgroundColor: t['status-success'] }} />
+          </View>
+
           <Section>
             <SectionContent>
               <View className="flex-row flex-wrap gap-3">
-                {MODE_LIST.map((modeValue) => {
+                {TRAINING_MODES.map((modeValue) => {
                   const isSelected = mode === modeValue;
+                  const meta = MODE_META[modeValue]!;
                   return (
                     <View key={modeValue} className="w-[48%]">
                       <Card
@@ -142,15 +152,20 @@ export function ModeSelectionScreen() {
                         accessibilityState={{ selected: isSelected }}
                       >
                         <CardContent>
+                          <View className="mb-2">
+                            <Ionicons
+                              name={meta.icon}
+                              size={24}
+                              color={isSelected ? t['brand-primary'] : t['text-secondary']}
+                            />
+                          </View>
                           <Text
                             className="text-base font-semibold"
                             style={{ color: isSelected ? t['brand-primary'] : t['text-primary'] }}
                           >
                             {TrainingModeNames[modeValue]}
                           </Text>
-                          <Text className="mt-1 text-xs text-text-tertiary">
-                            {MODE_DESCRIPTIONS[modeValue]}
-                          </Text>
+                          <Text className="mt-1 text-xs text-text-tertiary">{meta.desc}</Text>
                         </CardContent>
                       </Card>
                     </View>
@@ -160,11 +175,9 @@ export function ModeSelectionScreen() {
             </SectionContent>
           </Section>
 
-          {/* Per-mode config */}
           <ModeConfig mode={mode} voltraStore={voltraStore!} />
 
-          {/* Start exercise button */}
-          {showConfig && (
+          {!isIdle && (
             <View className="mt-4 px-2 pb-4">
               <TouchableOpacity
                 onPress={() => router.push('/exercise')}
