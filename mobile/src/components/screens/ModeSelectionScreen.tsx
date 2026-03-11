@@ -151,21 +151,21 @@ export function ModeSelectionScreen() {
                         borderColor={isSelected ? t['brand-primary'] : undefined}
                         accessibilityState={{ selected: isSelected }}
                       >
-                        <CardContent>
-                          <View className="mb-2">
-                            <Ionicons
-                              name={meta.icon}
-                              size={24}
-                              color={isSelected ? t['brand-primary'] : t['text-secondary']}
-                            />
+                        <CardContent className="flex-row items-center gap-3 px-4">
+                          <Ionicons
+                            name={meta.icon}
+                            size={20}
+                            color={isSelected ? t['brand-primary'] : t['text-secondary']}
+                          />
+                          <View className="flex-1">
+                            <Text
+                              className="text-sm font-semibold"
+                              style={{ color: isSelected ? t['brand-primary'] : t['text-primary'] }}
+                            >
+                              {TrainingModeNames[modeValue]}
+                            </Text>
+                            <Text className="text-xs text-text-tertiary">{meta.desc}</Text>
                           </View>
-                          <Text
-                            className="text-base font-semibold"
-                            style={{ color: isSelected ? t['brand-primary'] : t['text-primary'] }}
-                          >
-                            {TrainingModeNames[modeValue]}
-                          </Text>
-                          <Text className="mt-1 text-xs text-text-tertiary">{meta.desc}</Text>
                         </CardContent>
                       </Card>
                     </View>
