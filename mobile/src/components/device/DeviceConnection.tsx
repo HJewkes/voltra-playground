@@ -1,12 +1,3 @@
-/**
- * DeviceConnection
- *
- * Unified device connection component with three variants:
- * - inline: Compact row for dashboard embedding
- * - card: Full card with scan, BLE warning, device list
- * - guard: Full-screen gate that wraps children when connected
- */
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { useConnectionStore, selectIsConnected, selectBleEnvironment } from '@/stores';
@@ -14,6 +5,7 @@ import { SCAN_DURATION, SCAN_INTERVAL } from '@/config';
 import { getSemanticColors, alpha } from '@titan-design/react-ui';
 import { InlineVariant } from './DeviceConnectionInline';
 import { ConnectionCard } from './DeviceConnectionCard';
+import { GuardVariant } from './DeviceConnectionGuard';
 import type { DiscoveredDevice } from '@/domain/device';
 
 const t = getSemanticColors('dark');
@@ -21,6 +13,7 @@ const t = getSemanticColors('dark');
 export interface DeviceConnectionProps {
   variant: 'inline' | 'card' | 'guard';
   children?: React.ReactNode;
+  title?: string;
   subtitle?: string;
   autoScan?: boolean;
 }
@@ -28,6 +21,7 @@ export interface DeviceConnectionProps {
 export function DeviceConnection({
   variant,
   children,
+  title = 'Voltra',
   subtitle = 'Connect to your Voltra to continue',
   autoScan = true,
 }: DeviceConnectionProps) {
@@ -97,16 +91,13 @@ export function DeviceConnection({
           }
         }
       }
-    } catch {
-      // Silent fail for auto-scans
-    }
+    } catch { /* silent fail for auto-scans */ }
   }, [isScanning, connectingDeviceId, scan, requiresUserGesture, connectDevice]);
 
   const handleDisconnect = useCallback(() => {
     if (primaryDeviceId) disconnectAll();
   }, [primaryDeviceId, disconnectAll]);
 
-  // Auto-scan on mount
   useEffect(() => {
     if (canAutoScan && !isRestoring && bleSupported && discoveredDevices.length === 0) {
       const timeout = setTimeout(doScan, 300);
@@ -139,7 +130,6 @@ export function DeviceConnection({
     };
   }, [canAutoScan, bleSupported, discoveredDevices.length, scan]);
 
-  // Guard variant: render children when connected
   if (variant === 'guard' && isConnected) {
     return <>{children}</>;
   }
@@ -161,7 +151,6 @@ export function DeviceConnection({
       </View>
     );
   }
-
   if (variant === 'inline') {
     return (
       <InlineVariant
@@ -178,8 +167,28 @@ export function DeviceConnection({
     );
   }
 
-  // Card and guard share the same connection UI, just wrapped differently
-  const connectionUI = (
+  if (variant === 'guard') {
+    return (
+      <GuardVariant
+        title={title}
+        subtitle={subtitle}
+        discoveredDevices={discoveredDevices}
+        connectedDevices={connectedDevices}
+        isScanning={isScanning}
+        connectingDeviceId={connectingDeviceId}
+        bleSupported={bleSupported}
+        warningMessage={warningMessage}
+        environment={environment}
+        requiresUserGesture={requiresUserGesture}
+        error={error}
+        onScan={doScan}
+        onConnect={handleConnect}
+        onDismissError={() => setError(null)}
+      />
+    );
+  }
+
+  return (
     <ConnectionCard
       isConnected={isConnected}
       connectedDevices={connectedDevices}
@@ -199,14 +208,4 @@ export function DeviceConnection({
       onDismissError={() => setError(null)}
     />
   );
-
-  if (variant === 'guard') {
-    return (
-      <View className="flex-1 items-center justify-center bg-surface-400 p-6">
-        {connectionUI}
-      </View>
-    );
-  }
-
-  return connectionUI;
 }
