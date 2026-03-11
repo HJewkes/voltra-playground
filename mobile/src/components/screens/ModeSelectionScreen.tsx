@@ -7,8 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Card, CardContent, Section, SectionContent, getSemanticColors, alpha } from '@titan-design/react-ui';
 import { useConnectionStore, selectIsConnected } from '@/stores';
 import { TrainingMode, TrainingModeNames } from '@/domain/device';
-import { WeightTrainingConfig, BasicModeConfig } from '@/components/mode';
-import type { VoltraStoreApi } from '@/stores/voltra-store';
+import { ModeControls } from '@/components/mode';
 
 const t = getSemanticColors('dark');
 
@@ -23,14 +22,6 @@ const MODE_META: Partial<Record<TrainingMode, { desc: string; icon: IconName }>>
 };
 
 const TRAINING_MODES = Object.keys(MODE_META).map(Number) as TrainingMode[];
-const ECCENTRIC_MODES = new Set<TrainingMode>([TrainingMode.ResistanceBand]);
-
-function ModeConfig({ mode, voltraStore }: { mode: TrainingMode; voltraStore: VoltraStoreApi }) {
-  if (mode === TrainingMode.WeightTraining) return <WeightTrainingConfig voltraStore={voltraStore} />;
-  if (mode === TrainingMode.Idle) return null;
-  return <BasicModeConfig voltraStore={voltraStore} showEccentric={ECCENTRIC_MODES.has(mode)} />;
-}
-
 export function ModeSelectionScreen() {
   const router = useRouter();
   const isConnected = useConnectionStore(selectIsConnected);
@@ -175,7 +166,7 @@ export function ModeSelectionScreen() {
             </SectionContent>
           </Section>
 
-          <ModeConfig mode={mode} voltraStore={voltraStore!} />
+          <ModeControls mode={mode} voltraStore={voltraStore!} />
 
           {!isIdle && (
             <View className="mt-4 px-2 pb-4">
