@@ -73,7 +73,7 @@ export function ConnectionCard({
         <View className="mb-4 flex-row items-center justify-between">
           <View className="flex-row items-center">
             <Ionicons name="bluetooth-outline" size={24} color={t['text-disabled']} />
-            <Text className="ml-3 text-lg font-bold text-text-primary">Voltras</Text>
+            <Text accessibilityRole="header" className="ml-3 text-lg font-bold text-text-primary">Voltras</Text>
           </View>
           {bleSupported && (
             <ScanButton
@@ -136,7 +136,7 @@ export function ConnectionCard({
           >
             <Ionicons name="alert-circle" size={18} color={t['status-error']} />
             <Text className="ml-2 flex-1 text-xs" style={{ color: t['status-error'] }}>{error}</Text>
-            <TouchableOpacity onPress={onDismissError}>
+            <TouchableOpacity onPress={onDismissError} accessibilityRole="button" accessibilityLabel="Dismiss error">
               <Ionicons name="close" size={16} color={t['text-disabled']} />
             </TouchableOpacity>
           </View>
@@ -173,6 +173,8 @@ function ConnectedSection({ devices, onDisconnect }: { devices: { id: string; na
         className="mt-3 rounded-xl py-3"
         style={{ backgroundColor: t['background-subtle'] }}
         activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel="Disconnect all devices"
       >
         <Text className="text-center font-semibold text-text-secondary">Disconnect</Text>
       </TouchableOpacity>

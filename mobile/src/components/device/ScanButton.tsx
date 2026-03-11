@@ -53,6 +53,8 @@ export function ScanButton({
         backgroundColor: isScanning ? alpha(t['brand-primary'], 0.12) : t['background-subtle'],
       }}
       activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={isScanning ? scanningLabel : label}
     >
       {isScanning ? (
         <>

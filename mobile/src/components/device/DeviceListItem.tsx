@@ -49,7 +49,7 @@ export function DeviceListItem({
       className="rounded-xl bg-surface-input"
       style={{ opacity: isOtherConnecting ? 0.5 : 1 }}
     >
-      <ListItem onPress={onSelect} disabled={isOtherConnecting}>
+      <ListItem onPress={onSelect} disabled={isOtherConnecting} accessibilityRole="button" accessibilityLabel={`Connect to ${device.name || 'Voltra'}`}>
         <View
           className="mr-3 items-center justify-center rounded-xl"
           style={{ width: 48, height: 48, backgroundColor: t['surface-elevated'] }}
