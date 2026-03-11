@@ -93,12 +93,14 @@ export function ModeSelectionScreen() {
     <SafeAreaView className="flex-1 bg-surface-400">
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 pt-2 pb-1">
-        <Text className="text-lg font-semibold text-text-primary">Training Mode</Text>
+        <Text accessibilityRole="header" className="text-lg font-semibold text-text-primary">Training Mode</Text>
         <View className="relative">
           <TouchableOpacity
             onPress={() => setShowDisconnectMenu((v) => !v)}
             activeOpacity={0.7}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityRole="button"
+            accessibilityLabel="Device settings"
           >
             <Ionicons name="cog-outline" size={24} color={t['text-secondary']} />
           </TouchableOpacity>
@@ -108,6 +110,8 @@ export function ModeSelectionScreen() {
                 onPress={handleDisconnect}
                 className="flex-row items-center gap-2 rounded-md px-4 py-2.5"
                 activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="Disconnect device"
               >
                 <Ionicons name="bluetooth-outline" size={16} color={t['status-error']} />
                 <Text style={{ color: t['status-error'] }} className="text-sm font-medium">
@@ -135,6 +139,7 @@ export function ModeSelectionScreen() {
                         isInteractive
                         onPress={() => setMode(modeValue)}
                         borderColor={isSelected ? t['brand-primary'] : undefined}
+                        accessibilityState={{ selected: isSelected }}
                       >
                         <CardContent>
                           <Text
@@ -166,6 +171,8 @@ export function ModeSelectionScreen() {
                 activeOpacity={0.8}
                 className="items-center rounded-xl py-4"
                 style={{ backgroundColor: t['brand-primary'] }}
+                accessibilityRole="button"
+                accessibilityLabel="Start Exercise"
               >
                 <Text className="text-base font-bold text-white">Start Exercise</Text>
               </TouchableOpacity>
