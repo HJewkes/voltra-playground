@@ -178,9 +178,9 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
               accessibilityLabel={`${localWeight} pounds`}
             >
               <Animated.View style={textStyle}>
-                <Text className="text-center text-4xl font-bold" style={{ color: t['brand-primary'] }}>
+                <Text className="text-center text-2xl font-bold" style={{ color: t['brand-primary'] }}>
                   {localWeight}
-                  <Text className="text-xl text-text-tertiary"> lbs</Text>
+                  <Text className="text-sm text-text-tertiary"> lbs</Text>
                 </Text>
               </Animated.View>
             </Animated.View>
