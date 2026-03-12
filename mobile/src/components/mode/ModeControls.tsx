@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, PanResponder } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { useStore } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import Slider from '@react-native-community/slider';
@@ -45,14 +46,16 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
     [setWeight],
   );
 
-  // Elastic jog-shuttle: displacement from drag origin controls tick speed.
-  // Drag up = increase, down = decrease. Further = faster. Release to stop.
+  // Elastic jog-shuttle: horizontal displacement controls tick speed.
+  // Drag right = increase, left = decrease. Further = faster. Release to stop.
   const DEAD_ZONE = 12;
   const MAX_STRETCH = 120;
-  const MIN_INTERVAL = 30;   // ms — fastest tick rate (~33/sec)
-  const MAX_INTERVAL = 300;  // ms — slowest tick rate (~3/sec)
+  const MIN_INTERVAL = 30;
+  const MAX_INTERVAL = 300;
   const displacement = useRef(0);
   const tickTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pillOffset = useSharedValue(0);
+  const pillOpacity = useSharedValue(0);
 
   const stopTicking = useCallback(() => {
     if (tickTimer.current) { clearInterval(tickTimer.current); tickTimer.current = null; }
@@ -63,15 +66,14 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
     const tick = () => {
       const d = displacement.current;
       if (Math.abs(d) <= DEAD_ZONE) return;
-      const direction = d < 0 ? 1 : -1; // drag up (negative dy) = increase
+      const direction = d > 0 ? 1 : -1; // drag right = increase
       setLocalWeight((prev) => clampWeight(prev + direction));
     };
-    // Interval adapts live based on current displacement
     const scheduleNext = () => {
       const stretch = Math.min(Math.abs(displacement.current), MAX_STRETCH);
-      const t = stretch <= DEAD_ZONE ? MAX_INTERVAL
+      const interval = stretch <= DEAD_ZONE ? MAX_INTERVAL
         : MAX_INTERVAL - (MAX_INTERVAL - MIN_INTERVAL) * ((stretch - DEAD_ZONE) / (MAX_STRETCH - DEAD_ZONE));
-      tickTimer.current = setTimeout(() => { tick(); scheduleNext(); }, t);
+      tickTimer.current = setTimeout(() => { tick(); scheduleNext(); }, interval);
     };
     tick();
     scheduleNext();
@@ -80,20 +82,44 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > DEAD_ZONE,
-      onPanResponderGrant: () => { displacement.current = 0; },
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > DEAD_ZONE,
+      onPanResponderGrant: () => {
+        displacement.current = 0;
+        pillOffset.value = 0;
+        pillOpacity.value = 0;
+      },
       onPanResponderMove: (_, g) => {
         const wasActive = Math.abs(displacement.current) > DEAD_ZONE;
-        displacement.current = g.dy;
-        if (!wasActive && Math.abs(g.dy) > DEAD_ZONE) startTicking();
+        displacement.current = g.dx;
+        // Clamp visual stretch and update animated pill
+        const clamped = Math.max(-MAX_STRETCH, Math.min(MAX_STRETCH, g.dx));
+        pillOffset.value = clamped;
+        pillOpacity.value = Math.min(1, Math.abs(clamped) / MAX_STRETCH);
+        if (!wasActive && Math.abs(g.dx) > DEAD_ZONE) startTicking();
       },
       onPanResponderRelease: () => {
         displacement.current = 0;
         stopTicking();
+        pillOffset.value = withSpring(0, { damping: 15, stiffness: 300 });
+        pillOpacity.value = withSpring(0, { damping: 15, stiffness: 300 });
         setLocalWeight((prev) => { setWeight(prev); return prev; });
       },
     }),
   ).current;
+
+  const pillStyle = useAnimatedStyle(() => {
+    const d = pillOffset.value;
+    const absd = Math.abs(d);
+    return {
+      position: 'absolute' as const,
+      top: 4,
+      bottom: 4,
+      left: d > 0 ? '50%' : `${50 - (absd / MAX_STRETCH) * 40}%`,
+      right: d < 0 ? '50%' : `${50 - (absd / MAX_STRETCH) * 40}%`,
+      borderRadius: 20,
+      opacity: pillOpacity.value * 0.3,
+    };
+  });
 
   useEffect(() => stopTicking, [stopTicking]);
 
@@ -130,10 +156,11 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
           <View
             ref={weightCallbackRef}
             {...panResponder.panHandlers}
-            className="mb-2 select-none"
+            className="relative mb-2 select-none"
             accessibilityRole="adjustable"
             accessibilityLabel={`${localWeight} pounds`}
           >
+            <Animated.View style={[pillStyle, { backgroundColor: t['brand-primary'] }]} />
             <Text className="text-center text-[10px] font-medium text-text-tertiary">{label}</Text>
             <Text className="text-center text-3xl font-bold" style={{ color: t['brand-primary'] }}>
               {localWeight}
