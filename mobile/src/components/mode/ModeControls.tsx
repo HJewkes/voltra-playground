@@ -1,12 +1,12 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { View, Text, PanResponder } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { useStore } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import Slider from '@react-native-community/slider';
+import { Platform } from 'react-native';
 import { Section, SectionContent, Surface, getSemanticColors, alpha } from '@titan-design/react-ui';
 import { TrainingMode } from '@/domain/device';
-import { IncrementRow } from './IncrementRow';
 import type { VoltraStoreApi } from '@/stores/voltra-store';
 
 const t = getSemanticColors('dark');
@@ -28,6 +28,33 @@ const WEIGHT_MIN = 5;
 const WEIGHT_MAX = 200;
 const clampWeight = (v: number) => Math.max(WEIGHT_MIN, Math.min(WEIGHT_MAX, v));
 
+const DEAD_ZONE = 12;
+const MAX_STRETCH = 120;
+const MIN_INTERVAL = 30;
+const MAX_INTERVAL = 250;
+const MAX_EXTRA_PAD = 60;
+const BASE_PAD_H = 32;
+const BASE_PAD_V = 10;
+
+// Sigmoid decay: diminishing resistance like a real rubber band
+function decay(value: number, max: number) {
+  'worklet';
+  if (max === 0) return 0;
+  const entry = value / max;
+  const sigmoid = 2 * (1 / (1 + Math.exp(-entry * 3)) - 0.5);
+  return sigmoid * max;
+}
+
+// Returns [step, interval] — both ramp with displacement
+function tickParams(d: number): [number, number] {
+  const stretch = Math.min(Math.abs(d), MAX_STRETCH);
+  if (stretch <= DEAD_ZONE) return [0, MAX_INTERVAL];
+  const t = (stretch - DEAD_ZONE) / (MAX_STRETCH - DEAD_ZONE);
+  const step = Math.max(1, Math.round(1 + t * 4));
+  const interval = MAX_INTERVAL - (MAX_INTERVAL - MIN_INTERVAL) * t;
+  return [step, interval];
+}
+
 export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
   const weight = useStore(voltraStore, (s) => s.weight);
   const setWeight = useStore(voltraStore, (s) => s.setWeight);
@@ -41,44 +68,45 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
   const setInverseChains = useStore(voltraStore, (s) => s.setInverseChains);
 
   const [localWeight, setLocalWeight] = useState(weight);
-  const handleIncrement = useCallback(
-    (value: number) => { setLocalWeight(value); setWeight(value); },
-    [setWeight],
-  );
-
-  // Elastic jog-shuttle: horizontal displacement controls tick speed.
-  // Drag right = increase, left = decrease. Further = faster. Release to stop.
-  const DEAD_ZONE = 12;
-  const MAX_STRETCH = 120;
-  const MIN_INTERVAL = 30;
-  const MAX_INTERVAL = 300;
+  // Elastic jog-shuttle: horizontal displacement controls tick step size.
+  // Drag right = increase, left = decrease. Further = bigger steps. Release to stop.
   const displacement = useRef(0);
   const tickTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const pillStretch = useSharedValue(0); // -1..1 normalized displacement
 
   const stopTicking = useCallback(() => {
-    if (tickTimer.current) { clearInterval(tickTimer.current); tickTimer.current = null; }
+    if (tickTimer.current) { clearTimeout(tickTimer.current); tickTimer.current = null; }
   }, []);
 
   const startTicking = useCallback(() => {
     stopTicking();
-    const tick = () => {
-      const d = displacement.current;
-      if (Math.abs(d) <= DEAD_ZONE) return;
-      const direction = d > 0 ? 1 : -1; // drag right = increase
-      setLocalWeight((prev) => clampWeight(prev + direction));
+    const schedule = () => {
+      const [step, interval] = tickParams(displacement.current);
+      tickTimer.current = setTimeout(() => {
+        if (step > 0) {
+          const direction = displacement.current > 0 ? 1 : -1;
+          setLocalWeight((prev) => clampWeight(prev + direction * step));
+        }
+        schedule();
+      }, interval);
     };
-    const scheduleNext = () => {
-      const stretch = Math.min(Math.abs(displacement.current), MAX_STRETCH);
-      const interval = stretch <= DEAD_ZONE ? MAX_INTERVAL
-        : MAX_INTERVAL - (MAX_INTERVAL - MIN_INTERVAL) * ((stretch - DEAD_ZONE) / (MAX_STRETCH - DEAD_ZONE));
-      tickTimer.current = setTimeout(() => { tick(); scheduleNext(); }, interval);
-    };
-    tick();
-    scheduleNext();
+    const [step] = tickParams(displacement.current);
+    if (step > 0) {
+      const direction = displacement.current > 0 ? 1 : -1;
+      setLocalWeight((prev) => clampWeight(prev + direction * step));
+    }
+    schedule();
   }, [stopTicking]);
 
-  const panResponder = useRef(
+  // Refs so PanResponder closure always sees current functions
+  const startTickingRef = useRef(startTicking);
+  startTickingRef.current = startTicking;
+  const stopTickingRef = useRef(stopTicking);
+  stopTickingRef.current = stopTicking;
+  const setWeightRef = useRef(setWeight);
+  setWeightRef.current = setWeight;
+
+  const panResponder = useMemo(() =>
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > DEAD_ZONE,
@@ -91,61 +119,45 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
         displacement.current = g.dx;
         const clamped = Math.max(-MAX_STRETCH, Math.min(MAX_STRETCH, g.dx));
         pillStretch.value = clamped / MAX_STRETCH;
-        if (!wasActive && Math.abs(g.dx) > DEAD_ZONE) startTicking();
+        if (!wasActive && Math.abs(g.dx) > DEAD_ZONE) startTickingRef.current();
       },
       onPanResponderRelease: () => {
         displacement.current = 0;
-        stopTicking();
-        // Bouncy snap-back: low damping = cartoony elastic wiggle
+        stopTickingRef.current();
         pillStretch.value = withSpring(0, { damping: 4, stiffness: 350, mass: 0.4 });
-        setLocalWeight((prev) => { setWeight(prev); return prev; });
+        setLocalWeight((prev) => { setWeightRef.current(prev); return prev; });
       },
     }),
-  ).current;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  []);
 
-  // Sigmoid decay: diminishing resistance like a real rubber band
-  const decay = (value: number, max: number) => {
-    'worklet';
-    if (max === 0) return 0;
-    const entry = value / max;
-    const sigmoid = 2 * (1 / (1 + Math.exp(-entry * 3)) - 0.5);
-    return sigmoid * max;
-  };
-
-  // Pill container deforms on drag; text counter-scales to stay crisp.
-  // Anchor: when dragging right, left edge stays fixed (and vice versa).
-  // scaleX grows from center, so translateX compensates by half the growth
-  // in the drag direction, keeping the opposite edge pinned.
+  // Pill grows via padding in the drag direction — no scaleX, no counter-scale.
+  // Parent centers the pill, so translateX compensates by half the extra padding
+  // to keep the opposite edge pinned.
   const pillStyle = useAnimatedStyle(() => {
     const s = pillStretch.value; // -1..1
     const abs = Math.abs(s);
     const visual = decay(abs, 1);
-    const scaleX = 1 + visual * 1.8;
-    const scaleY = 1 - visual * 0.12;
-    // Half the added width, pushed in the drag direction
+    const extra = visual * MAX_EXTRA_PAD;
     const sign = s > 0 ? 1 : s < 0 ? -1 : 0;
-    const pillRestWidth = 120; // approximate rest width for offset calc
-    const growth = (scaleX - 1) * pillRestWidth;
-    const anchorShift = sign * growth / 2;
+    const baseRadius = 28 - visual * 8;
+    // Stretched side gets taller radius (visually tapers thinner)
+    const taperRadius = baseRadius + visual * 20;
     return {
-      borderRadius: 28 - visual * 8,
-      transform: [{ translateX: anchorShift }, { scaleX }, { scaleY }],
+      borderTopLeftRadius: s < 0 ? baseRadius : taperRadius,
+      borderBottomLeftRadius: s < 0 ? baseRadius : taperRadius,
+      borderTopRightRadius: s > 0 ? baseRadius : taperRadius,
+      borderBottomRightRadius: s > 0 ? baseRadius : taperRadius,
+      paddingLeft: BASE_PAD_H + (s < 0 ? extra : 0),
+      paddingRight: BASE_PAD_H + (s > 0 ? extra : 0),
+      paddingTop: BASE_PAD_V,
+      paddingBottom: BASE_PAD_V,
+      transform: [{ translateX: sign * extra / 2 }, { scaleY: 1 - visual * 0.15 }],
     };
-  });
-
-  // Counter-scale: undo the pill's scaleX/scaleY so text stays undeformed
-  const textStyle = useAnimatedStyle(() => {
-    const abs = Math.abs(pillStretch.value);
-    const visual = decay(abs, 1);
-    const scaleX = 1 / (1 + visual * 1.8);
-    const scaleY = 1 / (1 - visual * 0.12);
-    return { transform: [{ scaleX }, { scaleY }] };
   });
 
   useEffect(() => stopTicking, [stopTicking]);
 
-  const setWeightRef = useRef(setWeight);
-  setWeightRef.current = setWeight;
   const wheelHandler = useRef<(e: WheelEvent) => void>();
   const weightCallbackRef = useCallback((node: unknown) => {
     const el = node as HTMLElement | null;
@@ -179,19 +191,52 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
             <Animated.View
               ref={weightCallbackRef}
               {...panResponder.panHandlers}
-              style={[{ backgroundColor: alpha(t['brand-primary'], 0.15), paddingHorizontal: 32, paddingVertical: 10, alignItems: 'center', justifyContent: 'center' }, pillStyle]}
+              style={[{
+                backgroundColor: alpha(t['brand-primary'], 0.15),
+                alignItems: 'center',
+                justifyContent: 'center',
+                ...Platform.select({
+                  web: {
+                    boxShadow: [
+                      `0 4px 8px ${alpha('#000', 0.3)}`,
+                      `0 1px 3px ${alpha('#000', 0.2)}`,
+                    ].join(', '),
+                    borderTop: `1px solid ${alpha('#fff', 0.1)}`,
+                    borderBottom: `1px solid ${alpha('#000', 0.2)}`,
+                  } as any,
+                  default: {
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 8,
+                    elevation: 6,
+                  },
+                }),
+              }, pillStyle]}
               accessibilityRole="adjustable"
               accessibilityLabel={`${localWeight} pounds`}
             >
-              <Animated.View style={textStyle}>
-                <Text className="text-center text-2xl font-bold" style={{ color: t['brand-primary'] }}>
-                  {localWeight}
-                  <Text className="text-sm text-text-tertiary"> lbs</Text>
-                </Text>
-              </Animated.View>
+              <Text
+                className="text-center text-2xl font-bold"
+                style={{
+                  color: t['brand-primary'],
+                  ...Platform.select({
+                    web: {
+                      textShadow: `0 -1px 0 ${alpha('#000', 0.5)}, 0 1px 0 ${alpha('#fff', 0.12)}`,
+                    } as any,
+                    default: {
+                      textShadowColor: alpha('#000', 0.4),
+                      textShadowOffset: { width: 0, height: -1 },
+                      textShadowRadius: 1,
+                    },
+                  }),
+                }}
+              >
+                {localWeight}
+                <Text className="text-sm text-text-tertiary"> lbs</Text>
+              </Text>
             </Animated.View>
           </View>
-          <IncrementRow value={localWeight} min={WEIGHT_MIN} max={WEIGHT_MAX} onChange={handleIncrement} />
 
           {showEccentric && (
             <CompactEccentric value={eccentric} onChange={setEccentric} />
@@ -211,6 +256,66 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
   );
 }
 
+// Slider with a colored track that originates from the center rather than the left edge.
+// Both native tracks are neutral; an overlay bar shows the active range from center to thumb.
+function CenterSlider({ value, min, max, step, color, onValueChange, onSlidingComplete }: {
+  value: number; min: number; max: number; step: number;
+  color: string;
+  onValueChange: (v: number) => void;
+  onSlidingComplete: (v: number) => void;
+}) {
+  const center = (min + max) / 2;
+  const thumbPct = ((value - min) / (max - min)) * 100;
+  const centerPct = ((center - min) / (max - min)) * 100;
+  const barLeft = Math.min(thumbPct, centerPct);
+  const barWidth = Math.abs(thumbPct - centerPct);
+  const isNeutral = value === center;
+
+  return (
+    <View style={{ position: 'relative', justifyContent: 'center', height: 40 }}>
+      {/* Neumorphic inset track */}
+      <View style={{
+        position: 'absolute', left: 0, right: 0, height: 6, borderRadius: 3,
+        backgroundColor: '#1a1a1a',
+        ...Platform.select({
+          web: {
+            boxShadow: `inset 1px 2px 3px ${alpha('#000', 0.4)}, inset -1px -1px 2px ${alpha('#fff', 0.04)}`,
+          } as any,
+          default: {},
+        }),
+      }} />
+      {/* Active bar from center to thumb */}
+      {!isNeutral && (
+        <View style={{
+          position: 'absolute', left: `${barLeft}%`, width: `${barWidth}%`,
+          height: 6, borderRadius: 3, backgroundColor: color,
+          ...Platform.select({
+            web: {
+              boxShadow: `0 0 4px ${alpha(color, 0.4)}, inset 0 1px 0 ${alpha('#fff', 0.15)}`,
+            } as any,
+            default: {},
+          }),
+        }} />
+      )}
+      <Slider
+        value={value}
+        onValueChange={onValueChange}
+        onSlidingComplete={onSlidingComplete}
+        minimumValue={min}
+        maximumValue={max}
+        step={step}
+        minimumTrackTintColor="transparent"
+        maximumTrackTintColor="transparent"
+        thumbTintColor={isNeutral ? '#3a3a3a' : color}
+        {...Platform.select({
+          web: { style: { filter: `drop-shadow(0 2px 3px ${alpha('#000', 0.4)})` } } as any,
+          default: {},
+        })}
+      />
+    </View>
+  );
+}
+
 function CompactEccentric({ value, onChange }: { value: number; onChange: (v: number) => Promise<void> }) {
   const ECC_OFFSET = 195;
   const [slider, setSlider] = useState(Math.round(value) + ECC_OFFSET);
@@ -223,21 +328,19 @@ function CompactEccentric({ value, onChange }: { value: number; onChange: (v: nu
   const color = display > 0 ? t['status-success'] : display < 0 ? t['status-error'] : t['text-disabled'];
 
   return (
-    <View className="mt-3 border-t border-surface-300 pt-3">
+    <View className="mt-1">
       <View className="mb-1 flex-row items-center justify-between">
         <Text className="text-xs font-medium text-text-tertiary">Eccentric</Text>
         <Text className="text-xs font-semibold" style={{ color }}>{eccLabel}</Text>
       </View>
-      <Slider
+      <CenterSlider
         value={slider}
+        min={0}
+        max={390}
+        step={5}
+        color={display > 0 ? t['brand-primary'] : t['status-error']}
         onValueChange={(v: number) => { sliding.current = true; setSlider(Math.round(v)); }}
         onSlidingComplete={(v: number) => { sliding.current = false; const r = Math.round(v); setSlider(r); onChange(r - ECC_OFFSET); }}
-        minimumValue={0}
-        maximumValue={390}
-        step={5}
-        minimumTrackTintColor={display === 0 ? t['surface-elevated'] : display > 0 ? t['brand-primary'] : t['status-error']}
-        maximumTrackTintColor={t['surface-elevated']}
-        thumbTintColor={display === 0 ? t['text-disabled'] : display > 0 ? t['brand-primary'] : t['status-error']}
       />
     </View>
   );
@@ -274,21 +377,19 @@ function CompactChains({ chains, inverseChains, onChainsChange, onInverseChainsC
   const color = display !== 0 ? t['brand-primary'] : t['text-disabled'];
 
   return (
-    <View className="mt-3 border-t border-surface-300 pt-3">
+    <View className="mt-1">
       <View className="mb-1 flex-row items-center justify-between">
         <Text className="text-xs font-medium text-text-tertiary">Chains</Text>
         <Text className="text-xs font-semibold" style={{ color }}>{chainLabel}</Text>
       </View>
-      <Slider
+      <CenterSlider
         value={slider}
+        min={0}
+        max={200}
+        step={1}
+        color={display > 0 ? t['brand-primary'] : t['status-error']}
         onValueChange={(v: number) => { sliding.current = true; setSlider(Math.round(v)); }}
         onSlidingComplete={commit}
-        minimumValue={0}
-        maximumValue={200}
-        step={1}
-        minimumTrackTintColor={display === 0 ? t['surface-elevated'] : display > 0 ? t['brand-primary'] : t['status-error']}
-        maximumTrackTintColor={t['surface-elevated']}
-        thumbTintColor={display === 0 ? t['text-disabled'] : display > 0 ? t['brand-primary'] : t['status-error']}
       />
     </View>
   );

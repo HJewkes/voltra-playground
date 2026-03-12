@@ -8,6 +8,7 @@ import { Card, CardContent, Section, SectionContent, getSemanticColors, alpha } 
 import { useConnectionStore, selectIsConnected } from '@/stores';
 import { TrainingMode, TrainingModeNames } from '@/domain/device';
 import { ModeControls } from '@/components/mode';
+import type { VoltraStoreApi } from '@/stores/voltra-store';
 
 const t = getSemanticColors('dark');
 
@@ -28,18 +29,28 @@ export function ModeSelectionScreen() {
   const voltraStore = useConnectionStore((s) => s.getPrimaryDevice());
   const disconnectAll = useConnectionStore((s) => s.disconnectAll);
 
-  const mode = useStore(voltraStore!, (s) => s.mode);
-  const setMode = useStore(voltraStore!, (s) => s.setMode);
-  const deviceName = useStore(voltraStore!, (s) => s.deviceName) ?? 'Voltra';
-
-  const [showDisconnectMenu, setShowDisconnectMenu] = useState(false);
-  const isIdle = mode === TrainingMode.Idle;
-
   useEffect(() => {
     if (!isConnected) {
       router.replace('/');
     }
   }, [isConnected, router]);
+
+  if (!voltraStore) return null;
+
+  return <ModeSelectionInner voltraStore={voltraStore} disconnectAll={disconnectAll} />;
+}
+
+function ModeSelectionInner({ voltraStore, disconnectAll }: {
+  voltraStore: VoltraStoreApi;
+  disconnectAll: () => Promise<void>;
+}) {
+  const router = useRouter();
+  const mode = useStore(voltraStore, (s) => s.mode);
+  const setMode = useStore(voltraStore, (s) => s.setMode);
+  const deviceName = useStore(voltraStore, (s) => s.deviceName) ?? 'Voltra';
+
+  const [showDisconnectMenu, setShowDisconnectMenu] = useState(false);
+  const isIdle = mode === TrainingMode.Idle;
 
   const handleDisconnect = async () => {
     setShowDisconnectMenu(false);
