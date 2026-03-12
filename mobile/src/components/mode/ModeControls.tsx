@@ -45,31 +45,57 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
     [setWeight],
   );
 
-  const dragAccum = useRef(0);
+  // Elastic jog-shuttle: displacement from drag origin controls tick speed.
+  // Drag up = increase, down = decrease. Further = faster. Release to stop.
+  const DEAD_ZONE = 12;
+  const MAX_STRETCH = 120;
+  const MIN_INTERVAL = 30;   // ms — fastest tick rate (~33/sec)
+  const MAX_INTERVAL = 300;  // ms — slowest tick rate (~3/sec)
+  const displacement = useRef(0);
+  const tickTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const stopTicking = useCallback(() => {
+    if (tickTimer.current) { clearInterval(tickTimer.current); tickTimer.current = null; }
+  }, []);
+
+  const startTicking = useCallback(() => {
+    stopTicking();
+    const tick = () => {
+      const d = displacement.current;
+      if (Math.abs(d) <= DEAD_ZONE) return;
+      const direction = d < 0 ? 1 : -1; // drag up (negative dy) = increase
+      setLocalWeight((prev) => clampWeight(prev + direction));
+    };
+    // Interval adapts live based on current displacement
+    const scheduleNext = () => {
+      const stretch = Math.min(Math.abs(displacement.current), MAX_STRETCH);
+      const t = stretch <= DEAD_ZONE ? MAX_INTERVAL
+        : MAX_INTERVAL - (MAX_INTERVAL - MIN_INTERVAL) * ((stretch - DEAD_ZONE) / (MAX_STRETCH - DEAD_ZONE));
+      tickTimer.current = setTimeout(() => { tick(); scheduleNext(); }, t);
+    };
+    tick();
+    scheduleNext();
+  }, [stopTicking]);
+
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 5,
-      onPanResponderGrant: () => { dragAccum.current = 0; },
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > DEAD_ZONE,
+      onPanResponderGrant: () => { displacement.current = 0; },
       onPanResponderMove: (_, g) => {
-        const dist = Math.abs(g.dy);
-        const vel = Math.abs(g.vy);
-        // Pixels per tick shrinks as you drag further/faster → accelerating ramp
-        // Near: 16px/tick, far (200px+): 4px/tick. Velocity multiplies the effect.
-        const pxPerTick = Math.max(4, 16 - dist / 20 - vel * 4);
-        const prevTicks = Math.round(-dragAccum.current / pxPerTick);
-        const currTicks = Math.round(-g.dy / pxPerTick);
-        const delta = currTicks - prevTicks;
-        if (delta !== 0) {
-          setLocalWeight((prev) => clampWeight(prev + delta));
-        }
-        dragAccum.current = g.dy;
+        const wasActive = Math.abs(displacement.current) > DEAD_ZONE;
+        displacement.current = g.dy;
+        if (!wasActive && Math.abs(g.dy) > DEAD_ZONE) startTicking();
       },
       onPanResponderRelease: () => {
+        displacement.current = 0;
+        stopTicking();
         setLocalWeight((prev) => { setWeight(prev); return prev; });
       },
     }),
   ).current;
+
+  useEffect(() => stopTicking, [stopTicking]);
 
   const setWeightRef = useRef(setWeight);
   setWeightRef.current = setWeight;
