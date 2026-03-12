@@ -4,7 +4,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-na
 import { useStore } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import Slider from '@react-native-community/slider';
-import { Section, SectionContent, Surface, getSemanticColors } from '@titan-design/react-ui';
+import { Section, SectionContent, Surface, getSemanticColors, alpha } from '@titan-design/react-ui';
 import { TrainingMode } from '@/domain/device';
 import { IncrementRow } from './IncrementRow';
 import type { VoltraStoreApi } from '@/stores/voltra-store';
@@ -112,32 +112,19 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
     return sigmoid * max;
   };
 
-  // Capsule: always visible, deforms from anchor edge like pulling taffy.
-  const PILL_W = 72;
-  const PILL_H = 40;
+  // Pill container: the weight value lives inside it. Deforms on drag.
   const pillStyle = useAnimatedStyle(() => {
     const s = pillStretch.value; // -1..1
     const abs = Math.abs(s);
-    // Sigmoid decay makes it resist more at extremes
     const visual = decay(abs, 1);
-    // Stretch width: at rest 72px, at full pull ~250px
-    const stretchW = PILL_W + visual * 180;
-    // Squash height: compress vertically as it stretches
-    const squashH = PILL_H * (1 - visual * 0.25);
-    // Position: anchor near center, extend outward in drag direction
-    // At rest: centered. Dragging right: left edge stays, right edge extends.
-    const centerX = 0; // 0 = centered (via left:50% + marginLeft)
-    const offsetX = s > 0
-      ? (stretchW - PILL_W) / 2   // right: shift right so left edge holds
-      : -(stretchW - PILL_W) / 2; // left: shift left so right edge holds
+    // Scale: stretch horizontally, squash vertically
+    const scaleX = 1 + visual * 1.8;
+    const scaleY = 1 - visual * 0.12;
+    // Anchor offset: shift so the drag-side edge extends out
+    const anchorShift = s * visual * 60;
     return {
-      width: stretchW,
-      height: squashH,
-      marginLeft: -stretchW / 2,
-      marginTop: -(squashH - PILL_H) / 2,
-      borderRadius: squashH / 2, // always fully rounded ends
-      opacity: 0.22 + visual * 0.3,
-      transform: [{ translateX: abs > 0.01 ? offsetX : centerX }],
+      borderRadius: 24 - visual * 8,
+      transform: [{ translateX: anchorShift }, { scaleX }, { scaleY }],
     };
   });
 
@@ -146,8 +133,8 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
   const setWeightRef = useRef(setWeight);
   setWeightRef.current = setWeight;
   const wheelHandler = useRef<(e: WheelEvent) => void>();
-  const weightCallbackRef = useCallback((node: View | null) => {
-    const el = node as unknown as HTMLElement | null;
+  const weightCallbackRef = useCallback((node: unknown) => {
+    const el = node as HTMLElement | null;
     if (!el?.addEventListener) return;
     if (wheelHandler.current) el.removeEventListener('wheel', wheelHandler.current);
     wheelHandler.current = (e: WheelEvent) => {
@@ -173,27 +160,21 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
     <Section>
       <SectionContent>
         <Surface elevation={1} className="rounded-xl p-3">
-          <View
-            ref={weightCallbackRef}
-            {...panResponder.panHandlers}
-            className="relative mb-2 select-none"
-            accessibilityRole="adjustable"
-            accessibilityLabel={`${localWeight} pounds`}
-          >
+          <Text className="mb-1 text-center text-[10px] font-medium text-text-tertiary">{label}</Text>
+          <View className="mb-2 items-center select-none">
             <Animated.View
-              style={[{
-                position: 'absolute',
-                left: '50%',
-                top: 6,
-                backgroundColor: t['brand-primary'],
-              }, pillStyle]}
-              pointerEvents="none"
-            />
-            <Text className="text-center text-[10px] font-medium text-text-tertiary">{label}</Text>
-            <Text className="text-center text-3xl font-bold" style={{ color: t['brand-primary'] }}>
-              {localWeight}
-              <Text className="text-lg text-text-tertiary"> lbs</Text>
-            </Text>
+              ref={weightCallbackRef}
+              {...panResponder.panHandlers}
+              style={[{ backgroundColor: alpha(t['brand-primary'], 0.15) }, pillStyle]}
+              className="items-center justify-center px-8 py-2"
+              accessibilityRole="adjustable"
+              accessibilityLabel={`${localWeight} pounds`}
+            >
+              <Text className="text-center text-3xl font-bold" style={{ color: t['brand-primary'] }}>
+                {localWeight}
+                <Text className="text-lg text-text-tertiary"> lbs</Text>
+              </Text>
+            </Animated.View>
           </View>
           <IncrementRow value={localWeight} min={WEIGHT_MIN} max={WEIGHT_MAX} onChange={handleIncrement} />
 
