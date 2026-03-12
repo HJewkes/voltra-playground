@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, PanResponder } from 'react-native';
 import { useStore } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import Slider from '@react-native-community/slider';
@@ -23,6 +23,10 @@ interface ModeControlsProps {
   mode: TrainingMode;
 }
 
+const WEIGHT_MIN = 5;
+const WEIGHT_MAX = 200;
+const clampWeight = (v: number) => Math.max(WEIGHT_MIN, Math.min(WEIGHT_MAX, v));
+
 export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
   const weight = useStore(voltraStore, (s) => s.weight);
   const setWeight = useStore(voltraStore, (s) => s.setWeight);
@@ -41,6 +45,46 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
     [setWeight],
   );
 
+  const dragAccum = useRef(0);
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 5,
+      onPanResponderGrant: () => { dragAccum.current = 0; },
+      onPanResponderMove: (_, g) => {
+        const step = Math.abs(g.vy) > 1.5 ? 5 : 1;
+        const ticks = Math.floor(-g.dy / 12) - Math.floor(-dragAccum.current / 12);
+        if (ticks !== 0) {
+          setLocalWeight((prev) => clampWeight(prev + ticks * step));
+        }
+        dragAccum.current = g.dy;
+      },
+      onPanResponderRelease: () => {
+        setLocalWeight((prev) => { setWeight(prev); return prev; });
+      },
+    }),
+  ).current;
+
+  const setWeightRef = useRef(setWeight);
+  setWeightRef.current = setWeight;
+  const wheelHandler = useRef<(e: WheelEvent) => void>();
+  const weightCallbackRef = useCallback((node: View | null) => {
+    const el = node as unknown as HTMLElement | null;
+    if (!el?.addEventListener) return;
+    if (wheelHandler.current) el.removeEventListener('wheel', wheelHandler.current);
+    wheelHandler.current = (e: WheelEvent) => {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -1 : 1;
+      const step = e.shiftKey ? 10 : e.ctrlKey ? 5 : 1;
+      setLocalWeight((prev) => {
+        const next = clampWeight(prev + delta * step);
+        setWeightRef.current(next);
+        return next;
+      });
+    };
+    el.addEventListener('wheel', wheelHandler.current, { passive: false });
+  }, []);
+
   if (mode === TrainingMode.Idle) return null;
 
   const label = WEIGHT_LABEL[mode] ?? 'Weight';
@@ -50,18 +94,21 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
   return (
     <Section>
       <SectionContent>
-        <Surface elevation={1} className="rounded-xl p-4">
-          <Text className="mb-1 text-center text-xs font-medium text-text-tertiary">{label}</Text>
-          <Text
-            className="mb-3 text-center text-4xl font-bold"
-            style={{ color: t['brand-primary'] }}
+        <Surface elevation={1} className="rounded-xl p-3">
+          <View
+            ref={weightCallbackRef}
+            {...panResponder.panHandlers}
+            className="mb-2 select-none"
             accessibilityRole="adjustable"
             accessibilityLabel={`${localWeight} pounds`}
           >
-            {localWeight}
-            <Text className="text-xl text-text-tertiary"> lbs</Text>
-          </Text>
-          <IncrementRow value={localWeight} min={5} max={200} onChange={handleIncrement} />
+            <Text className="text-center text-[10px] font-medium text-text-tertiary">{label}</Text>
+            <Text className="text-center text-3xl font-bold" style={{ color: t['brand-primary'] }}>
+              {localWeight}
+              <Text className="text-lg text-text-tertiary"> lbs</Text>
+            </Text>
+          </View>
+          <IncrementRow value={localWeight} min={WEIGHT_MIN} max={WEIGHT_MAX} onChange={handleIncrement} />
 
           {showEccentric && (
             <CompactEccentric value={eccentric} onChange={setEccentric} />
@@ -93,8 +140,8 @@ function CompactEccentric({ value, onChange }: { value: number; onChange: (v: nu
   const color = display > 0 ? t['status-success'] : display < 0 ? t['status-error'] : t['text-disabled'];
 
   return (
-    <View className="mt-4 border-t border-surface-300 pt-4">
-      <View className="mb-2 flex-row items-center justify-between">
+    <View className="mt-3 border-t border-surface-300 pt-3">
+      <View className="mb-1 flex-row items-center justify-between">
         <Text className="text-xs font-medium text-text-tertiary">Eccentric</Text>
         <Text className="text-xs font-semibold" style={{ color }}>{eccLabel}</Text>
       </View>
@@ -144,8 +191,8 @@ function CompactChains({ chains, inverseChains, onChainsChange, onInverseChainsC
   const color = display !== 0 ? t['brand-primary'] : t['text-disabled'];
 
   return (
-    <View className="mt-4 border-t border-surface-300 pt-4">
-      <View className="mb-2 flex-row items-center justify-between">
+    <View className="mt-3 border-t border-surface-300 pt-3">
+      <View className="mb-1 flex-row items-center justify-between">
         <Text className="text-xs font-medium text-text-tertiary">Chains</Text>
         <Text className="text-xs font-semibold" style={{ color }}>{chainLabel}</Text>
       </View>

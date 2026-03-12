@@ -28,7 +28,7 @@ export function IncrementRow({ value, min, max, onChange }: IncrementRowProps) {
             activeOpacity={0.7}
             accessibilityRole="button"
             accessibilityLabel={`${inc > 0 ? 'Increase' : 'Decrease'} by ${Math.abs(inc)} pounds`}
-            className="rounded-lg px-3 py-2"
+            className="rounded-md px-2.5 py-1.5"
             style={{
               backgroundColor: alpha(t['brand-primary'], disabled ? 0.05 : 0.12),
               opacity: disabled ? 0.4 : 1,
