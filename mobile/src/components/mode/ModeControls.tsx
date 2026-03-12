@@ -112,20 +112,27 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
     return sigmoid * max;
   };
 
-  // Pill container: the weight value lives inside it. Deforms on drag.
+  // Pill container deforms on drag; text counter-scales to stay crisp.
   const pillStyle = useAnimatedStyle(() => {
     const s = pillStretch.value; // -1..1
     const abs = Math.abs(s);
     const visual = decay(abs, 1);
-    // Scale: stretch horizontally, squash vertically
     const scaleX = 1 + visual * 1.8;
     const scaleY = 1 - visual * 0.12;
-    // Anchor offset: shift so the drag-side edge extends out
     const anchorShift = s * visual * 60;
     return {
-      borderRadius: 24 - visual * 8,
+      borderRadius: 28 - visual * 8,
       transform: [{ translateX: anchorShift }, { scaleX }, { scaleY }],
     };
+  });
+
+  // Counter-scale: undo the pill's scaleX/scaleY so text stays undeformed
+  const textStyle = useAnimatedStyle(() => {
+    const abs = Math.abs(pillStretch.value);
+    const visual = decay(abs, 1);
+    const scaleX = 1 / (1 + visual * 1.8);
+    const scaleY = 1 / (1 - visual * 0.12);
+    return { transform: [{ scaleX }, { scaleY }] };
   });
 
   useEffect(() => stopTicking, [stopTicking]);
@@ -166,14 +173,16 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
               ref={weightCallbackRef}
               {...panResponder.panHandlers}
               style={[{ backgroundColor: alpha(t['brand-primary'], 0.15) }, pillStyle]}
-              className="items-center justify-center px-8 py-2"
+              className="items-center justify-center px-10 py-3"
               accessibilityRole="adjustable"
               accessibilityLabel={`${localWeight} pounds`}
             >
-              <Text className="text-center text-3xl font-bold" style={{ color: t['brand-primary'] }}>
-                {localWeight}
-                <Text className="text-lg text-text-tertiary"> lbs</Text>
-              </Text>
+              <Animated.View style={textStyle}>
+                <Text className="text-center text-4xl font-bold" style={{ color: t['brand-primary'] }}>
+                  {localWeight}
+                  <Text className="text-xl text-text-tertiary"> lbs</Text>
+                </Text>
+              </Animated.View>
             </Animated.View>
           </View>
           <IncrementRow value={localWeight} min={WEIGHT_MIN} max={WEIGHT_MAX} onChange={handleIncrement} />
