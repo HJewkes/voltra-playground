@@ -172,8 +172,7 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
             <Animated.View
               ref={weightCallbackRef}
               {...panResponder.panHandlers}
-              style={[{ backgroundColor: alpha(t['brand-primary'], 0.15) }, pillStyle]}
-              className="items-center justify-center px-10 py-3"
+              style={[{ backgroundColor: alpha(t['brand-primary'], 0.15), paddingHorizontal: 48, paddingVertical: 16, alignItems: 'center', justifyContent: 'center' }, pillStyle]}
               accessibilityRole="adjustable"
               accessibilityLabel={`${localWeight} pounds`}
             >
