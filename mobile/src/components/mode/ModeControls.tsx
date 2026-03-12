@@ -54,8 +54,7 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
   const MAX_INTERVAL = 300;
   const displacement = useRef(0);
   const tickTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pillOffset = useSharedValue(0);
-  const pillOpacity = useSharedValue(0);
+  const pillStretch = useSharedValue(0); // -1..1 normalized displacement
 
   const stopTicking = useCallback(() => {
     if (tickTimer.current) { clearInterval(tickTimer.current); tickTimer.current = null; }
@@ -85,39 +84,60 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
       onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > DEAD_ZONE,
       onPanResponderGrant: () => {
         displacement.current = 0;
-        pillOffset.value = 0;
-        pillOpacity.value = 0;
+        pillStretch.value = 0;
       },
       onPanResponderMove: (_, g) => {
         const wasActive = Math.abs(displacement.current) > DEAD_ZONE;
         displacement.current = g.dx;
-        // Clamp visual stretch and update animated pill
         const clamped = Math.max(-MAX_STRETCH, Math.min(MAX_STRETCH, g.dx));
-        pillOffset.value = clamped;
-        pillOpacity.value = Math.min(1, Math.abs(clamped) / MAX_STRETCH);
+        pillStretch.value = clamped / MAX_STRETCH;
         if (!wasActive && Math.abs(g.dx) > DEAD_ZONE) startTicking();
       },
       onPanResponderRelease: () => {
         displacement.current = 0;
         stopTicking();
-        pillOffset.value = withSpring(0, { damping: 15, stiffness: 300 });
-        pillOpacity.value = withSpring(0, { damping: 15, stiffness: 300 });
+        // Bouncy snap-back: low damping = cartoony elastic wiggle
+        pillStretch.value = withSpring(0, { damping: 4, stiffness: 350, mass: 0.4 });
         setLocalWeight((prev) => { setWeight(prev); return prev; });
       },
     }),
   ).current;
 
+  // Sigmoid decay: diminishing resistance like a real rubber band
+  const decay = (value: number, max: number) => {
+    'worklet';
+    if (max === 0) return 0;
+    const entry = value / max;
+    const sigmoid = 2 * (1 / (1 + Math.exp(-entry * 3)) - 0.5);
+    return sigmoid * max;
+  };
+
+  // Capsule: always visible, deforms from anchor edge like pulling taffy.
+  const PILL_W = 72;
+  const PILL_H = 40;
   const pillStyle = useAnimatedStyle(() => {
-    const d = pillOffset.value;
-    const absd = Math.abs(d);
+    const s = pillStretch.value; // -1..1
+    const abs = Math.abs(s);
+    // Sigmoid decay makes it resist more at extremes
+    const visual = decay(abs, 1);
+    // Stretch width: at rest 72px, at full pull ~250px
+    const stretchW = PILL_W + visual * 180;
+    // Squash height: compress vertically as it stretches
+    const squashH = PILL_H * (1 - visual * 0.25);
+    // Position: anchor near center, extend outward in drag direction
+    // At rest: centered. Dragging right: left edge stays, right edge extends.
+    const centerX = 0; // 0 = centered (via left:50% + marginLeft)
+    const offsetX = s > 0
+      ? (stretchW - PILL_W) / 2   // right: shift right so left edge holds
+      : -(stretchW - PILL_W) / 2; // left: shift left so right edge holds
     return {
-      position: 'absolute' as const,
-      top: 4,
-      bottom: 4,
-      left: d > 0 ? '50%' : `${50 - (absd / MAX_STRETCH) * 40}%`,
-      right: d < 0 ? '50%' : `${50 - (absd / MAX_STRETCH) * 40}%`,
-      borderRadius: 20,
-      opacity: pillOpacity.value * 0.3,
+      width: stretchW,
+      height: squashH,
+      marginLeft: -stretchW / 2,
+      marginTop: -(squashH - PILL_H) / 2,
+      borderRadius: squashH / 2, // always fully rounded ends
+      opacity: 0.22 + visual * 0.3,
+      transform: [{ translateX: abs > 0.01 ? offsetX : centerX }],
     };
   });
 
@@ -160,7 +180,15 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
             accessibilityRole="adjustable"
             accessibilityLabel={`${localWeight} pounds`}
           >
-            <Animated.View style={[pillStyle, { backgroundColor: t['brand-primary'] }]} />
+            <Animated.View
+              style={[{
+                position: 'absolute',
+                left: '50%',
+                top: 6,
+                backgroundColor: t['brand-primary'],
+              }, pillStyle]}
+              pointerEvents="none"
+            />
             <Text className="text-center text-[10px] font-medium text-text-tertiary">{label}</Text>
             <Text className="text-center text-3xl font-bold" style={{ color: t['brand-primary'] }}>
               {localWeight}
