@@ -158,7 +158,7 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
 
   useEffect(() => stopTicking, [stopTicking]);
 
-  const wheelHandler = useRef<(e: WheelEvent) => void>();
+  const wheelHandler = useRef<(e: WheelEvent) => void>(undefined);
   const weightCallbackRef = useCallback((node: unknown) => {
     const el = node as HTMLElement | null;
     if (!el?.addEventListener) return;
