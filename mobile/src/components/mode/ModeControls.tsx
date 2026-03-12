@@ -113,13 +113,20 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
   };
 
   // Pill container deforms on drag; text counter-scales to stay crisp.
+  // Anchor: when dragging right, left edge stays fixed (and vice versa).
+  // scaleX grows from center, so translateX compensates by half the growth
+  // in the drag direction, keeping the opposite edge pinned.
   const pillStyle = useAnimatedStyle(() => {
     const s = pillStretch.value; // -1..1
     const abs = Math.abs(s);
     const visual = decay(abs, 1);
     const scaleX = 1 + visual * 1.8;
     const scaleY = 1 - visual * 0.12;
-    const anchorShift = s * visual * 60;
+    // Half the added width, pushed in the drag direction
+    const sign = s > 0 ? 1 : s < 0 ? -1 : 0;
+    const pillRestWidth = 120; // approximate rest width for offset calc
+    const growth = (scaleX - 1) * pillRestWidth;
+    const anchorShift = sign * growth / 2;
     return {
       borderRadius: 28 - visual * 8,
       transform: [{ translateX: anchorShift }, { scaleX }, { scaleY }],
