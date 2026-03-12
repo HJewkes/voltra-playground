@@ -64,10 +64,18 @@ export interface RecordingState {
   lastRepPeakVelocity: number | null;
 
   // Live metrics (computed from library functions)
+  meanVelocity: number;
   velocityLoss: number;
   rpe: number;
   rir: number;
   velocityTrend: number[];
+
+  // Tempo tracking — live phase timing for current rep
+  currentPhase: MovementPhase;
+  phaseStartTime: number;
+  phaseElapsedMs: number;
+  /** Completed phase durations (ms) for the current rep, in order */
+  repPhaseDurations: { phase: MovementPhase; durationMs: number }[];
 
   // UI feedback
   liveMessage: string;
@@ -90,6 +98,17 @@ export interface RecordingState {
 }
 
 // =============================================================================
+// Smoothing
+// =============================================================================
+
+/** EMA smoothing factor — lower = smoother, higher = more responsive */
+const EMA_ALPHA = 0.35;
+
+function ema(prev: number, next: number, alpha = EMA_ALPHA): number {
+  return prev + alpha * (next - prev);
+}
+
+// =============================================================================
 // Initial State
 // =============================================================================
 
@@ -106,7 +125,12 @@ function createInitialState(): Pick<
   | 'velocityLoss'
   | 'rpe'
   | 'rir'
+  | 'meanVelocity'
   | 'velocityTrend'
+  | 'currentPhase'
+  | 'phaseStartTime'
+  | 'phaseElapsedMs'
+  | 'repPhaseDurations'
   | 'liveMessage'
   | 'allSamples'
   | 'lastSet'
@@ -120,10 +144,15 @@ function createInitialState(): Pick<
     startTime: null,
     repCount: 0,
     lastRepPeakVelocity: null,
+    meanVelocity: 0,
     velocityLoss: 0,
-    rpe: 5,
-    rir: 6,
+    rpe: 0,
+    rir: 0,
     velocityTrend: [],
+    currentPhase: MovementPhase.IDLE,
+    phaseStartTime: 0,
+    phaseElapsedMs: 0,
+    repPhaseDurations: [],
     liveMessage: '',
     allSamples: [],
     lastSet: null,
@@ -209,31 +238,73 @@ export function createRecordingStore(): RecordingStoreApi {
             set({ allSamples: [...currentSamples, sample] });
           }
 
+          // --- Tempo tracking: phase transitions and timing ---
+          const state = get();
+          const now = sample.timestamp;
+          const tempoUpdate: Partial<RecordingState> = {
+            currentPhase: sample.phase,
+            phaseElapsedMs: state.phaseStartTime > 0 ? now - state.phaseStartTime : 0,
+          };
+
+          if (sample.phase !== state.currentPhase) {
+            // Phase changed — record duration of the previous phase
+            const prevDuration = state.phaseStartTime > 0 ? now - state.phaseStartTime : 0;
+            tempoUpdate.phaseStartTime = now;
+            tempoUpdate.phaseElapsedMs = 0;
+
+            if (state.currentPhase !== MovementPhase.IDLE && prevDuration > 0) {
+              tempoUpdate.repPhaseDurations = [
+                ...state.repPhaseDurations,
+                { phase: state.currentPhase, durationMs: prevDuration },
+              ];
+            }
+
+            // New rep starting (transition into concentric from idle/eccentric)
+            if (sample.phase === MovementPhase.CONCENTRIC && state.currentPhase !== MovementPhase.HOLD) {
+              tempoUpdate.repPhaseDurations = [];
+            }
+          }
+
           // Feed sample through library pipeline
           const prevRepCount = analyticsSet.reps.length;
           analyticsSet = addSampleToSet(analyticsSet, sample);
           const newRepCount = analyticsSet.reps.length;
 
-          // New rep completed - update metrics
-          if (newRepCount > prevRepCount) {
-            const lastRep = analyticsSet.reps.at(-1)!;
+          // A new rep boundary means the *previous* rep just completed and
+          // a new one started. Skip the 0→1 transition (first concentric sample,
+          // no rep finished yet). From 1→2 onward, rep N-1 is complete.
+          if (newRepCount > prevRepCount && newRepCount >= 2) {
+            const completedRep = analyticsSet.reps.at(-2)!;
+            const completedCount = newRepCount - 1;
 
-            // Compute live metrics from library
-            const velocityLoss = getSetVelocityLossPct(analyticsSet);
-            const rirEstimate = estimateSetRIR(analyticsSet);
-            const velocityTrend = [...getSetRepVelocities(analyticsSet)];
+            // Compute metrics over completed reps only (exclude partial last rep)
+            const completedSet = { reps: analyticsSet.reps.slice(0, -1) };
+            const rawVelLoss = Math.abs(getSetVelocityLossPct(completedSet));
+            const rawMeanVel = getSetMeanVelocity(completedSet);
+            const rirEstimate = estimateSetRIR(completedSet);
+            const velocityTrend = [...getSetRepVelocities(completedSet)];
 
-            set({
-              repCount: newRepCount,
-              lastRepPeakVelocity: getRepPeakVelocity(lastRep),
-              velocityLoss: Math.abs(velocityLoss),
-              rpe: rirEstimate.rpe,
-              rir: rirEstimate.rir,
+            // First completed rep: seed values. Subsequent: EMA smooth.
+            const isFirst = completedCount === 1;
+            const smoothRpe = isFirst ? rirEstimate.rpe : ema(state.rpe, rirEstimate.rpe);
+            const smoothRir = isFirst ? rirEstimate.rir : ema(state.rir, rirEstimate.rir);
+            const smoothVelLoss = isFirst ? rawVelLoss : ema(state.velocityLoss, rawVelLoss);
+            const smoothMeanVel = isFirst ? rawMeanVel : ema(state.meanVelocity, rawMeanVel);
+
+            Object.assign(tempoUpdate, {
+              repCount: completedCount,
+              lastRepPeakVelocity: getRepPeakVelocity(completedRep),
+              meanVelocity: smoothMeanVel,
+              velocityLoss: smoothVelLoss,
+              rpe: smoothRpe,
+              rir: smoothRir,
               velocityTrend,
-              liveMessage: getLiveEffortMessage(rirEstimate.rpe, newRepCount),
+              liveMessage: getLiveEffortMessage(smoothRpe, completedCount),
               _analyticsSet: analyticsSet,
             });
           }
+
+          set(tempoUpdate as Partial<RecordingState>);
         },
 
         reset: () => {

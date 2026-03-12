@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { View, Text, PanResponder } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import { View, Text, PanResponder, TouchableOpacity } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming } from 'react-native-reanimated';
 import { useStore } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import Slider from '@react-native-community/slider';
@@ -238,10 +238,66 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
             </Animated.View>
           </View>
 
+          {(showEccentric || showChains) && (
+            <AdvancedAccordion
+              showEccentric={showEccentric}
+              showChains={showChains}
+              eccentric={eccentric}
+              setEccentric={setEccentric}
+              chains={chains}
+              inverseChains={inverseChains}
+              setChains={setChains}
+              setInverseChains={setInverseChains}
+            />
+          )}
+        </Surface>
+      </SectionContent>
+    </Section>
+  );
+}
+
+export function AdvancedAccordion({
+  showEccentric, showChains,
+  eccentric, setEccentric,
+  chains, inverseChains, setChains, setInverseChains,
+}: {
+  showEccentric: boolean; showChains: boolean;
+  eccentric: number; setEccentric: (v: number) => Promise<void>;
+  chains: number; inverseChains: number;
+  setChains: (v: number) => Promise<void>;
+  setInverseChains: (v: number) => Promise<void>;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const rotation = useSharedValue(0);
+
+  const toggle = useCallback(() => {
+    setExpanded((prev) => {
+      rotation.value = withTiming(prev ? 0 : 1, { duration: 200 });
+      return !prev;
+    });
+  }, [rotation]);
+
+  const chevronStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value * 180}deg` }],
+  }));
+
+  return (
+    <View className="mt-1">
+      <TouchableOpacity
+        onPress={toggle}
+        activeOpacity={0.7}
+        className="flex-row items-center justify-center py-1"
+      >
+        <Text className="mr-1 text-[11px] font-medium text-text-disabled">Advanced</Text>
+        <Animated.Text style={[{ fontSize: 10, color: t['text-disabled'] }, chevronStyle]}>
+          ▼
+        </Animated.Text>
+      </TouchableOpacity>
+      {expanded && (
+        <View>
           {showEccentric && (
             <CompactEccentric value={eccentric} onChange={setEccentric} />
           )}
-
           {showChains && (
             <CompactChains
               chains={chains}
@@ -250,9 +306,9 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
               onInverseChainsChange={setInverseChains}
             />
           )}
-        </Surface>
-      </SectionContent>
-    </Section>
+        </View>
+      )}
+    </View>
   );
 }
 

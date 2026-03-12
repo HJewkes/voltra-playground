@@ -23,3 +23,16 @@ export type { ExerciseSessionActionButtonsProps } from './ExerciseSessionActionB
 // Resume session prompt
 export { ResumeSessionPrompt } from './ResumeSessionPrompt';
 export type { ResumeSessionPromptProps } from './ResumeSessionPrompt';
+
+// Tempo visualization
+export { TempoBar } from './TempoBar';
+
+// Scroll dial input
+export { ScrollDial } from './ScrollDial';
+
+// Vertical weight jog shuttle
+export { VerticalWeightJog } from './VerticalWeightJog';
+
+// Set targets configuration
+export { SetTargets, EMPTY_TARGETS } from './SetTargets';
+export type { SetTargetsState, TargetMode } from './SetTargets';

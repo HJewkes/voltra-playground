@@ -19,6 +19,20 @@ vi.mock('@expo/vector-icons', () => ({
 vi.mock('@titan-design/react-ui', () => ({
   Button: 'Button',
   getSemanticColors: () => ({}),
+  alpha: (_color: string, _opacity: number) => 'rgba(0,0,0,0)',
+}));
+
+vi.mock('@voltras/workout-analytics', () => ({
+  MovementPhase: { IDLE: 0, CONCENTRIC: 1, ECCENTRIC: 2, HOLD: 3 },
+  getSetVelocityLossPct: () => 0,
+  getSetMeanVelocity: () => 0,
+  getSetRepVelocities: () => [],
+  estimateSetRIR: () => ({ rpe: 5, rir: 5 }),
+}));
+
+vi.mock('@/domain/workout', () => ({
+  getRPEColor: () => '#ffffff',
+  createCompletedSet: vi.fn(),
 }));
 
 // Mirror SDK enum to avoid react-native-ble-plx resolution
@@ -76,6 +90,25 @@ vi.mock('@/stores', () => ({
 vi.mock('@/components/recording', () => ({
   RecordingDisplayView: 'RecordingDisplayView',
   WorkoutControls: 'WorkoutControls',
+}));
+
+vi.mock('@/components/mode', () => ({
+  ModeControls: 'ModeControls',
+  AdvancedAccordion: 'AdvancedAccordion',
+}));
+
+vi.mock('@/components/exercise', () => ({
+  TempoBar: 'TempoBar',
+  SetTargets: 'SetTargets',
+  VerticalWeightJog: 'VerticalWeightJog',
+  EMPTY_TARGETS: {
+    targetMode: 'reps',
+    targetReps: 0,
+    rirTarget: 0,
+    targetTempo: { concentric: 0, eccentric: 0, pauseTop: 0, pauseBottom: 0 },
+    targetSets: 0,
+    enabledSections: { effort: false, tempo: false, sets: false },
+  },
 }));
 
 describe('SimpleExerciseScreen', () => {

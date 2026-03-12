@@ -1,37 +1,33 @@
 /**
  * SimpleExerciseScreen
  *
- * Recording interface: auto-starts countdown on mount, shows live telemetry
- * (RPE, velocity loss, phase) during recording, and a summary on stop.
- * No session planning, no sets, no rest timer.
+ * Training view for a selected mode. Weight/eccentric/chains config at top,
+ * live telemetry always visible in the middle, start/stop pinned at bottom.
+ * Config stays interactive between sets for adjust-and-go-again flow.
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, Alert, ScrollView, TouchableOpacity } from 'react-native';
 import { useStore } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Button, getSemanticColors, alpha } from '@titan-design/react-ui';
+import { Button, Surface, getSemanticColors, alpha } from '@titan-design/react-ui';
 
-import { TrainingModeNames } from '@/domain/device';
-import { getEffortLabel, getRPEColor } from '@/domain/workout';
+import { TrainingMode, TrainingModeNames } from '@/domain/device';
+import { getRPEColor } from '@/domain/workout';
 import { useConnectionStore, selectIsConnected, createRecordingStore } from '@/stores';
-import { RecordingDisplayView, WorkoutControls } from '@/components/recording';
-import { PhaseIndicator } from '@/components/recording/PhaseIndicator';
-import {
-  MovementPhase,
-  getSetVelocityLossPct,
-  getSetMeanVelocity,
-  getSetRepVelocities,
-  estimateSetRIR,
-} from '@voltras/workout-analytics';
+import { WorkoutControls } from '@/components/recording';
+import { AdvancedAccordion } from '@/components/mode';
+import { TempoBar, SetTargets, EMPTY_TARGETS, VerticalWeightJog } from '@/components/exercise';
+import type { SetTargetsState } from '@/components/exercise';
+import { MovementPhase } from '@voltras/workout-analytics';
 import type { VoltraStoreApi } from '@/stores/voltra-store';
-import type { CompletedSet } from '@/domain/workout';
 
 const t = getSemanticColors('dark');
 
-type ExerciseState = 'preparing' | 'countdown' | 'recording' | 'summary';
+type ExerciseState = 'idle' | 'preparing' | 'recording' | 'summary';
 
 export function SimpleExerciseScreen() {
   const router = useRouter();
@@ -52,76 +48,70 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
   const mode = useStore(voltraStore, (s) => s.mode);
   const weight = useStore(voltraStore, (s) => s.weight);
   const currentSample = useStore(voltraStore, (s) => s.currentSample);
+  const eccentric = useStore(voltraStore, (s) => s.eccentric);
+  const setEccentric = useStore(voltraStore, (s) => s.setEccentric);
+  const { chains, inverseChains } = useStore(
+    voltraStore,
+    useShallow((s) => ({ chains: s.chains, inverseChains: s.inverseChains })),
+  );
+  const setChains = useStore(voltraStore, (s) => s.setChains);
+  const setInverseChains = useStore(voltraStore, (s) => s.setInverseChains);
+
+  const showEccentric = mode === TrainingMode.WeightTraining || mode === TrainingMode.ResistanceBand;
+  const showChains = mode === TrainingMode.WeightTraining;
 
   const recordingStore = useMemo(() => createRecordingStore(), []);
   const repCount = useStore(recordingStore, (s) => s.repCount);
   const lastRepPeakVelocity = useStore(recordingStore, (s) => s.lastRepPeakVelocity);
+  const meanVelocity = useStore(recordingStore, (s) => s.meanVelocity);
   const rpe = useStore(recordingStore, (s) => s.rpe);
   const rir = useStore(recordingStore, (s) => s.rir);
   const velocityLoss = useStore(recordingStore, (s) => s.velocityLoss);
   const liveMessage = useStore(recordingStore, (s) => s.liveMessage);
+  const currentPhase = useStore(recordingStore, (s) => s.currentPhase);
+  const phaseElapsedMs = useStore(recordingStore, (s) => s.phaseElapsedMs);
+  const repPhaseDurations = useStore(recordingStore, (s) => s.repPhaseDurations);
 
-  const [exerciseState, setExerciseState] = useState<ExerciseState>('preparing');
-  const [countdown, setCountdown] = useState(3);
-  const [summary, setSummary] = useState<CompletedSet | null>(null);
+  const [exerciseState, setExerciseState] = useState<ExerciseState>('idle');
   const [duration, setDuration] = useState(0);
-  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [setTargets, setSetTargets] = useState<SetTargetsState>(EMPTY_TARGETS);
   const startTimeRef = useRef(0);
 
   const modeName = TrainingModeNames[mode] ?? 'Unknown';
+  const isRecording = exerciseState === 'recording';
+  const isSummary = exerciseState === 'summary';
+  const isActive = isRecording || exerciseState === 'preparing';
 
-  function cleanupCountdown() {
-    if (countdownRef.current) {
-      clearInterval(countdownRef.current);
-      countdownRef.current = null;
-    }
-  }
+  // Live duration timer
+  useEffect(() => {
+    if (!isRecording) return;
+    const id = setInterval(() => {
+      setDuration(Math.round((Date.now() - startTimeRef.current) / 1000));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [isRecording]);
 
-  const startRecording = useCallback(() => {
-    recordingStore.getState().startRecording();
-    recordingStore.getState().setUIState('recording');
-    startTimeRef.current = Date.now();
-    setExerciseState('recording');
-  }, [recordingStore]);
-
-  const beginCountdown = useCallback(async () => {
+  const handleStart = useCallback(async () => {
     try {
       setExerciseState('preparing');
       await voltraStore.getState().prepareWorkout();
       await voltraStore.getState().engageMotor();
 
-      setCountdown(3);
-      setExerciseState('countdown');
-      recordingStore.getState().setUIState('countdown');
-
-      countdownRef.current = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            cleanupCountdown();
-            startRecording();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      recordingStore.getState().startRecording();
+      recordingStore.getState().setUIState('recording');
+      startTimeRef.current = Date.now();
+      setDuration(0);
+      setExerciseState('recording');
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e);
-      Alert.alert('Error', `Failed to start workout: ${message}`);
-      router.replace('/modes');
+      Alert.alert('Error', `Failed to start: ${message}`);
+      setExerciseState('idle');
     }
-  }, [voltraStore, recordingStore, startRecording, router]);
-
-  // Auto-start on mount
-  useEffect(() => {
-    beginCountdown();
-    return () => cleanupCountdown();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [voltraStore, recordingStore]);
 
   const handleStop = useCallback(async () => {
-    cleanupCountdown();
     const elapsed = Math.round((Date.now() - startTimeRef.current) / 1000);
-    const completedSet = recordingStore.getState().stopRecording(weight);
+    recordingStore.getState().stopRecording(weight);
     recordingStore.getState().setUIState('idle');
 
     try {
@@ -131,12 +121,16 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
     }
 
     setDuration(elapsed);
-    setSummary(completedSet);
     setExerciseState('summary');
   }, [voltraStore, recordingStore, weight]);
 
+  const handleGoAgain = useCallback(() => {
+    recordingStore.getState().reset();
+    handleStart();
+  }, [recordingStore, handleStart]);
+
   const handleBack = useCallback(() => {
-    if (exerciseState === 'recording' || exerciseState === 'countdown') {
+    if (isRecording) {
       Alert.alert('Stop Workout?', 'This will stop the current recording.', [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -151,256 +145,230 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
     } else {
       router.replace('/modes');
     }
-  }, [exerciseState, handleStop, router]);
+  }, [isRecording, handleStop, router]);
 
-  const handleGoAgain = useCallback(() => {
-    recordingStore.getState().reset();
-    setSummary(null);
-    beginCountdown();
-  }, [recordingStore, beginCountdown]);
-
-  // Subscribe to voltra telemetry during recording
+  // Telemetry subscription
   useEffect(() => {
-    if (exerciseState !== 'recording') return;
-
+    if (!isRecording) return;
     const unsubscribe = voltraStore.subscribe((state, prevState) => {
       if (state.currentSample && state.currentSample !== prevState.currentSample) {
         recordingStore.getState().processSample(state.currentSample);
       }
     });
-
     return unsubscribe;
-  }, [voltraStore, recordingStore, exerciseState]);
+  }, [voltraStore, recordingStore, isRecording]);
 
-  const isActive = exerciseState === 'countdown' || exerciseState === 'recording';
+  const hasMetrics = repCount > 0;
+  const rpeColor = hasMetrics ? getRPEColor(rpe) : t['text-disabled'];
 
-  if (exerciseState === 'summary') {
-    return (
-      <SafeAreaView className="bg-background flex-1" edges={['top']}>
-        <View className="flex-1 px-4 pt-2">
-          <Header modeName={modeName} weight={weight} onBack={() => router.replace('/modes')} />
-
-          <View className="flex-1 justify-center">
-            <WorkoutSummary
-              summary={summary}
-              duration={duration}
-              modeName={modeName}
-              weight={weight}
-            />
-          </View>
-
-          <View className="flex-row gap-3 pb-4 pt-2">
-            <TouchableOpacity
-              onPress={() => router.replace('/modes')}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="Done"
-              className="flex-1 items-center rounded-2xl py-4"
-              style={{ backgroundColor: t['surface-elevated'] }}
-            >
-              <Text className="text-base font-bold text-text-primary">Done</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleGoAgain}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="Go Again"
-              className="flex-1 items-center rounded-2xl py-4"
-              style={{ backgroundColor: t['brand-primary'] }}
-            >
-              <Text className="text-base font-bold text-white">Go Again</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  const rpeColor = getRPEColor(rpe);
-  const phase = currentSample?.phase ?? MovementPhase.IDLE;
-
-  return (
-    <SafeAreaView className="bg-background flex-1" edges={['top']}>
-      <View className="flex-1 px-4 pt-2">
-        <Header modeName={modeName} weight={weight} onBack={handleBack} />
-
-        <View className="flex-1 justify-center" style={{ overflow: 'hidden' }}>
-          {exerciseState === 'preparing' ? (
-            <View className="items-center">
-              <Text className="text-lg text-text-disabled">Preparing...</Text>
-            </View>
-          ) : exerciseState === 'countdown' ? (
-            <RecordingDisplayView
-              uiState="countdown"
-              instruction="Get Ready"
-              subInstruction={`${modeName} - ${weight} lbs`}
-              startCountdown={countdown}
-              repCount={0}
-              lastRepPeakVelocity={null}
-            />
-          ) : (
-            <View>
-              {/* Phase indicator */}
-              <View className="mb-3 flex-row items-center justify-between">
-                <PhaseIndicator phase={phase} />
-                {liveMessage ? (
-                  <Text className="text-sm font-medium" style={{ color: rpeColor }}>
-                    {liveMessage}
-                  </Text>
-                ) : null}
-              </View>
-
-              {/* Main recording display */}
-              <RecordingDisplayView
-                uiState="recording"
-                instruction="Lift!"
-                repCount={repCount}
-                lastRepPeakVelocity={lastRepPeakVelocity}
-              />
-
-              {/* Live metrics bar */}
-              <View className="mt-3 flex-row items-center justify-between rounded-xl px-4 py-3"
-                style={{ backgroundColor: alpha('#000', 0.3) }}
-              >
-                <MetricPill label="RPE" value={rpe.toFixed(1)} color={rpeColor} />
-                <MetricPill
-                  label="RIR"
-                  value={rir >= 5 ? '5+' : `~${Math.round(rir)}`}
-                  color={t['text-primary']}
-                />
-                <MetricPill
-                  label="Vel Loss"
-                  value={`${Math.round(velocityLoss)}%`}
-                  color={velocityLoss > 30 ? t['status-error'] : velocityLoss > 20 ? t['status-warning'] : t['status-success']}
-                />
-              </View>
-
-              {/* Fatigue bar */}
-              <View className="mt-3">
-                <View className="h-2 overflow-hidden rounded-full"
-                  style={{ backgroundColor: alpha('#fff', 0.08) }}
-                >
-                  <View
-                    className="h-full rounded-full"
-                    style={{
-                      width: `${Math.min(velocityLoss, 50) * 2}%`,
-                      backgroundColor:
-                        velocityLoss > 30 ? t['status-error']
-                          : velocityLoss > 20 ? t['status-warning']
-                          : t['status-success'],
-                    }}
-                  />
-                </View>
-                <View className="mt-1 flex-row justify-between">
-                  <Text className="text-xs text-text-disabled">Fresh</Text>
-                  <Text className="text-xs text-text-disabled">Fatigued</Text>
-                </View>
-              </View>
-            </View>
-          )}
-        </View>
-
-        {/* Stop button only during active recording */}
-        {isActive && (
-          <View className="pb-4 pt-2">
-            <WorkoutControls isActive onStart={() => {}} onStop={handleStop} />
-          </View>
-        )}
-      </View>
-    </SafeAreaView>
-  );
-}
-
-function Header({ modeName, weight, onBack }: {
-  modeName: string; weight: number; onBack: () => void;
-}) {
-  return (
-    <View className="mb-4 flex-row items-center">
-      <Button
-        variant="ghost"
-        size="sm"
-        onPress={onBack}
-        accessibilityRole="button"
-        accessibilityLabel="Go back"
-      >
-        <Ionicons name="arrow-back" size={24} color={t['text-primary']} />
-      </Button>
-      <View className="ml-2 flex-1">
-        <Text className="text-lg font-bold text-text-primary">{modeName}</Text>
-        <Text className="text-sm text-text-secondary">{weight} lbs</Text>
-      </View>
-    </View>
-  );
-}
-
-function MetricPill({ label, value, color }: {
-  label: string; value: string; color: string;
-}) {
-  return (
-    <View className="items-center">
-      <Text className="text-xs text-text-disabled">{label}</Text>
-      <Text className="text-lg font-bold" style={{ color }}>{value}</Text>
-    </View>
-  );
-}
-
-function WorkoutSummary({ summary, duration, modeName, weight }: {
-  summary: CompletedSet | null;
-  duration: number;
-  modeName: string;
-  weight: number;
-}) {
   const minutes = Math.floor(duration / 60);
   const seconds = duration % 60;
   const durationStr = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
 
-  const data = summary?.data;
-  const repVelocities = data ? getSetRepVelocities(data) : [];
-  const repCount = repVelocities.length;
-  const meanVel = data ? getSetMeanVelocity(data) : 0;
-  const peakVel = repVelocities.length > 0 ? Math.max(...repVelocities) : 0;
-  const velLoss = data ? getSetVelocityLossPct(data) : 0;
-  const { rpe } = data ? estimateSetRIR(data) : { rpe: 0 };
-
   return (
-    <View className="items-center rounded-3xl p-8"
-      style={{ backgroundColor: alpha(t['status-success'], 0.12) }}
-    >
-      <Ionicons name="checkmark-circle" size={48} color={t['status-success']} />
-      <Text className="mt-3 text-2xl font-bold text-text-primary">Workout Complete</Text>
-      <Text className="mt-1 text-base text-text-secondary">{modeName} - {weight} lbs</Text>
-
-      <View className="mt-6 w-full flex-row justify-around">
-        <SummaryStat label="Reps" value={String(repCount)} />
-        <SummaryStat label="Duration" value={durationStr} />
-        <SummaryStat
-          label="Peak Vel"
-          value={peakVel > 0 ? peakVel.toFixed(2) : '--'}
-          unit="m/s"
-        />
+    <SafeAreaView className="flex-1 bg-surface-400" edges={['top']}>
+      {/* Header */}
+      <View className="flex-row items-center px-4 pt-2 pb-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          onPress={handleBack}
+          accessibilityRole="button"
+          accessibilityLabel="Back to modes"
+        >
+          <Ionicons name="arrow-back" size={22} color={t['text-primary']} />
+        </Button>
+        <Text className="ml-2 text-base font-bold text-text-primary">{modeName}</Text>
       </View>
 
-      {repCount > 0 && (
-        <View className="mt-4 w-full flex-row justify-around">
-          <SummaryStat label="Avg Vel" value={meanVel.toFixed(2)} unit="m/s" />
-          <SummaryStat label="Vel Loss" value={`${Math.round(velLoss)}%`} />
-          <SummaryStat label="Est. RPE" value={rpe.toFixed(1)} />
+      <ScrollView className="flex-1" scrollEnabled={!isRecording}>
+        <View className="px-4 pb-4">
+          {/* Unified config: Sets | Reps/RIR | Weight | Tempo | Rest */}
+          <Surface elevation={1} className="mt-1 rounded-xl py-3 px-2">
+            <SetTargets
+              targets={setTargets}
+              onChange={setSetTargets}
+              disabled={isActive}
+              weightSlot={
+                <VerticalWeightJog
+                  weight={weight}
+                  onWeightChange={(w) => { voltraStore.getState().setWeight(w); }}
+                  disabled={isActive}
+                />
+              }
+            />
+            {/* Advanced settings (eccentric, chains) */}
+            {(showEccentric || showChains) && (
+              <View
+                className="px-1"
+                style={{ opacity: isActive ? 0.4 : 1 }}
+                pointerEvents={isActive ? 'none' : 'auto'}
+              >
+                <AdvancedAccordion
+                  showEccentric={showEccentric}
+                  showChains={showChains}
+                  eccentric={eccentric}
+                  setEccentric={setEccentric}
+                  chains={chains}
+                  inverseChains={inverseChains}
+                  setChains={setChains}
+                  setInverseChains={setInverseChains}
+                />
+              </View>
+            )}
+          </Surface>
+
+          {/* Unified telemetry card */}
+          <Surface elevation={1} className="mt-2 rounded-xl p-4">
+            {/* Row 1: Rep count + peak velocity */}
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-baseline gap-2">
+                <Text className="text-3xl font-bold text-text-primary">
+                  {repCount}
+                </Text>
+                <Text className="text-sm text-text-tertiary">
+                  {repCount === 1 ? 'rep' : 'reps'}
+                </Text>
+              </View>
+              <View className="items-end">
+                <Text className="text-xs text-text-disabled">Peak</Text>
+                <Text className="text-lg font-bold text-text-primary">
+                  {hasMetrics ? lastRepPeakVelocity?.toFixed(2) ?? '–' : '–'}
+                  <Text className="text-sm text-text-tertiary"> m/s</Text>
+                </Text>
+              </View>
+            </View>
+
+            {/* Row 2: Duration + avg velocity */}
+            <View className="mt-1 flex-row items-center justify-between">
+              <View className="flex-row items-baseline gap-1.5">
+                <Text className="text-sm text-text-tertiary">
+                  {isRecording || isSummary ? durationStr : '–'}
+                </Text>
+              </View>
+              <View className="items-end">
+                <Text className="text-sm text-text-tertiary">
+                  {hasMetrics ? `${meanVelocity.toFixed(2)} m/s avg` : '–'}
+                </Text>
+              </View>
+            </View>
+
+            {/* Tempo bar */}
+            <View className="mt-3">
+              <TempoBar
+                currentPhase={isRecording ? currentPhase : MovementPhase.IDLE}
+                phaseElapsedMs={phaseElapsedMs}
+                repPhaseDurations={repPhaseDurations}
+              />
+            </View>
+
+            {/* Metrics bar: RPE + RIR + Vel Loss */}
+            <View
+              className="mt-2 flex-row items-center justify-around rounded-lg px-4 py-2"
+              style={{ backgroundColor: alpha('#fff', 0.06) }}
+            >
+              <MetricCell
+                label="RPE"
+                value={hasMetrics ? rpe.toFixed(1) : '–'}
+                color={rpeColor}
+              />
+              <MetricCell
+                label="RIR"
+                value={hasMetrics ? (rir >= 5 ? '5+' : `~${Math.round(rir)}`) : '–'}
+                color={hasMetrics ? t['text-primary'] : t['text-disabled']}
+              />
+              <MetricCell
+                label="Vel Loss"
+                value={hasMetrics ? `${Math.round(velocityLoss)}%` : '–'}
+                color={hasMetrics ? velLossColor(velocityLoss) : t['text-disabled']}
+              />
+            </View>
+
+            {/* Effort message — only during recording */}
+            {liveMessage && !isSummary ? (
+              <Text className="mt-2 text-center text-sm font-medium" style={{ color: rpeColor }}>
+                {liveMessage}
+              </Text>
+            ) : null}
+
+            {/* Bottom section: fatigue bar OR set complete */}
+            {isSummary ? (
+              <View className="mt-3">
+                <View
+                  className="flex-row items-center justify-center gap-2 rounded-lg py-2.5"
+                  style={{ backgroundColor: alpha(t['status-success'], 0.12) }}
+                >
+                  <Ionicons name="checkmark-circle" size={18} color={t['status-success']} />
+                  <Text className="text-sm font-semibold" style={{ color: t['status-success'] }}>
+                    Set Complete
+                  </Text>
+                  <Text className="text-sm text-text-tertiary">
+                    {modeName} · {weight} lbs
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={handleGoAgain}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="Go Again"
+                  className="mt-3 items-center rounded-lg py-2.5"
+                  style={{ backgroundColor: t['brand-primary'] }}
+                >
+                  <Text className="text-sm font-bold text-white">Go Again</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View className="mt-2.5">
+                <View className="h-1.5 overflow-hidden rounded-full" style={{ backgroundColor: alpha('#fff', 0.08) }}>
+                  <View
+                    className="h-full rounded-full"
+                    style={{
+                      width: hasMetrics ? `${Math.min(velocityLoss, 50) * 2}%` : '0%',
+                      backgroundColor: velLossColor(velocityLoss),
+                    }}
+                  />
+                </View>
+                <View className="mt-1 flex-row justify-between">
+                  <Text className="text-[10px] text-text-disabled">Fresh</Text>
+                  <Text className="text-[10px] text-text-disabled">Fatigued</Text>
+                </View>
+              </View>
+            )}
+          </Surface>
+        </View>
+      </ScrollView>
+
+      {/* Pinned start/stop */}
+      {!isSummary && (
+        <View className="px-4 pb-4 pt-2">
+          <WorkoutControls
+            isActive={isRecording}
+            onStart={handleStart}
+            onStop={handleStop}
+          />
         </View>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
-function SummaryStat({ label, value, unit }: {
-  label: string; value: string; unit?: string;
+// =============================================================================
+// Helpers
+// =============================================================================
+
+function velLossColor(loss: number): string {
+  if (loss > 30) return t['status-error'];
+  if (loss > 20) return t['status-warning'];
+  return t['status-success'];
+}
+
+function MetricCell({ label, value, color }: {
+  label: string; value: string; color: string;
 }) {
   return (
     <View className="items-center">
-      <Text className="text-xs text-text-disabled">{label}</Text>
-      <Text className="text-xl font-bold text-text-primary">
-        {value}
-        {unit && <Text className="text-sm text-text-secondary"> {unit}</Text>}
-      </Text>
+      <Text className="text-[10px] text-text-disabled">{label}</Text>
+      <Text className="text-base font-bold" style={{ color }}>{value}</Text>
     </View>
   );
 }
