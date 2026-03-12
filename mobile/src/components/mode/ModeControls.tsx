@@ -52,10 +52,16 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
       onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 5,
       onPanResponderGrant: () => { dragAccum.current = 0; },
       onPanResponderMove: (_, g) => {
-        const step = Math.abs(g.vy) > 1.5 ? 5 : 1;
-        const ticks = Math.floor(-g.dy / 12) - Math.floor(-dragAccum.current / 12);
-        if (ticks !== 0) {
-          setLocalWeight((prev) => clampWeight(prev + ticks * step));
+        const dist = Math.abs(g.dy);
+        const vel = Math.abs(g.vy);
+        // Pixels per tick shrinks as you drag further/faster → accelerating ramp
+        // Near: 16px/tick, far (200px+): 4px/tick. Velocity multiplies the effect.
+        const pxPerTick = Math.max(4, 16 - dist / 20 - vel * 4);
+        const prevTicks = Math.round(-dragAccum.current / pxPerTick);
+        const currTicks = Math.round(-g.dy / pxPerTick);
+        const delta = currTicks - prevTicks;
+        if (delta !== 0) {
+          setLocalWeight((prev) => clampWeight(prev + delta));
         }
         dragAccum.current = g.dy;
       },
