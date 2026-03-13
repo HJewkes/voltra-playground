@@ -139,6 +139,9 @@ export interface ExerciseSessionState {
   loadCurrentSession: () => Promise<void>;
   stopSession: () => Promise<void>;
 
+  // Actions - Dynamic plan building
+  addPlannedSet: (set: PlannedSet) => void;
+
   // Actions - First set flow
   prepareFirstSet: () => Promise<void>;
   startFirstSet: () => void;
@@ -331,6 +334,26 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
         },
 
         // =====================================================================
+        // Dynamic Plan Building
+        // =====================================================================
+
+        addPlannedSet: (plannedSet: PlannedSet) => {
+          const { session } = get();
+          if (!session) return;
+
+          const updatedPlan = {
+            ...session.plan,
+            sets: [...session.plan.sets, plannedSet],
+          };
+          const updatedSession = { ...session, plan: updatedPlan };
+
+          set({
+            session: updatedSession,
+            ...computeDerivedState(updatedSession),
+          });
+        },
+
+        // =====================================================================
         // First Set Flow
         // =====================================================================
 
@@ -445,7 +468,10 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
             await persistSession(get, 'completed', termResult.reason);
           } else {
             // Continue to rest (motor disengaged, device still in workout mode)
-            const restSeconds = session.plan.defaultRestSeconds || DEFAULT_REST_SECONDS;
+            // Per-set rest takes priority, then plan default, then global default
+            const completedSetIndex = updatedSession.completedSets.length - 1;
+            const plannedSet = session.plan.sets[completedSetIndex];
+            const restSeconds = plannedSet?.restSeconds ?? session.plan.defaultRestSeconds ?? DEFAULT_REST_SECONDS;
             const sessionWithRest = startRest(updatedSession, restSeconds);
 
             set({

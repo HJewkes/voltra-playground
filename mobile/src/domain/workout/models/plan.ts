@@ -59,6 +59,9 @@ export interface PlannedSet {
 
   /** Target range of motion 0-1 (optional, for partial detection) */
   targetROM?: number;
+
+  /** Rest time after this set in seconds (default from plan if not specified) */
+  restSeconds?: number;
 }
 
 /**
@@ -68,7 +71,7 @@ export interface PlannedSet {
  * Planners (standard-planner, discovery-planner) generate these.
  *
  * Design notes:
- * - No per-set rest - plan-level default, adaptation can adjust based on fatigue
+ * - Per-set rest via PlannedSet.restSeconds, falls back to plan-level default
  * - Goal is optional but needed for discovery recommendations
  */
 export interface ExercisePlan {
