@@ -44,3 +44,9 @@ export { VerticalWeightJog } from './VerticalWeightJog';
 // Set targets configuration
 export { SetTargets, EMPTY_TARGETS } from './SetTargets';
 export type { SetTargetsState, TargetMode } from './SetTargets';
+
+// Plan-as-you-go components
+export { CycleToggle } from './CycleToggle';
+export type { CycleToggleOption } from './CycleToggle';
+export { AddSetButton } from './AddSetButton';
+export { RestScrubber } from './RestScrubber';

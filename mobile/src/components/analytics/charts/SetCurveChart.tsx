@@ -7,15 +7,22 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text } from 'react-native';
 import Svg, { Path, Line, Rect } from 'react-native-svg';
 import { MovementPhase, type WorkoutSample } from '@/domain/workout';
 import { getSemanticColors, alpha } from '@titan-design/react-ui';
+import { CycleToggle, type CycleToggleOption } from '@/components/exercise/CycleToggle';
 
 const t = getSemanticColors('dark');
 
 const SAMPLE_INTERVAL_MS = 91;
 const DEFAULT_EXPECTED_MS = 30_000;
+
+const SIGNAL_OPTIONS: readonly CycleToggleOption<ChartSignal>[] = [
+  { value: 'velocity', label: 'Velocity' },
+  { value: 'force', label: 'Force' },
+  { value: 'position', label: 'Position' },
+];
 
 export type ChartSignal = 'velocity' | 'force' | 'position';
 
@@ -165,33 +172,14 @@ export function SetCurveChart({
 
   return (
     <View>
-      {/* Signal selector pills — centered, evenly spread */}
-      <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', height: selectorHeight, gap: 16 }}>
-        {(Object.keys(SIGNAL_CONFIG) as ChartSignal[]).map((s) => {
-          const active = s === signal;
-          return (
-            <Pressable
-              key={s}
-              onPress={() => setSignal(s)}
-              style={{
-                paddingHorizontal: 14,
-                paddingVertical: 4,
-                borderRadius: 12,
-                backgroundColor: active ? alpha(t['brand-primary'], 0.2) : alpha('#fff', 0.04),
-                borderWidth: active ? 1 : 0,
-                borderColor: active ? alpha(t['brand-primary'], 0.4) : 'transparent',
-              }}
-            >
-              <Text style={{
-                fontSize: 12,
-                fontWeight: active ? '700' : '500',
-                color: active ? t['brand-primary'] : t['text-tertiary'],
-              }}>
-                {SIGNAL_CONFIG[s].label}
-              </Text>
-            </Pressable>
-          );
-        })}
+      {/* Signal toggle */}
+      <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', height: selectorHeight }}>
+        <CycleToggle
+          options={SIGNAL_OPTIONS}
+          value={signal}
+          onChange={setSignal}
+          activeColor={config.color}
+        />
       </View>
 
       {/* Chart */}
