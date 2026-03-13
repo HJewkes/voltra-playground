@@ -54,7 +54,7 @@ function createMockRecordingStore(overrides: {
   };
 
   const store = {
-    getState: () => ({ ...mockState, currentPhase: phase, repCount: reps }),
+    getState: () => ({ ...mockState, currentPhase: phase, repCount: reps, liveSamples: [] }),
     setState: vi.fn(),
     subscribe: (listener: (state: unknown, prev: unknown) => void) => {
       listeners.add(listener);
@@ -134,20 +134,15 @@ describe('Idle Detection', () => {
     mockRecording._setStopRecordingResult(completedSet);
 
     sessionStore.setState({ uiState: 'recording' });
-    vi.setSystemTime(new Date(10000));
 
-    // Go idle
+    // Go idle — starts the idle timer
     sessionStore.getState()._onPhaseChange(MovementPhase.IDLE, 5);
-    expect(sessionStore.getState().idleSinceMs).toBe(10000);
+    expect(sessionStore.getState().idleSinceMs).not.toBeNull();
 
-    // Advance time past threshold
-    vi.setSystemTime(new Date(10000 + SESSION_DEFAULTS.idleThreshold + 100));
-
-    // Resume active phase - should trigger auto-rest
-    sessionStore.getState()._onPhaseChange(MovementPhase.CONCENTRIC, 5);
+    // Advance past idle threshold — timer fires, auto-rest triggers
+    vi.advanceTimersByTime(SESSION_DEFAULTS.idleThreshold + 100);
 
     expect(sessionStore.getState().idleSinceMs).toBeNull();
-    // stopRecording should have been called
     expect(mockRecording.getState().stopRecording).toHaveBeenCalled();
   });
 
