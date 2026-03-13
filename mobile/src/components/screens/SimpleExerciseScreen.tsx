@@ -50,7 +50,7 @@ function buildPlanFromTargets(targets: SetTargetsState, weight: number): Exercis
   const sets: PlannedSet[] = Array.from({ length: numSets }, (_, i) => ({
     setNumber: i + 1,
     weight,
-    targetReps: targetReps || 8,
+    targetReps: targetReps,
     rirTarget,
     isWarmup: false,
     targetTempo,
