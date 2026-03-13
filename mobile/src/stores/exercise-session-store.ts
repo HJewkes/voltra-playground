@@ -28,6 +28,8 @@ import {
   type ExerciseSession,
   type PlannedSet,
   type TerminationReason,
+  type ClusterBoundary,
+  type SetLogEntry,
   createExerciseSession,
   getSessionCurrentSetIndex,
   getCurrentPlannedSet,
@@ -38,6 +40,7 @@ import {
   clearRest,
   checkTermination,
   createUserStoppedTermination,
+  MovementPhase,
 } from '@/domain/workout';
 
 // Library analytics for computing velocity from sets
@@ -106,6 +109,20 @@ export interface ExerciseSessionState {
   velocityProfile: LoadVelocityProfile | null;
   recommendation: WorkingWeightRecommendation | null;
 
+  // Idle detection
+  idleSinceMs: number | null;
+
+  // Count-up rest
+  restElapsedMs: number;
+  restStartTime: number | null;
+
+  // Cluster tracking (for pause sets)
+  currentClusterStart: number;
+  pendingClusters: ClusterBoundary[];
+
+  // Set log
+  setLog: SetLogEntry[];
+
   // Error state
   error: string | null;
 
@@ -149,6 +166,10 @@ export interface ExerciseSessionState {
   _repository: ExerciseSessionRepository | null;
   _restTimerId: ReturnType<typeof setInterval> | null;
   _countdownTimerId: ReturnType<typeof setInterval> | null;
+  _idleUnsubscribe: (() => void) | null;
+  _onPhaseChange: (phase: MovementPhase, repCount: number) => void;
+  _autoTransitionToRest: () => void;
+  _onLiftingResumedFromRest: () => void;
 }
 
 // =============================================================================
@@ -157,6 +178,16 @@ export interface ExerciseSessionState {
 
 const COUNTDOWN_SECONDS = 3;
 const DEFAULT_REST_SECONDS = 90;
+
+/** Thresholds for idle detection and pause-set clustering */
+export const SESSION_DEFAULTS = {
+  /** ms idle before auto-rest triggers */
+  idleThreshold: 7000,
+  /** ms rest before new set (vs intra-set pause) */
+  pauseSetThreshold: 20000,
+  /** ms to debounce brief pauses at lockout */
+  idleDebounce: 2000,
+};
 
 // =============================================================================
 // Store Factory
@@ -171,6 +202,7 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
   let repository: ExerciseSessionRepository | null = null;
   let restTimerId: ReturnType<typeof setInterval> | null = null;
   let countdownTimerId: ReturnType<typeof setInterval> | null = null;
+  let idleUnsubscribe: (() => void) | null = null;
 
   const store = createStore<ExerciseSessionState>()(
     devtools(
@@ -184,6 +216,12 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
         terminationMessage: null,
         velocityProfile: null,
         recommendation: null,
+        idleSinceMs: null,
+        restElapsedMs: 0,
+        restStartTime: null,
+        currentClusterStart: 0,
+        pendingClusters: [],
+        setLog: [],
         error: null,
 
         // Derived state (will be computed)
@@ -200,6 +238,7 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
         _repository: null,
         _restTimerId: null,
         _countdownTimerId: null,
+        _idleUnsubscribe: null,
 
         // =====================================================================
         // Lifecycle Actions
@@ -217,6 +256,12 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
             terminationMessage: null,
             velocityProfile: null,
             recommendation: null,
+            idleSinceMs: null,
+            restElapsedMs: 0,
+            restStartTime: null,
+            currentClusterStart: 0,
+            pendingClusters: [],
+            setLog: [],
             error: null,
             ...computeDerivedState(session),
           });
@@ -252,8 +297,9 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
           const { session } = get();
           if (!session) return;
 
-          // Clear timers
+          // Clear timers and idle subscription
           clearTimers();
+          clearIdleSubscription();
 
           // Stop device (exit workout mode)
           if (voltraStore) {
@@ -351,6 +397,12 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
             }
           }
 
+          // Build set log entry with cluster info
+          const entry: SetLogEntry = {
+            set: completedSet,
+            clusters: [...get().pendingClusters],
+          };
+
           // Add set to session
           const updatedSession = addCompletedSet(session, completedSet);
 
@@ -373,8 +425,14 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
               uiState: 'results',
               terminationReason: termResult.reason,
               terminationMessage: termResult.message,
+              setLog: [...get().setLog, entry],
+              pendingClusters: [],
+              currentClusterStart: 0,
               ...computeDerivedState(updatedSession),
             });
+
+            // Clean up idle subscription
+            clearIdleSubscription();
 
             // Compute discovery results if applicable
             if (isDiscoverySession(updatedSession)) {
@@ -392,6 +450,11 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
               session: sessionWithRest,
               uiState: 'resting',
               restCountdown: restSeconds,
+              restElapsedMs: 0,
+              restStartTime: Date.now(),
+              setLog: [...get().setLog, entry],
+              pendingClusters: [],
+              currentClusterStart: 0,
               ...computeDerivedState(sessionWithRest),
             });
 
@@ -467,8 +530,9 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
         // =====================================================================
 
         tickRestTimer: () => {
-          const { restCountdown, session } = get();
+          const { restCountdown, restElapsedMs, session } = get();
           const newCountdown = restCountdown - 1;
+          const newElapsed = restElapsedMs + 1000;
 
           if (newCountdown <= COUNTDOWN_SECONDS && newCountdown > 0) {
             // Transition to countdown phase (last 3 seconds of rest)
@@ -479,14 +543,16 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
               uiState: 'countdown',
               startCountdown: newCountdown,
               restCountdown: 0,
+              restElapsedMs: newElapsed,
             });
             startCountdownTimer(get, set);
           } else if (newCountdown <= 0) {
             // Rest complete - start recording
             clearTimers();
+            set({ restElapsedMs: newElapsed });
             transitionToRecording(get, set);
           } else {
-            set({ restCountdown: newCountdown });
+            set({ restCountdown: newCountdown, restElapsedMs: newElapsed });
           }
         },
 
@@ -500,6 +566,78 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
             transitionToRecording(get, set);
           } else {
             set({ startCountdown: newCountdown });
+          }
+        },
+
+        // =====================================================================
+        // Idle Detection & Cluster Tracking (internal)
+        // =====================================================================
+
+        _onPhaseChange: (phase: MovementPhase, _repCount: number) => {
+          const state = get();
+          const isIdlePhase = phase === MovementPhase.IDLE || phase === MovementPhase.HOLD;
+          const isActivePhase = phase === MovementPhase.CONCENTRIC || phase === MovementPhase.ECCENTRIC;
+
+          if (state.uiState === 'recording') {
+            if (isIdlePhase && state.idleSinceMs === null) {
+              set({ idleSinceMs: Date.now() });
+            } else if (isActivePhase && state.idleSinceMs !== null) {
+              const idleDuration = Date.now() - state.idleSinceMs;
+              set({ idleSinceMs: null });
+              if (idleDuration >= SESSION_DEFAULTS.idleThreshold) {
+                get()._autoTransitionToRest();
+              }
+            }
+          } else if (state.uiState === 'resting' && isActivePhase) {
+            get()._onLiftingResumedFromRest();
+          }
+        },
+
+        _autoTransitionToRest: () => {
+          if (!recordingStore) return;
+          const state = get();
+          const weight = state.currentPlannedSet?.weight ?? 0;
+          const completedSet = recordingStore.getState().stopRecording(weight);
+          if (completedSet) {
+            get().onSetCompleted(completedSet);
+          }
+        },
+
+        _onLiftingResumedFromRest: () => {
+          const { restStartTime } = get();
+          if (!restStartTime || !recordingStore) return;
+          const elapsed = Date.now() - restStartTime;
+
+          if (elapsed < SESSION_DEFAULTS.pauseSetThreshold) {
+            // Intra-set pause — continue same recording, add cluster boundary
+            const repCount = recordingStore.getState().repCount;
+            const clusters = get().pendingClusters;
+            set({
+              pendingClusters: [
+                ...clusters,
+                {
+                  repStart: get().currentClusterStart,
+                  repEnd: repCount,
+                  pauseAfterMs: elapsed,
+                },
+              ],
+              currentClusterStart: repCount,
+              uiState: 'recording',
+              restElapsedMs: 0,
+              restStartTime: null,
+              restCountdown: 0,
+            });
+            clearTimers();
+          } else {
+            // Real rest — finalize, start new set via countdown
+            clearTimers();
+            set({
+              uiState: 'countdown',
+              startCountdown: COUNTDOWN_SECONDS,
+              restCountdown: 0,
+              restStartTime: null,
+            });
+            startCountdownTimer(get, set);
           }
         },
 
@@ -539,6 +677,13 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
     }
   }
 
+  function clearIdleSubscription() {
+    if (idleUnsubscribe) {
+      idleUnsubscribe();
+      idleUnsubscribe = null;
+    }
+  }
+
   function startRestTimer(
     get: () => ExerciseSessionState,
     _set: (state: Partial<ExerciseSessionState>) => void
@@ -566,7 +711,17 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
     const { session, currentPlannedSet } = get();
     if (!session || !recordingStore) return;
 
-    set({ uiState: 'recording' });
+    set({ uiState: 'recording', idleSinceMs: null });
+
+    // Subscribe to recording-store phase changes for idle detection
+    clearIdleSubscription();
+    if (recordingStore) {
+      idleUnsubscribe = recordingStore.subscribe((state, prev) => {
+        if (state.currentPhase !== prev.currentPhase) {
+          store.getState()._onPhaseChange(state.currentPhase, state.repCount);
+        }
+      });
+    }
 
     // Engage motor at end of countdown (device already in workout mode from prepareFirstSet)
     if (voltraStore) {

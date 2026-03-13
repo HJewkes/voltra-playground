@@ -16,6 +16,33 @@ import type { CompletedSet } from './completed-set';
 import type { Exercise } from '@/domain/exercise';
 import type { ExercisePlan, PlannedSet } from './plan';
 
+// =============================================================================
+// Cluster / Pause-Set Types
+// =============================================================================
+
+/**
+ * A cluster boundary within a pause/myorep set.
+ * Marks where intra-set pauses occurred.
+ */
+export interface ClusterBoundary {
+  /** First rep index in this cluster (0-based) */
+  repStart: number;
+  /** Last rep index (exclusive) */
+  repEnd: number;
+  /** Pause duration after this cluster in ms (null for last cluster) */
+  pauseAfterMs: number | null;
+}
+
+/**
+ * A set log entry wrapping CompletedSet with cluster info.
+ * For standard sets, clusters is empty.
+ * For pause/myorep sets, clusters track intra-set pause boundaries.
+ */
+export interface SetLogEntry {
+  set: CompletedSet;
+  clusters: ClusterBoundary[];
+}
+
 /**
  * Exercise session - runtime state during exercise execution.
  *

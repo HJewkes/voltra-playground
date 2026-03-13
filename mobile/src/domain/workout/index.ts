@@ -44,6 +44,8 @@ export {
   // Session
   type ExerciseSession,
   type SetComparison,
+  type ClusterBoundary,
+  type SetLogEntry,
   createExerciseSession,
   getSessionCurrentSetIndex,
   getCurrentPlannedSet,

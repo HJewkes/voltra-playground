@@ -39,7 +39,7 @@ export {
 } from './plan';
 
 // Session
-export type { ExerciseSession, SetComparison } from './session';
+export type { ExerciseSession, SetComparison, ClusterBoundary, SetLogEntry } from './session';
 export {
   createExerciseSession,
   getSessionCurrentSetIndex,
