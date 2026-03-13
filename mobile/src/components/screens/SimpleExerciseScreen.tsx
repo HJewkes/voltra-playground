@@ -97,15 +97,13 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
 
   const recordingStore = useMemo(() => createRecordingStore(), []);
   const repCount = useStore(recordingStore, (s) => s.repCount);
-  const lastRepPeakVelocity = useStore(recordingStore, (s) => s.lastRepPeakVelocity);
-  const meanVelocity = useStore(recordingStore, (s) => s.meanVelocity);
   const rpe = useStore(recordingStore, (s) => s.rpe);
   const rir = useStore(recordingStore, (s) => s.rir);
-  const velocityLoss = useStore(recordingStore, (s) => s.velocityLoss);
   const liveMessage = useStore(recordingStore, (s) => s.liveMessage);
   const currentPhase = useStore(recordingStore, (s) => s.currentPhase);
   const phaseElapsedMs = useStore(recordingStore, (s) => s.phaseElapsedMs);
   const repPhaseDurations = useStore(recordingStore, (s) => s.repPhaseDurations);
+  const liveSamples = useStore(recordingStore, (s) => s.liveSamples);
 
   // Session store replaces local ExerciseState
   const sessionStore = useMemo(() => createExerciseSessionStore(), []);
@@ -128,6 +126,17 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
   const restTargetMs = session
     ? (session.plan.defaultRestSeconds * 1000)
     : null;
+
+  // Expected set duration for chart x-axis pre-stub
+  const expectedSetDurationMs = useMemo(() => {
+    const tempo = currentPlannedSet?.targetTempo;
+    const reps = targetReps ?? 10;
+    if (tempo) {
+      const repMs = ((tempo.concentric || 2) + (tempo.pauseTop || 0.5) + (tempo.eccentric || 3) + (tempo.pauseBottom || 1)) * 1000;
+      return reps * repMs;
+    }
+    return 30_000;
+  }, [currentPlannedSet, targetReps]);
 
   const toggleDrawer = useCallback(() => {
     if (isRecording) return;
@@ -266,7 +275,7 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
               />
             ) : (
               <>
-                {/* Row 1: Rep count + peak velocity */}
+                {/* Row 1: Rep count + RPE + RIR */}
                 <View className="flex-row items-center justify-between">
                   <View className="flex-row items-baseline gap-2">
                     <Text className="text-3xl font-bold text-text-primary">
@@ -276,22 +285,19 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
                       {repLabel}
                     </Text>
                   </View>
-                  <View className="items-end">
-                    <Text className="text-xs text-text-disabled">Peak</Text>
-                    <Text className="text-lg font-bold text-text-primary">
-                      {hasMetrics ? lastRepPeakVelocity?.toFixed(2) ?? '–' : '–'}
-                      <Text className="text-sm text-text-tertiary"> m/s</Text>
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Row 2: avg velocity */}
-                <View className="mt-1 flex-row items-center justify-between">
-                  <View />
-                  <View className="items-end">
-                    <Text className="text-sm text-text-tertiary">
-                      {hasMetrics ? `${meanVelocity.toFixed(2)} m/s avg` : '–'}
-                    </Text>
+                  <View className="flex-row items-baseline gap-3">
+                    <View className="items-end">
+                      <Text className="text-xs text-text-disabled">RPE</Text>
+                      <Text className="text-lg font-bold" style={{ color: rpeColor }}>
+                        {hasMetrics ? rpe.toFixed(1) : '–'}
+                      </Text>
+                    </View>
+                    <View className="items-end">
+                      <Text className="text-xs text-text-disabled">RIR</Text>
+                      <Text className="text-lg font-bold text-text-primary">
+                        {hasMetrics ? (rir >= 5 ? '5+' : `~${Math.round(rir)}`) : '–'}
+                      </Text>
+                    </View>
                   </View>
                 </View>
 
@@ -305,51 +311,12 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
                   />
                 </View>
 
-                {/* Metrics bar: RPE + RIR + Vel Loss */}
-                <View
-                  className="mt-2 flex-row items-center justify-around rounded-lg px-4 py-2"
-                  style={{ backgroundColor: alpha('#fff', 0.06) }}
-                >
-                  <MetricCell
-                    label="RPE"
-                    value={hasMetrics ? rpe.toFixed(1) : '–'}
-                    color={rpeColor}
-                  />
-                  <MetricCell
-                    label="RIR"
-                    value={hasMetrics ? (rir >= 5 ? '5+' : `~${Math.round(rir)}`) : '–'}
-                    color={hasMetrics ? t['text-primary'] : t['text-disabled']}
-                  />
-                  <MetricCell
-                    label="Vel Loss"
-                    value={hasMetrics ? `${Math.round(velocityLoss)}%` : '–'}
-                    color={hasMetrics ? velLossColor(velocityLoss) : t['text-disabled']}
-                  />
-                </View>
-
                 {/* Effort message — only during recording */}
                 {liveMessage && isRecording ? (
                   <Text className="mt-2 text-center text-sm font-medium" style={{ color: rpeColor }}>
                     {liveMessage}
                   </Text>
                 ) : null}
-
-                {/* Fatigue bar */}
-                <View className="mt-2.5">
-                  <View className="h-1.5 overflow-hidden rounded-full" style={{ backgroundColor: alpha('#fff', 0.08) }}>
-                    <View
-                      className="h-full rounded-full"
-                      style={{
-                        width: hasMetrics ? `${Math.min(velocityLoss, 50) * 2}%` : '0%',
-                        backgroundColor: velLossColor(velocityLoss),
-                      }}
-                    />
-                  </View>
-                  <View className="mt-1 flex-row justify-between">
-                    <Text className="text-[10px] text-text-disabled">Fresh</Text>
-                    <Text className="text-[10px] text-text-disabled">Fatigued</Text>
-                  </View>
-                </View>
               </>
             )}
           </Surface>
@@ -365,6 +332,10 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
                   weight: currentPlannedSet?.weight ?? weight,
                   targetReps: currentPlannedSet?.targetReps ?? null,
                 } : null}
+                activeChart={isRecording ? {
+                  samples: liveSamples,
+                  expectedDurationMs: expectedSetDurationMs,
+                } : null}
                 plannedSets={session?.plan.sets.slice(currentSetIndex + 1) ?? []}
                 totalSets={session?.plan.sets.length ?? null}
               />
@@ -374,15 +345,13 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
       </ScrollView>
 
       {/* Pinned start/stop */}
-      {uiState !== 'results' && (
-        <View className="px-4 pb-4 pt-2">
-          <WorkoutControls
-            isActive={uiState === 'recording' || uiState === 'countdown'}
-            onStart={handleStart}
-            onStop={handleStop}
-          />
-        </View>
-      )}
+      <View className="px-4 pb-4 pt-2">
+        <WorkoutControls
+          isActive={uiState === 'recording' || uiState === 'countdown'}
+          onStart={handleStart}
+          onStop={handleStop}
+        />
+      </View>
     </SafeAreaView>
   );
 }
@@ -504,19 +473,3 @@ function ModeDrawer({
   );
 }
 
-function velLossColor(loss: number): string {
-  if (loss > 30) return t['status-error'];
-  if (loss > 20) return t['status-warning'];
-  return t['status-success'];
-}
-
-function MetricCell({ label, value, color }: {
-  label: string; value: string; color: string;
-}) {
-  return (
-    <View className="items-center">
-      <Text className="text-[10px] text-text-disabled">{label}</Text>
-      <Text className="text-base font-bold" style={{ color }}>{value}</Text>
-    </View>
-  );
-}

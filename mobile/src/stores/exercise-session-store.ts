@@ -202,6 +202,7 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
   let repository: ExerciseSessionRepository | null = null;
   let restTimerId: ReturnType<typeof setInterval> | null = null;
   let countdownTimerId: ReturnType<typeof setInterval> | null = null;
+  let idleTimerId: ReturnType<typeof setTimeout> | null = null;
   let idleUnsubscribe: (() => void) | null = null;
 
   const store = createStore<ExerciseSessionState>()(
@@ -397,10 +398,11 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
             }
           }
 
-          // Build set log entry with cluster info
+          // Build set log entry with cluster info and chart samples
           const entry: SetLogEntry = {
             set: completedSet,
             clusters: [...get().pendingClusters],
+            samples: recordingStore ? [...recordingStore.getState().liveSamples] : undefined,
           };
 
           // Add set to session
@@ -580,13 +582,23 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
 
           if (state.uiState === 'recording') {
             if (isIdlePhase && state.idleSinceMs === null) {
+              // Idle started — arm a timer to auto-transition to rest
               set({ idleSinceMs: Date.now() });
+              if (idleTimerId) clearTimeout(idleTimerId);
+              idleTimerId = setTimeout(() => {
+                idleTimerId = null;
+                if (get().uiState === 'recording' && get().idleSinceMs !== null) {
+                  set({ idleSinceMs: null });
+                  get()._autoTransitionToRest();
+                }
+              }, SESSION_DEFAULTS.idleThreshold);
             } else if (isActivePhase && state.idleSinceMs !== null) {
-              const idleDuration = Date.now() - state.idleSinceMs;
-              set({ idleSinceMs: null });
-              if (idleDuration >= SESSION_DEFAULTS.idleThreshold) {
-                get()._autoTransitionToRest();
+              // Active phase resumed before threshold — cancel the idle timer
+              if (idleTimerId) {
+                clearTimeout(idleTimerId);
+                idleTimerId = null;
               }
+              set({ idleSinceMs: null });
             }
           } else if (state.uiState === 'resting' && isActivePhase) {
             get()._onLiftingResumedFromRest();
@@ -674,6 +686,10 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
     if (countdownTimerId) {
       clearInterval(countdownTimerId);
       countdownTimerId = null;
+    }
+    if (idleTimerId) {
+      clearTimeout(idleTimerId);
+      idleTimerId = null;
     }
   }
 

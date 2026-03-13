@@ -15,6 +15,7 @@
 import type { CompletedSet } from './completed-set';
 import type { Exercise } from '@/domain/exercise';
 import type { ExercisePlan, PlannedSet } from './plan';
+import type { WorkoutSample } from '@voltras/workout-analytics';
 
 // =============================================================================
 // Cluster / Pause-Set Types
@@ -41,6 +42,8 @@ export interface ClusterBoundary {
 export interface SetLogEntry {
   set: CompletedSet;
   clusters: ClusterBoundary[];
+  /** Raw telemetry samples for chart replay */
+  samples?: WorkoutSample[];
 }
 
 /**

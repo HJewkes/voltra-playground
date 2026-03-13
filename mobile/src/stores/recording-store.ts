@@ -27,6 +27,7 @@ import {
   getSetMeanVelocity,
   estimateSetRIR,
   getRepPeakVelocity,
+  isInEccentricPhase,
   MovementPhase,
 } from '@voltras/workout-analytics';
 
@@ -80,6 +81,9 @@ export interface RecordingState {
   // UI feedback
   liveMessage: string;
 
+  // Live samples for chart visualization (rolling window, always populated during recording)
+  liveSamples: WorkoutSample[];
+
   // Debug telemetry - all samples for replay (only populated when debug enabled)
   allSamples: WorkoutSample[];
 
@@ -132,6 +136,7 @@ function createInitialState(): Pick<
   | 'phaseElapsedMs'
   | 'repPhaseDurations'
   | 'liveMessage'
+  | 'liveSamples'
   | 'allSamples'
   | 'lastSet'
 > {
@@ -154,6 +159,7 @@ function createInitialState(): Pick<
     phaseElapsedMs: 0,
     repPhaseDurations: [],
     liveMessage: '',
+    liveSamples: [],
     allSamples: [],
     lastSet: null,
   };
@@ -168,6 +174,7 @@ function createInitialState(): Pick<
  */
 export function createRecordingStore(): RecordingStoreApi {
   let analyticsSet = createSet();
+  let lastEagerRepCount = 0;
 
   const store = createStore<RecordingState>()(
     devtools(
@@ -187,6 +194,7 @@ export function createRecordingStore(): RecordingStoreApi {
 
         startRecording: (exerciseId?: string, exerciseName?: string) => {
           analyticsSet = createSet();
+          lastEagerRepCount = 0;
           set({
             ...createInitialState(),
             uiState: 'recording',
@@ -232,6 +240,9 @@ export function createRecordingStore(): RecordingStoreApi {
         processSample: (sample: WorkoutSample) => {
           if (!get().isRecording) return;
 
+          // Accumulate live samples for full-set chart visualization
+          set({ liveSamples: [...get().liveSamples, sample] });
+
           // Accumulate samples if debug telemetry is enabled
           if (isDebugTelemetryEnabled()) {
             const currentSamples = get().allSamples;
@@ -270,21 +281,45 @@ export function createRecordingStore(): RecordingStoreApi {
           analyticsSet = addSampleToSet(analyticsSet, sample);
           const newRepCount = analyticsSet.reps.length;
 
-          // A new rep boundary means the *previous* rep just completed and
-          // a new one started. Skip the 0→1 transition (first concentric sample,
-          // no rep finished yet). From 1→2 onward, rep N-1 is complete.
+          // Determine how many reps to report as complete.
+          // The library only creates a new rep on eccentric→concentric transition,
+          // so during idle after the last eccentric the count lags by 1.
+          // We eagerly count the last rep as complete when it has an eccentric
+          // phase and we're now in idle — avoiding the N-1 display lag.
+          let completedCount: number;
+          let metricsReps: readonly Rep[];
+
           if (newRepCount > prevRepCount && newRepCount >= 2) {
-            const completedRep = analyticsSet.reps.at(-2)!;
-            const completedCount = newRepCount - 1;
+            // Library boundary: new rep just started, previous rep is definitively complete.
+            // Use all reps except the new partial one for metrics.
+            completedCount = newRepCount - 1;
+            metricsReps = analyticsSet.reps.slice(0, -1);
+            // Reset eager flag — the new partial rep hasn't been counted yet
+            lastEagerRepCount = completedCount;
+          } else if (
+            newRepCount >= 1 &&
+            sample.phase === MovementPhase.IDLE &&
+            isInEccentricPhase(analyticsSet.reps.at(-1)!) &&
+            newRepCount > lastEagerRepCount
+          ) {
+            // Eager boundary: last rep has eccentric data and we just entered idle.
+            // Count it as complete for display purposes.
+            completedCount = newRepCount;
+            metricsReps = analyticsSet.reps;
+            lastEagerRepCount = completedCount;
+          } else {
+            completedCount = 0; // No update this sample
+            metricsReps = [];
+          }
 
-            // Compute metrics over completed reps only (exclude partial last rep)
-            const completedSet = { reps: analyticsSet.reps.slice(0, -1) };
-            const rawVelLoss = Math.abs(getSetVelocityLossPct(completedSet));
-            const rawMeanVel = getSetMeanVelocity(completedSet);
-            const rirEstimate = estimateSetRIR(completedSet);
-            const velocityTrend = [...getSetRepVelocities(completedSet)];
+          if (completedCount > 0 && completedCount > state.repCount) {
+            const lastCompletedRep = metricsReps.at(-1)!;
+            const metricsSet = { reps: metricsReps };
+            const rawVelLoss = Math.abs(getSetVelocityLossPct(metricsSet));
+            const rawMeanVel = getSetMeanVelocity(metricsSet);
+            const rirEstimate = estimateSetRIR(metricsSet);
+            const velocityTrend = [...getSetRepVelocities(metricsSet)];
 
-            // First completed rep: seed values. Subsequent: EMA smooth.
             const isFirst = completedCount === 1;
             const smoothRpe = isFirst ? rirEstimate.rpe : ema(state.rpe, rirEstimate.rpe);
             const smoothRir = isFirst ? rirEstimate.rir : ema(state.rir, rirEstimate.rir);
@@ -293,7 +328,7 @@ export function createRecordingStore(): RecordingStoreApi {
 
             Object.assign(tempoUpdate, {
               repCount: completedCount,
-              lastRepPeakVelocity: getRepPeakVelocity(completedRep),
+              lastRepPeakVelocity: getRepPeakVelocity(lastCompletedRep),
               meanVelocity: smoothMeanVel,
               velocityLoss: smoothVelLoss,
               rpe: smoothRpe,
@@ -309,6 +344,7 @@ export function createRecordingStore(): RecordingStoreApi {
 
         reset: () => {
           analyticsSet = createSet();
+          lastEagerRepCount = 0;
           set({ ...createInitialState(), _analyticsSet: analyticsSet });
         },
       }),
