@@ -49,4 +49,6 @@ export type { SetTargetsState, TargetMode } from './SetTargets';
 export { CycleToggle } from './CycleToggle';
 export type { CycleToggleOption } from './CycleToggle';
 export { AddSetButton } from './AddSetButton';
+export { QuickConfig } from './QuickConfig';
+export type { QuickConfigProps } from './QuickConfig';
 export { RestScrubber } from './RestScrubber';

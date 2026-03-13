@@ -7,6 +7,8 @@ import Slider from '@react-native-community/slider';
 import { Platform } from 'react-native';
 import { Section, SectionContent, Surface, getSemanticColors, alpha } from '@titan-design/react-ui';
 import { TrainingMode } from '@/domain/device';
+import type { TempoTarget } from '@/domain/workout';
+import { ScrollDial } from '@/components/exercise';
 import type { VoltraStoreApi } from '@/stores/voltra-store';
 
 const t = getSemanticColors('dark');
@@ -260,15 +262,21 @@ export function AdvancedAccordion({
   showEccentric, showChains,
   eccentric, setEccentric,
   chains, inverseChains, setChains, setInverseChains,
+  tempoEnabled, targetTempo, onToggleTempo, onTempoChange,
 }: {
   showEccentric: boolean; showChains: boolean;
   eccentric: number; setEccentric: (v: number) => Promise<void>;
   chains: number; inverseChains: number;
   setChains: (v: number) => Promise<void>;
   setInverseChains: (v: number) => Promise<void>;
+  tempoEnabled?: boolean;
+  targetTempo?: TempoTarget;
+  onToggleTempo?: () => void;
+  onTempoChange?: (key: keyof TempoTarget, value: number) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const rotation = useSharedValue(0);
+  const hasTempo = onTempoChange != null;
 
   const toggle = useCallback(() => {
     setExpanded((prev) => {
@@ -280,6 +288,22 @@ export function AdvancedAccordion({
   const chevronStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${rotation.value * 180}deg` }],
   }));
+
+  const hardwareControls = (
+    <View style={{ flex: hasTempo ? 1 : undefined }}>
+      {showEccentric && (
+        <CompactEccentric value={eccentric} onChange={setEccentric} />
+      )}
+      {showChains && (
+        <CompactChains
+          chains={chains}
+          inverseChains={inverseChains}
+          onChainsChange={setChains}
+          onInverseChainsChange={setInverseChains}
+        />
+      )}
+    </View>
+  );
 
   return (
     <View className="mt-1">
@@ -294,22 +318,135 @@ export function AdvancedAccordion({
         </Animated.Text>
       </TouchableOpacity>
       {expanded && (
-        <View>
-          {showEccentric && (
-            <CompactEccentric value={eccentric} onChange={setEccentric} />
-          )}
-          {showChains && (
-            <CompactChains
-              chains={chains}
-              inverseChains={inverseChains}
-              onChainsChange={setChains}
-              onInverseChainsChange={setInverseChains}
+        hasTempo ? (
+          <View className="flex-row" style={{ gap: 8 }}>
+            {hardwareControls}
+            <TempoColumn
+              enabled={tempoEnabled ?? false}
+              tempo={targetTempo ?? { concentric: 0, eccentric: 0, pauseTop: 0, pauseBottom: 0 }}
+              onToggle={onToggleTempo}
+              onChange={onTempoChange}
             />
-          )}
-        </View>
+          </View>
+        ) : (
+          hardwareControls
+        )
       )}
     </View>
   );
+}
+
+function TempoColumn({
+  enabled, tempo, onToggle, onChange,
+}: {
+  enabled: boolean;
+  tempo: TempoTarget;
+  onToggle?: () => void;
+  onChange?: (key: keyof TempoTarget, value: number) => void;
+}) {
+  const disabledColor = t['text-disabled'];
+
+  return (
+    <View style={{ flex: 1, alignItems: 'center' }}>
+      {onToggle && (
+        <TouchableOpacity
+          onPress={onToggle}
+          activeOpacity={0.7}
+          style={{
+            paddingHorizontal: 12,
+            paddingVertical: 5,
+            borderRadius: 10,
+            backgroundColor: enabled ? alpha(t['brand-primary'], 0.15) : '#1a1a1a',
+            ...Platform.select({
+              web: {
+                boxShadow: enabled
+                  ? [
+                      `0 1px 2px ${alpha('#000', 0.4)}`,
+                      `inset 0 1px 0 ${alpha(t['brand-primary'], 0.15)}`,
+                    ].join(', ')
+                  : [
+                      `inset 0 1px 3px ${alpha('#000', 0.4)}`,
+                      `0 1px 0 ${alpha('#fff', 0.04)}`,
+                    ].join(', '),
+              } as any,
+              default: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: enabled ? 1 : 0 },
+                shadowOpacity: enabled ? 0.3 : 0,
+                shadowRadius: enabled ? 2 : 0,
+              },
+            }),
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 10,
+              fontWeight: enabled ? '700' : '500',
+              color: enabled ? t['brand-primary'] : disabledColor,
+              ...Platform.select({
+                web: enabled ? {
+                  textShadow: `0 0 8px ${alpha(t['brand-primary'], 0.4)}`,
+                } as any : {},
+                default: {},
+              }),
+            }}
+          >
+            Tempo
+          </Text>
+        </TouchableOpacity>
+      )}
+      <View className="mt-1.5 flex-row" style={{ gap: 4 }}>
+        <ScrollDial
+          value={tempo.concentric}
+          min={0}
+          max={10}
+          onChange={(v) => onChange?.('concentric', v)}
+          label="Con"
+          width={32}
+          formatValue={dashZero}
+          activeColor={enabled && tempo.concentric > 0 ? t['status-success'] : disabledColor}
+          disabled={!enabled}
+        />
+        <ScrollDial
+          value={tempo.pauseTop}
+          min={0}
+          max={5}
+          onChange={(v) => onChange?.('pauseTop', v)}
+          label="Hold"
+          width={32}
+          formatValue={dashZero}
+          activeColor={enabled && tempo.pauseTop > 0 ? t['brand-primary'] : disabledColor}
+          disabled={!enabled}
+        />
+        <ScrollDial
+          value={tempo.eccentric}
+          min={0}
+          max={10}
+          onChange={(v) => onChange?.('eccentric', v)}
+          label="Ecc"
+          width={32}
+          formatValue={dashZero}
+          activeColor={enabled && tempo.eccentric > 0 ? t['status-warning'] : disabledColor}
+          disabled={!enabled}
+        />
+        <ScrollDial
+          value={tempo.pauseBottom}
+          min={0}
+          max={5}
+          onChange={(v) => onChange?.('pauseBottom', v)}
+          label="Pause"
+          width={32}
+          formatValue={dashZero}
+          activeColor={enabled && tempo.pauseBottom > 0 ? t['text-secondary'] : disabledColor}
+          disabled={!enabled}
+        />
+      </View>
+    </View>
+  );
+}
+
+function dashZero(v: number): string {
+  return v === 0 ? '\u2013' : String(v);
 }
 
 // Slider with a colored track that originates from the center rather than the left edge.

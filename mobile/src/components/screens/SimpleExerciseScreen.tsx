@@ -1,9 +1,11 @@
 /**
  * SimpleExerciseScreen
  *
- * Training view for a selected mode. Weight/eccentric/chains config at top,
- * live telemetry always visible in the middle, start/stop pinned at bottom.
- * Config stays interactive between sets for adjust-and-go-again flow.
+ * Training view for a selected mode. Plan-as-you-go workflow:
+ * - Quick config bar: Reps/RIR dial, weight jog, add set button
+ * - Advanced accordion: eccentric, chains, tempo
+ * - Live telemetry during recording
+ * - Unified set list with charts
  *
  * Session orchestration is delegated to exercise-session-store.
  */
@@ -19,51 +21,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { Surface, getSemanticColors, alpha } from '@titan-design/react-ui';
 
 import { TrainingMode, TrainingModeNames } from '@/domain/device';
-import { getRPEColor } from '@/domain/workout';
-import type { ExercisePlan, PlannedSet, TempoTarget } from '@/domain/workout';
+import { getRPEColor, createEmptyPlan } from '@/domain/workout';
+import type { TempoTarget, PlannedSet } from '@/domain/workout';
 import { createExercise } from '@/domain/exercise';
 import { useConnectionStore, selectIsConnected, createRecordingStore, createExerciseSessionStore } from '@/stores';
 import { WorkoutControls } from '@/components/recording';
 import { AdvancedAccordion } from '@/components/mode';
-import { TempoBar, SetTargets, EMPTY_TARGETS, VerticalWeightJog, RestCard, SetLog } from '@/components/exercise';
-import type { SetTargetsState } from '@/components/exercise';
+import { TempoBar, QuickConfig, VerticalWeightJog, RestCard, SetLog } from '@/components/exercise';
+import type { TargetMode } from '@/components/exercise';
 import { MovementPhase } from '@voltras/workout-analytics';
 import type { VoltraStoreApi } from '@/stores/voltra-store';
 
 const t = getSemanticColors('dark');
-
-function buildPlanFromTargets(targets: SetTargetsState, weight: number): ExercisePlan {
-  const numSets = targets.enabledSections.sets ? targets.targetSets : 1;
-  const targetReps = targets.enabledSections.effort
-    ? (targets.targetMode === 'reps' ? targets.targetReps : 0)
-    : 0;
-  const rirTarget = targets.enabledSections.effort
-    ? (targets.targetMode === 'rir' ? targets.rirTarget : 0)
-    : 0;
-  const targetTempo: TempoTarget | undefined = targets.enabledSections.tempo
-    ? targets.targetTempo
-    : undefined;
-  const restSeconds = targets.enabledSections.rest
-    ? targets.restBlocks * 15
-    : 90;
-
-  const sets: PlannedSet[] = Array.from({ length: numSets }, (_, i) => ({
-    setNumber: i + 1,
-    weight,
-    targetReps: targetReps,
-    rirTarget,
-    isWarmup: false,
-    targetTempo,
-  }));
-
-  return {
-    exerciseId: 'simple-exercise',
-    sets,
-    defaultRestSeconds: restSeconds,
-    generatedAt: Date.now(),
-    generatedBy: 'manual',
-  };
-}
 
 export function SimpleExerciseScreen() {
   const router = useRouter();
@@ -105,7 +74,6 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
   const repPhaseDurations = useStore(recordingStore, (s) => s.repPhaseDurations);
   const liveSamples = useStore(recordingStore, (s) => s.liveSamples);
 
-  // Session store replaces local ExerciseState
   const sessionStore = useMemo(() => createExerciseSessionStore(), []);
   const uiState = useStore(sessionStore, (s) => s.uiState);
   const setLog = useStore(sessionStore, (s) => s.setLog);
@@ -114,7 +82,16 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
   const currentPlannedSet = useStore(sessionStore, (s) => s.currentPlannedSet);
   const session = useStore(sessionStore, (s) => s.session);
 
-  const [setTargets, setSetTargets] = useState<SetTargetsState>(EMPTY_TARGETS);
+  // Quick config state
+  const [effortEnabled, setEffortEnabled] = useState(false);
+  const [targetMode, setTargetMode] = useState<TargetMode>('reps');
+  const [targetReps, setTargetReps] = useState(0);
+  const [rirTarget, setRirTarget] = useState(0);
+  const [tempoEnabled, setTempoEnabled] = useState(false);
+  const [targetTempo, setTargetTempo] = useState<TempoTarget>({
+    concentric: 0, eccentric: 0, pauseTop: 0, pauseBottom: 0,
+  });
+
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerProgress = useSharedValue(0);
 
@@ -122,21 +99,70 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
   const isRecording = uiState === 'recording';
   const isActive = isRecording || uiState === 'preparing' || uiState === 'countdown';
 
-  const targetReps = currentPlannedSet?.targetReps ?? null;
+  const isReps = targetMode === 'reps';
+  const mainValue = isReps ? targetReps : rirTarget;
+  const mainMax = isReps ? 30 : 5;
+
+  const plannedSetCount = session?.plan.sets.length ?? 0;
+
+  const targetRepsForDisplay = currentPlannedSet?.targetReps ?? null;
   const restTargetMs = session
     ? (session.plan.defaultRestSeconds * 1000)
     : null;
 
   // Expected set duration for chart x-axis pre-stub
   const expectedSetDurationMs = useMemo(() => {
-    const tempo = currentPlannedSet?.targetTempo;
-    const reps = targetReps ?? 10;
-    if (tempo) {
+    const tempo = currentPlannedSet?.targetTempo ?? (tempoEnabled ? targetTempo : null);
+    const reps = targetRepsForDisplay ?? (effortEnabled && isReps ? targetReps : 10);
+    if (tempo && (tempo.concentric > 0 || tempo.eccentric > 0)) {
       const repMs = ((tempo.concentric || 2) + (tempo.pauseTop || 0.5) + (tempo.eccentric || 3) + (tempo.pauseBottom || 1)) * 1000;
       return reps * repMs;
     }
     return 30_000;
-  }, [currentPlannedSet, targetReps]);
+  }, [currentPlannedSet, targetRepsForDisplay, tempoEnabled, targetTempo, effortEnabled, isReps, targetReps]);
+
+  // Effort cycling: Off → Reps → RIR → Off
+  const cycleEffort = useCallback(() => {
+    if (!effortEnabled) {
+      setEffortEnabled(true);
+      setTargetMode('reps');
+    } else if (targetMode === 'reps') {
+      setTargetMode('rir');
+    } else {
+      setEffortEnabled(false);
+    }
+  }, [effortEnabled, targetMode]);
+
+  const handleTargetChange = useCallback((v: number) => {
+    if (isReps) setTargetReps(v);
+    else setRirTarget(v);
+  }, [isReps]);
+
+  const handleAddSet = useCallback(() => {
+    const store = sessionStore.getState();
+
+    // Ensure session exists
+    if (!store.session) {
+      const exercise = createExercise({ id: 'simple-exercise', name: modeName });
+      const plan = createEmptyPlan('simple-exercise');
+      store.startSession(exercise, plan);
+      store.bindRecordingStore(recordingStore);
+      store.bindVoltraStore(voltraStore);
+    }
+
+    const setNumber = (store.session?.plan.sets.length ?? 0) + 1;
+    const planned: PlannedSet = {
+      setNumber,
+      weight,
+      targetReps: effortEnabled && isReps ? targetReps : 0,
+      rirTarget: effortEnabled && !isReps ? rirTarget : 0,
+      isWarmup: false,
+      targetTempo: tempoEnabled ? targetTempo : undefined,
+      restSeconds: 90,
+    };
+
+    sessionStore.getState().addPlannedSet(planned);
+  }, [sessionStore, recordingStore, voltraStore, weight, effortEnabled, isReps, targetReps, rirTarget, tempoEnabled, targetTempo, modeName]);
 
   const toggleDrawer = useCallback(() => {
     if (isRecording) return;
@@ -155,18 +181,35 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
 
   const handleStart = useCallback(async () => {
     try {
-      const plan = buildPlanFromTargets(setTargets, weight);
-      const exercise = createExercise({ id: 'simple-exercise', name: modeName });
-      sessionStore.getState().startSession(exercise, plan);
-      sessionStore.getState().bindRecordingStore(recordingStore);
-      sessionStore.getState().bindVoltraStore(voltraStore);
+      const store = sessionStore.getState();
+
+      // If no session or no planned sets, create one with a single set
+      if (!store.session || store.session.plan.sets.length === 0) {
+        const exercise = createExercise({ id: 'simple-exercise', name: modeName });
+        const plan = createEmptyPlan('simple-exercise');
+        store.startSession(exercise, plan);
+        store.bindRecordingStore(recordingStore);
+        store.bindVoltraStore(voltraStore);
+
+        const planned: PlannedSet = {
+          setNumber: 1,
+          weight,
+          targetReps: effortEnabled && isReps ? targetReps : 0,
+          rirTarget: effortEnabled && !isReps ? rirTarget : 0,
+          isWarmup: false,
+          targetTempo: tempoEnabled ? targetTempo : undefined,
+          restSeconds: 90,
+        };
+        sessionStore.getState().addPlannedSet(planned);
+      }
+
       await sessionStore.getState().prepareFirstSet();
       sessionStore.getState().startFirstSet();
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e);
       Alert.alert('Error', `Failed to start: ${message}`);
     }
-  }, [sessionStore, recordingStore, voltraStore, setTargets, weight, modeName]);
+  }, [sessionStore, recordingStore, voltraStore, weight, effortEnabled, isReps, targetReps, rirTarget, tempoEnabled, targetTempo, modeName]);
 
   const handleStop = useCallback(async () => {
     await sessionStore.getState().stopSession();
@@ -190,11 +233,14 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
   const hasMetrics = repCount > 0;
   const rpeColor = hasMetrics ? getRPEColor(rpe) : t['text-disabled'];
 
-  // Rep count display: target-aware
-  const repCountDisplay = targetReps
-    ? `${repCount}/${targetReps}`
+  const repCountDisplay = targetRepsForDisplay
+    ? `${repCount}/${targetRepsForDisplay}`
     : `${repCount}`;
-  const repLabel = repCount === 1 && !targetReps ? 'rep' : 'reps';
+  const repLabel = repCount === 1 && !targetRepsForDisplay ? 'rep' : 'reps';
+
+  const handleTempoChange = useCallback((key: keyof TempoTarget, v: number) => {
+    setTargetTempo((prev) => ({ ...prev, [key]: v }));
+  }, []);
 
   return (
     <SafeAreaView className="flex-1 bg-surface-400" edges={['top']}>
@@ -229,12 +275,15 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
 
       <ScrollView className="flex-1" scrollEnabled={!isRecording}>
         <View className="px-4 pb-4">
-          {/* Unified config: Sets | Reps/RIR | Weight | Tempo | Rest */}
+          {/* Quick config: Reps/RIR | Weight | Add Set */}
           <Surface elevation={1} className="mt-1 rounded-xl py-3 px-2">
-            <SetTargets
-              targets={setTargets}
-              onChange={setSetTargets}
-              disabled={isActive}
+            <QuickConfig
+              effortEnabled={effortEnabled}
+              targetMode={targetMode}
+              targetValue={mainValue}
+              maxValue={mainMax}
+              onCycleEffort={cycleEffort}
+              onTargetChange={handleTargetChange}
               weightSlot={
                 <VerticalWeightJog
                   weight={weight}
@@ -242,8 +291,12 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
                   disabled={isActive}
                 />
               }
+              onAddSet={handleAddSet}
+              setCount={plannedSetCount}
+              addSetDisabled={isActive}
+              disabled={isActive}
             />
-            {/* Advanced settings (eccentric, chains) */}
+            {/* Advanced settings (eccentric, chains, tempo) */}
             {(showEccentric || showChains) && (
               <View
                 className="px-1"
@@ -259,74 +312,80 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
                   inverseChains={inverseChains}
                   setChains={setChains}
                   setInverseChains={setInverseChains}
+                  tempoEnabled={tempoEnabled}
+                  targetTempo={targetTempo}
+                  onToggleTempo={() => setTempoEnabled((v) => !v)}
+                  onTempoChange={handleTempoChange}
                 />
               </View>
             )}
           </Surface>
 
-          {/* Telemetry card — switches between active and rest states */}
-          <Surface elevation={1} className="mt-2 rounded-xl p-4">
-            {uiState === 'resting' ? (
-              <RestCard
-                restElapsedMs={restElapsedMs}
-                restTargetMs={restTargetMs}
-                lastSetEntry={setLog.at(-1) ?? null}
-                setNumber={currentSetIndex}
-              />
-            ) : (
-              <>
-                {/* Row 1: Rep count + RPE + RIR */}
-                <View className="flex-row items-center justify-between">
-                  <View className="flex-row items-baseline gap-2">
-                    <Text className="text-3xl font-bold text-text-primary">
-                      {repCountDisplay}
-                    </Text>
-                    <Text className="text-sm text-text-tertiary">
-                      {repLabel}
-                    </Text>
-                  </View>
-                  <View className="flex-row items-baseline gap-3">
-                    <View className="items-end">
-                      <Text className="text-xs text-text-disabled">RPE</Text>
-                      <Text className="text-lg font-bold" style={{ color: rpeColor }}>
-                        {hasMetrics ? rpe.toFixed(1) : '–'}
+          {/* Telemetry card — shows during active recording or resting */}
+          {(isRecording || uiState === 'resting') && (
+            <Surface elevation={1} className="mt-2 rounded-xl p-4">
+              {uiState === 'resting' ? (
+                <RestCard
+                  restElapsedMs={restElapsedMs}
+                  restTargetMs={restTargetMs}
+                  lastSetEntry={setLog.at(-1) ?? null}
+                  setNumber={currentSetIndex}
+                />
+              ) : (
+                <>
+                  {/* Row 1: Rep count + RPE + RIR */}
+                  <View className="flex-row items-center justify-between">
+                    <View className="flex-row items-baseline gap-2">
+                      <Text className="text-3xl font-bold text-text-primary">
+                        {repCountDisplay}
+                      </Text>
+                      <Text className="text-sm text-text-tertiary">
+                        {repLabel}
                       </Text>
                     </View>
-                    <View className="items-end">
-                      <Text className="text-xs text-text-disabled">RIR</Text>
-                      <Text className="text-lg font-bold text-text-primary">
-                        {hasMetrics ? (rir >= 5 ? '5+' : `~${Math.round(rir)}`) : '–'}
-                      </Text>
+                    <View className="flex-row items-baseline gap-3">
+                      <View className="items-end">
+                        <Text className="text-xs text-text-disabled">RPE</Text>
+                        <Text className="text-lg font-bold" style={{ color: rpeColor }}>
+                          {hasMetrics ? rpe.toFixed(1) : '–'}
+                        </Text>
+                      </View>
+                      <View className="items-end">
+                        <Text className="text-xs text-text-disabled">RIR</Text>
+                        <Text className="text-lg font-bold text-text-primary">
+                          {hasMetrics ? (rir >= 5 ? '5+' : `~${Math.round(rir)}`) : '–'}
+                        </Text>
+                      </View>
                     </View>
                   </View>
-                </View>
 
-                {/* Tempo bar — with target pacing */}
-                <View className="mt-3">
-                  <TempoBar
-                    currentPhase={isRecording ? currentPhase : MovementPhase.IDLE}
-                    phaseElapsedMs={phaseElapsedMs}
-                    repPhaseDurations={repPhaseDurations}
-                    targetTempo={currentPlannedSet?.targetTempo}
-                  />
-                </View>
+                  {/* Tempo bar — with target pacing */}
+                  <View className="mt-3">
+                    <TempoBar
+                      currentPhase={isRecording ? currentPhase : MovementPhase.IDLE}
+                      phaseElapsedMs={phaseElapsedMs}
+                      repPhaseDurations={repPhaseDurations}
+                      targetTempo={currentPlannedSet?.targetTempo}
+                    />
+                  </View>
 
-                {/* Effort message — only during recording */}
-                {liveMessage && isRecording ? (
-                  <Text className="mt-2 text-center text-sm font-medium" style={{ color: rpeColor }}>
-                    {liveMessage}
-                  </Text>
-                ) : null}
-              </>
-            )}
-          </Surface>
+                  {/* Effort message */}
+                  {liveMessage && isRecording ? (
+                    <Text className="mt-2 text-center text-sm font-medium" style={{ color: rpeColor }}>
+                      {liveMessage}
+                    </Text>
+                  ) : null}
+                </>
+              )}
+            </Surface>
+          )}
 
           {/* Set Log */}
-          {(setLog.length > 0 || uiState === 'recording') && (
+          {(setLog.length > 0 || isRecording || plannedSetCount > 0) && (
             <Surface elevation={1} className="mt-2 rounded-xl p-3">
               <SetLog
                 setLog={setLog}
-                activeSet={uiState === 'recording' ? {
+                activeSet={isRecording ? {
                   setIndex: currentSetIndex,
                   repCount,
                   weight: currentPlannedSet?.weight ?? weight,
@@ -382,7 +441,6 @@ function ModeDrawer({
 }) {
   return (
     <>
-      {/* Backdrop */}
       <Pressable
         onPress={onClose}
         style={{
@@ -395,7 +453,6 @@ function ModeDrawer({
           backgroundColor: alpha('#000', 0.4),
         }}
       />
-      {/* Panel */}
       <View
         style={{
           zIndex: 11,
@@ -472,4 +529,3 @@ function ModeDrawer({
     </>
   );
 }
-
