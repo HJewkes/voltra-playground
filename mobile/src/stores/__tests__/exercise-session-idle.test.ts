@@ -34,7 +34,7 @@ function createMockRecordingStore(overrides: {
   currentPhase?: MovementPhase;
   repCount?: number;
   stopRecordingResult?: ReturnType<typeof mockCompletedSet> | null;
-} = {}): RecordingStoreApi {
+} = {}): MockRecordingStore {
   const {
     currentPhase = MovementPhase.IDLE,
     repCount = 0,
