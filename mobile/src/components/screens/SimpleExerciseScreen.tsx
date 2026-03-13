@@ -7,13 +7,14 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, Alert, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, Alert, ScrollView, TouchableOpacity, Pressable, Platform } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { useStore } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Button, Surface, getSemanticColors, alpha } from '@titan-design/react-ui';
+import { Surface, getSemanticColors, alpha } from '@titan-design/react-ui';
 
 import { TrainingMode, TrainingModeNames } from '@/domain/device';
 import { getRPEColor } from '@/domain/workout';
@@ -44,8 +45,8 @@ export function SimpleExerciseScreen() {
 }
 
 function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
-  const router = useRouter();
   const mode = useStore(voltraStore, (s) => s.mode);
+  const setMode = useStore(voltraStore, (s) => s.setMode);
   const weight = useStore(voltraStore, (s) => s.weight);
   const currentSample = useStore(voltraStore, (s) => s.currentSample);
   const eccentric = useStore(voltraStore, (s) => s.eccentric);
@@ -76,11 +77,28 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
   const [duration, setDuration] = useState(0);
   const [setTargets, setSetTargets] = useState<SetTargetsState>(EMPTY_TARGETS);
   const startTimeRef = useRef(0);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const drawerProgress = useSharedValue(0);
 
   const modeName = TrainingModeNames[mode] ?? 'Unknown';
   const isRecording = exerciseState === 'recording';
   const isSummary = exerciseState === 'summary';
   const isActive = isRecording || exerciseState === 'preparing';
+
+  const toggleDrawer = useCallback(() => {
+    if (isRecording) return;
+    setDrawerOpen((prev) => {
+      const next = !prev;
+      drawerProgress.value = withSpring(next ? 1 : 0, { damping: 20, stiffness: 200 });
+      return next;
+    });
+  }, [isRecording, drawerProgress]);
+
+  const handleSelectMode = useCallback((m: TrainingMode) => {
+    setMode(m);
+    setDrawerOpen(false);
+    drawerProgress.value = withSpring(0, { damping: 20, stiffness: 200 });
+  }, [setMode, drawerProgress]);
 
   // Live duration timer
   useEffect(() => {
@@ -129,23 +147,9 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
     handleStart();
   }, [recordingStore, handleStart]);
 
-  const handleBack = useCallback(() => {
-    if (isRecording) {
-      Alert.alert('Stop Workout?', 'This will stop the current recording.', [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Stop',
-          style: 'destructive',
-          onPress: async () => {
-            await handleStop();
-            router.replace('/modes');
-          },
-        },
-      ]);
-    } else {
-      router.replace('/modes');
-    }
-  }, [isRecording, handleStop, router]);
+  const chevronStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${drawerProgress.value * 180}deg` }],
+  }));
 
   // Telemetry subscription
   useEffect(() => {
@@ -167,19 +171,34 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
 
   return (
     <SafeAreaView className="flex-1 bg-surface-400" edges={['top']}>
-      {/* Header */}
-      <View className="flex-row items-center px-4 pt-2 pb-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          onPress={handleBack}
-          accessibilityRole="button"
-          accessibilityLabel="Back to modes"
-        >
-          <Ionicons name="arrow-back" size={22} color={t['text-primary']} />
-        </Button>
-        <Text className="ml-2 text-base font-bold text-text-primary">{modeName}</Text>
-      </View>
+      {/* Header — tappable mode switcher */}
+      <Pressable
+        onPress={toggleDrawer}
+        style={{ opacity: isRecording ? 0.5 : 1 }}
+        accessibilityRole="button"
+        accessibilityLabel={`${modeName} — tap to switch mode`}
+      >
+        <View className="flex-row items-center justify-center px-4 pt-2 pb-1 gap-2">
+          <Ionicons
+            name={MODE_META[mode]?.icon ?? 'barbell-outline'}
+            size={18}
+            color={t['brand-primary']}
+          />
+          <Text className="text-base font-bold text-text-primary">{modeName}</Text>
+          <Animated.View style={chevronStyle}>
+            <Ionicons name="chevron-down" size={16} color={t['text-tertiary']} />
+          </Animated.View>
+        </View>
+      </Pressable>
+
+      {/* Mode drawer */}
+      {drawerOpen && (
+        <ModeDrawer
+          currentMode={mode}
+          onSelect={handleSelectMode}
+          onClose={toggleDrawer}
+        />
+      )}
 
       <ScrollView className="flex-1" scrollEnabled={!isRecording}>
         <View className="px-4 pb-4">
@@ -353,8 +372,121 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
 }
 
 // =============================================================================
-// Helpers
+// Mode drawer & helpers
 // =============================================================================
+
+type IconName = keyof typeof Ionicons.glyphMap;
+const MODE_META: Partial<Record<TrainingMode, { desc: string; icon: IconName }>> = {
+  [TrainingMode.WeightTraining]: { desc: 'Free weights & cables', icon: 'barbell-outline' },
+  [TrainingMode.ResistanceBand]: { desc: 'Elastic resistance', icon: 'fitness-outline' },
+  [TrainingMode.Rowing]: { desc: 'Row machine simulation', icon: 'boat-outline' },
+  [TrainingMode.Damper]: { desc: 'Fluid resistance', icon: 'water-outline' },
+  [TrainingMode.Isokinetic]: { desc: 'Constant velocity', icon: 'speedometer-outline' },
+  [TrainingMode.Isometric]: { desc: 'Static holds', icon: 'hand-left-outline' },
+};
+const TRAINING_MODES = Object.keys(MODE_META).map(Number) as TrainingMode[];
+
+function ModeDrawer({
+  currentMode,
+  onSelect,
+  onClose,
+}: {
+  currentMode: TrainingMode;
+  onSelect: (m: TrainingMode) => void;
+  onClose: () => void;
+}) {
+  return (
+    <>
+      {/* Backdrop */}
+      <Pressable
+        onPress={onClose}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 10,
+          backgroundColor: alpha('#000', 0.4),
+        }}
+      />
+      {/* Panel */}
+      <View
+        style={{
+          zIndex: 11,
+          backgroundColor: t['surface-300'] ?? '#1a1a1a',
+          borderBottomLeftRadius: 16,
+          borderBottomRightRadius: 16,
+          paddingHorizontal: 16,
+          paddingTop: 4,
+          paddingBottom: 12,
+          ...Platform.select({
+            web: {
+              boxShadow: `0 8px 24px ${alpha('#000', 0.5)}`,
+            } as any,
+            default: {
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.4,
+              shadowRadius: 12,
+              elevation: 8,
+            },
+          }),
+        }}
+      >
+        <View className="flex-row flex-wrap gap-2">
+          {TRAINING_MODES.map((modeValue) => {
+            const isSelected = currentMode === modeValue;
+            const meta = MODE_META[modeValue]!;
+            return (
+              <TouchableOpacity
+                key={modeValue}
+                onPress={() => onSelect(modeValue)}
+                activeOpacity={0.7}
+                style={{
+                  width: '48%',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 10,
+                  paddingVertical: 10,
+                  paddingHorizontal: 12,
+                  borderRadius: 12,
+                  backgroundColor: isSelected
+                    ? alpha(t['brand-primary'], 0.12)
+                    : alpha('#fff', 0.04),
+                  borderWidth: isSelected ? 1 : 0,
+                  borderColor: isSelected ? alpha(t['brand-primary'], 0.3) : 'transparent',
+                }}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isSelected }}
+              >
+                <Ionicons
+                  name={meta.icon}
+                  size={16}
+                  color={isSelected ? t['brand-primary'] : t['text-secondary']}
+                />
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontWeight: isSelected ? '700' : '600',
+                      color: isSelected ? t['brand-primary'] : t['text-primary'],
+                    }}
+                  >
+                    {TrainingModeNames[modeValue]}
+                  </Text>
+                  <Text style={{ fontSize: 9, color: t['text-tertiary'] }}>
+                    {meta.desc}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
+    </>
+  );
+}
 
 function velLossColor(loss: number): string {
   if (loss > 30) return t['status-error'];
