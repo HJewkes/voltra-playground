@@ -137,6 +137,17 @@ export const useConnectionStore = create<ConnectionStoreState>()(
 
           if (env.forceMock) {
             manager = VoltraManager.forMock();
+            // Expose mock adapter on window for debug access after first scan/connect creates it
+            // Usage: window.__mockBLE.setRepPlan([{ conSeconds: 2, holdSeconds: 0.5, eccSeconds: 3, idleSeconds: 1, romMm: 300 }])
+            if (typeof window !== 'undefined') {
+              // Adapter is created lazily on first scan — capture it via adapterFactory wrapper
+              const origFactory = (manager as unknown as { adapterFactory: () => unknown }).adapterFactory;
+              (manager as unknown as { adapterFactory: () => unknown }).adapterFactory = () => {
+                const adapter = origFactory();
+                (window as Record<string, unknown>).__mockBLE = adapter;
+                return adapter;
+              };
+            }
           } else if (env.environment === 'native') {
             manager = VoltraManager.forNative();
           } else if (env.environment === 'web') {
