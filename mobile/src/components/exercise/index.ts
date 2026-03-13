@@ -27,6 +27,14 @@ export type { ResumeSessionPromptProps } from './ResumeSessionPrompt';
 // Tempo visualization
 export { TempoBar } from './TempoBar';
 
+// Rest period display
+export { RestCard } from './RestCard';
+export { CircularTimer } from './CircularTimer';
+
+// Set log
+export { SetLog } from './SetLog';
+export type { SetLogProps } from './SetLog';
+
 // Scroll dial input
 export { ScrollDial } from './ScrollDial';
 
