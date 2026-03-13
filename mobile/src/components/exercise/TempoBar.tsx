@@ -11,12 +11,42 @@ import { View, Text } from 'react-native';
 import { alpha, getSemanticColors } from '@titan-design/react-ui';
 import { MovementPhase } from '@voltras/workout-analytics';
 
+import { type TempoTarget } from '@/domain/workout';
+
 const t = getSemanticColors('dark');
+
+export const TEMPO_PACING = {
+  behindThresholdPct: 0.15,
+  aheadThresholdPct: 0.20,
+  minPhaseDurationMs: 500,
+  colorTransitionMs: 300,
+};
+
+const TARGET_MAP: Record<number, keyof TempoTarget> = {
+  [MovementPhase.CONCENTRIC]: 'concentric',
+  [MovementPhase.HOLD]: 'pauseTop',
+  [MovementPhase.ECCENTRIC]: 'eccentric',
+};
+
+export type PacingState = 'none' | 'on-pace' | 'behind';
+
+export function getPacingState(elapsedMs: number, targetMs: number | null): PacingState {
+  if (!targetMs || targetMs < TEMPO_PACING.minPhaseDurationMs) return 'none';
+  const ratio = elapsedMs / targetMs;
+  if (ratio > 1 + TEMPO_PACING.behindThresholdPct) return 'behind';
+  return 'on-pace';
+}
+
+export function getFillPct(elapsedMs: number, targetMs: number | null): number {
+  if (!targetMs) return 100;
+  return Math.min(100, (elapsedMs / targetMs) * 100);
+}
 
 interface TempoBarProps {
   currentPhase: MovementPhase;
   phaseElapsedMs: number;
   repPhaseDurations: { phase: MovementPhase; durationMs: number }[];
+  targetTempo?: TempoTarget;
 }
 
 const PHASE_ORDER = [
@@ -31,7 +61,7 @@ const PHASE_CONFIG: Record<number, { label: string; color: string; flex: number 
   [MovementPhase.ECCENTRIC]: { label: 'Ecc', color: t['status-warning'], flex: 3 },
 };
 
-export function TempoBar({ currentPhase, phaseElapsedMs, repPhaseDurations }: TempoBarProps) {
+export function TempoBar({ currentPhase, phaseElapsedMs, repPhaseDurations, targetTempo }: TempoBarProps) {
   const isIdle = currentPhase === MovementPhase.IDLE;
   const completedPhases = new Map(repPhaseDurations.map((d) => [d.phase, d.durationMs]));
 
@@ -56,6 +86,8 @@ export function TempoBar({ currentPhase, phaseElapsedMs, repPhaseDurations }: Te
           const isActive = currentPhase === phase;
           const isCompleted = completedPhases.has(phase);
           const completedMs = completedPhases.get(phase);
+          const targetKey = TARGET_MAP[phase];
+          const targetMs = targetTempo && targetKey ? targetTempo[targetKey] * 1000 : null;
 
           return (
             <View
@@ -68,22 +100,91 @@ export function TempoBar({ currentPhase, phaseElapsedMs, repPhaseDurations }: Te
               }}
             >
               {isActive && !isIdle ? (
-                <View className="h-full flex-row items-center justify-center" style={{ backgroundColor: alpha(config.color, 0.3) }}>
-                  <Text className="text-xs font-bold" style={{ color: config.color }}>
-                    {formatDuration(phaseElapsedMs)}
-                  </Text>
-                </View>
+                <ActiveSegment
+                  config={config}
+                  phaseElapsedMs={phaseElapsedMs}
+                  targetMs={targetMs}
+                />
               ) : isCompleted ? (
-                <View className="h-full flex-row items-center justify-center" style={{ backgroundColor: alpha(config.color, 0.15) }}>
-                  <Text className="text-xs font-medium" style={{ color: alpha(config.color, 0.7) }}>
-                    {formatDuration(completedMs!)}
-                  </Text>
-                </View>
+                <CompletedSegment
+                  config={config}
+                  completedMs={completedMs!}
+                  targetMs={targetMs}
+                />
               ) : null}
             </View>
           );
         })}
       </View>
+    </View>
+  );
+}
+
+function ActiveSegment({
+  config,
+  phaseElapsedMs,
+  targetMs,
+}: {
+  config: { color: string };
+  phaseElapsedMs: number;
+  targetMs: number | null;
+}) {
+  const pacing = getPacingState(phaseElapsedMs, targetMs);
+  const barColor = pacing === 'behind' ? t['status-error'] : config.color;
+  const fillPct = getFillPct(phaseElapsedMs, targetMs);
+
+  const label = targetMs
+    ? `${formatDuration(phaseElapsedMs)} / ${formatDuration(targetMs)}`
+    : formatDuration(phaseElapsedMs);
+
+  return (
+    <View className="h-full" style={{ position: 'relative' }}>
+      <View
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: `${fillPct}%`,
+          backgroundColor: alpha(barColor, 0.3),
+          borderRadius: 4,
+        }}
+      />
+      <View className="h-full flex-row items-center justify-center">
+        <Text className="text-xs font-bold" style={{ color: barColor }}>
+          {label}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+function CompletedSegment({
+  config,
+  completedMs,
+  targetMs,
+}: {
+  config: { color: string };
+  completedMs: number;
+  targetMs: number | null;
+}) {
+  const pacing = getPacingState(completedMs, targetMs);
+  const hitTarget = pacing !== 'behind';
+  const indicator = targetMs && targetMs >= TEMPO_PACING.minPhaseDurationMs
+    ? (hitTarget ? ' \u2713' : ' \u2717')
+    : '';
+
+  return (
+    <View
+      className="h-full flex-row items-center justify-center"
+      style={{ backgroundColor: alpha(config.color, 0.15) }}
+    >
+      <Text
+        className="text-xs font-medium"
+        style={{ color: alpha(config.color, 0.7) }}
+      >
+        {formatDuration(completedMs)}{indicator}
+      </Text>
     </View>
   );
 }
