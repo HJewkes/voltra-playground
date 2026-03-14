@@ -17,7 +17,6 @@ import { Button, getSemanticColors } from '@titan-design/react-ui';
 import { TrainingModeNames } from '@/domain/device';
 import { useConnectionStore, selectIsConnected, createRecordingStore } from '@/stores';
 import { RecordingDisplayView, WorkoutControls } from '@/components/recording';
-import type { VoltraStoreApi } from '@/stores/voltra-store';
 
 const t = getSemanticColors('dark');
 
@@ -25,7 +24,17 @@ const t = getSemanticColors('dark');
 // Types
 // =============================================================================
 
-type ExerciseState = 'idle' | 'preparing' | 'countdown' | 'recording';
+export type ExerciseState = 'idle' | 'preparing' | 'countdown' | 'recording';
+
+export function getInstruction(state: ExerciseState): string {
+  if (state === 'recording') return 'Lift!';
+  if (state === 'countdown') return 'Get Ready';
+  return 'Press Start';
+}
+
+export function isActiveState(state: ExerciseState): boolean {
+  return state === 'countdown' || state === 'recording';
+}
 
 // =============================================================================
 // Component
@@ -36,23 +45,8 @@ export function SimpleExerciseScreen() {
   const isConnected = useConnectionStore(selectIsConnected);
   const voltraStore = useConnectionStore((s) => s.getPrimaryDevice());
 
-  useEffect(() => {
-    if (!isConnected) {
-      router.replace('/');
-    }
-  }, [isConnected, router]);
-
-  if (!voltraStore) return null;
-
-  return <SimpleExerciseContent voltraStore={voltraStore} />;
-}
-
-function SimpleExerciseContent({ voltraStore }: { voltraStore: VoltraStoreApi }) {
-  const router = useRouter();
-  const isConnected = useConnectionStore(selectIsConnected);
-
-  const mode = useStore(voltraStore, (s) => s.mode);
-  const weight = useStore(voltraStore, (s) => s.weight);
+  const mode = useStore(voltraStore!, (s) => s.mode);
+  const weight = useStore(voltraStore!, (s) => s.weight);
 
   const recordingStore = useMemo(() => createRecordingStore(), []);
   const repCount = useStore(recordingStore, (s) => s.repCount);
@@ -64,7 +58,13 @@ function SimpleExerciseContent({ voltraStore }: { voltraStore: VoltraStoreApi })
 
   const modeName = TrainingModeNames[mode] ?? 'Unknown';
 
-
+  // Handle disconnection: navigate to connection screen
+  useEffect(() => {
+    if (!isConnected) {
+      cleanupCountdown();
+      router.replace('/');
+    }
+  }, [isConnected, router]);
 
   function cleanupCountdown() {
     if (countdownRef.current) {
@@ -162,7 +162,7 @@ function SimpleExerciseContent({ voltraStore }: { voltraStore: VoltraStoreApi })
     return () => cleanupCountdown();
   }, []);
 
-  const isActive = exerciseState === 'countdown' || exerciseState === 'recording';
+  const isActive = isActiveState(exerciseState);
 
   const displayUIState =
     exerciseState === 'recording'
@@ -171,12 +171,7 @@ function SimpleExerciseContent({ voltraStore }: { voltraStore: VoltraStoreApi })
         ? 'countdown'
         : 'idle';
 
-  const instruction =
-    exerciseState === 'recording'
-      ? 'Lift!'
-      : exerciseState === 'countdown'
-        ? 'Get Ready'
-        : 'Press Start';
+  const instruction = getInstruction(exerciseState);
 
   return (
     <SafeAreaView className="bg-background flex-1" edges={['top']}>
