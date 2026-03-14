@@ -62,3 +62,7 @@ export type { QuickNoteProps } from './QuickNote';
 // Exercise picker modal
 export { ExercisePickerModal } from './ExercisePickerModal';
 export type { ExercisePickerModalProps } from './ExercisePickerModal';
+
+// Workout summary
+export { WorkoutSummary, buildTextSummary } from './WorkoutSummary';
+export type { WorkoutSummaryProps } from './WorkoutSummary';
