@@ -5,5 +5,6 @@
  */
 
 export * from './baseline-service';
+export * from './cross-session-analytics';
 export * from './records-service';
 export * from './stats-service';
