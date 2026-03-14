@@ -150,9 +150,11 @@ export function ConnectPrompt({
 
   return (
     <View className="flex-1 items-center justify-center bg-surface-400 p-6">
+      {/* Wrapper constrains width on web; Card's internal style merge (elevation last)
+          overrides user-supplied maxWidth. Root fix is in titan-design Card. */}
+      <View style={{ width: '100%', maxWidth: 400, alignSelf: 'center' }}>
       <Card
         elevation={1}
-        style={{ maxWidth: 400, width: '100%' }}
       >
         <CardContent className="p-6">
         {/* Header with scan/connect button */}
@@ -361,6 +363,7 @@ export function ConnectPrompt({
         )}
         </CardContent>
       </Card>
+      </View>
     </View>
   );
 }
