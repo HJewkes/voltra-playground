@@ -122,7 +122,9 @@ const rpeStyle: TextStyle = {
 /** Cable-specific velocity zones (m/s) — lower than barbell due to friction/pulley */
 const VELOCITY_GREEN = 0.55;
 const VELOCITY_WORKING = 0.40;
-const VELOCITY_LOSS_THRESHOLD = 0.20;
+// Cable-specific velocity loss threshold (higher than barbell 20%)
+const VELOCITY_LOSS_THRESHOLD = 0.25;
+const MIN_REPS_FOR_VEL_LOSS = 3;
 
 interface CoachingCueData {
   text: string;
@@ -130,17 +132,18 @@ interface CoachingCueData {
   icon: keyof typeof Ionicons.glyphMap;
 }
 
-function getVelocityCue(meanVelocity: number, velocityLoss: number): CoachingCueData {
-  if (velocityLoss >= VELOCITY_LOSS_THRESHOLD) {
-    return { text: 'Approaching failure — consider stopping', color: '#ef4444', icon: 'alert-circle-outline' };
+function getVelocityCue(meanVelocity: number, velocityLoss: number, repCount: number): CoachingCueData {
+  // Only flag velocity loss after enough reps for reliable data
+  if (repCount >= MIN_REPS_FOR_VEL_LOSS && velocityLoss >= VELOCITY_LOSS_THRESHOLD) {
+    return { text: 'High velocity loss — nearing limit', color: '#f97316', icon: 'trending-down-outline' };
   }
   if (meanVelocity < VELOCITY_WORKING) {
-    return { text: 'Slowing down — 2-3 reps left', color: '#f97316', icon: 'trending-down-outline' };
+    return { text: 'Heavy load zone — control the eccentric', color: '#eab308', icon: 'barbell-outline' };
   }
   if (meanVelocity <= VELOCITY_GREEN) {
-    return { text: 'Good working pace', color: '#eab308', icon: 'checkmark-circle-outline' };
+    return { text: 'Good working pace', color: '#22c55e', icon: 'checkmark-circle-outline' };
   }
-  return { text: 'Strong pace — weight could go up next set', color: '#22c55e', icon: 'arrow-up-circle-outline' };
+  return { text: 'Light — increase load or slow tempo', color: t['text-tertiary'], icon: 'arrow-up-circle-outline' };
 }
 
 function getCoachingCue(
@@ -151,11 +154,12 @@ function getCoachingCue(
   if (repCount === 0 && setupNotes) {
     return { text: setupNotes, color: t['text-secondary'], icon: 'information-circle-outline' };
   }
-  if (repCount > 0 && telemetry?.meanVelocity !== undefined && telemetry.meanVelocity > 0) {
-    return getVelocityCue(telemetry.meanVelocity, telemetry.velocityLoss ?? 0);
-  }
+  // Don't show velocity cue when effort message is active (avoids conflicting signals)
   if (telemetry?.liveMessage) {
-    return null; // liveMessage is rendered separately
+    return null;
+  }
+  if (repCount > 0 && telemetry?.meanVelocity !== undefined && telemetry.meanVelocity > 0) {
+    return getVelocityCue(telemetry.meanVelocity, telemetry.velocityLoss ?? 0, repCount);
   }
   return null;
 }
