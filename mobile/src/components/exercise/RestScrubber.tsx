@@ -31,7 +31,7 @@ interface RestScrubberProps {
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
-  return m > 0 ? `${m}:${s.toString().padStart(2, '0')}` : `${s}s`;
+  return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
 export function RestScrubber({
@@ -135,11 +135,25 @@ export function RestScrubber({
         )}
       </View>
 
-      {/* Label */}
+      {/* Label pill */}
       <View style={{ position: 'absolute', left: 0, right: 0, alignItems: 'center' }}>
-        <Text style={{ fontSize: 10, color: labelColor, fontVariant: ['tabular-nums'] }}>
-          {label}
-        </Text>
+        <View style={{
+          paddingHorizontal: 8,
+          paddingVertical: 2,
+          borderRadius: 8,
+          backgroundColor: mode === 'resting'
+            ? alpha(t['brand-primary'], 0.25)
+            : alpha('#000', 0.6),
+        }}>
+          <Text style={{
+            fontSize: 10,
+            fontWeight: '600',
+            color: mode === 'resting' ? t['brand-primary'] : t['text-secondary'],
+            fontVariant: ['tabular-nums'],
+          }}>
+            {label}
+          </Text>
+        </View>
       </View>
 
       {/* Drag hint */}

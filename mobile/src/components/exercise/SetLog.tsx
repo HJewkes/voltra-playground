@@ -379,11 +379,43 @@ export function SetLog({
 }: SetLogProps) {
   const [expandedSet, setExpandedSet] = useState<string | null>(null);
 
-  const reversedLog = [...setLog].reverse();
-
-  // Active set + chart first, then completed sets in reverse order (most recent first), then planned
+  // Ascending order: completed sets → rest (if resting) → active set → planned sets
   return (
     <View>
+      {/* Completed sets in ascending order */}
+      {setLog.map((entry, i) => (
+        <React.Fragment key={entry.set.id}>
+          <Surface elevation={1} className="rounded-xl p-3 mt-2">
+            <CompletedSetRow
+              entry={entry}
+              setNumber={i + 1}
+              expanded={expandedSet === entry.set.id}
+              onToggle={() =>
+                setExpandedSet((prev) => (prev === entry.set.id ? null : entry.set.id))
+              }
+            />
+          </Surface>
+          {/* Rest scrubber after each completed set */}
+          {i < setLog.length - 1 && (
+            <View style={{ marginTop: 4, marginBottom: 4 }}>
+              <RestScrubber mode="complete" restSeconds={defaultRestSeconds} />
+            </View>
+          )}
+        </React.Fragment>
+      ))}
+
+      {/* Rest scrubber in resting mode — after last completed set, before next */}
+      {isResting && (
+        <View style={{ marginTop: 4, marginBottom: 4 }}>
+          <RestScrubber
+            mode="resting"
+            restSeconds={defaultRestSeconds}
+            elapsedMs={restElapsedMs}
+          />
+        </View>
+      )}
+
+      {/* Active set with telemetry + chart */}
       {activeSet && (
         <Surface
           elevation={1}
@@ -394,58 +426,14 @@ export function SetLog({
         </Surface>
       )}
 
-      {/* Rest scrubber between active set and most recent completed set */}
-      {isResting && setLog.length > 0 && (
-        <View style={{ marginTop: 4, marginBottom: 4 }}>
-          <RestScrubber
-            mode="resting"
-            restSeconds={defaultRestSeconds}
-            elapsedMs={restElapsedMs}
-          />
-        </View>
-      )}
-
-      {reversedLog.map((entry, i) => {
-        const setNumber = setLog.length - i;
-        const isLastReversed = i === reversedLog.length - 1;
-
-        return (
-          <React.Fragment key={entry.set.id}>
-            <Surface elevation={1} className="rounded-xl p-3 mt-2">
-              <CompletedSetRow
-                entry={entry}
-                setNumber={setNumber}
-                expanded={expandedSet === entry.set.id}
-                onToggle={() =>
-                  setExpandedSet((prev) => (prev === entry.set.id ? null : entry.set.id))
-                }
-              />
-            </Surface>
-            {/* Rest scrubber between consecutive completed sets */}
-            {!isLastReversed && (
-              <View style={{ marginTop: 4, marginBottom: 4 }}>
-                <RestScrubber
-                  mode="complete"
-                  restSeconds={defaultRestSeconds}
-                />
-              </View>
-            )}
-          </React.Fragment>
-        );
-      })}
-
+      {/* Rest scrubbers + planned (future) sets */}
       {plannedSets.map((planned, i) => (
         <React.Fragment key={planned.setNumber}>
-          {i === 0 && (setLog.length > 0 || activeSet) && (
+          {(i === 0 && (setLog.length > 0 || activeSet || isResting)) || i > 0 ? (
             <View style={{ marginTop: 4, marginBottom: 4 }}>
               <RestScrubber mode="editing" restSeconds={planned.restSeconds ?? defaultRestSeconds} />
             </View>
-          )}
-          {i > 0 && (
-            <View style={{ marginTop: 4, marginBottom: 4 }}>
-              <RestScrubber mode="editing" restSeconds={planned.restSeconds ?? defaultRestSeconds} />
-            </View>
-          )}
+          ) : null}
           <Surface
             elevation={1}
             className="rounded-xl p-3 mt-1"
