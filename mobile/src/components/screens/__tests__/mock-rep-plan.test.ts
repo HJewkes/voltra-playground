@@ -9,7 +9,9 @@ import type { ExercisePlan } from '@/domain/workout';
 function makePlan(targetReps: number, setCount = 1): ExercisePlan {
   return {
     exerciseId: 'test',
-    source: 'user' as const,
+    defaultRestSeconds: 90,
+    generatedAt: Date.now(),
+    generatedBy: 'manual',
     sets: Array.from({ length: setCount }, (_, i) => ({
       setNumber: i + 1,
       weight: 50,
