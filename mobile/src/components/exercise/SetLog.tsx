@@ -68,6 +68,8 @@ export interface SetLogProps {
   restElapsedMs?: number;
   /** Default rest seconds from plan (used for rest scrubbers) */
   defaultRestSeconds?: number;
+  /** Called when user drags a rest scrubber for a planned set */
+  onPlannedRestChange?: (setIndex: number, restSeconds: number) => void;
 }
 
 // =============================================================================
@@ -376,6 +378,7 @@ export function SetLog({
   isResting,
   restElapsedMs,
   defaultRestSeconds = 90,
+  onPlannedRestChange,
 }: SetLogProps) {
   const [expandedSet, setExpandedSet] = useState<string | null>(null);
 
@@ -431,7 +434,14 @@ export function SetLog({
         <React.Fragment key={planned.setNumber}>
           {(i === 0 && (setLog.length > 0 || activeSet || isResting)) || i > 0 ? (
             <View style={{ marginTop: 4, marginBottom: 4 }}>
-              <RestScrubber mode="editing" restSeconds={planned.restSeconds ?? defaultRestSeconds} />
+              <RestScrubber
+                mode="editing"
+                restSeconds={planned.restSeconds ?? defaultRestSeconds}
+                onRestChange={onPlannedRestChange
+                  ? (s) => onPlannedRestChange(planned.setNumber - 1, s)
+                  : undefined
+                }
+              />
             </View>
           ) : null}
           <Surface

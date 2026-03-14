@@ -141,6 +141,7 @@ export interface ExerciseSessionState {
 
   // Actions - Dynamic plan building
   addPlannedSet: (set: PlannedSet) => void;
+  updatePlannedSetRest: (setIndex: number, restSeconds: number) => void;
 
   // Actions - First set flow
   prepareFirstSet: () => Promise<void>;
@@ -351,6 +352,18 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
             session: updatedSession,
             ...computeDerivedState(updatedSession),
           });
+        },
+
+        updatePlannedSetRest: (setIndex: number, restSeconds: number) => {
+          const { session } = get();
+          if (!session) return;
+
+          const sets = session.plan.sets.map((s, i) =>
+            i === setIndex ? { ...s, restSeconds } : s,
+          );
+          const updatedSession = { ...session, plan: { ...session.plan, sets } };
+
+          set({ session: updatedSession });
         },
 
         // =====================================================================

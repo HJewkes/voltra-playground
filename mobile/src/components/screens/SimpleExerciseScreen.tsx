@@ -370,6 +370,7 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
               isResting={uiState === 'resting'}
               restElapsedMs={restElapsedMs}
               defaultRestSeconds={session?.plan.defaultRestSeconds}
+              onPlannedRestChange={(setIdx, secs) => sessionStore.getState().updatePlannedSetRest(setIdx, secs)}
             />
           )}
         </View>
