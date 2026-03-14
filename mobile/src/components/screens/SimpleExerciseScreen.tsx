@@ -51,8 +51,16 @@ export function SimpleExerciseScreen() {
 function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
   const mode = useStore(voltraStore, (s) => s.mode);
   const setMode = useStore(voltraStore, (s) => s.setMode);
-  const weight = useStore(voltraStore, (s) => s.weight);
+  const deviceWeight = useStore(voltraStore, (s) => s.weight);
   const eccentric = useStore(voltraStore, (s) => s.eccentric);
+
+  // Default to 45 lbs (empty barbell) if device reports 0
+  const weight = deviceWeight || 45;
+  useEffect(() => {
+    if (deviceWeight === 0) {
+      voltraStore.getState().setWeight(45);
+    }
+  }, [deviceWeight, voltraStore]);
   const setEccentric = useStore(voltraStore, (s) => s.setEccentric);
   const { chains, inverseChains } = useStore(
     voltraStore,
@@ -287,8 +295,13 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
             {/* Advanced settings (eccentric, chains, tempo) */}
             {(showEccentric || showChains) && (
               <View
-                className="px-1"
-                style={{ opacity: isActive ? 0.4 : 1 }}
+                className="px-1 mt-2 pt-2"
+                style={{
+                  opacity: isActive ? 0.4 : 1,
+                  borderTopWidth: 1,
+                  borderTopColor: alpha('#fff', 0.06),
+                  marginHorizontal: 4,
+                }}
                 pointerEvents={isActive ? 'none' : 'auto'}
               >
                 <AdvancedAccordion
@@ -333,7 +346,10 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
                   targetTempo: currentPlannedSet?.targetTempo,
                   liveMessage: liveMessage || undefined,
                 } : null}
-                plannedSets={session?.plan.sets.slice(currentSetIndex + 1) ?? []}
+                plannedSets={isRecording
+                  ? (session?.plan.sets.slice(currentSetIndex + 1) ?? [])
+                  : (session?.plan.sets.slice(session.completedSets.length) ?? [])
+                }
                 totalSets={session?.plan.sets.length ?? null}
                 isResting={uiState === 'resting'}
                 restElapsedMs={restElapsedMs}

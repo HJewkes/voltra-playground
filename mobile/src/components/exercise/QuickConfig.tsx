@@ -80,8 +80,8 @@ export function QuickConfig({
           {weightSlot}
         </View>
 
-        {/* Right: AddSetButton */}
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        {/* Right: AddSetButton — paddingTop matches weight slot alignment */}
+        <View style={{ flex: 1, alignItems: 'center', paddingTop: 26 }}>
           <AddSetButton
             onPress={onAddSet}
             disabled={addSetDisabled}
