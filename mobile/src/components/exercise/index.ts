@@ -23,3 +23,7 @@ export type { ExerciseSessionActionButtonsProps } from './ExerciseSessionActionB
 // Resume session prompt
 export { ResumeSessionPrompt } from './ResumeSessionPrompt';
 export type { ResumeSessionPromptProps } from './ResumeSessionPrompt';
+
+// Progression tracking
+export { ProgressionCard, LastSessionBanner } from './ProgressionCard';
+export type { ProgressionCardProps, LastSessionBannerProps } from './ProgressionCard';

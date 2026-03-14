@@ -36,6 +36,7 @@ import {
 
 // Hook imports
 import { useDiscoverySession } from '@/hooks/use-discovery-session';
+import { useExerciseProgression } from '@/hooks/use-exercise-progression';
 
 // Data imports
 import type { ExerciseSessionRepository } from '@/data/exercise-session';
@@ -52,6 +53,8 @@ import {
   ExerciseSessionProgress,
   ExerciseSessionSummaryCard,
   ExerciseSessionActionButtons,
+  ProgressionCard,
+  LastSessionBanner,
 } from '@/components/exercise';
 
 const t = getSemanticColors('dark');
@@ -123,6 +126,9 @@ export function ExerciseScreen({
       lastSet: s.lastSet,
     })),
   );
+
+  // Progression tracking - compare against previous sessions
+  const { progression, lastSession } = useExerciseProgression(exercise.id, repository);
 
   // Discovery session hook - adaptive step-by-step guidance
   const exerciseType = exercise.movementPattern === 'isolation' ? 'isolation' : 'compound';
@@ -328,12 +334,24 @@ export function ExerciseScreen({
                 completedCount={discoveryState.completedResults.length}
               />
             ) : (
-              <SetTargetCard
-                setNumber={currentSetIndex + 1}
-                totalSets={plan.sets.length}
-                plannedSet={currentPlannedSet}
-                isDiscovery={isDiscovery}
-              />
+              <>
+                {lastSession && currentSetIndex === 0 && (
+                  <LastSessionBanner
+                    exerciseName={lastSession.exerciseName}
+                    date={lastSession.date}
+                    weight={lastSession.weight}
+                    velocity={lastSession.velocity}
+                    sets={lastSession.sets}
+                    reps={lastSession.reps}
+                  />
+                )}
+                <SetTargetCard
+                  setNumber={currentSetIndex + 1}
+                  totalSets={plan.sets.length}
+                  plannedSet={currentPlannedSet}
+                  isDiscovery={isDiscovery}
+                />
+              </>
             ))}
 
           {/* Countdown / Recording / Resting states */}
@@ -360,6 +378,13 @@ export function ExerciseScreen({
               {/* Live metrics during recording */}
               {uiState === 'recording' && (
                 <LiveMetrics store={recordingStore} style={{ marginTop: 16 }} />
+              )}
+
+              {/* Progression comparison during rest */}
+              {uiState === 'resting' && progression && (
+                <View style={{ marginTop: 12 }}>
+                  <ProgressionCard progression={progression} />
+                </View>
               )}
             </View>
           )}
