@@ -8,6 +8,7 @@ import importPlugin from 'eslint-plugin-import';
 import checkFile from 'eslint-plugin-check-file';
 import globals from 'globals';
 import eslintReact from '@eslint-react/eslint-plugin';
+import reactCompilerPlugin from 'eslint-plugin-react-compiler';
 
 export default tseslint.config(
   // Global ignores
@@ -45,6 +46,7 @@ export default tseslint.config(
       'check-file': checkFile,
       // Leak detection: web-api rules (event listeners, timers)
       ...eslintReact.configs['web-api'].plugins,
+      'react-compiler': reactCompilerPlugin,
     },
     languageOptions: {
       parserOptions: {
@@ -130,6 +132,10 @@ export default tseslint.config(
       // React Hooks rules
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
+
+      // React Compiler: flags violations of the Rules of React that would
+      // prevent the compiler from auto-memoizing the component or hook.
+      'react-compiler/react-compiler': 'error',
 
       // =========================================================================
       // Leak detection rules (@eslint-react/web-api)
