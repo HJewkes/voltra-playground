@@ -54,3 +54,7 @@ export type { QuickConfigProps } from './QuickConfig';
 export { RestScrubber } from './RestScrubber';
 export { JogPill } from './JogPill';
 export type { JogPillProps } from './JogPill';
+
+// Exercise picker modal
+export { ExercisePickerModal } from './ExercisePickerModal';
+export type { ExercisePickerModalProps } from './ExercisePickerModal';

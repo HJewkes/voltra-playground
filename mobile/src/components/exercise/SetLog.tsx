@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, useWindowDimensions, type TextStyle, type ViewStyle } from 'react-native';
 import { Surface, getSemanticColors, alpha } from '@titan-design/react-ui';
+import { Ionicons } from '@expo/vector-icons';
 import {
   getSetMeanVelocity,
   estimateSetRIR,
@@ -42,6 +43,8 @@ export interface ActiveTelemetry {
   repPhaseDurations: { phase: MovementPhase; durationMs: number }[];
   targetTempo?: TempoTarget;
   liveMessage?: string;
+  meanVelocity?: number;
+  velocityLoss?: number;
 }
 
 export interface SetLogProps {
@@ -62,6 +65,8 @@ export interface SetLogProps {
   plannedSets: PlannedSet[];
   /** Total planned sets (null if dynamic/unlimited) */
   totalSets: number | null;
+  /** Setup notes for the current exercise (from catalog) */
+  exerciseSetupNotes?: string;
   /** Whether the session is currently in rest state */
   isResting?: boolean;
   /** Elapsed rest time in ms (used with isResting) */
@@ -109,6 +114,65 @@ const rpeStyle: TextStyle = {
   minWidth: 48,
   textAlign: 'right',
 };
+
+// =============================================================================
+// Coaching Cues
+// =============================================================================
+
+/** Cable-specific velocity zones (m/s) — lower than barbell due to friction/pulley */
+const VELOCITY_GREEN = 0.55;
+const VELOCITY_WORKING = 0.40;
+const VELOCITY_LOSS_THRESHOLD = 0.20;
+
+interface CoachingCueData {
+  text: string;
+  color: string;
+  icon: keyof typeof Ionicons.glyphMap;
+}
+
+function getVelocityCue(meanVelocity: number, velocityLoss: number): CoachingCueData {
+  if (velocityLoss >= VELOCITY_LOSS_THRESHOLD) {
+    return { text: 'Approaching failure — consider stopping', color: '#ef4444', icon: 'alert-circle-outline' };
+  }
+  if (meanVelocity < VELOCITY_WORKING) {
+    return { text: 'Slowing down — 2-3 reps left', color: '#f97316', icon: 'trending-down-outline' };
+  }
+  if (meanVelocity <= VELOCITY_GREEN) {
+    return { text: 'Good working pace', color: '#eab308', icon: 'checkmark-circle-outline' };
+  }
+  return { text: 'Strong pace — weight could go up next set', color: '#22c55e', icon: 'arrow-up-circle-outline' };
+}
+
+function getCoachingCue(
+  repCount: number,
+  telemetry: ActiveTelemetry | null | undefined,
+  setupNotes: string | undefined,
+): CoachingCueData | null {
+  if (repCount === 0 && setupNotes) {
+    return { text: setupNotes, color: t['text-secondary'], icon: 'information-circle-outline' };
+  }
+  if (repCount > 0 && telemetry?.meanVelocity !== undefined && telemetry.meanVelocity > 0) {
+    return getVelocityCue(telemetry.meanVelocity, telemetry.velocityLoss ?? 0);
+  }
+  if (telemetry?.liveMessage) {
+    return null; // liveMessage is rendered separately
+  }
+  return null;
+}
+
+function CoachingCueBar({ cue }: { cue: CoachingCueData }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingTop: 4 }}>
+      <Ionicons name={cue.icon} size={14} color={cue.color} />
+      <Text
+        numberOfLines={1}
+        style={{ fontSize: 12, fontWeight: '500', color: cue.color, flex: 1 }}
+      >
+        {cue.text}
+      </Text>
+    </View>
+  );
+}
 
 // =============================================================================
 // Sub-components
@@ -232,6 +296,7 @@ function ActiveSetRow({
   targetReps,
   chart,
   telemetry,
+  exerciseSetupNotes,
 }: {
   setIndex: number;
   repCount: number;
@@ -239,6 +304,7 @@ function ActiveSetRow({
   targetReps: number | null;
   chart?: ActiveChartData | null;
   telemetry?: ActiveTelemetry | null;
+  exerciseSetupNotes?: string;
 }) {
   const { width: screenWidth } = useWindowDimensions();
   const chartWidth = screenWidth - 56;
@@ -280,6 +346,11 @@ function ActiveSetRow({
           />
         </View>
       )}
+
+      {(() => {
+        const cue = getCoachingCue(repCount, telemetry, exerciseSetupNotes);
+        return cue ? <CoachingCueBar cue={cue} /> : null;
+      })()}
 
       {telemetry?.liveMessage && (
         <Text
@@ -375,6 +446,7 @@ export function SetLog({
   activeChart,
   activeTelemetry,
   plannedSets,
+  exerciseSetupNotes,
   isResting,
   restElapsedMs,
   defaultRestSeconds = 90,
@@ -425,7 +497,7 @@ export function SetLog({
           className="rounded-xl p-3 mt-2"
           style={{ borderLeftWidth: 3, borderLeftColor: t['brand-primary'] }}
         >
-          <ActiveSetRow {...activeSet} chart={activeChart} telemetry={activeTelemetry} />
+          <ActiveSetRow {...activeSet} chart={activeChart} telemetry={activeTelemetry} exerciseSetupNotes={exerciseSetupNotes} />
         </Surface>
       )}
 

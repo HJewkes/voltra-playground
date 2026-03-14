@@ -22,12 +22,13 @@ import { Surface, getSemanticColors, alpha } from '@titan-design/react-ui';
 
 import { TrainingMode, TrainingModeNames } from '@/domain/device';
 import { createEmptyPlan } from '@/domain/workout';
-import type { TempoTarget, PlannedSet } from '@/domain/workout';
+import type { TempoTarget, PlannedSet, SetLogEntry } from '@/domain/workout';
 import { createExercise } from '@/domain/exercise';
+import type { Exercise } from '@/domain/exercise';
 import { useConnectionStore, selectIsConnected, createRecordingStore, createExerciseSessionStore } from '@/stores';
 import { WorkoutControls } from '@/components/recording';
 import { AdvancedAccordion } from '@/components/mode';
-import { QuickConfig, VerticalWeightJog, SetLog } from '@/components/exercise';
+import { QuickConfig, VerticalWeightJog, SetLog, ExercisePickerModal } from '@/components/exercise';
 import type { TargetMode } from '@/components/exercise';
 import { MovementPhase } from '@voltras/workout-analytics';
 import type { VoltraStoreApi } from '@/stores/voltra-store';
@@ -82,6 +83,8 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
   const phaseElapsedMs = useStore(recordingStore, (s) => s.phaseElapsedMs);
   const repPhaseDurations = useStore(recordingStore, (s) => s.repPhaseDurations);
   const liveSamples = useStore(recordingStore, (s) => s.liveSamples);
+  const meanVelocity = useStore(recordingStore, (s) => s.meanVelocity);
+  const velocityLoss = useStore(recordingStore, (s) => s.velocityLoss);
 
   const sessionStore = useMemo(() => createExerciseSessionStore(), []);
   const uiState = useStore(sessionStore, (s) => s.uiState);
@@ -90,6 +93,13 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
   const currentSetIndex = useStore(sessionStore, (s) => s.currentSetIndex);
   const currentPlannedSet = useStore(sessionStore, (s) => s.currentPlannedSet);
   const session = useStore(sessionStore, (s) => s.session);
+  const exerciseSetupNotes = session?.exercise.equipmentSetup?.notes;
+
+  // Multi-exercise tracking
+  const [completedExercises, setCompletedExercises] = useState<
+    { name: string; setCount: number; setLog: SetLogEntry[] }[]
+  >([]);
+  const [pickerVisible, setPickerVisible] = useState(false);
 
   // Quick config state
   const [effortEnabled, setEffortEnabled] = useState(false);
@@ -107,6 +117,37 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
   const modeName = TrainingModeNames[mode] ?? 'Unknown';
   const isRecording = uiState === 'recording';
   const isActive = isRecording || uiState === 'preparing' || uiState === 'countdown';
+
+  // Multi-exercise: next-exercise handler (must be after modeName)
+  const handleNextExercise = useCallback((exercise: Exercise) => {
+    const currentSession = sessionStore.getState().session;
+    const currentLog = sessionStore.getState().setLog;
+    const currentName = currentSession?.exercise.name ?? modeName;
+    const currentSetCount = currentSession?.completedSets.length ?? currentLog.length;
+
+    setCompletedExercises((prev) => [
+      ...prev,
+      { name: currentName, setCount: currentSetCount, setLog: [...currentLog] },
+    ]);
+
+    const plan = createEmptyPlan(exercise.id);
+    sessionStore.getState().startSession(exercise, plan);
+    sessionStore.getState().bindRecordingStore(recordingStore);
+    sessionStore.getState().bindVoltraStore(voltraStore);
+
+    if (exercise.equipmentSetup?.cablePath) {
+      const cableMode = exercise.movementPattern === 'pull'
+        ? TrainingMode.WeightTraining
+        : mode;
+      if (cableMode !== mode) {
+        setMode(cableMode);
+      }
+    }
+
+    setPickerVisible(false);
+  }, [sessionStore, recordingStore, voltraStore, modeName, mode, setMode]);
+
+  const totalExercisesDone = completedExercises.length;
 
   const isReps = targetMode === 'reps';
   const mainValue = isReps ? targetReps : rirTarget;
@@ -283,6 +324,57 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
         />
       )}
 
+      {/* Exercise breadcrumb trail */}
+      {totalExercisesDone > 0 && (
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingHorizontal: 16,
+            paddingVertical: 6,
+            gap: 6,
+            flexWrap: 'wrap',
+          }}
+        >
+          {completedExercises.map((ex, i) => (
+            <View
+              key={i}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 4,
+              }}
+            >
+              <View
+                style={{
+                  backgroundColor: alpha(t['brand-primary'], 0.15),
+                  borderRadius: 6,
+                  paddingHorizontal: 8,
+                  paddingVertical: 3,
+                }}
+              >
+                <Text style={{ fontSize: 10, color: t['text-tertiary'] }}>
+                  {ex.name} ({ex.setCount}s)
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={10} color={t['text-tertiary']} />
+            </View>
+          ))}
+          <View
+            style={{
+              backgroundColor: alpha(t['brand-primary'], 0.25),
+              borderRadius: 6,
+              paddingHorizontal: 8,
+              paddingVertical: 3,
+            }}
+          >
+            <Text style={{ fontSize: 10, fontWeight: '700', color: t['brand-primary'] }}>
+              {session?.exercise.name ?? modeName}
+            </Text>
+          </View>
+        </View>
+      )}
+
       <ScrollView className="flex-1" scrollEnabled={!isRecording}>
         <View className="px-4 pb-4">
           {/* Quick config: Reps/RIR | Weight | Add Set */}
@@ -361,12 +453,15 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
                 repPhaseDurations,
                 targetTempo: currentPlannedSet?.targetTempo,
                 liveMessage: liveMessage || undefined,
+                meanVelocity,
+                velocityLoss,
               } : null}
               plannedSets={isActive
                 ? (session?.plan.sets.slice(currentSetIndex + 1) ?? [])
                 : (session?.plan.sets.slice(session?.completedSets.length ?? 0) ?? [])
               }
               totalSets={session?.plan.sets.length ?? null}
+              exerciseSetupNotes={exerciseSetupNotes}
               isResting={uiState === 'resting'}
               restElapsedMs={restElapsedMs}
               defaultRestSeconds={session?.plan.defaultRestSeconds}
@@ -396,12 +491,42 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
           }),
         }}
       >
-        <WorkoutControls
-          isActive={uiState === 'recording' || uiState === 'countdown'}
-          onStart={handleStart}
-          onStop={handleStop}
-        />
+        {uiState === 'results' ? (
+          <TouchableOpacity
+            onPress={() => setPickerVisible(true)}
+            activeOpacity={0.8}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 10,
+              backgroundColor: t['brand-primary'],
+              borderRadius: 16,
+              paddingVertical: 14,
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Next Exercise"
+          >
+            <Ionicons name="arrow-forward" size={22} color="#fff" />
+            <Text style={{ fontSize: 16, fontWeight: '700', color: '#fff' }}>
+              Next Exercise
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <WorkoutControls
+            isActive={uiState === 'recording' || uiState === 'countdown'}
+            onStart={handleStart}
+            onStop={handleStop}
+          />
+        )}
       </View>
+
+      {/* Exercise picker modal */}
+      <ExercisePickerModal
+        visible={pickerVisible}
+        onSelect={handleNextExercise}
+        onClose={() => setPickerVisible(false)}
+      />
     </SafeAreaView>
   );
 }
