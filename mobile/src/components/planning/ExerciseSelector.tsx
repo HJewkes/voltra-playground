@@ -2,11 +2,9 @@
  * ExerciseSelector
  *
  * A modal for selecting exercises, grouped by muscle group.
- * Shows past performance data (last performed, working weight, best velocity)
- * when session history is available.
  */
 
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -15,12 +13,6 @@ import {
   EXERCISE_MUSCLE_GROUPS,
   MuscleGroup,
 } from '@/domain/exercise';
-import {
-  type ExercisePickerSummary,
-  buildPickerSummaryMap,
-  formatTimeAgo,
-} from '@/domain/history';
-import { getSessionRepository } from '@/data/provider';
 import { getSemanticColors, alpha } from '@titan-design/react-ui';
 
 const t = getSemanticColors('dark');
@@ -77,22 +69,6 @@ export function ExerciseSelector({
   onSelect,
 }: ExerciseSelectorProps) {
   const groupedExercises = useMemo(() => groupExercisesByMuscle(), []);
-  const [summaryMap, setSummaryMap] = useState<Map<string, ExercisePickerSummary>>(new Map());
-
-  const loadHistory = useCallback(async () => {
-    try {
-      const sessions = await getSessionRepository().getRecent(100);
-      setSummaryMap(buildPickerSummaryMap(sessions));
-    } catch {
-      // History is supplementary; silent failure is acceptable
-    }
-  }, []);
-
-  useEffect(() => {
-    if (visible) {
-      loadHistory();
-    }
-  }, [visible, loadHistory]);
 
   return (
     <Modal
@@ -126,7 +102,6 @@ export function ExerciseSelector({
               </Text>
               {exercises.map((ex) => {
                 const isSelected = selectedExercise === ex;
-                const summary = summaryMap.get(ex);
                 return (
                   <TouchableOpacity
                     key={ex}
@@ -148,7 +123,6 @@ export function ExerciseSelector({
                     >
                       {getExerciseName(ex)}
                     </Text>
-                    {summary && <ExerciseHistoryBadge summary={summary} />}
                   </TouchableOpacity>
                 );
               })}
@@ -157,33 +131,5 @@ export function ExerciseSelector({
         </ScrollView>
       </View>
     </Modal>
-  );
-}
-
-/**
- * Compact badge showing last-performed date, working weight, and best velocity.
- */
-function ExerciseHistoryBadge({ summary }: { summary: ExercisePickerSummary }) {
-  return (
-    <View className="mt-2 flex-row items-center gap-3">
-      <View className="flex-row items-center">
-        <Ionicons name="time-outline" size={12} color={t['text-disabled']} />
-        <Text className="ml-1 text-xs text-text-disabled">
-          {formatTimeAgo(summary.lastPerformedAt)}
-        </Text>
-      </View>
-      <View className="flex-row items-center">
-        <Ionicons name="barbell-outline" size={12} color={t['text-disabled']} />
-        <Text className="ml-1 text-xs text-text-disabled">
-          {summary.workingWeight} lbs
-        </Text>
-      </View>
-      <View className="flex-row items-center">
-        <Ionicons name="speedometer-outline" size={12} color={t['text-disabled']} />
-        <Text className="ml-1 text-xs text-text-disabled">
-          {summary.bestMeanVelocity.toFixed(2)} m/s
-        </Text>
-      </View>
-    </View>
   );
 }
