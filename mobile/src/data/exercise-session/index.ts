@@ -36,3 +36,12 @@ export {
   ExerciseSessionRepositoryImpl,
   createExerciseSessionRepository,
 } from './exercise-session-repository';
+
+// Export
+export {
+  type ExportedSession,
+  type ExportedSetData,
+  type ExportedSessionSummary,
+  exportSession,
+  exportSessionsToJSON,
+} from './session-export';

@@ -212,7 +212,7 @@ describe('ExerciseSessionRepository', () => {
     it('filters sessions by exercise ID', async () => {
       const row1 = createTestSession({ id: 'row-1', exerciseId: 'cable_row' });
       const row2 = createTestSession({ id: 'row-2', exerciseId: 'cable_row' });
-      const curl = createTestSession({ id: 'curl-1', exerciseId: 'bicep_curl' });
+      const curl = createTestSession({ id: 'curl-1', exerciseId: 'cable_curl' });
 
       await repo.save(row1);
       await repo.save(row2);

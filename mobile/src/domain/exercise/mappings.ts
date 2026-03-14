@@ -18,9 +18,7 @@ import { MuscleGroup, type ExerciseType } from './types';
 export const EXERCISE_MUSCLE_GROUPS: Record<string, MuscleGroup> = {
   // Back
   cable_row: MuscleGroup.BACK,
-  seated_cable_row: MuscleGroup.BACK,
   lat_pulldown: MuscleGroup.BACK,
-  cable_pulldown: MuscleGroup.BACK,
 
   // Chest
   cable_chest_press: MuscleGroup.CHEST,
@@ -29,12 +27,10 @@ export const EXERCISE_MUSCLE_GROUPS: Record<string, MuscleGroup> = {
 
   // Biceps
   cable_curl: MuscleGroup.BICEPS,
-  bicep_curl: MuscleGroup.BICEPS,
   cable_hammer_curl: MuscleGroup.BICEPS,
 
   // Triceps
   cable_tricep_pushdown: MuscleGroup.TRICEPS,
-  tricep_pushdown: MuscleGroup.TRICEPS,
   cable_tricep_extension: MuscleGroup.TRICEPS,
 
   // Shoulders
@@ -65,9 +61,7 @@ export const EXERCISE_MUSCLE_GROUPS: Record<string, MuscleGroup> = {
 export const EXERCISE_TYPES: Record<string, ExerciseType> = {
   // Compound exercises
   cable_row: 'compound',
-  seated_cable_row: 'compound',
   lat_pulldown: 'compound',
-  cable_pulldown: 'compound',
   cable_chest_press: 'compound',
   cable_shoulder_press: 'compound',
   cable_squat: 'compound',
@@ -79,10 +73,8 @@ export const EXERCISE_TYPES: Record<string, ExerciseType> = {
   cable_fly: 'isolation',
   cable_crossover: 'isolation',
   cable_curl: 'isolation',
-  bicep_curl: 'isolation',
   cable_hammer_curl: 'isolation',
   cable_tricep_pushdown: 'isolation',
-  tricep_pushdown: 'isolation',
   cable_tricep_extension: 'isolation',
   cable_lateral_raise: 'isolation',
   cable_face_pull: 'isolation',

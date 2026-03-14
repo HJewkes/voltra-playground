@@ -120,7 +120,7 @@ describe('getExercisesByMuscleGroup()', () => {
     const exercises = getExercisesByMuscleGroup(MuscleGroup.BICEPS);
 
     expect(exercises).toContain('cable_curl');
-    expect(exercises).toContain('bicep_curl');
+    expect(exercises).toContain('cable_hammer_curl');
   });
 
   it('returns empty array for muscle group with no exercises', () => {

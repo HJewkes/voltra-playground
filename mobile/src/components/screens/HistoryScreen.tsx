@@ -14,11 +14,14 @@ import {
   RefreshControl,
   TouchableOpacity,
   Modal,
+  Platform,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, CardContent, VStack, Metric, MetricGroup, EmptyState, getSemanticColors, alpha } from '@titan-design/react-ui';
 import { getSessionRepository } from '@/data/provider';
 import type { StoredExerciseSession } from '@/data/exercise-session';
+import { exportSession, exportSessionsToJSON } from '@/data/exercise-session';
 
 const t = getSemanticColors('dark');
 
@@ -79,6 +82,16 @@ export function HistoryScreen() {
   useEffect(() => {
     loadSessions();
   }, [loadSessions]);
+
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      (window as unknown as Record<string, unknown>).__exportSessions = async (): Promise<string> => {
+        const recent = await getSessionRepository().getRecent(100);
+        const completed = recent.filter((s) => s.status === 'completed');
+        return exportSessionsToJSON(completed);
+      };
+    }
+  }, []);
 
   const handleRefresh = useCallback(async () => {
     await loadSessions();
@@ -239,6 +252,16 @@ function SessionDetailModal({
   visible: boolean;
   onClose: () => void;
 }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyToClipboard = useCallback(async () => {
+    if (!session) return;
+    const exported = exportSession(session);
+    await Clipboard.setStringAsync(JSON.stringify(exported, null, 2));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [session]);
+
   if (!session) return null;
 
   const totalReps = session.completedSets.reduce((sum, s) => sum + s.reps.length, 0);
@@ -258,7 +281,7 @@ function SessionDetailModal({
           className="flex-row items-center justify-between border-b px-5 py-5"
           style={{ backgroundColor: t['surface-elevated'], borderColor: t['border-strong'] }}
         >
-          <View>
+          <View className="flex-1">
             <Text className="text-xl font-bold text-text-primary">
               {session.exerciseName ?? 'Exercise'}
             </Text>
@@ -267,6 +290,17 @@ function SessionDetailModal({
               {isDiscovery ? 'Discovery' : 'Training'}
             </Text>
           </View>
+          <TouchableOpacity
+            onPress={handleCopyToClipboard}
+            className="mr-2 h-10 w-10 items-center justify-center rounded-full"
+            style={{ backgroundColor: copied ? alpha(t['status-success'], 0.15) : t['background-subtle'] }}
+          >
+            <Ionicons
+              name={copied ? 'checkmark' : 'copy-outline'}
+              size={20}
+              color={copied ? t['status-success'] : t['text-secondary']}
+            />
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={onClose}
             className="h-10 w-10 items-center justify-center rounded-full"

@@ -67,7 +67,7 @@ describe('createDiscoveryState()', () => {
   });
 
   it('handles isolation exercises', () => {
-    const state = createDiscoveryState('bicep_curl', 'isolation', TrainingGoal.HYPERTROPHY);
+    const state = createDiscoveryState('cable_curl', 'isolation', TrainingGoal.HYPERTROPHY);
 
     expect(state.exerciseType).toBe('isolation');
   });
