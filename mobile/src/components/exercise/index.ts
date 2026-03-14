@@ -52,3 +52,5 @@ export { AddSetButton } from './AddSetButton';
 export { QuickConfig } from './QuickConfig';
 export type { QuickConfigProps } from './QuickConfig';
 export { RestScrubber } from './RestScrubber';
+export { JogPill } from './JogPill';
+export type { JogPillProps } from './JogPill';
