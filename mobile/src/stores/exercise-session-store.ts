@@ -38,6 +38,13 @@ import {
   clearRest,
   checkTermination,
   createUserStoppedTermination,
+  type SupersetConfig,
+  type SupersetState,
+  createSupersetState,
+  advanceSuperset,
+  getCurrentSlot,
+  isSupersetComplete,
+  getUpcomingExercises,
 } from '@/domain/workout';
 
 // Library analytics for computing velocity from sets
@@ -137,8 +144,18 @@ export interface ExerciseSessionState {
   // Stale state flag
   isDisposed: boolean;
 
+  // Superset state
+  supersetConfig: SupersetConfig | null;
+  supersetState: SupersetState | null;
+  currentExercise: Exercise | null;
+  nextExerciseName: string | null;
+  supersetRound: number;
+  supersetSlotIndex: number;
+  isSupersetActive: boolean;
+
   // Actions - Lifecycle
   startSession: (exercise: Exercise, plan: ExercisePlan) => void;
+  startSupersetSession: (config: SupersetConfig) => void;
   loadCurrentSession: () => Promise<void>;
   stopSession: () => Promise<void>;
   dispose: () => void;
@@ -237,6 +254,15 @@ function createStoreInstance(): ExerciseSessionStoreApi {
       totalSets: 0,
       completedSetsCount: 0,
 
+      // Superset state
+      supersetConfig: null,
+      supersetState: null,
+      currentExercise: null,
+      nextExerciseName: null,
+      supersetRound: 0,
+      supersetSlotIndex: 0,
+      isSupersetActive: false,
+
       // Internal refs
       _recordingStore: null,
       _voltraStore: null,
@@ -262,7 +288,35 @@ function createStoreInstance(): ExerciseSessionStoreApi {
           recommendation: null,
           autoRegulation: null,
           error: null,
+          supersetConfig: null,
+          supersetState: null,
           ...computeDerivedState(session),
+          ...computeSupersetDerived(null, null),
+        });
+        persistSession(get, 'in_progress');
+      },
+
+      startSupersetSession: (config: SupersetConfig) => {
+        const ssState = createSupersetState();
+        const firstSlot = getCurrentSlot(config, ssState);
+        const session = createExerciseSession(firstSlot.exercise, firstSlot.plan);
+
+        set({
+          session,
+          uiState: 'idle',
+          isDisposed: false,
+          restCountdown: 0,
+          startCountdown: 0,
+          terminationReason: null,
+          terminationMessage: null,
+          velocityProfile: null,
+          recommendation: null,
+          autoRegulation: null,
+          error: null,
+          supersetConfig: config,
+          supersetState: ssState,
+          ...computeDerivedState(session),
+          ...computeSupersetDerived(config, ssState),
         });
         persistSession(get, 'in_progress');
       },
@@ -358,7 +412,10 @@ function createStoreInstance(): ExerciseSessionStoreApi {
           recommendation: null,
           autoRegulation: null,
           error: null,
+          supersetConfig: null,
+          supersetState: null,
           ...computeDerivedState(null),
+          ...computeSupersetDerived(null, null),
         });
       },
 
@@ -526,7 +583,7 @@ async function onSetCompletedAction(
   set: (state: Partial<ExerciseSessionState>) => void,
   completedSet: CompletedSet
 ): Promise<void> {
-  const { session } = get();
+  const { session, supersetConfig, supersetState } = get();
   if (!session) return;
 
   set({ uiState: 'processing' });
@@ -541,6 +598,52 @@ async function onSetCompletedAction(
   }
 
   const updatedSession = addCompletedSet(session, completedSet);
+
+  // Superset path: rotate to next exercise
+  if (supersetConfig && supersetState) {
+    const result = advanceSuperset(supersetConfig, supersetState);
+
+    if (result.isComplete) {
+      if (voltraStoreRef) {
+        try {
+          await voltraStoreRef.getState().stopRecording();
+        } catch (err) {
+          console.warn('[ExerciseSessionStore] Failed to stop device:', err);
+        }
+      }
+
+      set({
+        session: updatedSession,
+        uiState: 'results',
+        terminationReason: 'all_sets_completed' as TerminationReason,
+        terminationMessage: 'Superset complete',
+        ...computeDerivedState(updatedSession),
+        isSupersetActive: false,
+      });
+
+      await persistSession(get, 'completed', 'all_sets_completed' as TerminationReason);
+    } else {
+      const nextSlot = result.nextSlot!;
+      const nextSession = createExerciseSession(nextSlot.exercise, nextSlot.plan);
+      const restSeconds = result.restSeconds;
+      const sessionWithRest = startRest(nextSession, restSeconds);
+
+      set({
+        session: sessionWithRest,
+        uiState: 'resting',
+        restCountdown: restSeconds,
+        supersetState: result.state,
+        ...computeDerivedState(sessionWithRest),
+        ...computeSupersetDerived(supersetConfig, result.state),
+      });
+
+      startRestTimer(get, set);
+      persistSession(get, 'in_progress');
+    }
+    return;
+  }
+
+  // Standard path: check termination
   const termResult = checkTermination(updatedSession, completedSet);
 
   if (termResult.shouldTerminate) {
@@ -861,6 +964,43 @@ function computeDerivedState(session: ExerciseSession | null): {
     isDiscovery: isDiscoverySession(session),
     totalSets: session.plan.sets.length,
     completedSetsCount: session.completedSets.length,
+  };
+}
+
+// =============================================================================
+// Superset Derived State
+// =============================================================================
+
+function computeSupersetDerived(
+  config: SupersetConfig | null,
+  ssState: SupersetState | null
+): {
+  currentExercise: Exercise | null;
+  nextExerciseName: string | null;
+  supersetRound: number;
+  supersetSlotIndex: number;
+  isSupersetActive: boolean;
+} {
+  if (!config || !ssState) {
+    return {
+      currentExercise: null,
+      nextExerciseName: null,
+      supersetRound: 0,
+      supersetSlotIndex: 0,
+      isSupersetActive: false,
+    };
+  }
+
+  const current = getCurrentSlot(config, ssState);
+  const upcoming = getUpcomingExercises(config, ssState, 2);
+  const nextName = upcoming.length > 1 ? upcoming[1].exercise.name : null;
+
+  return {
+    currentExercise: current.exercise,
+    nextExerciseName: nextName,
+    supersetRound: ssState.currentRound,
+    supersetSlotIndex: ssState.currentSlotIndex,
+    isSupersetActive: !isSupersetComplete(config, ssState),
   };
 }
 
