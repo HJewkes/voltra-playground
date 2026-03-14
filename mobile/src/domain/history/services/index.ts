@@ -5,5 +5,6 @@
  */
 
 export * from './baseline-service';
+export * from './exercise-picker-history';
 export * from './records-service';
 export * from './stats-service';
