@@ -362,9 +362,9 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
                 targetTempo: currentPlannedSet?.targetTempo,
                 liveMessage: liveMessage || undefined,
               } : null}
-              plannedSets={isRecording
+              plannedSets={isActive
                 ? (session?.plan.sets.slice(currentSetIndex + 1) ?? [])
-                : (session?.plan.sets.slice(session.completedSets.length) ?? [])
+                : (session?.plan.sets.slice(session?.completedSets.length ?? 0) ?? [])
               }
               totalSets={session?.plan.sets.length ?? null}
               isResting={uiState === 'resting'}
