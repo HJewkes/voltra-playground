@@ -293,7 +293,7 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
               disabled={isActive}
             />
             {/* Advanced settings (eccentric, chains, tempo) */}
-            {(showEccentric || showChains) && (
+            {(showEccentric || showChains) && !isActive && (
               <View
                 className="px-1 mt-2 pt-2"
                 style={{
