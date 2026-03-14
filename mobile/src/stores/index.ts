@@ -17,8 +17,8 @@ export type {
 export { createRecordingStore } from './recording-store';
 export type { RecordingState, RecordingStoreApi, RecordingUIState } from './recording-store';
 
-// Exercise session store (factory for multi-set orchestration)
-export { createExerciseSessionStore } from './exercise-session-store';
+// Exercise session store (singleton for multi-set orchestration)
+export { exerciseSessionStore, useExerciseSessionStore } from './exercise-session-store';
 export type {
   ExerciseSessionState,
   ExerciseSessionStoreApi,
