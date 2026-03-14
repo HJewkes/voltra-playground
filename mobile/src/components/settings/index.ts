@@ -5,3 +5,4 @@
  */
 
 export { DevToolsSection } from './DevToolsSection';
+export { WorkoutCuesSection } from './WorkoutCuesSection';
