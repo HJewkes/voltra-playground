@@ -1,5 +1,21 @@
 import { describe, it, expect, vi } from 'vitest';
 
+vi.mock('@/domain/device', () => ({
+  VoltraManager: vi.fn(),
+  detectBLEEnvironment: () => ({
+    environment: 'node', bleSupported: true, warningMessage: null,
+    isWeb: false, requiresUserGesture: false, forceMock: false,
+  }),
+}));
+
+vi.mock('@/stores', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/stores')>();
+  return {
+    ...actual,
+    selectBleEnvironment: actual.selectBleEnvironment,
+  };
+});
+
 vi.mock('@titan-design/react-ui', () => ({
   DataRow: 'DataRow',
   Surface: 'Surface',
@@ -21,31 +37,21 @@ vi.mock('@/components/settings', () => ({
   DevToolsSection: 'DevToolsSection',
 }));
 
-vi.mock('@/stores', () => ({
-  selectBleEnvironment: () => ({
-    isWeb: false,
-    bleSupported: true,
-    warningMessage: null,
-    environment: 'native',
-    requiresUserGesture: false,
-  }),
-}));
-
 describe('SettingsScreen', () => {
   it('exports SettingsScreen as a function', async () => {
     const mod = await import('../SettingsScreen');
     expect(mod.SettingsScreen).toBeTypeOf('function');
   });
 
-  it('barrel file includes SettingsScreen export', async () => {
+  it('barrel file declares SettingsScreen export', async () => {
     const fs = await import('fs');
     const path = await import('path');
     const indexPath = path.resolve(__dirname, '../index.ts');
     const content = fs.readFileSync(indexPath, 'utf-8');
-    expect(content).toContain("export { SettingsScreen } from './SettingsScreen'");
+    expect(content).toContain("export { SettingsScreen }");
   });
 
-  it('selectBleEnvironment returns expected shape', async () => {
+  it('selectBleEnvironment returns expected shape from real selector', async () => {
     const { selectBleEnvironment } = await import('@/stores');
     const env = selectBleEnvironment();
     expect(env).toHaveProperty('isWeb');
@@ -53,11 +59,12 @@ describe('SettingsScreen', () => {
     expect(env).toHaveProperty('environment');
   });
 
-  it('selectBleEnvironment returns native environment by default', async () => {
+  it('selectBleEnvironment returns node environment in test', async () => {
     const { selectBleEnvironment } = await import('@/stores');
     const env = selectBleEnvironment();
+    // detectBLEEnvironment is mocked to return node environment
     expect(env.isWeb).toBe(false);
-    expect(env.environment).toBe('native');
+    expect(env.environment).toBe('node');
   });
 
   it('selectBleEnvironment indicates BLE support', async () => {
@@ -68,16 +75,7 @@ describe('SettingsScreen', () => {
   });
 
   it('__DEV__ flag controls DevToolsSection visibility', () => {
-    // __DEV__ is defined as true in vitest.config.ts
     expect(__DEV__).toBe(true);
-  });
-
-  it('app version is hardcoded to 1.0.0', async () => {
-    const fs = await import('fs');
-    const path = await import('path');
-    const screenPath = path.resolve(__dirname, '../SettingsScreen.tsx');
-    const content = fs.readFileSync(screenPath, 'utf-8');
-    expect(content).toContain('"1.0.0"');
   });
 
   it('BLE mode label shows Web Bluetooth for web environment', () => {

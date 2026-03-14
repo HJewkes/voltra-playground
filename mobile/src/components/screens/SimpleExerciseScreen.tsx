@@ -24,7 +24,17 @@ const t = getSemanticColors('dark');
 // Types
 // =============================================================================
 
-type ExerciseState = 'idle' | 'preparing' | 'countdown' | 'recording';
+export type ExerciseState = 'idle' | 'preparing' | 'countdown' | 'recording';
+
+export function getInstruction(state: ExerciseState): string {
+  if (state === 'recording') return 'Lift!';
+  if (state === 'countdown') return 'Get Ready';
+  return 'Press Start';
+}
+
+export function isActiveState(state: ExerciseState): boolean {
+  return state === 'countdown' || state === 'recording';
+}
 
 // =============================================================================
 // Component
@@ -152,7 +162,7 @@ export function SimpleExerciseScreen() {
     return () => cleanupCountdown();
   }, []);
 
-  const isActive = exerciseState === 'countdown' || exerciseState === 'recording';
+  const isActive = isActiveState(exerciseState);
 
   const displayUIState =
     exerciseState === 'recording'
@@ -161,12 +171,7 @@ export function SimpleExerciseScreen() {
         ? 'countdown'
         : 'idle';
 
-  const instruction =
-    exerciseState === 'recording'
-      ? 'Lift!'
-      : exerciseState === 'countdown'
-        ? 'Get Ready'
-        : 'Press Start';
+  const instruction = getInstruction(exerciseState);
 
   return (
     <SafeAreaView className="bg-background flex-1" edges={['top']}>

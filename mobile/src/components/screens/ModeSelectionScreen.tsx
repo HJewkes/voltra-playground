@@ -36,7 +36,7 @@ const MODE_DESCRIPTIONS: Record<TrainingMode, string> = {
   [TrainingMode.Isometric]: 'Static holds',
 };
 
-const MODE_LIST = [
+export const MODE_LIST = [
   TrainingMode.WeightTraining,
   TrainingMode.ResistanceBand,
   TrainingMode.Rowing,
@@ -46,7 +46,7 @@ const MODE_LIST = [
   TrainingMode.Idle,
 ] as const;
 
-const ECCENTRIC_MODES = new Set<TrainingMode>([TrainingMode.ResistanceBand]);
+export const ECCENTRIC_MODES = new Set<TrainingMode>([TrainingMode.ResistanceBand]);
 
 function ModeConfig({ mode, voltraStore }: { mode: TrainingMode; voltraStore: VoltraStoreApi }) {
   if (mode === TrainingMode.WeightTraining) {

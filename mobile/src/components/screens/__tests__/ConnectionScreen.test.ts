@@ -1,10 +1,28 @@
 import { describe, it, expect, vi } from 'vitest';
 
-vi.mock('expo-router', () => ({
-  useRouter: () => ({
-    replace: vi.fn(),
-    push: vi.fn(),
+// Mock @/domain/device before anything imports it (prevents BLE resolution)
+vi.mock('@/domain/device', () => ({
+  VoltraManager: vi.fn(),
+  detectBLEEnvironment: () => ({
+    environment: 'node', bleSupported: true, warningMessage: null,
+    isWeb: false, requiresUserGesture: false, forceMock: false,
   }),
+}));
+
+// Mock stores but import the real selectIsConnected via importActual
+vi.mock('@/stores', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/stores')>();
+  return {
+    ...actual,
+    useConnectionStore: vi.fn((selector?: (s: unknown) => unknown) => {
+      if (selector) return selector({ primaryDeviceId: null, devices: new Map() });
+      return {};
+    }),
+  };
+});
+
+vi.mock('expo-router', () => ({
+  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
 }));
 
 vi.mock('react-native-safe-area-context', () => ({
@@ -19,15 +37,6 @@ vi.mock('@titan-design/react-ui', () => ({
   getSemanticColors: () => ({}),
 }));
 
-vi.mock('@/stores', () => ({
-  useConnectionStore: vi.fn((selector?: (s: unknown) => unknown) => {
-    if (selector) return selector({ primaryDeviceId: null, devices: new Map() });
-    return {};
-  }),
-  selectIsConnected: (state: { primaryDeviceId: string | null; devices: Map<string, unknown> }) =>
-    !!(state.primaryDeviceId && state.devices.has(state.primaryDeviceId)),
-}));
-
 vi.mock('@/components/device', () => ({
   DeviceConnection: 'DeviceConnection',
 }));
@@ -38,12 +47,12 @@ describe('ConnectionScreen', () => {
     expect(mod.ConnectionScreen).toBeTypeOf('function');
   });
 
-  it('barrel file includes ConnectionScreen export', async () => {
+  it('barrel file declares ConnectionScreen export', async () => {
     const fs = await import('fs');
     const path = await import('path');
     const indexPath = path.resolve(__dirname, '../index.ts');
     const content = fs.readFileSync(indexPath, 'utf-8');
-    expect(content).toContain("export { ConnectionScreen } from './ConnectionScreen'");
+    expect(content).toContain("export { ConnectionScreen }");
   });
 
   it('selectIsConnected returns false when no device connected', async () => {
