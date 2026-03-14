@@ -11,4 +11,4 @@ export {
   type DiscoverySessionState,
   type DiscoverySessionActions,
   type UseDiscoverySessionReturn,
-} from './usediscoverysession';
+} from './use-discovery-session';

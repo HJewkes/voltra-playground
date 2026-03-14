@@ -406,4 +406,66 @@ describe('ExerciseSessionStore', () => {
       await freshStore.getState().adjustWeight(200);
     });
   });
+
+  describe('dispose()', () => {
+    it('sets isDisposed to true', () => {
+      const exercise = createTestExercise('bench');
+      const plan = planBuilder().workingSets(3).build();
+      store.getState().startSession(exercise, plan);
+      expect(store.getState().isDisposed).toBe(false);
+
+      store.getState().dispose();
+      expect(store.getState().isDisposed).toBe(true);
+      expect(store.getState().session).toBeNull();
+      expect(store.getState().uiState).toBe('idle');
+    });
+
+    it('clears timers on dispose', () => {
+      const exercise = createTestExercise('bench');
+      const plan = planBuilder().workingSets(3).build();
+      store.getState().startSession(exercise, plan);
+      store.getState().startFirstSet();
+      expect(store.getState().uiState).toBe('countdown');
+
+      store.getState().dispose();
+      expect(store.getState().uiState).toBe('idle');
+    });
+
+    it('startSession resets isDisposed', () => {
+      store.getState().dispose();
+      expect(store.getState().isDisposed).toBe(true);
+
+      const exercise = createTestExercise('bench');
+      const plan = planBuilder().workingSets(3).build();
+      store.getState().startSession(exercise, plan);
+      expect(store.getState().isDisposed).toBe(false);
+    });
+  });
+
+  describe('stale state guards', () => {
+    it('loadCurrentSession is a no-op after dispose', async () => {
+      store.getState().dispose();
+      await store.getState().loadCurrentSession();
+      expect(store.getState().uiState).toBe('idle');
+    });
+
+    it('stopSession is a no-op after dispose', async () => {
+      store.getState().dispose();
+      await store.getState().stopSession();
+      expect(store.getState().uiState).toBe('idle');
+    });
+
+    it('prepareFirstSet is a no-op after dispose', async () => {
+      store.getState().dispose();
+      await store.getState().prepareFirstSet();
+      expect(store.getState().uiState).toBe('idle');
+    });
+
+    it('onSetCompleted is a no-op after dispose', async () => {
+      store.getState().dispose();
+      await store.getState().onSetCompleted(mockCompletedSet());
+      expect(store.getState().uiState).toBe('idle');
+    });
+  });
+
 });

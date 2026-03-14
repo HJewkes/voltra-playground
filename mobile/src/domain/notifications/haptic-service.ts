@@ -9,37 +9,78 @@ import { Platform } from 'react-native';
 
 export type HapticIntensity = 'light' | 'medium' | 'heavy';
 
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 let hapticsModule: typeof import('expo-haptics') | null = null;
 let hapticsSupported = false;
 
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+/**
+ * Initialize haptics module lazily.
+ * On web or unsupported platforms, haptics silently become no-ops.
+ */
 async function ensureModule(): Promise<typeof import('expo-haptics') | null> {
   if (hapticsModule) return hapticsModule;
-  if (Platform.OS === 'web') { hapticsSupported = false; return null; }
+
+  if (Platform.OS === 'web') {
+    hapticsSupported = false;
+    return null;
+  }
+
   try {
     hapticsModule = await import('expo-haptics');
     hapticsSupported = true;
     return hapticsModule;
-  } catch { hapticsSupported = false; return null; }
+  } catch {
+    hapticsSupported = false;
+    return null;
+  }
 }
 
+/**
+ * Trigger haptic feedback at the given intensity.
+ */
 export async function triggerHaptic(intensity: HapticIntensity): Promise<void> {
   const mod = await ensureModule();
   if (!mod) return;
-  const style = intensity === 'light' ? mod.ImpactFeedbackStyle.Light
-    : intensity === 'medium' ? mod.ImpactFeedbackStyle.Medium
-    : mod.ImpactFeedbackStyle.Heavy;
+
+  const style =
+    intensity === 'light'
+      ? mod.ImpactFeedbackStyle.Light
+      : intensity === 'medium'
+        ? mod.ImpactFeedbackStyle.Medium
+        : mod.ImpactFeedbackStyle.Heavy;
+
   await mod.impactAsync(style);
 }
 
-export async function triggerNotificationHaptic(type: 'success' | 'warning' | 'error'): Promise<void> {
+/**
+ * Trigger a notification-style haptic (used for rest-complete).
+ */
+export async function triggerNotificationHaptic(
+  type: 'success' | 'warning' | 'error'
+): Promise<void> {
   const mod = await ensureModule();
   if (!mod) return;
-  const feedbackType = type === 'success' ? mod.NotificationFeedbackType.Success
-    : type === 'warning' ? mod.NotificationFeedbackType.Warning
-    : mod.NotificationFeedbackType.Error;
+
+  const feedbackType =
+    type === 'success'
+      ? mod.NotificationFeedbackType.Success
+      : type === 'warning'
+        ? mod.NotificationFeedbackType.Warning
+        : mod.NotificationFeedbackType.Error;
+
   await mod.notificationAsync(feedbackType);
 }
 
-export function isHapticsSupported(): boolean { return hapticsSupported; }
+/**
+ * Check if haptics are supported on this platform.
+ */
+export function isHapticsSupported(): boolean {
+  return hapticsSupported;
+}
+
+/**
+ * Reset module state (for testing).
+ */
+export function _resetHapticsModule(): void {
+  hapticsModule = null;
+  hapticsSupported = false;
+}

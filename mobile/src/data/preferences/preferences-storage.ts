@@ -45,20 +45,34 @@ export async function setAutoReconnectEnabled(enabled: boolean): Promise<void> {
   await asyncStorageAdapter.set(STORAGE_KEYS.AUTO_RECONNECT, enabled);
 }
 
+/**
+ * Check if haptic cues are enabled during rest timer.
+ * Defaults to true if not explicitly set.
+ */
 export async function isHapticCuesEnabled(): Promise<boolean> {
   const enabled = await asyncStorageAdapter.get<boolean>(STORAGE_KEYS.HAPTIC_CUES_ENABLED);
   return enabled ?? true;
 }
 
+/**
+ * Enable or disable haptic cues during rest timer.
+ */
 export async function setHapticCuesEnabled(enabled: boolean): Promise<void> {
   await asyncStorageAdapter.set(STORAGE_KEYS.HAPTIC_CUES_ENABLED, enabled);
 }
 
+/**
+ * Check if audio cues are enabled during rest timer.
+ * Defaults to true if not explicitly set.
+ */
 export async function isAudioCuesEnabled(): Promise<boolean> {
   const enabled = await asyncStorageAdapter.get<boolean>(STORAGE_KEYS.AUDIO_CUES_ENABLED);
   return enabled ?? true;
 }
 
+/**
+ * Enable or disable audio cues during rest timer.
+ */
 export async function setAudioCuesEnabled(enabled: boolean): Promise<void> {
   await asyncStorageAdapter.set(STORAGE_KEYS.AUDIO_CUES_ENABLED, enabled);
 }

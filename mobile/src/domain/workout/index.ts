@@ -80,6 +80,18 @@ export {
   getTerminationMessage,
 } from './session';
 
+// Re-export readiness assessment
+export {
+  type IntensityAdjustment,
+  type ReadinessAssessment,
+  deriveIntensityAdjustment,
+  assessReadiness,
+  isReadinessCheckCandidate,
+} from './session';
+
+// Telemetry
+export { TelemetryRingBuffer } from './telemetry-ring-buffer';
+
 // Re-export planners
 export {
   type StandardPlanOptions,

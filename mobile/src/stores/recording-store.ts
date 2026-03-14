@@ -30,6 +30,7 @@ import {
 // App imports
 import { type CompletedSet, createCompletedSet } from '@/domain/workout';
 import { getLiveEffortMessage } from '@/domain/workout';
+import { TelemetryRingBuffer } from '@/domain/workout/telemetry-ring-buffer';
 import { isDebugTelemetryEnabled } from '@/data/provider';
 
 // =============================================================================
@@ -132,8 +133,9 @@ function createInitialState(): Pick<
 // =============================================================================
 
 let analyticsSet = createSet();
+const telemetryBuffer = new TelemetryRingBuffer();
 
-export const recordingStore: RecordingStoreApi = createStore<RecordingState>()(
+const _recordingStoreBase = createStore<RecordingState>()(
   devtools(
     (set, get) => ({
       ...createInitialState(),
@@ -145,6 +147,7 @@ export const recordingStore: RecordingStoreApi = createStore<RecordingState>()(
 
       startRecording: (exerciseId?: string, exerciseName?: string) => {
         analyticsSet = createSet();
+        telemetryBuffer.clear();
         set({
           ...createInitialState(),
           uiState: 'recording',
@@ -166,6 +169,7 @@ export const recordingStore: RecordingStoreApi = createStore<RecordingState>()(
 
       reset: () => {
         analyticsSet = createSet();
+        telemetryBuffer.clear();
         set({ ...createInitialState(), _analyticsSet: analyticsSet });
       },
     }),
@@ -211,6 +215,9 @@ function processSampleAction(
 ): void {
   if (!get().isRecording) return;
 
+  // O(1) push into ring buffer (ref-based, no re-render)
+  telemetryBuffer.push(sample);
+
   if (isDebugTelemetryEnabled()) {
     set({ allSamples: [...get().allSamples, sample] });
   }
@@ -245,6 +252,7 @@ function updateMetricsAfterNewRep(
   });
 }
 
+// Add telemetry buffer accessor
 // =============================================================================
 // Typed Hook
 // =============================================================================
@@ -257,4 +265,6 @@ export function useRecordingStore<T>(selector: (state: RecordingState) => T): T 
 // Types
 // =============================================================================
 
-export type RecordingStoreApi = StoreApi<RecordingState>;
+export type RecordingStoreApi = StoreApi<RecordingState> & {
+  getTelemetryBuffer: () => TelemetryRingBuffer;
+};

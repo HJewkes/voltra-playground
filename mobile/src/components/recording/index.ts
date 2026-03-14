@@ -26,3 +26,7 @@ export type { WorkoutControlsProps } from './WorkoutControls';
 // Recording state display
 export { RecordingDisplay, RecordingDisplayView } from './RecordingDisplay';
 export type { RecordingDisplayProps, RecordingDisplayViewProps } from './RecordingDisplay';
+
+// Readiness indicator
+export { ReadinessIndicator, getReadinessColor, getReadinessLabel } from './ReadinessIndicator';
+export type { ReadinessIndicatorProps } from './ReadinessIndicator';

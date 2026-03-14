@@ -57,9 +57,13 @@ import type { ExerciseSessionRepository } from '@/data/exercise-session';
 import { toStoredExerciseSession } from '@/data/exercise-session';
 import { getRecordingRepository, isDebugTelemetryEnabled } from '@/data/provider';
 import type { SampleRecording } from '@/data/recordings';
-
 import { isHapticCuesEnabled, isAudioCuesEnabled } from '@/data/preferences';
-import { fireRestTimerCues, type RestTimerCueSettings } from '@/domain/notifications/rest-timer-cues';
+
+// Notification cues for rest timer
+import {
+  fireRestTimerCues,
+  type RestTimerCueSettings,
+} from '@/domain/notifications/rest-timer-cues';
 
 // Recording store for intra-set recording
 import type { RecordingStoreApi } from './recording-store';
@@ -120,6 +124,9 @@ export interface ExerciseSessionState {
   totalSets: number;
   completedSetsCount: number;
 
+  // Stale state flag
+  isDisposed: boolean;
+
   // Actions - Lifecycle
   startSession: (exercise: Exercise, plan: ExercisePlan) => void;
   loadCurrentSession: () => Promise<void>;
@@ -175,7 +182,10 @@ let cachedCueSettings: RestTimerCueSettings | null = null;
 
 async function loadCueSettings(): Promise<RestTimerCueSettings> {
   if (cachedCueSettings) return cachedCueSettings;
-  const [hapticEnabled, audioEnabled] = await Promise.all([isHapticCuesEnabled(), isAudioCuesEnabled()]);
+  const [hapticEnabled, audioEnabled] = await Promise.all([
+    isHapticCuesEnabled(),
+    isAudioCuesEnabled(),
+  ]);
   cachedCueSettings = { hapticEnabled, audioEnabled };
   return cachedCueSettings;
 }
@@ -190,6 +200,7 @@ export const exerciseSessionStore: ExerciseSessionStoreApi = createStore<Exercis
       // Initial state
       session: null,
       uiState: 'idle',
+      isDisposed: false,
       restCountdown: 0,
       startCountdown: 0,
       terminationReason: null,
@@ -222,6 +233,7 @@ export const exerciseSessionStore: ExerciseSessionStoreApi = createStore<Exercis
         set({
           session,
           uiState: 'idle',
+          isDisposed: false,
           restCountdown: 0,
           startCountdown: 0,
           terminationReason: null,
@@ -235,10 +247,12 @@ export const exerciseSessionStore: ExerciseSessionStoreApi = createStore<Exercis
       },
 
       loadCurrentSession: async () => {
+        if (get().isDisposed) return;
         await loadCurrentSessionAction(get, set);
       },
 
       stopSession: async () => {
+        if (get().isDisposed) return;
         await stopSessionAction(get, set);
       },
 
@@ -247,6 +261,7 @@ export const exerciseSessionStore: ExerciseSessionStoreApi = createStore<Exercis
       // =======================================================================
 
       prepareFirstSet: async () => {
+        if (get().isDisposed) return;
         await prepareFirstSetAction(get, set);
       },
 
@@ -260,6 +275,7 @@ export const exerciseSessionStore: ExerciseSessionStoreApi = createStore<Exercis
       // =======================================================================
 
       onSetCompleted: async (completedSet: CompletedSet) => {
+        if (get().isDisposed) return;
         await onSetCompletedAction(get, set, completedSet);
       },
 
@@ -312,6 +328,7 @@ export const exerciseSessionStore: ExerciseSessionStoreApi = createStore<Exercis
         set({
           session: null,
           uiState: 'idle',
+          isDisposed: true,
           restCountdown: 0,
           startCountdown: 0,
           terminationReason: null,
@@ -543,9 +560,6 @@ function handleContinueToRest(
   const restSeconds = originalSession.plan.defaultRestSeconds || DEFAULT_REST_SECONDS;
   const sessionWithRest = startRest(updatedSession, restSeconds);
 
-  // Reload cue settings for each rest period
-  cachedCueSettings = null;
-
   set({
     session: sessionWithRest,
     uiState: 'resting',
@@ -599,11 +613,6 @@ function tickRestTimerAction(
 ): void {
   const { restCountdown, session } = get();
   const newCountdown = restCountdown - 1;
-
-  // Fire haptic/audio cues at configured thresholds (fire-and-forget)
-  loadCueSettings()
-    .then((settings) => fireRestTimerCues(newCountdown, settings))
-    .catch(() => {});
 
   if (newCountdown <= COUNTDOWN_SECONDS && newCountdown > 0) {
     clearTimers();

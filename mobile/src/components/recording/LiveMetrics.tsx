@@ -8,6 +8,7 @@
 import React from 'react';
 import { View, Text, type StyleProp, type ViewStyle } from 'react-native';
 import { useStore } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import { type WorkoutSample, MovementPhase } from '@voltras/workout-analytics';
 import { getEffortLabel, getRIRDescription, getRPEColor } from '@/domain/workout';
 import type { RecordingStoreApi } from '@/stores';
@@ -213,11 +214,16 @@ export interface LiveMetricsProps {
  * LiveMetrics - connected component that subscribes to recording store.
  */
 export function LiveMetrics({ store, currentSample, weight, compact, style }: LiveMetricsProps) {
-  const repCount = useStore(store, (s) => s.repCount);
-  const rpe = useStore(store, (s) => s.rpe);
-  const rir = useStore(store, (s) => s.rir);
-  const velocityLoss = useStore(store, (s) => s.velocityLoss);
-  const liveMessage = useStore(store, (s) => s.liveMessage);
+  const { repCount, rpe, rir, velocityLoss, liveMessage } = useStore(
+    store,
+    useShallow((s) => ({
+      repCount: s.repCount,
+      rpe: s.rpe,
+      rir: s.rir,
+      velocityLoss: s.velocityLoss,
+      liveMessage: s.liveMessage,
+    })),
+  );
 
   return (
     <View style={style}>

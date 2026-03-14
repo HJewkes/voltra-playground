@@ -1,8 +1,9 @@
 /**
  * HistoryScreen
  *
- * Exercise session history with list and calendar views.
- * Shows personal records, aggregate stats, and training log calendar.
+ * Exercise session history with list, calendar, and analytics views.
+ * Shows personal records, aggregate stats, training log calendar,
+ * and cross-session analytics dashboard.
  * Detail view is handled by SessionDetailModal.
  */
 
@@ -19,10 +20,11 @@ import {
 } from '@/domain/history';
 import { SessionDetailModal } from './SessionDetailModal';
 import { TrainingLogScreen } from './TrainingLogScreen';
+import { AnalyticsDashboard } from './AnalyticsDashboard';
 
 const t = getSemanticColors('dark');
 
-type HistoryView = 'list' | 'calendar';
+type HistoryView = 'list' | 'calendar' | 'analytics';
 
 
 function formatNumber(num: number): string {
@@ -111,6 +113,21 @@ function ViewToggle({
           Calendar
         </Text>
       </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => onChangeView('analytics')}
+        className="flex-1 items-center rounded-md py-2"
+        style={activeView === 'analytics' ? { backgroundColor: t['brand-primary'] } : undefined}
+      >
+        <Text
+          style={{
+            color: activeView === 'analytics' ? '#FFFFFF' : t['text-secondary'],
+            fontWeight: '600',
+            fontSize: 13,
+          }}
+        >
+          Analytics
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -168,6 +185,17 @@ export function HistoryScreen() {
   const aggregateStats = useMemo(() => computeStoredAggregateStats(sessions), [sessions]);
   const personalRecords = useMemo(() => computeStoredPersonalRecords(sessions), [sessions]);
 
+  if (activeView === 'analytics') {
+    return (
+      <View className="flex-1 bg-surface-400">
+        <View className="px-4 pt-4">
+          <ViewToggle activeView={activeView} onChangeView={setActiveView} />
+        </View>
+        <AnalyticsDashboard sessions={sessions} isLoading={isLoading} onRefresh={handleRefresh} />
+      </View>
+    );
+  }
+
   if (activeView === 'calendar') {
     return (
       <View className="flex-1 bg-surface-400">
@@ -181,7 +209,7 @@ export function HistoryScreen() {
 
   return (
     <ScrollView
-      className="flex-1 bg-surface-400"
+      className="flex-1 bg-background-base"
       refreshControl={
         <RefreshControl
           refreshing={isLoading}
