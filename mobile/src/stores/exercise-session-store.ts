@@ -106,6 +106,9 @@ export interface ExerciseSessionState {
   velocityProfile: LoadVelocityProfile | null;
   recommendation: WorkingWeightRecommendation | null;
 
+  // Disposed flag — true after dispose(), prevents async continuations
+  isDisposed: boolean;
+
   // Error state
   error: string | null;
 
@@ -137,6 +140,9 @@ export interface ExerciseSessionState {
   // Actions - Timers (for external interval drivers)
   tickRestTimer: () => void;
   tickCountdown: () => void;
+
+  // Actions - Cleanup
+  dispose: () => void;
 
   // Actions - Store bindings
   bindRecordingStore: (store: RecordingStoreApi) => void;
@@ -178,6 +184,7 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
         // Initial state
         session: null,
         uiState: 'idle',
+        isDisposed: false,
         restCountdown: 0,
         startCountdown: 0,
         terminationReason: null,
@@ -211,6 +218,7 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
           set({
             session,
             uiState: 'idle',
+            isDisposed: false,
             restCountdown: 0,
             startCountdown: 0,
             terminationReason: null,
@@ -309,6 +317,7 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
             if (plannedSet) {
               console.log('[ExerciseSessionStore] Setting weight to', plannedSet.weight, 'lbs');
               await voltraStore.getState().setWeight(plannedSet.weight);
+              if (get().isDisposed) return;
               console.log('[ExerciseSessionStore] Weight set successfully');
             } else {
               console.warn('[ExerciseSessionStore] No planned set found');
@@ -317,6 +326,7 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
             // 2. Put device in workout mode (PREPARE + SETUP, motor NOT engaged)
             console.log('[ExerciseSessionStore] Preparing workout mode');
             await voltraStore.getState().prepareWorkout();
+            if (get().isDisposed) return;
             console.log('[ExerciseSessionStore] Device ready (motor not engaged)');
 
             set({ uiState: 'ready' });
@@ -346,6 +356,7 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
             try {
               console.log('[ExerciseSessionStore] Disengaging motor (end of set)');
               await voltraStore.getState().disengageMotor();
+              if (get().isDisposed) return;
             } catch (err) {
               console.warn('[ExerciseSessionStore] Failed to disengage motor:', err);
             }
@@ -363,6 +374,7 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
               try {
                 console.log('[ExerciseSessionStore] Session complete, stopping device');
                 await voltraStore.getState().stopRecording();
+                if (get().isDisposed) return;
               } catch (err) {
                 console.warn('[ExerciseSessionStore] Failed to stop device:', err);
               }
@@ -504,6 +516,15 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
         },
 
         // =====================================================================
+        // Cleanup
+        // =====================================================================
+
+        dispose: () => {
+          clearTimers();
+          set({ isDisposed: true, uiState: 'idle' });
+        },
+
+        // =====================================================================
         // Store Bindings
         // =====================================================================
 
@@ -564,7 +585,7 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
     set: (state: Partial<ExerciseSessionState>) => void
   ) {
     const { session, currentPlannedSet } = get();
-    if (!session || !recordingStore) return;
+    if (!session || !recordingStore || get().isDisposed) return;
 
     set({ uiState: 'recording' });
 
@@ -581,11 +602,13 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
               'lbs'
             );
             await voltraStore.getState().setWeight(currentPlannedSet.weight);
+            if (get().isDisposed) return;
           }
         }
         // Engage motor (sends GO command)
         console.log('[ExerciseSessionStore] Engaging motor');
         await voltraStore.getState().engageMotor();
+        if (get().isDisposed) return;
       } catch (err) {
         console.error('[ExerciseSessionStore] Failed to engage motor:', err);
         set({ error: `Failed to engage motor: ${err}` });
@@ -602,7 +625,7 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
     terminationReason?: TerminationReason
   ) {
     const { session, currentPlannedSet } = get();
-    if (!session || !repository) return;
+    if (!session || !repository || get().isDisposed) return;
 
     try {
       // Get raw samples from recording store for the last set (if debug enabled)
@@ -615,12 +638,14 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
         rawSamples && rawSamples.length > 0 ? rawSamples : undefined
       );
       await repository.save(stored);
+      if (get().isDisposed) return;
 
       if (status === 'in_progress') {
         await repository.setCurrent(session.id);
       } else {
         await repository.setCurrent(null);
       }
+      if (get().isDisposed) return;
 
       // Save standalone SampleRecording when debug enabled and we have samples
       if (isDebugTelemetryEnabled() && rawSamples && rawSamples.length > 0) {
