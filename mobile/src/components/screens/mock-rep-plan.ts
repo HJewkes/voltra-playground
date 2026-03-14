@@ -29,7 +29,12 @@ const FATIGUE_CON_INCREMENT = 0.1;
 const DEFAULT_REPS = 8;
 
 export function generateMockRepPlan(plan: ExercisePlan): PlannedRepProfile[] {
-  const reps: PlannedRepProfile[] = [];
+  // Lead with a short IDLE buffer to create a clean phase break between
+  // normal cycling's ECCENTRIC and the plan's first CONCENTRIC, preventing
+  // a spurious rep boundary in the analytics library.
+  const reps: PlannedRepProfile[] = [
+    { conSeconds: 0, holdSeconds: 0, eccSeconds: 0, idleSeconds: 0.5, romMm: 0 },
+  ];
 
   for (let setIdx = 0; setIdx < plan.sets.length; setIdx++) {
     const plannedSet = plan.sets[setIdx];

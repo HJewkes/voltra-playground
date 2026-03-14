@@ -387,19 +387,6 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
 
       await sessionStore.getState().prepareFirstSet();
       sessionStore.getState().startFirstSet();
-
-      // In mock mode, auto-generate a rep plan from the session's planned sets
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (typeof window !== 'undefined' && (window as any).__mockBLE) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const mock = (window as any).__mockBLE as {
-          setRepPlan?: (reps: ReturnType<typeof generateMockRepPlan>) => void;
-        };
-        const plan = sessionStore.getState().session?.plan;
-        if (plan && mock.setRepPlan) {
-          mock.setRepPlan(generateMockRepPlan(plan));
-        }
-      }
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e);
       Alert.alert('Error', `Failed to start: ${message}`);
@@ -424,6 +411,22 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
     });
     return unsubscribe;
   }, [voltraStore, recordingStore, isRecording]);
+
+  // Sync mock rep plan with recording start (not handleStart) to avoid off-by-one
+  useEffect(() => {
+    if (uiState !== 'recording') return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (typeof window === 'undefined' || !(window as any).__mockBLE) return;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mock = (window as any).__mockBLE as {
+      setRepPlan?: (reps: ReturnType<typeof generateMockRepPlan>) => void;
+    };
+    const plan = sessionStore.getState().session?.plan;
+    if (plan && mock.setRepPlan) {
+      mock.setRepPlan(generateMockRepPlan(plan));
+    }
+  }, [uiState, sessionStore]);
 
   const handleTempoChange = useCallback((key: keyof TempoTarget, v: number) => {
     setTargetTempo((prev) => ({ ...prev, [key]: v }));
