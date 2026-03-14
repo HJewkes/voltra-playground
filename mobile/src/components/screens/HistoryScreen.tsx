@@ -1,57 +1,64 @@
 /**
  * HistoryScreen
  *
- * Exercise session history list with detail modal.
- * Pure orchestration - composes analytics and UI components.
+ * Exercise session history list with personal records and aggregate stats.
+ * Detail view is handled by SessionDetailModal.
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  Alert,
-  RefreshControl,
-  TouchableOpacity,
-  Modal,
-} from 'react-native';
+import { View, Text, ScrollView, Alert, RefreshControl, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, CardContent, VStack, Metric, MetricGroup, EmptyState, getSemanticColors, alpha } from '@titan-design/react-ui';
 import { getSessionRepository } from '@/data/provider';
 import type { StoredExerciseSession } from '@/data/exercise-session';
+import {
+  computeStoredAggregateStats,
+  computeStoredPersonalRecords,
+  type StoredPersonalRecord,
+} from '@/domain/history';
+import { SessionDetailModal } from './SessionDetailModal';
 
 const t = getSemanticColors('dark');
 
-/**
- * Format large numbers for display.
- */
 function formatNumber(num: number): string {
-  if (num >= 1000000) {
-    return `${(num / 1000000).toFixed(1)}M`;
-  }
-  if (num >= 1000) {
-    return `${(num / 1000).toFixed(1)}k`;
-  }
+  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
   return String(num);
 }
 
-/**
- * Calculate aggregate stats from sessions.
- */
-function calculateAggregateStats(sessions: StoredExerciseSession[]) {
-  let totalSets = 0;
-  let totalReps = 0;
-  let totalVolume = 0;
+function formatPRType(type: StoredPersonalRecord['type']): string {
+  const labels: Record<string, string> = {
+    max_weight: 'Heaviest',
+    max_reps: 'Most Reps',
+    max_velocity: 'Fastest',
+    max_volume: 'Most Volume',
+  };
+  return labels[type] ?? type;
+}
 
-  for (const session of sessions) {
-    totalSets += session.completedSets.length;
-    for (const set of session.completedSets) {
-      totalReps += set.reps.length;
-      totalVolume += set.weight * set.reps.length;
-    }
+function formatPRValue(record: StoredPersonalRecord): string {
+  switch (record.type) {
+    case 'max_weight':
+      return `${record.value} lbs`;
+    case 'max_reps':
+      return `${record.value} reps`;
+    case 'max_velocity':
+      return `${record.value.toFixed(2)} m/s`;
+    case 'max_volume':
+      return `${formatNumber(record.value)} lbs`;
+    default:
+      return String(record.value);
   }
+}
 
-  return { totalSets, totalReps, totalVolume };
+function getPRIcon(type: StoredPersonalRecord['type']): keyof typeof Ionicons.glyphMap {
+  const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
+    max_weight: 'barbell',
+    max_reps: 'repeat',
+    max_velocity: 'flash',
+    max_volume: 'trending-up',
+  };
+  return icons[type] ?? 'trophy';
 }
 
 /**
@@ -103,7 +110,8 @@ export function HistoryScreen() {
     ]);
   };
 
-  const aggregateStats = useMemo(() => calculateAggregateStats(sessions), [sessions]);
+  const aggregateStats = useMemo(() => computeStoredAggregateStats(sessions), [sessions]);
+  const personalRecords = useMemo(() => computeStoredPersonalRecords(sessions), [sessions]);
 
   return (
     <ScrollView
@@ -117,19 +125,19 @@ export function HistoryScreen() {
       }
     >
       <View className="p-4">
-        {/* Aggregate Stats */}
-        <Card elevation={1} style={{ marginBottom: 24 }}>
+        <Card elevation={1} style={{ marginBottom: 16 }}>
           <CardContent className="p-6">
             <Text className="mb-4 font-bold text-text-secondary">All Time Stats</Text>
             <MetricGroup>
-              <Metric value={String(aggregateStats.totalSets)} label="Sets" />
+              <Metric value={String(sessions.length)} label="Workouts" />
               <Metric value={formatNumber(aggregateStats.totalReps)} label="Total Reps" />
               <Metric value={formatNumber(aggregateStats.totalVolume)} label="Volume (lbs)" />
             </MetricGroup>
           </CardContent>
         </Card>
 
-        {/* Session List */}
+        {personalRecords.length > 0 && <PersonalRecordsCard records={personalRecords} />}
+
         <Text className="mb-4 text-lg font-bold text-text-primary">Past Sessions</Text>
 
         {sessions.length === 0 ? (
@@ -151,7 +159,6 @@ export function HistoryScreen() {
           </VStack>
         )}
 
-        {/* Tip */}
         {sessions.length > 0 && (
           <Text className="mt-6 text-center text-xs text-text-disabled">
             Long press a session to delete it
@@ -159,13 +166,45 @@ export function HistoryScreen() {
         )}
       </View>
 
-      {/* Detail Modal */}
       <SessionDetailModal
         session={selectedSession}
         visible={showDetails}
         onClose={() => setShowDetails(false)}
       />
     </ScrollView>
+  );
+}
+
+/**
+ * PersonalRecordsCard - displays all-time personal records.
+ */
+function PersonalRecordsCard({ records }: { records: StoredPersonalRecord[] }) {
+  return (
+    <Card elevation={1} style={{ marginBottom: 16 }}>
+      <CardContent className="p-6">
+        <Text className="mb-4 font-bold text-text-secondary">Personal Records</Text>
+        <View className="flex-row flex-wrap">
+          {records.map((record) => (
+            <View key={record.type} className="mb-3 w-1/2 pr-2">
+              <View className="flex-row items-center">
+                <View
+                  className="mr-2 h-8 w-8 items-center justify-center rounded-lg"
+                  style={{ backgroundColor: alpha(t['status-warning'], 0.12) }}
+                >
+                  <Ionicons name={getPRIcon(record.type)} size={16} color={t['status-warning']} />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-sm font-bold text-text-primary">
+                    {formatPRValue(record)}
+                  </Text>
+                  <Text className="text-xs text-text-disabled">{formatPRType(record.type)}</Text>
+                </View>
+              </View>
+            </View>
+          ))}
+        </View>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -205,7 +244,7 @@ function SessionListItem({
                 {session.exerciseName ?? 'Exercise'}
               </Text>
               <Text className="text-sm text-text-disabled">
-                {formattedDate} • {isDiscovery ? 'Discovery' : 'Training'}
+                {formattedDate} - {isDiscovery ? 'Discovery' : 'Training'}
               </Text>
             </View>
             <View className="items-end">
@@ -225,161 +264,4 @@ function SessionListItem({
       </Card>
     </TouchableOpacity>
   );
-}
-
-/**
- * SessionDetailModal - displays session details.
- */
-function SessionDetailModal({
-  session,
-  visible,
-  onClose,
-}: {
-  session: StoredExerciseSession | null;
-  visible: boolean;
-  onClose: () => void;
-}) {
-  if (!session) return null;
-
-  const totalReps = session.completedSets.reduce((sum, s) => sum + s.reps.length, 0);
-  const totalVolume = session.completedSets.reduce((sum, s) => sum + s.weight * s.reps.length, 0);
-  const isDiscovery = session.plan.generatedBy === 'discovery';
-
-  return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
-    >
-      <View className="flex-1" style={{ backgroundColor: t['background-default'] }}>
-        {/* Header */}
-        <View
-          className="flex-row items-center justify-between border-b px-5 py-5"
-          style={{ backgroundColor: t['surface-elevated'], borderColor: t['border-strong'] }}
-        >
-          <View>
-            <Text className="text-xl font-bold text-text-primary">
-              {session.exerciseName ?? 'Exercise'}
-            </Text>
-            <Text className="text-text-disabled">
-              {new Date(session.startTime).toLocaleDateString()} •{' '}
-              {isDiscovery ? 'Discovery' : 'Training'}
-            </Text>
-          </View>
-          <TouchableOpacity
-            onPress={onClose}
-            className="h-10 w-10 items-center justify-center rounded-full"
-            style={{ backgroundColor: t['background-subtle'] }}
-          >
-            <Ionicons name="close" size={22} color={t['text-secondary']} />
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView className="flex-1 p-4">
-          {/* Summary stats */}
-          <Card elevation={1} className="mb-4">
-            <CardContent className="p-6">
-              <MetricGroup>
-                <Metric value={String(session.completedSets.length)} label="Sets" />
-                <Metric value={String(totalReps)} label="Reps" />
-                <Metric value={formatNumber(totalVolume)} label="Volume" />
-              </MetricGroup>
-            </CardContent>
-          </Card>
-
-          {/* Set breakdown */}
-          <Card elevation={1} className="mb-4">
-            <CardContent className="p-6">
-              <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-text-disabled">
-                Set Breakdown
-              </Text>
-              {session.completedSets.map((set, i) => {
-                const planned = session.plan.sets[i];
-                const repsDelta = planned ? set.reps.length - planned.targetReps : 0;
-
-                return (
-                  <View
-                    key={i}
-                    className={`flex-row items-center justify-between py-3 ${
-                      i < session.completedSets.length - 1 ? 'border-b border-surface-100' : ''
-                    }`}
-                  >
-                    <View className="flex-row items-center">
-                      <View
-                        className="mr-4 h-9 w-9 items-center justify-center rounded-full"
-                        style={{ backgroundColor: t['background-subtle'] }}
-                      >
-                        <Text className="font-bold text-text-secondary">{i + 1}</Text>
-                      </View>
-                      <View>
-                        <Text className="font-medium text-text-primary">
-                          {set.weight} lbs × {set.reps.length}
-                          {planned && (
-                            <Text
-                              style={{
-                                color: repsDelta >= 0 ? t['status-success'] : t['status-error'],
-                              }}
-                            >
-                              {' '}
-                              ({repsDelta >= 0 ? '+' : ''}
-                              {repsDelta})
-                            </Text>
-                          )}
-                        </Text>
-                        <Text className="text-xs text-text-disabled">
-                          {set.meanVelocity.toFixed(2)} m/s • RPE {set.estimatedRPE}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                );
-              })}
-            </CardContent>
-          </Card>
-
-          {/* Termination reason */}
-          {session.terminationReason && (
-            <Card elevation={1} className="mb-4">
-              <CardContent>
-                <View className="flex-row items-center">
-                  <Ionicons
-                    name="information-circle"
-                    size={20}
-                    color={t['text-disabled']}
-                    style={{ marginRight: 8 }}
-                  />
-                  <Text className="flex-1 text-text-disabled">
-                    Session ended: {formatTerminationReason(session.terminationReason)}
-                  </Text>
-                </View>
-              </CardContent>
-            </Card>
-          )}
-        </ScrollView>
-      </View>
-    </Modal>
-  );
-}
-
-/**
- * Format termination reason for display.
- */
-function formatTerminationReason(reason: string): string {
-  switch (reason) {
-    case 'failure':
-      return 'Reached failure';
-    case 'velocity_grinding':
-      return 'Near max effort';
-    case 'junk_volume':
-      return 'Performance declined';
-    case 'plan_exhausted':
-      return 'All sets completed';
-    case 'profile_complete':
-      return 'Discovery complete';
-    case 'user_stopped':
-      return 'Stopped by user';
-    default:
-      return reason;
-  }
 }
