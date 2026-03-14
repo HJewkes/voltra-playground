@@ -25,7 +25,12 @@ import type { Exercise } from '@/domain/exercise';
 import type { ExercisePlan } from '@/domain/workout';
 
 // Store imports
-import { createExerciseSessionStore, createRecordingStore, type VoltraStoreApi } from '@/stores';
+import {
+  createExerciseSessionStore,
+  recordingStore,
+  useRecordingStore,
+  type VoltraStoreApi,
+} from '@/stores';
 
 // Data imports
 import type { ExerciseSessionRepository } from '@/data/exercise-session';
@@ -76,9 +81,8 @@ export function ExerciseScreen({
   onComplete,
   onNewSession,
 }: ExerciseScreenProps) {
-  // Create stores
+  // Create session store (per-screen instance, not singleton)
   const sessionStore = useMemo(() => createExerciseSessionStore(), []);
-  const recordingStore = useMemo(() => createRecordingStore(), []);
 
   // Subscribe to session state
   const uiState = useStore(sessionStore, (s) => s.uiState);
@@ -93,11 +97,11 @@ export function ExerciseScreen({
   const recommendation = useStore(sessionStore, (s) => s.recommendation);
   const error = useStore(sessionStore, (s) => s.error);
 
-  // Subscribe to recording state
-  const repCount = useStore(recordingStore, (s) => s.repCount);
-  const lastRepPeakVelocity = useStore(recordingStore, (s) => s.lastRepPeakVelocity);
-  const lastSet = useStore(recordingStore, (s) => s.lastSet);
-  const _recordingUIState = useStore(recordingStore, (s) => s.uiState);
+  // Subscribe to recording state (module-level singleton)
+  const repCount = useRecordingStore((s) => s.repCount);
+  const lastRepPeakVelocity = useRecordingStore((s) => s.lastRepPeakVelocity);
+  const lastSet = useRecordingStore((s) => s.lastSet);
+  const _recordingUIState = useRecordingStore((s) => s.uiState);
 
   // Initialize session on mount
   useEffect(() => {
@@ -111,7 +115,7 @@ export function ExerciseScreen({
 
     // Prepare first set
     sessionStore.getState().prepareFirstSet();
-  }, [exercise, plan, voltraStore, repository, sessionStore, recordingStore]);
+  }, [exercise, plan, voltraStore, repository, sessionStore]);
 
   // Sync recording store UI state based on session state
   useEffect(() => {
@@ -124,7 +128,7 @@ export function ExerciseScreen({
     } else {
       recordingStore.getState().setUIState('idle');
     }
-  }, [uiState, recordingStore]);
+  }, [uiState]);
 
   // Connect voltra telemetry to recording store
   // Subscribe to currentSample changes from the voltra store
@@ -140,7 +144,7 @@ export function ExerciseScreen({
     });
 
     return unsubscribe;
-  }, [voltraStore, recordingStore, uiState]);
+  }, [voltraStore, uiState]);
 
   // Handle set completion from recording store
   useEffect(() => {
