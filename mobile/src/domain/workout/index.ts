@@ -80,6 +80,9 @@ export {
   getTerminationMessage,
 } from './session';
 
+// Telemetry
+export { TelemetryRingBuffer } from './telemetry-ring-buffer';
+
 // Re-export planners
 export {
   type StandardPlanOptions,
