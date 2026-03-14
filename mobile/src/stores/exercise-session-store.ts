@@ -57,6 +57,13 @@ import type { ExerciseSessionRepository } from '@/data/exercise-session';
 import { toStoredExerciseSession } from '@/data/exercise-session';
 import { getRecordingRepository, isDebugTelemetryEnabled } from '@/data/provider';
 import type { SampleRecording } from '@/data/recordings';
+import { isHapticCuesEnabled, isAudioCuesEnabled } from '@/data/preferences';
+
+// Notification cues for rest timer
+import {
+  fireRestTimerCues,
+  type RestTimerCueSettings,
+} from '@/domain/notifications/rest-timer-cues';
 
 // Recording store for intra-set recording
 import type { RecordingStoreApi } from './recording-store';
@@ -171,6 +178,17 @@ let voltraStoreRef: VoltraStoreApi | null = null;
 let repositoryRef: ExerciseSessionRepository | null = null;
 let restTimerId: ReturnType<typeof setInterval> | null = null;
 let countdownTimerId: ReturnType<typeof setInterval> | null = null;
+let cachedCueSettings: RestTimerCueSettings | null = null;
+
+async function loadCueSettings(): Promise<RestTimerCueSettings> {
+  if (cachedCueSettings) return cachedCueSettings;
+  const [hapticEnabled, audioEnabled] = await Promise.all([
+    isHapticCuesEnabled(),
+    isAudioCuesEnabled(),
+  ]);
+  cachedCueSettings = { hapticEnabled, audioEnabled };
+  return cachedCueSettings;
+}
 
 // =============================================================================
 // Singleton Store

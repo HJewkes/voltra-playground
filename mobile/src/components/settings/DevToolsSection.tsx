@@ -180,7 +180,7 @@ export function DevToolsSection() {
                 loadingText="Seeding..."
               >
                 <Ionicons name="cloud-download" size={20} color="#f97316" style={{ marginRight: 8 }} />
-                <ButtonText>Seed Data</ButtonText>
+                <ButtonText className="text-brand-primary">Seed Data</ButtonText>
               </Button>
             </View>
             <View className="flex-1">
@@ -194,7 +194,7 @@ export function DevToolsSection() {
                 loadingText="Clearing..."
               >
                 <Ionicons name="trash" size={20} color="#f97316" style={{ marginRight: 8 }} />
-                <ButtonText>Clear Data</ButtonText>
+                <ButtonText className="text-brand-primary">Clear Data</ButtonText>
               </Button>
             </View>
           </View>

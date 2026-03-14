@@ -1,17 +1,17 @@
 {
   "expo": {
-    "name": "Voltra",
-    "slug": "voltra",
+    "name": "Voltra Connect",
+    "slug": "voltra-connect",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "voltra",
+    "scheme": "voltra-connect",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#101010"
     },
     "ios": {
       "supportsTablet": true,
@@ -19,15 +19,15 @@
         "UIBackgroundModes": [
           "bluetooth-central"
         ],
-        "NSBluetoothAlwaysUsageDescription": "Voltra needs Bluetooth to connect to your training device and track your workouts.",
-        "NSBluetoothPeripheralUsageDescription": "Voltra needs Bluetooth to connect to your training device."
+        "NSBluetoothAlwaysUsageDescription": "Voltra Connect needs Bluetooth to connect to your training device and track your workouts.",
+        "NSBluetoothPeripheralUsageDescription": "Voltra Connect needs Bluetooth to connect to your training device."
       },
-      "bundleIdentifier": "com.anonymous.voltra"
+      "bundleIdentifier": "com.voltras.connect"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#FF7900"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -36,18 +36,13 @@
         "android.permission.BLUETOOTH_ADMIN",
         "android.permission.BLUETOOTH_CONNECT",
         "android.permission.BLUETOOTH_SCAN",
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.BLUETOOTH",
-        "android.permission.BLUETOOTH_ADMIN",
-        "android.permission.BLUETOOTH_CONNECT",
-        "android.permission.BLUETOOTH_SCAN",
         "android.permission.ACCESS_FINE_LOCATION"
       ],
-      "package": "com.anonymous.voltra"
+      "package": "com.voltras.connect"
     },
     "web": {
       "bundler": "metro",
-      "output": "static",
+      "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
@@ -60,7 +55,7 @@
             "peripheral",
             "central"
           ],
-          "bluetoothAlwaysPermission": "Voltra needs Bluetooth to connect to your training device and track your workouts."
+          "bluetoothAlwaysPermission": "Voltra Connect needs Bluetooth to connect to your training device and track your workouts."
         }
       ]
     ],

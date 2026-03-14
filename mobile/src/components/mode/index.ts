@@ -4,6 +4,6 @@
  * Components for training mode selection and configuration.
  */
 
+export { BasicModeConfig } from './BasicModeConfig';
 export { WeightTrainingConfig } from './WeightTrainingConfig';
-export { ChainsSelector } from './ChainsSelector';
-export { EccentricSlider } from './EccentricSlider';
+export { LoadProfileChart } from './LoadProfileChart';
