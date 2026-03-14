@@ -107,7 +107,7 @@ export function ExerciseScreen({
     );
 
   // Subscribe to session timing and results state
-  const { restCountdown, startCountdown, terminationReason, terminationMessage, recommendation } =
+  const { restCountdown, startCountdown, terminationReason, terminationMessage, recommendation, autoRegulation } =
     useExerciseSessionStore(
       useShallow((s) => ({
         restCountdown: s.restCountdown,
@@ -115,6 +115,7 @@ export function ExerciseScreen({
         terminationReason: s.terminationReason,
         terminationMessage: s.terminationMessage,
         recommendation: s.recommendation,
+        autoRegulation: s.autoRegulation,
       })),
     );
 
