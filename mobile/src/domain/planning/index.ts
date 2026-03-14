@@ -52,5 +52,21 @@ export {
   createPlanningContext,
 } from './types';
 
+// Auto-regulation engine
+export {
+  computeAutoRegulation,
+  extractLoadSuggestion,
+  computeVelocityWarning,
+  computeJunkVolumeAlert,
+  extractAutoStopSignal,
+  shouldAutoStopSet,
+  type AutoRegulationState,
+  type AutoRegulationSeverity,
+  type LoadSuggestion,
+  type VelocityWarning,
+  type JunkVolumeAlert,
+  type AutoStopSignal,
+} from './auto-regulation';
+
 // Strategies (for advanced usage)
 export * from './strategies';

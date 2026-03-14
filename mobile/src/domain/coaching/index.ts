@@ -1,0 +1,28 @@
+/**
+ * Coaching Domain
+ *
+ * AI coaching context generation for Claude-powered coaching responses.
+ * Assembles telemetry from workout, planning, and history domains
+ * into structured prompts for the Claude Messages API.
+ */
+
+export {
+  buildCoachingContext,
+  toPrompt,
+  type BuildContextInput,
+  type AutoRegulationInput,
+} from './coaching-context-builder';
+
+export type {
+  CoachingContext,
+  SetSummary,
+  SessionContext,
+  FatigueTrend,
+  AthleteHistory,
+  HistoricalSession,
+  PersonalRecordSummary,
+  AutoRegulationSignals,
+  LoadSuggestionSummary,
+  PreviousCoachingCue,
+  VelocityWarningSeverity,
+} from './types';
