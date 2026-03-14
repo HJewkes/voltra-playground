@@ -44,3 +44,21 @@ export async function isAutoReconnectEnabled(): Promise<boolean> {
 export async function setAutoReconnectEnabled(enabled: boolean): Promise<void> {
   await asyncStorageAdapter.set(STORAGE_KEYS.AUTO_RECONNECT, enabled);
 }
+
+export async function isHapticCuesEnabled(): Promise<boolean> {
+  const enabled = await asyncStorageAdapter.get<boolean>(STORAGE_KEYS.HAPTIC_CUES_ENABLED);
+  return enabled ?? true;
+}
+
+export async function setHapticCuesEnabled(enabled: boolean): Promise<void> {
+  await asyncStorageAdapter.set(STORAGE_KEYS.HAPTIC_CUES_ENABLED, enabled);
+}
+
+export async function isAudioCuesEnabled(): Promise<boolean> {
+  const enabled = await asyncStorageAdapter.get<boolean>(STORAGE_KEYS.AUDIO_CUES_ENABLED);
+  return enabled ?? true;
+}
+
+export async function setAudioCuesEnabled(enabled: boolean): Promise<void> {
+  await asyncStorageAdapter.set(STORAGE_KEYS.AUDIO_CUES_ENABLED, enabled);
+}

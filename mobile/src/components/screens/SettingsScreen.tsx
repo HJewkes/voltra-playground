@@ -12,6 +12,10 @@ import { ConnectionBanner, DeviceList } from '@/components/device';
 import { DevToolsSection } from '@/components/settings';
 import { useConnectionStore, selectBleEnvironment } from '@/stores';
 import type { DiscoveredDevice } from '@/domain/device';
+import { DataRow, Surface } from '@titan-design/react-ui';
+import { DeviceConnection } from '@/components/device';
+import { DevToolsSection, WorkoutCuesSection } from '@/components/settings';
+import { selectBleEnvironment } from '@/stores';
 
 /**
  * SettingsScreen - connection and app settings.
@@ -97,6 +101,9 @@ export function SettingsScreen() {
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
+
+        {/* Workout Cues Settings */}
+        <WorkoutCuesSection />
 
         {/* Dev Tools (DEV only) */}
         {__DEV__ && <DevToolsSection />}
