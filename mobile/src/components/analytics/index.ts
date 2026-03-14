@@ -5,7 +5,7 @@
  */
 
 // Charts
-export { ForceCurveChart, VelocityTrendChart, SetCurveChart } from './charts';
+export { ForceCurveChart, VelocityTrendChart, SetCurveChart, RepCurveChart } from './charts';
 
 // History
 export { WorkoutListItem, WorkoutDetailModal, AggregateStats } from './history';

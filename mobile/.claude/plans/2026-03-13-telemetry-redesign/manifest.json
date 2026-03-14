@@ -1,0 +1,97 @@
+{
+  "planId": "2026-03-13-telemetry-redesign",
+  "createdAt": "2026-03-13T09:45:00Z",
+  "goal": "Add multi-set session orchestration with auto-idle detection, tempo pacing, rest timer, set log, and pause-set support",
+  "tasks": [
+    {
+      "id": "task-01",
+      "name": "MockBLE Session Config",
+      "briefing": "briefings/task-01.md",
+      "wave": 1,
+      "dependsOn": [],
+      "fileOwnership": [
+        "voltra-node-sdk/src/bluetooth/adapters/mock/types.ts",
+        "voltra-node-sdk/src/bluetooth/adapters/mock.ts",
+        "voltra-node-sdk/src/bluetooth/adapters/mock/session-config.ts",
+        "voltra-node-sdk/tests/bluetooth/adapters/mock-session.test.ts"
+      ],
+      "status": "done",
+      "commit": "dc63351"
+    },
+    {
+      "id": "task-02",
+      "name": "Session Store Extensions",
+      "briefing": "briefings/task-02.md",
+      "wave": 1,
+      "dependsOn": [],
+      "fileOwnership": [
+        "voltras/mobile/src/stores/exercise-session-store.ts",
+        "voltras/mobile/src/domain/workout/models/session.ts",
+        "voltras/mobile/src/domain/workout/models/index.ts",
+        "voltras/mobile/src/domain/workout/index.ts",
+        "voltras/mobile/src/stores/__tests__/exercise-session-idle.test.ts"
+      ],
+      "status": "done",
+      "commit": "b9edd44"
+    },
+    {
+      "id": "task-03",
+      "name": "TempoBar Target Pacing",
+      "briefing": "briefings/task-03.md",
+      "wave": 1,
+      "dependsOn": [],
+      "fileOwnership": [
+        "voltras/mobile/src/components/exercise/TempoBar.tsx",
+        "voltras/mobile/src/components/exercise/__tests__/TempoBar.test.ts"
+      ],
+      "status": "done",
+      "commit": "2ec38ce"
+    },
+    {
+      "id": "task-04",
+      "name": "RestCard + CircularTimer",
+      "briefing": "briefings/task-04.md",
+      "wave": 2,
+      "dependsOn": ["task-02"],
+      "fileOwnership": [
+        "voltras/mobile/src/components/exercise/RestCard.tsx",
+        "voltras/mobile/src/components/exercise/CircularTimer.tsx",
+        "voltras/mobile/src/components/exercise/__tests__/RestCard.test.ts"
+      ],
+      "status": "done",
+      "commit": "3952236"
+    },
+    {
+      "id": "task-05",
+      "name": "SetLog Component",
+      "briefing": "briefings/task-05.md",
+      "wave": 2,
+      "dependsOn": ["task-02"],
+      "fileOwnership": [
+        "voltras/mobile/src/components/exercise/SetLog.tsx",
+        "voltras/mobile/src/components/exercise/__tests__/SetLog.test.ts"
+      ],
+      "status": "done",
+      "commit": "2d0c635"
+    },
+    {
+      "id": "task-06",
+      "name": "Screen Integration",
+      "briefing": "briefings/task-06.md",
+      "wave": 3,
+      "dependsOn": ["task-01", "task-02", "task-03", "task-04", "task-05"],
+      "fileOwnership": [
+        "voltras/mobile/src/components/screens/SimpleExerciseScreen.tsx",
+        "voltras/mobile/src/components/exercise/index.ts",
+        "voltras/mobile/src/components/screens/__tests__/SimpleExerciseScreen.test.ts"
+      ],
+      "status": "done",
+      "commit": "036185b"
+    }
+  ],
+  "waves": [
+    { "id": 1, "tasks": ["task-01", "task-02", "task-03"], "gate": "tests pass + lint clean in respective repos" },
+    { "id": 2, "tasks": ["task-04", "task-05"], "gate": "tests pass + lint clean" },
+    { "id": 3, "tasks": ["task-06"], "gate": "tests pass + lint clean + visual verification on localhost:8081" }
+  ]
+}

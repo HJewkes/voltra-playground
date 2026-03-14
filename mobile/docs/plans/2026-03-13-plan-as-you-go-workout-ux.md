@@ -1,7 +1,7 @@
 # Plan-As-You-Go Workout UX Redesign
 
 **Date:** 2026-03-13
-**Status:** Draft
+**Status:** In Progress
 **Branch:** `feat/telemetry-redesign`
 
 ## Problem

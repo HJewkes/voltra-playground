@@ -21,13 +21,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { Surface, getSemanticColors, alpha } from '@titan-design/react-ui';
 
 import { TrainingMode, TrainingModeNames } from '@/domain/device';
-import { getRPEColor, createEmptyPlan } from '@/domain/workout';
+import { createEmptyPlan } from '@/domain/workout';
 import type { TempoTarget, PlannedSet } from '@/domain/workout';
 import { createExercise } from '@/domain/exercise';
 import { useConnectionStore, selectIsConnected, createRecordingStore, createExerciseSessionStore } from '@/stores';
 import { WorkoutControls } from '@/components/recording';
 import { AdvancedAccordion } from '@/components/mode';
-import { TempoBar, QuickConfig, VerticalWeightJog, RestCard, SetLog } from '@/components/exercise';
+import { QuickConfig, VerticalWeightJog, SetLog } from '@/components/exercise';
 import type { TargetMode } from '@/components/exercise';
 import { MovementPhase } from '@voltras/workout-analytics';
 import type { VoltraStoreApi } from '@/stores/voltra-store';
@@ -106,9 +106,6 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
   const plannedSetCount = session?.plan.sets.length ?? 0;
 
   const targetRepsForDisplay = currentPlannedSet?.targetReps ?? null;
-  const restTargetMs = session
-    ? (session.plan.defaultRestSeconds * 1000)
-    : null;
 
   // Expected set duration for chart x-axis pre-stub
   const expectedSetDurationMs = useMemo(() => {
@@ -230,14 +227,6 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
     return unsubscribe;
   }, [voltraStore, recordingStore, isRecording]);
 
-  const hasMetrics = repCount > 0;
-  const rpeColor = hasMetrics ? getRPEColor(rpe) : t['text-disabled'];
-
-  const repCountDisplay = targetRepsForDisplay
-    ? `${repCount}/${targetRepsForDisplay}`
-    : `${repCount}`;
-  const repLabel = repCount === 1 && !targetRepsForDisplay ? 'rep' : 'reps';
-
   const handleTempoChange = useCallback((key: keyof TempoTarget, v: number) => {
     setTargetTempo((prev) => ({ ...prev, [key]: v }));
   }, []);
@@ -321,67 +310,8 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
             )}
           </Surface>
 
-          {/* Telemetry card — shows during active recording or resting */}
-          {(isRecording || uiState === 'resting') && (
-            <Surface elevation={1} className="mt-2 rounded-xl p-4">
-              {uiState === 'resting' ? (
-                <RestCard
-                  restElapsedMs={restElapsedMs}
-                  restTargetMs={restTargetMs}
-                  lastSetEntry={setLog.at(-1) ?? null}
-                  setNumber={currentSetIndex}
-                />
-              ) : (
-                <>
-                  {/* Row 1: Rep count + RPE + RIR */}
-                  <View className="flex-row items-center justify-between">
-                    <View className="flex-row items-baseline gap-2">
-                      <Text className="text-3xl font-bold text-text-primary">
-                        {repCountDisplay}
-                      </Text>
-                      <Text className="text-sm text-text-tertiary">
-                        {repLabel}
-                      </Text>
-                    </View>
-                    <View className="flex-row items-baseline gap-3">
-                      <View className="items-end">
-                        <Text className="text-xs text-text-disabled">RPE</Text>
-                        <Text className="text-lg font-bold" style={{ color: rpeColor }}>
-                          {hasMetrics ? rpe.toFixed(1) : '–'}
-                        </Text>
-                      </View>
-                      <View className="items-end">
-                        <Text className="text-xs text-text-disabled">RIR</Text>
-                        <Text className="text-lg font-bold text-text-primary">
-                          {hasMetrics ? (rir >= 5 ? '5+' : `~${Math.round(rir)}`) : '–'}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-
-                  {/* Tempo bar — with target pacing */}
-                  <View className="mt-3">
-                    <TempoBar
-                      currentPhase={isRecording ? currentPhase : MovementPhase.IDLE}
-                      phaseElapsedMs={phaseElapsedMs}
-                      repPhaseDurations={repPhaseDurations}
-                      targetTempo={currentPlannedSet?.targetTempo}
-                    />
-                  </View>
-
-                  {/* Effort message */}
-                  {liveMessage && isRecording ? (
-                    <Text className="mt-2 text-center text-sm font-medium" style={{ color: rpeColor }}>
-                      {liveMessage}
-                    </Text>
-                  ) : null}
-                </>
-              )}
-            </Surface>
-          )}
-
-          {/* Set Log */}
-          {(setLog.length > 0 || isRecording || plannedSetCount > 0) && (
+          {/* Unified Set Log — telemetry, charts, rest, history all in one */}
+          {(setLog.length > 0 || isRecording || uiState === 'resting' || plannedSetCount > 0) && (
             <Surface elevation={1} className="mt-2 rounded-xl p-3">
               <SetLog
                 setLog={setLog}
@@ -395,8 +325,20 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
                   samples: liveSamples,
                   expectedDurationMs: expectedSetDurationMs,
                 } : null}
+                activeTelemetry={isRecording ? {
+                  rpe,
+                  rir,
+                  currentPhase,
+                  phaseElapsedMs,
+                  repPhaseDurations,
+                  targetTempo: currentPlannedSet?.targetTempo,
+                  liveMessage: liveMessage || undefined,
+                } : null}
                 plannedSets={session?.plan.sets.slice(currentSetIndex + 1) ?? []}
                 totalSets={session?.plan.sets.length ?? null}
+                isResting={uiState === 'resting'}
+                restElapsedMs={restElapsedMs}
+                defaultRestSeconds={session?.plan.defaultRestSeconds}
               />
             </Surface>
           )}

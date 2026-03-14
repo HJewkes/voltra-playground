@@ -5,11 +5,15 @@ import {
   getSetMeanVelocity,
   estimateSetRIR,
   getRepPeakVelocity,
+  MovementPhase,
   type Rep,
 } from '@voltras/workout-analytics';
-import type { SetLogEntry, ClusterBoundary, PlannedSet } from '@/domain/workout';
+import type { SetLogEntry, ClusterBoundary, PlannedSet, TempoTarget } from '@/domain/workout';
+import { getRPEColor } from '@/domain/workout';
 import type { WorkoutSample } from '@voltras/workout-analytics';
 import { SetCurveChart } from '@/components/analytics';
+import { RestScrubber } from './RestScrubber';
+import { TempoBar } from './TempoBar';
 
 const t = getSemanticColors('dark');
 
@@ -20,6 +24,16 @@ const t = getSemanticColors('dark');
 export interface ActiveChartData {
   samples: WorkoutSample[];
   expectedDurationMs: number;
+}
+
+export interface ActiveTelemetry {
+  rpe: number;
+  rir: number;
+  currentPhase: MovementPhase;
+  phaseElapsedMs: number;
+  repPhaseDurations: { phase: MovementPhase; durationMs: number }[];
+  targetTempo?: TempoTarget;
+  liveMessage?: string;
 }
 
 export interface SetLogProps {
@@ -34,10 +48,18 @@ export interface SetLogProps {
   } | null;
   /** Live chart data for the active set */
   activeChart?: ActiveChartData | null;
+  /** Live telemetry for the active set (RPE, RIR, tempo) */
+  activeTelemetry?: ActiveTelemetry | null;
   /** Planned future sets (from session plan) */
   plannedSets: PlannedSet[];
   /** Total planned sets (null if dynamic/unlimited) */
   totalSets: number | null;
+  /** Whether the session is currently in rest state */
+  isResting?: boolean;
+  /** Elapsed rest time in ms (used with isResting) */
+  restElapsedMs?: number;
+  /** Default rest seconds from plan (used for rest scrubbers) */
+  defaultRestSeconds?: number;
 }
 
 // =============================================================================
@@ -199,17 +221,22 @@ function ActiveSetRow({
   weight,
   targetReps,
   chart,
+  telemetry,
 }: {
   setIndex: number;
   repCount: number;
   weight: number;
   targetReps: number | null;
   chart?: ActiveChartData | null;
+  telemetry?: ActiveTelemetry | null;
 }) {
   const { width: screenWidth } = useWindowDimensions();
   const chartWidth = screenWidth - 56;
 
+  const hasMetrics = telemetry && repCount > 0;
+  const rpeColor = hasMetrics ? getRPEColor(telemetry.rpe) : t['text-disabled'];
   const repText = targetReps ? `${repCount}/${targetReps} reps` : `${repCount} reps`;
+
   return (
     <View>
       <View style={[rowStyle, { backgroundColor: alpha(t['brand-primary'], 0.06) }]}>
@@ -217,10 +244,48 @@ function ActiveSetRow({
         <Text style={[detailStyle, { color: t['brand-primary'] }]}>
           {repText} · {weight} lbs
         </Text>
-        <Text style={{ fontSize: 11, color: t['brand-primary'], fontStyle: 'italic' }}>
-          (active)
-        </Text>
+        {hasMetrics ? (
+          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+            <Text style={[rpeStyle, { color: rpeColor }]}>
+              RPE {telemetry.rpe.toFixed(1)}
+            </Text>
+            <Text style={rpeStyle}>
+              RIR {telemetry.rir >= 5 ? '5+' : `~${Math.round(telemetry.rir)}`}
+            </Text>
+          </View>
+        ) : (
+          <Text style={{ fontSize: 11, color: t['brand-primary'], fontStyle: 'italic' }}>
+            (active)
+          </Text>
+        )}
       </View>
+
+      {telemetry && (
+        <View style={{ paddingHorizontal: 12, paddingTop: 4 }}>
+          <TempoBar
+            currentPhase={telemetry.currentPhase}
+            phaseElapsedMs={telemetry.phaseElapsedMs}
+            repPhaseDurations={telemetry.repPhaseDurations}
+            targetTempo={telemetry.targetTempo}
+          />
+        </View>
+      )}
+
+      {telemetry?.liveMessage && (
+        <Text
+          style={{
+            fontSize: 12,
+            fontWeight: '500',
+            color: rpeColor,
+            textAlign: 'center',
+            paddingTop: 4,
+            paddingHorizontal: 12,
+          }}
+        >
+          {telemetry.liveMessage}
+        </Text>
+      )}
+
       {chart && chart.samples.length > 0 && (
         <View style={{ paddingHorizontal: 4, paddingTop: 4, paddingBottom: 8 }}>
           <SetCurveChart
@@ -250,25 +315,60 @@ function PlannedSetRow({ planned }: { planned: PlannedSet }) {
 // Main Component
 // =============================================================================
 
-export function SetLog({ setLog, activeSet, activeChart, plannedSets }: SetLogProps) {
+export function SetLog({
+  setLog,
+  activeSet,
+  activeChart,
+  activeTelemetry,
+  plannedSets,
+  isResting,
+  restElapsedMs,
+  defaultRestSeconds = 90,
+}: SetLogProps) {
   const [expandedSet, setExpandedSet] = useState<string | null>(null);
+
+  const reversedLog = [...setLog].reverse();
 
   // Active set + chart first, then completed sets in reverse order (most recent first), then planned
   return (
     <View>
-      {activeSet && <ActiveSetRow {...activeSet} chart={activeChart} />}
+      {activeSet && (
+        <ActiveSetRow {...activeSet} chart={activeChart} telemetry={activeTelemetry} />
+      )}
 
-      {[...setLog].reverse().map((entry, i) => (
-        <CompletedSetRow
-          key={entry.set.id}
-          entry={entry}
-          setNumber={setLog.length - i}
-          expanded={expandedSet === entry.set.id}
-          onToggle={() =>
-            setExpandedSet((prev) => (prev === entry.set.id ? null : entry.set.id))
-          }
+      {/* Rest scrubber between active set and most recent completed set */}
+      {isResting && setLog.length > 0 && (
+        <RestScrubber
+          mode="resting"
+          restSeconds={defaultRestSeconds}
+          elapsedMs={restElapsedMs}
         />
-      ))}
+      )}
+
+      {reversedLog.map((entry, i) => {
+        const setNumber = setLog.length - i;
+        const isLastReversed = i === reversedLog.length - 1;
+
+        return (
+          <React.Fragment key={entry.set.id}>
+            <CompletedSetRow
+              entry={entry}
+              setNumber={setNumber}
+              expanded={expandedSet === entry.set.id}
+              onToggle={() =>
+                setExpandedSet((prev) => (prev === entry.set.id ? null : entry.set.id))
+              }
+            />
+            {/* Rest scrubber between consecutive completed sets */}
+            {!isLastReversed && (
+              <RestScrubber
+                mode="complete"
+                restSeconds={defaultRestSeconds}
+              />
+            )}
+          </React.Fragment>
+        );
+      })}
 
       {plannedSets.map((planned) => (
         <PlannedSetRow key={planned.setNumber} planned={planned} />
