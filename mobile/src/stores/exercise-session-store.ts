@@ -117,6 +117,9 @@ export interface ExerciseSessionState {
   totalSets: number;
   completedSetsCount: number;
 
+  // Stale state flag
+  isDisposed: boolean;
+
   // Actions - Lifecycle
   startSession: (exercise: Exercise, plan: ExercisePlan) => void;
   loadCurrentSession: () => Promise<void>;
@@ -179,6 +182,7 @@ export const exerciseSessionStore: ExerciseSessionStoreApi = createStore<Exercis
       // Initial state
       session: null,
       uiState: 'idle',
+      isDisposed: false,
       restCountdown: 0,
       startCountdown: 0,
       terminationReason: null,
@@ -211,6 +215,7 @@ export const exerciseSessionStore: ExerciseSessionStoreApi = createStore<Exercis
         set({
           session,
           uiState: 'idle',
+          isDisposed: false,
           restCountdown: 0,
           startCountdown: 0,
           terminationReason: null,
@@ -224,10 +229,12 @@ export const exerciseSessionStore: ExerciseSessionStoreApi = createStore<Exercis
       },
 
       loadCurrentSession: async () => {
+        if (get().isDisposed) return;
         await loadCurrentSessionAction(get, set);
       },
 
       stopSession: async () => {
+        if (get().isDisposed) return;
         await stopSessionAction(get, set);
       },
 
@@ -236,6 +243,7 @@ export const exerciseSessionStore: ExerciseSessionStoreApi = createStore<Exercis
       // =======================================================================
 
       prepareFirstSet: async () => {
+        if (get().isDisposed) return;
         await prepareFirstSetAction(get, set);
       },
 
@@ -249,6 +257,7 @@ export const exerciseSessionStore: ExerciseSessionStoreApi = createStore<Exercis
       // =======================================================================
 
       onSetCompleted: async (completedSet: CompletedSet) => {
+        if (get().isDisposed) return;
         await onSetCompletedAction(get, set, completedSet);
       },
 
@@ -301,6 +310,7 @@ export const exerciseSessionStore: ExerciseSessionStoreApi = createStore<Exercis
         set({
           session: null,
           uiState: 'idle',
+          isDisposed: true,
           restCountdown: 0,
           startCountdown: 0,
           terminationReason: null,
