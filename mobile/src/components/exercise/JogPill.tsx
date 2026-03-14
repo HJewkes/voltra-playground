@@ -11,6 +11,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { View, Text, PanResponder, Platform } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { alpha, getSemanticColors } from '@titan-design/react-ui';
+import { webStyle } from '@/utils/web-style';
 
 const t = getSemanticColors('dark');
 
@@ -260,7 +261,7 @@ export function JogPill({
           minWidth: pillWidth ?? (isHorizontal ? 80 : 60),
           minHeight: pillHeight ?? (isHorizontal ? 28 : 48),
           ...Platform.select({
-            web: {
+            web: webStyle({
               boxShadow: [
                 `0 2px 4px ${alpha('#000', 0.3)}`,
                 `inset 0 1px 0 ${alpha('#fff', 0.08)}`,
@@ -268,7 +269,7 @@ export function JogPill({
               cursor: disabled ? 'default' : cursor,
               touchAction: 'none',
               userSelect: 'none',
-            } as any,
+            }),
             default: {
               shadowColor: '#000',
               shadowOffset: { width: 0, height: 2 },

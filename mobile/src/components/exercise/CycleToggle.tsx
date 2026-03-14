@@ -8,6 +8,7 @@
 import React from 'react';
 import { TouchableOpacity, Text, Platform } from 'react-native';
 import { alpha, getSemanticColors } from '@titan-design/react-ui';
+import { webStyle } from '@/utils/web-style';
 
 const t = getSemanticColors('dark');
 
@@ -50,12 +51,12 @@ export function CycleToggle<T extends string = string>({
         borderRadius: 10,
         backgroundColor: alpha(activeColor, 0.15),
         ...Platform.select({
-          web: {
+          web: webStyle({
             boxShadow: [
               `0 1px 2px ${alpha('#000', 0.4)}`,
               `inset 0 1px 0 ${alpha(activeColor, 0.15)}`,
             ].join(', '),
-          } as any,
+          }),
           default: {
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 1 },
@@ -71,9 +72,9 @@ export function CycleToggle<T extends string = string>({
           fontWeight: '700',
           color: activeColor,
           ...Platform.select({
-            web: {
+            web: webStyle({
               textShadow: `0 0 8px ${alpha(activeColor, 0.4)}`,
-            } as any,
+            }),
             default: {},
           }),
         }}
