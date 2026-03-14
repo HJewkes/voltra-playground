@@ -18,7 +18,7 @@ export { createRecordingStore, recordingStore, useRecordingStore } from './recor
 export type { RecordingState, RecordingStoreApi, RecordingUIState } from './recording-store';
 
 // Exercise session store (singleton for multi-set orchestration)
-export { exerciseSessionStore, useExerciseSessionStore } from './exercise-session-store';
+export { createExerciseSessionStore, exerciseSessionStore, useExerciseSessionStore } from './exercise-session-store';
 export type {
   ExerciseSessionState,
   ExerciseSessionStoreApi,

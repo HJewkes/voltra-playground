@@ -201,12 +201,21 @@ async function loadCueSettings(): Promise<RestTimerCueSettings> {
 }
 
 // =============================================================================
-// Singleton Store
+// Factory & Singleton
 // =============================================================================
 
-export const exerciseSessionStore: ExerciseSessionStoreApi = createStore<ExerciseSessionState>()(
-  devtools(
-    (set, get) => ({
+function createStoreInstance(): ExerciseSessionStoreApi {
+  // Reset module-level refs for test isolation
+  recordingStoreRef = null;
+  voltraStoreRef = null;
+  repositoryRef = null;
+  restTimerId = null;
+  countdownTimerId = null;
+  cachedCueSettings = null;
+
+  return createStore<ExerciseSessionState>()(
+    devtools(
+      (set, get) => ({
       // Initial state
       session: null,
       uiState: 'idle',
@@ -403,7 +412,14 @@ export const exerciseSessionStore: ExerciseSessionStoreApi = createStore<Exercis
     }),
     { name: 'exercise-session-store' }
   )
-);
+  );
+}
+
+export function createExerciseSessionStore(): ExerciseSessionStoreApi {
+  return createStoreInstance();
+}
+
+export const exerciseSessionStore: ExerciseSessionStoreApi = createStoreInstance();
 
 // =============================================================================
 // Extracted Actions
