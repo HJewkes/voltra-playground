@@ -10,3 +10,4 @@ export * from './records-service';
 export * from './stats-service';
 export * from './session-history-service';
 export * from './training-log-service';
+export * from './cross-session-analytics';

@@ -113,6 +113,21 @@ function ViewToggle({
           Calendar
         </Text>
       </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => onChangeView('analytics')}
+        className="flex-1 items-center rounded-md py-2"
+        style={activeView === 'analytics' ? { backgroundColor: t['brand-primary'] } : undefined}
+      >
+        <Text
+          style={{
+            color: activeView === 'analytics' ? '#FFFFFF' : t['text-secondary'],
+            fontWeight: '600',
+            fontSize: 13,
+          }}
+        >
+          Analytics
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -169,6 +184,17 @@ export function HistoryScreen() {
 
   const aggregateStats = useMemo(() => computeStoredAggregateStats(sessions), [sessions]);
   const personalRecords = useMemo(() => computeStoredPersonalRecords(sessions), [sessions]);
+
+  if (activeView === 'analytics') {
+    return (
+      <View className="flex-1 bg-surface-400">
+        <View className="px-4 pt-4">
+          <ViewToggle activeView={activeView} onChangeView={setActiveView} />
+        </View>
+        <AnalyticsDashboard sessions={sessions} isLoading={isLoading} onRefresh={handleRefresh} />
+      </View>
+    );
+  }
 
   if (activeView === 'calendar') {
     return (

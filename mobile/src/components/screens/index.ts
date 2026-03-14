@@ -19,5 +19,8 @@ export type { ExercisePickerScreenProps } from './ExercisePickerScreen';
 // Training log calendar
 export { TrainingLogScreen } from './TrainingLogScreen';
 
+// Analytics dashboard
+export { AnalyticsDashboard } from './AnalyticsDashboard';
+
 // Simplified screens (MVP)
 export { SimpleExerciseScreen } from './SimpleExerciseScreen';
