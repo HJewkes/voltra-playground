@@ -18,7 +18,7 @@ const t = getSemanticColors('dark');
 const SAMPLE_INTERVAL_MS = 91;
 const DEFAULT_EXPECTED_MS = 30_000;
 
-const SIGNAL_OPTIONS: readonly CycleToggleOption<ChartSignal>[] = [
+export const SIGNAL_OPTIONS: readonly CycleToggleOption<ChartSignal>[] = [
   { value: 'velocity', label: 'Velocity' },
   { value: 'force', label: 'Force' },
   { value: 'position', label: 'Position' },
@@ -31,6 +31,8 @@ interface SetCurveChartProps {
   width: number;
   height: number;
   expectedDurationMs?: number;
+  /** When provided, signal is externally controlled (no internal toggle rendered) */
+  signal?: ChartSignal;
 }
 
 const SIGNAL_CONFIG: Record<ChartSignal, {
@@ -76,8 +78,11 @@ export function SetCurveChart({
   width,
   height,
   expectedDurationMs = DEFAULT_EXPECTED_MS,
+  signal: externalSignal,
 }: SetCurveChartProps) {
-  const [signal, setSignal] = useState<ChartSignal>('velocity');
+  const [internalSignal, setInternalSignal] = useState<ChartSignal>('velocity');
+  const signal = externalSignal ?? internalSignal;
+  const showToggle = !externalSignal;
   const config = SIGNAL_CONFIG[signal];
 
   const selectorHeight = 32;
@@ -104,13 +109,13 @@ export function SetCurveChart({
     const totalDurationMs = Math.max(expectedDurationMs, elapsedMs + SAMPLE_INTERVAL_MS * 5);
     const msToX = (ms: number) => padding.left + (ms / totalDurationMs) * chartWidth;
 
-    // Value range — floor at 0 for force/velocity/position
+    // Value range — scale to actual data, floor at 0 for force/velocity/position
     const values = samples.map(config.getValue);
-    const rawMin = config.floorAtZero ? 0 : Math.min(...values, config.defaultMin);
-    const rawMax = Math.max(...values, config.defaultMax);
-    const range = rawMax - rawMin || 1;
+    const rawMin = config.floorAtZero ? 0 : Math.min(...values);
+    const rawMax = Math.max(...values);
+    const range = rawMax - rawMin || 0.1;
     const minVal = rawMin;
-    const maxVal = rawMax + range * 0.05;
+    const maxVal = rawMax + range * 0.1;
     const yScale = chartHeight / (maxVal - minVal);
     const valToY = (v: number) => padding.top + (maxVal - v) * yScale;
 
@@ -172,15 +177,17 @@ export function SetCurveChart({
 
   return (
     <View>
-      {/* Signal toggle */}
-      <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', height: selectorHeight }}>
-        <CycleToggle
-          options={SIGNAL_OPTIONS}
-          value={signal}
-          onChange={setSignal}
-          activeColor={config.color}
-        />
-      </View>
+      {/* Signal toggle (only when not externally controlled) */}
+      {showToggle && (
+        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', height: selectorHeight }}>
+          <CycleToggle
+            options={SIGNAL_OPTIONS}
+            value={signal}
+            onChange={setInternalSignal}
+            activeColor={config.color}
+          />
+        </View>
+      )}
 
       {/* Chart */}
       <View>

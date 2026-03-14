@@ -11,7 +11,8 @@ import {
 import type { SetLogEntry, ClusterBoundary, PlannedSet, TempoTarget } from '@/domain/workout';
 import { getRPEColor } from '@/domain/workout';
 import type { WorkoutSample } from '@voltras/workout-analytics';
-import { SetCurveChart, RepCurveChart } from '@/components/analytics';
+import { SetCurveChart, RepCurveChart, SIGNAL_OPTIONS } from '@/components/analytics';
+import type { ChartSignal } from '@/components/analytics';
 import { RestScrubber } from './RestScrubber';
 import { TempoBar } from './TempoBar';
 import { CycleToggle, type CycleToggleOption } from './CycleToggle';
@@ -314,11 +315,19 @@ function ActiveSetChart({
   chartWidth: number;
 }) {
   const [view, setView] = useState<ChartView>('set');
+  const [signal, setSignal] = useState<ChartSignal>('velocity');
 
   return (
     <View style={{ paddingHorizontal: 4, paddingTop: 4, paddingBottom: 8 }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'flex-start', marginBottom: 4 }}>
+      {/* Two toggles on one line: view left, signal right */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
         <CycleToggle options={VIEW_OPTIONS} value={view} onChange={setView} />
+        <CycleToggle
+          options={SIGNAL_OPTIONS}
+          value={signal}
+          onChange={setSignal}
+          activeColor={signal === 'velocity' ? t['status-success'] : signal === 'force' ? t['brand-primary'] : t['status-info']}
+        />
       </View>
       {view === 'set' ? (
         <SetCurveChart
@@ -326,6 +335,7 @@ function ActiveSetChart({
           width={chartWidth}
           height={140}
           expectedDurationMs={chart.expectedDurationMs}
+          signal={signal}
         />
       ) : (
         <RepCurveChart
@@ -343,14 +353,11 @@ function ActiveSetChart({
 }
 
 function PlannedSetRow({ planned }: { planned: PlannedSet }) {
-  const repText = planned.targetReps > 0
-    ? `${planned.targetReps} reps`
-    : 'open reps';
   return (
     <View style={rowStyle}>
       <Text style={setLabelStyle}>Set {planned.setNumber}</Text>
       <Text style={detailStyle}>
-        {repText} · {planned.weight} lbs
+        {planned.targetReps > 0 ? `${planned.targetReps} reps · ` : ''}{planned.weight} lbs
       </Text>
     </View>
   );

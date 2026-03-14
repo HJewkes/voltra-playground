@@ -324,6 +324,9 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
 
           {/* Unified Set Log — each set renders its own Surface card */}
           {(setLog.length > 0 || isRecording || uiState === 'resting' || plannedSetCount > 0) && (
+            <View className="mt-3" />
+          )}
+          {(setLog.length > 0 || isRecording || uiState === 'resting' || plannedSetCount > 0) && (
             <SetLog
               setLog={setLog}
               activeSet={isRecording ? {
