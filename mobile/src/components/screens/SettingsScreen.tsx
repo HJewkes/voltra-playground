@@ -19,7 +19,7 @@ export function SettingsScreen() {
   const { isWeb } = selectBleEnvironment();
 
   return (
-    <ScrollView className="flex-1 bg-background-base">
+    <ScrollView className="flex-1 bg-surface-400">
       <View className="p-4">
         {/* Device Connection */}
         <View className="mb-4">
@@ -45,7 +45,7 @@ function AppInfoSection({ isWeb }: { isWeb: boolean }) {
     <>
       <Surface elevation={0} className="rounded-xl bg-surface-input" style={{ marginBottom: 16 }}>
         <View className="p-4">
-          <DataRow label="Version" value="1.0.0" className="border-b border-border-subtle pb-3 mb-3" />
+          <DataRow label="Version" value="1.0.0" className="border-b border-surface-200 pb-3 mb-3" />
           <DataRow label="BLE Mode" value={isWeb ? 'Web Bluetooth' : 'Native'} />
         </View>
       </Surface>

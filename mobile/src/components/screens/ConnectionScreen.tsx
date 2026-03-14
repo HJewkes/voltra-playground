@@ -20,7 +20,7 @@ export function ConnectionScreen() {
   }, [isConnected, router]);
 
   return (
-    <SafeAreaView className="flex-1 bg-background-base">
+    <SafeAreaView className="flex-1 bg-surface-400">
       {/* Header with settings */}
       <View className="flex-row items-center justify-between px-4 pt-2">
         <View />
