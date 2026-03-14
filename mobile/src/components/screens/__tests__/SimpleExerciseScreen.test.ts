@@ -1,6 +1,37 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createStore } from 'zustand';
 
+
+vi.mock("react-native-reanimated", () => ({
+  default: { createAnimatedComponent: (c: unknown) => c },
+  useSharedValue: () => ({ value: 0 }),
+  useAnimatedStyle: (fn: () => unknown) => fn(),
+  withSpring: (v: number) => v,
+}));
+
+vi.mock("../mock-rep-plan", () => ({
+  generateMockRepPlan: vi.fn(() => []),
+}));
+
+vi.mock("@/utils/coach-console", () => ({
+  registerCoachConsole: vi.fn(),
+}));
+
+vi.mock("@/utils/web-style", () => ({
+  webStyle: (s: Record<string, unknown>) => s,
+}));
+
+vi.mock("@/domain/workout/models/workout-plan", () => ({
+  validateWorkoutPlan: vi.fn(),
+}));
+
+vi.mock("@/data/provider", () => ({
+  getWorkoutPlanRepository: () => ({ saveWorkoutPlan: vi.fn() }),
+}));
+
+vi.mock("expo-clipboard", () => ({
+  getStringAsync: vi.fn(async () => ""),
+}));
 vi.mock('expo-router', () => ({
   useRouter: () => ({
     replace: vi.fn(),
@@ -149,6 +180,8 @@ vi.mock('@/components/exercise', () => ({
   RestCard: 'RestCard',
   CircularTimer: 'CircularTimer',
   SetLog: 'SetLog',
+  ExercisePickerModal: 'ExercisePickerModal',
+  QuickConfig: 'QuickConfig',
   EMPTY_TARGETS: {
     targetMode: 'reps',
     targetReps: 0,
@@ -158,6 +191,39 @@ vi.mock('@/components/exercise', () => ({
     restBlocks: 0,
     enabledSections: { effort: false, tempo: false, sets: false, rest: false },
   },
+}));
+
+vi.mock('../exercise', () => ({
+  ModeDrawer: 'ModeDrawer',
+  MODE_META: {},
+  PlanLoader: 'PlanLoader',
+  ConfigSection: 'ConfigSection',
+  ExerciseBreadcrumbs: 'ExerciseBreadcrumbs',
+  NextExerciseButton: 'NextExerciseButton',
+  WorkoutView: 'WorkoutView',
+  useExerciseStores: () => ({
+    recordingStore: mockRecordingStore,
+    sessionStore: mockSessionStore,
+    device: { mode: 0x0001, setMode: vi.fn(), weight: 50, eccentric: 50, setEccentric: vi.fn(), chains: 0, inverseChains: 0, setChains: vi.fn(), setInverseChains: vi.fn() },
+    recording: { repCount: 0, rpe: 5, rir: 5, liveMessage: null, currentPhase: 0, phaseElapsedMs: 0, repPhaseDurations: [], liveSamples: [], meanVelocity: 0, velocityLoss: 0 },
+    session: { uiState: 'idle', setLog: [], restElapsedMs: 0, currentSetIndex: 0, currentPlannedSet: null, session: null },
+  }),
+  useExerciseLifecycle: () => ({
+    configRef: { current: null },
+    completedExercises: [],
+    pickerVisible: false,
+    setPickerVisible: vi.fn(),
+    workoutPlan: null,
+    planExerciseIndex: 0,
+    currentPlanExercise: null,
+    hasMorePlanExercises: false,
+    handlePlanLoaded: vi.fn(),
+    handleNextExercise: vi.fn(),
+    handlePlanNextExercise: vi.fn(),
+    handleAddSet: vi.fn(),
+    handleStart: vi.fn(async () => {}),
+    handleStop: vi.fn(async () => {}),
+  }),
 }));
 
 describe('SimpleExerciseScreen', () => {
