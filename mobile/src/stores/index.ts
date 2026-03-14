@@ -14,7 +14,7 @@ export type {
 } from './voltra-store';
 
 // Recording store (singleton for per-recording analytics)
-export { recordingStore, useRecordingStore } from './recording-store';
+export { createRecordingStore, recordingStore, useRecordingStore } from './recording-store';
 export type { RecordingState, RecordingStoreApi, RecordingUIState } from './recording-store';
 
 // Exercise session store (singleton for multi-set orchestration)

@@ -2,7 +2,7 @@
  * Recording Store Tests
  *
  * Tests for single-set recording lifecycle, sample processing,
- * metric updates, and reset behavior.
+ * metric updates, reset behavior, and throttled set() calls.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -240,6 +240,93 @@ describe('RecordingStore', () => {
 
       expect(store.getState().repCount).toBe(0);
       expect(store.getState().isRecording).toBe(true);
+    });
+  });
+
+  describe('throttled set() calls', () => {
+    it('fires fewer set() calls than processSample() calls', () => {
+      store.getState().startRecording('bench', 'Bench');
+
+      for (let i = 0; i < 20; i++) {
+        store.getState().processSample(createSample(MovementPhase.IDLE));
+      }
+
+      const stats = store._getThrottleStats();
+      expect(stats.sampleCount).toBe(20);
+      expect(stats.setCallCount).toBeLessThan(stats.sampleCount);
+      expect(stats.setCallCount).toBeGreaterThan(0);
+    });
+
+    it('fires set() on phase transitions', () => {
+      store.getState().startRecording('bench', 'Bench');
+
+      store.getState().processSample(createSample(MovementPhase.IDLE));
+      const countBefore = store._getThrottleStats().setCallCount;
+
+      store.getState().processSample(
+        createSample(MovementPhase.CONCENTRIC, { timestamp: sampleTime + 1 }),
+      );
+
+      expect(store._getThrottleStats().setCallCount).toBeGreaterThan(countBefore);
+    });
+
+    it('fires set() on rep completion', () => {
+      store.getState().startRecording('bench', 'Bench');
+
+      const countBefore = store._getThrottleStats().setCallCount;
+      feedPhases(store.getState().processSample.bind(null), fullRepPhases());
+
+      expect(store._getThrottleStats().setCallCount).toBeGreaterThan(countBefore);
+      expect(store.getState().repCount).toBe(1);
+    });
+
+    it('reduces set() calls by >50% for sustained same-phase samples', () => {
+      store.getState().startRecording('bench', 'Bench');
+
+      for (let i = 0; i < 100; i++) {
+        store.getState().processSample(createSample(MovementPhase.IDLE));
+      }
+
+      const stats = store._getThrottleStats();
+      expect(stats.sampleCount).toBe(100);
+      // 100 samples * 50ms = 5000ms total. 5000/250 = 20 max throttle flushes.
+      expect(stats.setCallCount).toBeLessThanOrEqual(25);
+      expect(stats.setCallCount).toBeGreaterThan(0);
+    });
+
+    it('ring buffer receives every sample regardless of throttling', () => {
+      store.getState().startRecording('bench', 'Bench');
+
+      const sampleCount = 50;
+      for (let i = 0; i < sampleCount; i++) {
+        store.getState().processSample(createSample(MovementPhase.IDLE));
+      }
+
+      expect(store.getTelemetryBuffer().length).toBe(sampleCount);
+    });
+
+    it('flushes pending debug samples on phase change', () => {
+      mockIsDebugEnabled.mockReturnValue(true);
+      store.getState().startRecording('bench', 'Bench');
+
+      for (let i = 0; i < 10; i++) {
+        store.getState().processSample(createSample(MovementPhase.IDLE));
+      }
+
+      // Phase change flushes all pending debug samples
+      store.getState().processSample(createSample(MovementPhase.CONCENTRIC));
+
+      expect(store.getState().allSamples).toHaveLength(11);
+    });
+
+    it('resets throttle stats on startRecording', () => {
+      store.getState().startRecording('bench', 'Bench');
+      store.getState().processSample(createSample(MovementPhase.IDLE));
+      expect(store._getThrottleStats().sampleCount).toBe(1);
+
+      store.getState().startRecording('bench', 'Bench');
+      expect(store._getThrottleStats().sampleCount).toBe(0);
+      expect(store._getThrottleStats().setCallCount).toBe(0);
     });
   });
 });
