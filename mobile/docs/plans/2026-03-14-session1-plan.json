@@ -1,0 +1,86 @@
+{
+  "id": "assessment-1-2026-03-14",
+  "name": "Assessment Session 1: Upper Body Discovery",
+  "date": "2026-03-14",
+  "coach": "Claude",
+  "exercises": [
+    {
+      "exerciseId": "cable_chest_press",
+      "exerciseName": "Cable Chest Press",
+      "cues": [
+        "Cable at sternum height (high-mid for 7ft frame)",
+        "D-handles, stand 2-3ft from posts",
+        "Staggered stance for stability",
+        "3s eccentric, full stretch at extension"
+      ],
+      "notes": "Discovery ramp — building load-velocity profile. Stop if velocity < 0.40 m/s.",
+      "sets": [
+        { "weight": 30, "reps": 5, "type": "warmup", "note": "Movement pattern check" },
+        { "weight": 50, "reps": 3, "type": "ramp", "note": "Should be easy" },
+        { "weight": 70, "reps": 3, "type": "ramp", "note": "Report velocity to coach" },
+        { "weight": 85, "reps": 3, "type": "ramp", "note": "Coach decides next load" },
+        { "weight": null, "reps": 3, "type": "ramp", "note": "Only if prev set velocity > 0.50 m/s" },
+        { "weight": null, "reps": 8, "type": "working", "rirTarget": 4, "note": "Hypertrophy load — RPE 6 max" },
+        { "weight": null, "reps": 8, "type": "working", "rirTarget": 4, "note": "Same weight, focus on tempo" }
+      ]
+    },
+    {
+      "exerciseId": "cable_row",
+      "exerciseName": "Cable Row",
+      "cues": [
+        "Cable low-mid (navel height standing)",
+        "V-handle or straight bar",
+        "Full scapular retraction at peak",
+        "2s eccentric, squeeze at contraction"
+      ],
+      "notes": "Same discovery ramp protocol as chest press.",
+      "sets": [
+        { "weight": 30, "reps": 5, "type": "warmup" },
+        { "weight": 50, "reps": 3, "type": "ramp" },
+        { "weight": 70, "reps": 3, "type": "ramp", "note": "Report velocity" },
+        { "weight": 85, "reps": 3, "type": "ramp", "note": "Coach decides next" },
+        { "weight": null, "reps": 3, "type": "ramp", "note": "If needed" },
+        { "weight": null, "reps": 8, "type": "working", "rirTarget": 4 },
+        { "weight": null, "reps": 8, "type": "working", "rirTarget": 4 }
+      ]
+    },
+    {
+      "exerciseId": "lat_pulldown",
+      "exerciseName": "Lat Pulldown",
+      "cues": [
+        "Cables at highest position",
+        "Wide bar or D-handles",
+        "Use Pegasus seat with knee pad",
+        "Initiate with lats not biceps",
+        "3s eccentric — slow negative is key"
+      ],
+      "notes": "Verify full arm extension doesn't hit cable limit at 7ft height.",
+      "sets": [
+        { "weight": 25, "reps": 5, "type": "warmup" },
+        { "weight": 40, "reps": 3, "type": "ramp" },
+        { "weight": 55, "reps": 3, "type": "ramp", "note": "Report velocity" },
+        { "weight": 65, "reps": 3, "type": "ramp", "note": "Coach decides next" },
+        { "weight": null, "reps": 10, "type": "working", "rirTarget": 4 },
+        { "weight": null, "reps": 10, "type": "working", "rirTarget": 4 }
+      ]
+    },
+    {
+      "exerciseId": "cable_curl",
+      "exerciseName": "Cable Curl",
+      "cues": [
+        "Cable at lowest position",
+        "Straight bar or EZ attachment",
+        "Elbows pinned at sides",
+        "Squeeze at top, 2s eccentric"
+      ],
+      "notes": "Light exploration only — not full discovery.",
+      "sets": [
+        { "weight": 20, "reps": 8, "type": "warmup" },
+        { "weight": 30, "reps": 8, "type": "ramp" },
+        { "weight": 40, "reps": 6, "type": "ramp", "note": "Find moderate RPE 5-6 load" },
+        { "weight": null, "reps": 12, "type": "working", "rirTarget": 5 },
+        { "weight": null, "reps": 12, "type": "working", "rirTarget": 5 }
+      ]
+    }
+  ]
+}

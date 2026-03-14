@@ -38,6 +38,10 @@ export {
   getPlanVolume,
 } from './plan';
 
+// Workout Plan (coach-programmed)
+export type { WorkoutPlan, WorkoutExercise, WorkoutSet } from './workout-plan';
+export { validateWorkoutPlan } from './workout-plan';
+
 // Session
 export type { ExerciseSession, SetComparison, ClusterBoundary, SetLogEntry } from './session';
 export {

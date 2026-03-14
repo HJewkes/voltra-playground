@@ -14,9 +14,11 @@ import { getRPEColor } from '@/domain/workout';
 import type { WorkoutSample } from '@voltras/workout-analytics';
 import { SetCurveChart, RepCurveChart, SIGNAL_OPTIONS } from '@/components/analytics';
 import type { ChartSignal } from '@/components/analytics';
+import type { SessionNote } from '@/stores/exercise-session-store';
 import { RestScrubber } from './RestScrubber';
 import { TempoBar } from './TempoBar';
 import { CycleToggle, type CycleToggleOption } from './CycleToggle';
+import { QuickNote } from './QuickNote';
 
 type ChartView = 'set' | 'rep';
 const VIEW_OPTIONS: readonly CycleToggleOption<ChartView>[] = [
@@ -75,6 +77,10 @@ export interface SetLogProps {
   defaultRestSeconds?: number;
   /** Called when user drags a rest scrubber for a planned set */
   onPlannedRestChange?: (setIndex: number, restSeconds: number) => void;
+  /** Session notes (displayed after their corresponding set) */
+  sessionNotes?: SessionNote[];
+  /** Called when athlete saves a new note */
+  onAddNote?: (text: string) => void;
 }
 
 // =============================================================================
@@ -429,6 +435,20 @@ function ActiveSetChart({
   );
 }
 
+function NoteRow({ note }: { note: SessionNote }) {
+  const time = new Date(note.timestamp);
+  const timeStr = `${time.getHours()}:${String(time.getMinutes()).padStart(2, '0')}`;
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6, paddingHorizontal: 12, paddingVertical: 4 }}>
+      <Ionicons name="create-outline" size={12} color={t['text-tertiary']} style={{ marginTop: 2 }} />
+      <Text style={{ fontSize: 12, color: t['text-secondary'], flex: 1 }} numberOfLines={3}>
+        {note.text}
+      </Text>
+      <Text style={{ fontSize: 10, color: t['text-disabled'] }}>{timeStr}</Text>
+    </View>
+  );
+}
+
 function PlannedSetRow({ planned }: { planned: PlannedSet }) {
   return (
     <View style={rowStyle}>
@@ -455,6 +475,8 @@ export function SetLog({
   restElapsedMs,
   defaultRestSeconds = 90,
   onPlannedRestChange,
+  sessionNotes = [],
+  onAddNote,
 }: SetLogProps) {
   const [expandedSet, setExpandedSet] = useState<string | null>(null);
 
@@ -462,26 +484,40 @@ export function SetLog({
   return (
     <View>
       {/* Completed sets in ascending order */}
-      {setLog.map((entry, i) => (
-        <React.Fragment key={entry.set.id}>
-          <Surface elevation={1} className="rounded-xl p-3 mt-2">
-            <CompletedSetRow
-              entry={entry}
-              setNumber={i + 1}
-              expanded={expandedSet === entry.set.id}
-              onToggle={() =>
-                setExpandedSet((prev) => (prev === entry.set.id ? null : entry.set.id))
-              }
-            />
-          </Surface>
-          {/* Rest scrubber after each completed set */}
-          {i < setLog.length - 1 && (
-            <View style={{ marginTop: 4, marginBottom: 4 }}>
-              <RestScrubber mode="complete" restSeconds={defaultRestSeconds} />
-            </View>
-          )}
-        </React.Fragment>
-      ))}
+      {setLog.map((entry, i) => {
+        const setNotes = sessionNotes.filter((n) => n.setIndex === i + 1);
+        return (
+          <React.Fragment key={entry.set.id}>
+            <Surface elevation={1} className="rounded-xl p-3 mt-2">
+              <CompletedSetRow
+                entry={entry}
+                setNumber={i + 1}
+                expanded={expandedSet === entry.set.id}
+                onToggle={() =>
+                  setExpandedSet((prev) => (prev === entry.set.id ? null : entry.set.id))
+                }
+              />
+              {/* Notes attached to this set */}
+              {setNotes.map((note) => (
+                <NoteRow key={note.timestamp} note={note} />
+              ))}
+            </Surface>
+            {/* Rest scrubber after each completed set */}
+            {i < setLog.length - 1 && (
+              <View style={{ marginTop: 4, marginBottom: 4 }}>
+                <RestScrubber mode="complete" restSeconds={defaultRestSeconds} />
+              </View>
+            )}
+          </React.Fragment>
+        );
+      })}
+
+      {/* Quick note input during rest */}
+      {isResting && onAddNote && (
+        <View style={{ marginTop: 6, paddingHorizontal: 12 }}>
+          <QuickNote onSave={onAddNote} />
+        </View>
+      )}
 
       {/* Rest scrubber in resting mode — after last completed set, before next */}
       {isResting && (

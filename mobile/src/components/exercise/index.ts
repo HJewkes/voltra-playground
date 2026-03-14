@@ -55,6 +55,10 @@ export { RestScrubber } from './RestScrubber';
 export { JogPill } from './JogPill';
 export type { JogPillProps } from './JogPill';
 
+// Quick note input
+export { QuickNote } from './QuickNote';
+export type { QuickNoteProps } from './QuickNote';
+
 // Exercise picker modal
 export { ExercisePickerModal } from './ExercisePickerModal';
 export type { ExercisePickerModalProps } from './ExercisePickerModal';

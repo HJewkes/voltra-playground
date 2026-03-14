@@ -25,6 +25,10 @@ import {
   createManualLogRepository,
   type ManualLogRepository,
 } from './manual-log/manual-log-repository';
+import {
+  createWorkoutPlanRepository,
+  type WorkoutPlanRepository,
+} from './workout-plan/workout-plan-repository';
 
 // Re-export debug config for convenience (consumers can import from provider)
 export { isDebugTelemetryEnabled, setDebugTelemetryEnabled } from './debug-config';
@@ -58,6 +62,7 @@ export function setTestAdapter(adapter: StorageAdapter | null): void {
   _recordingRepository = null;
   _velocityProfileRepository = null;
   _manualLogRepository = null;
+  _workoutPlanRepository = null;
 }
 
 // =============================================================================
@@ -69,6 +74,7 @@ let _exerciseRepository: ExerciseRepository | null = null;
 let _recordingRepository: RecordingRepository | null = null;
 let _velocityProfileRepository: VelocityProfileRepository | null = null;
 let _manualLogRepository: ManualLogRepository | null = null;
+let _workoutPlanRepository: WorkoutPlanRepository | null = null;
 
 /**
  * Get the exercise session repository singleton.
@@ -118,4 +124,14 @@ export function getManualLogRepository(): ManualLogRepository {
     _manualLogRepository = createManualLogRepository(getAdapter());
   }
   return _manualLogRepository;
+}
+
+/**
+ * Get the workout plan repository singleton.
+ */
+export function getWorkoutPlanRepository(): WorkoutPlanRepository {
+  if (!_workoutPlanRepository) {
+    _workoutPlanRepository = createWorkoutPlanRepository(getAdapter());
+  }
+  return _workoutPlanRepository;
 }

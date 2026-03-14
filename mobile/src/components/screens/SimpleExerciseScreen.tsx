@@ -18,14 +18,18 @@ import { useShallow } from 'zustand/react/shallow';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
 import { Surface, getSemanticColors, alpha } from '@titan-design/react-ui';
 
 import { TrainingMode, TrainingModeNames } from '@/domain/device';
 import { createEmptyPlan } from '@/domain/workout';
 import type { TempoTarget, PlannedSet, SetLogEntry } from '@/domain/workout';
-import { createExercise } from '@/domain/exercise';
+import type { WorkoutPlan, WorkoutExercise } from '@/domain/workout/models/workout-plan';
+import { validateWorkoutPlan } from '@/domain/workout/models/workout-plan';
+import { createExercise, EXERCISE_CATALOG } from '@/domain/exercise';
 import type { Exercise } from '@/domain/exercise';
 import { useConnectionStore, selectIsConnected, createRecordingStore, createExerciseSessionStore } from '@/stores';
+import { getWorkoutPlanRepository } from '@/data/provider';
 import { WorkoutControls } from '@/components/recording';
 import { AdvancedAccordion } from '@/components/mode';
 import { QuickConfig, VerticalWeightJog, SetLog, ExercisePickerModal } from '@/components/exercise';
@@ -33,8 +37,40 @@ import type { TargetMode } from '@/components/exercise';
 import { MovementPhase } from '@voltras/workout-analytics';
 import type { VoltraStoreApi } from '@/stores/voltra-store';
 import { generateMockRepPlan } from './mock-rep-plan';
+import { registerCoachConsole } from '@/utils/coach-console';
 
 const t = getSemanticColors('dark');
+
+/**
+ * Convert a WorkoutExercise's sets to PlannedSets for the session store.
+ */
+function workoutSetsToPlannedSets(exercise: WorkoutExercise): PlannedSet[] {
+  return exercise.sets.map((s, i) => ({
+    setNumber: i + 1,
+    weight: s.weight ?? 0,
+    targetReps: s.reps,
+    rirTarget: s.rirTarget ?? 0,
+    isWarmup: s.type === 'warmup',
+    targetTempo: s.tempoTarget
+      ? {
+          concentric: s.tempoTarget.concentric,
+          eccentric: s.tempoTarget.eccentric,
+          pauseTop: s.tempoTarget.pauseTop,
+          pauseBottom: s.tempoTarget.pauseBottom,
+        }
+      : undefined,
+    restSeconds: 90,
+  }));
+}
+
+/**
+ * Resolve a WorkoutExercise to a catalog Exercise, falling back to a generic entry.
+ */
+function resolveExercise(we: WorkoutExercise): Exercise {
+  const catalogEntry = EXERCISE_CATALOG[we.exerciseId];
+  if (catalogEntry) return catalogEntry;
+  return createExercise({ id: we.exerciseId, name: we.exerciseName });
+}
 
 export function SimpleExerciseScreen() {
   const router = useRouter();
@@ -95,11 +131,21 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
   const session = useStore(sessionStore, (s) => s.session);
   const exerciseSetupNotes = session?.exercise.equipmentSetup?.notes;
 
+  // Register coach console for browser monitoring (web only)
+  useEffect(() => {
+    registerCoachConsole(recordingStore, sessionStore);
+  }, [recordingStore, sessionStore]);
+
   // Multi-exercise tracking
   const [completedExercises, setCompletedExercises] = useState<
     { name: string; setCount: number; setLog: SetLogEntry[] }[]
   >([]);
   const [pickerVisible, setPickerVisible] = useState(false);
+
+  // Workout plan state
+  const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlan | null>(null);
+  const [planExerciseIndex, setPlanExerciseIndex] = useState(0);
+  const currentPlanExercise = workoutPlan?.exercises[planExerciseIndex] ?? null;
 
   // Quick config state
   const [effortEnabled, setEffortEnabled] = useState(false);
@@ -117,6 +163,72 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
   const modeName = TrainingModeNames[mode] ?? 'Unknown';
   const isRecording = uiState === 'recording';
   const isActive = isRecording || uiState === 'preparing' || uiState === 'countdown';
+
+  // Load a specific plan exercise into the session
+  const loadPlanExercise = useCallback(
+    (plan: WorkoutPlan, exerciseIdx: number) => {
+      const we = plan.exercises[exerciseIdx];
+      if (!we) return;
+
+      const exercise = resolveExercise(we);
+      const plannedSets = workoutSetsToPlannedSets(we);
+      const emptyPlan = createEmptyPlan(exercise.id);
+      const planWithSets = { ...emptyPlan, sets: plannedSets };
+
+      sessionStore.getState().startSession(exercise, planWithSets);
+      sessionStore.getState().bindRecordingStore(recordingStore);
+      sessionStore.getState().bindVoltraStore(voltraStore);
+
+      // Sync device weight to first set
+      const firstWeight = plannedSets[0]?.weight;
+      if (firstWeight && firstWeight > 0) {
+        voltraStore.getState().setWeight(firstWeight);
+      }
+    },
+    [sessionStore, recordingStore, voltraStore],
+  );
+
+  // Clipboard plan import
+  const handleLoadPlan = useCallback(async () => {
+    try {
+      const text = await Clipboard.getStringAsync();
+      if (!text.trim()) {
+        Alert.alert('Empty Clipboard', 'Copy a workout plan JSON to your clipboard first.');
+        return;
+      }
+
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(text);
+      } catch {
+        Alert.alert('Invalid JSON', 'Clipboard content is not valid JSON.');
+        return;
+      }
+
+      const error = validateWorkoutPlan(parsed);
+      if (error) {
+        Alert.alert('Invalid Plan', error);
+        return;
+      }
+
+      const plan = parsed as WorkoutPlan;
+
+      // Save to storage
+      const repo = getWorkoutPlanRepository();
+      await repo.saveWorkoutPlan(plan);
+
+      // Load first exercise
+      setWorkoutPlan(plan);
+      setPlanExerciseIndex(0);
+      setCompletedExercises([]);
+      loadPlanExercise(plan, 0);
+
+      Alert.alert('Plan Loaded', `"${plan.name}" — ${plan.exercises.length} exercises`);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      Alert.alert('Error', `Failed to load plan: ${message}`);
+    }
+  }, [loadPlanExercise]);
 
   // Multi-exercise: next-exercise handler (must be after modeName)
   const handleNextExercise = useCallback((exercise: Exercise) => {
@@ -146,6 +258,30 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
 
     setPickerVisible(false);
   }, [sessionStore, recordingStore, voltraStore, modeName, mode, setMode]);
+
+  // Plan-aware next exercise: advance to next in plan or open picker
+  const handlePlanNextExercise = useCallback(() => {
+    const currentSession = sessionStore.getState().session;
+    const currentLog = sessionStore.getState().setLog;
+    const currentName = currentSession?.exercise.name ?? modeName;
+    const currentSetCount = currentSession?.completedSets.length ?? currentLog.length;
+
+    setCompletedExercises((prev) => [
+      ...prev,
+      { name: currentName, setCount: currentSetCount, setLog: [...currentLog] },
+    ]);
+
+    if (workoutPlan && planExerciseIndex < workoutPlan.exercises.length - 1) {
+      const nextIdx = planExerciseIndex + 1;
+      setPlanExerciseIndex(nextIdx);
+      loadPlanExercise(workoutPlan, nextIdx);
+    } else {
+      setPickerVisible(true);
+    }
+  }, [sessionStore, modeName, workoutPlan, planExerciseIndex, loadPlanExercise]);
+
+  const hasMorePlanExercises =
+    workoutPlan !== null && planExerciseIndex < workoutPlan.exercises.length - 1;
 
   const totalExercisesDone = completedExercises.length;
 
@@ -375,8 +511,85 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
         </View>
       )}
 
+      {/* Workout plan header */}
+      {workoutPlan && (
+        <View
+          style={{
+            paddingHorizontal: 16,
+            paddingVertical: 6,
+            backgroundColor: alpha(t['brand-primary'], 0.08),
+            borderBottomWidth: 1,
+            borderBottomColor: alpha(t['brand-primary'], 0.15),
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Ionicons name="clipboard-outline" size={14} color={t['brand-primary']} />
+            <Text style={{ fontSize: 13, fontWeight: '700', color: t['brand-primary'], flex: 1 }}>
+              {workoutPlan.name}
+            </Text>
+            <Text style={{ fontSize: 11, color: t['text-tertiary'] }}>
+              {planExerciseIndex + 1}/{workoutPlan.exercises.length}
+            </Text>
+          </View>
+          {workoutPlan.coach && (
+            <Text style={{ fontSize: 10, color: t['text-tertiary'], marginTop: 2 }}>
+              Coach: {workoutPlan.coach}
+            </Text>
+          )}
+        </View>
+      )}
+
+      {/* Coaching cues for current plan exercise */}
+      {currentPlanExercise?.cues && currentPlanExercise.cues.length > 0 && (
+        <View
+          style={{
+            paddingHorizontal: 16,
+            paddingVertical: 6,
+            backgroundColor: alpha('#FFD700', 0.06),
+            borderBottomWidth: 1,
+            borderBottomColor: alpha('#FFD700', 0.1),
+          }}
+        >
+          {currentPlanExercise.cues.map((cue, i) => (
+            <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginBottom: 2 }}>
+              <Text style={{ fontSize: 11, color: '#FFD700' }}>*</Text>
+              <Text style={{ fontSize: 11, color: t['text-secondary'], flex: 1 }}>{cue}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
       <ScrollView className="flex-1" scrollEnabled={!isRecording}>
         <View className="px-4 pb-4">
+          {/* Load Plan button (only when idle / no active session) */}
+          {!isActive && uiState !== 'resting' && uiState !== 'results' && !workoutPlan && (
+            <TouchableOpacity
+              onPress={handleLoadPlan}
+              activeOpacity={0.7}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                backgroundColor: alpha(t['brand-primary'], 0.1),
+                borderRadius: 10,
+                paddingVertical: 10,
+                marginTop: 4,
+                marginBottom: 4,
+                borderWidth: 1,
+                borderColor: alpha(t['brand-primary'], 0.2),
+                borderStyle: 'dashed',
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Load workout plan from clipboard"
+            >
+              <Ionicons name="clipboard-outline" size={16} color={t['brand-primary']} />
+              <Text style={{ fontSize: 13, fontWeight: '600', color: t['brand-primary'] }}>
+                Load Plan from Clipboard
+              </Text>
+            </TouchableOpacity>
+          )}
+
           {/* Quick config: Reps/RIR | Weight | Add Set */}
           <Surface elevation={1} className="mt-1 rounded-xl py-3 px-2">
             <QuickConfig
@@ -493,7 +706,7 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
       >
         {uiState === 'results' ? (
           <TouchableOpacity
-            onPress={() => setPickerVisible(true)}
+            onPress={workoutPlan ? handlePlanNextExercise : () => setPickerVisible(true)}
             activeOpacity={0.8}
             style={{
               flexDirection: 'row',
@@ -505,11 +718,13 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
               paddingVertical: 14,
             }}
             accessibilityRole="button"
-            accessibilityLabel="Next Exercise"
+            accessibilityLabel={hasMorePlanExercises ? 'Next plan exercise' : 'Next Exercise'}
           >
             <Ionicons name="arrow-forward" size={22} color="#fff" />
             <Text style={{ fontSize: 16, fontWeight: '700', color: '#fff' }}>
-              Next Exercise
+              {hasMorePlanExercises
+                ? `Next: ${workoutPlan!.exercises[planExerciseIndex + 1].exerciseName}`
+                : 'Next Exercise'}
             </Text>
           </TouchableOpacity>
         ) : (

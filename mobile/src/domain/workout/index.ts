@@ -41,6 +41,12 @@ export {
   isDiscoveryPlan,
   getPlanVolume,
 
+  // Workout Plan (coach-programmed)
+  type WorkoutPlan,
+  type WorkoutExercise,
+  type WorkoutSet,
+  validateWorkoutPlan,
+
   // Session
   type ExerciseSession,
   type SetComparison,

@@ -73,6 +73,16 @@ import type { VoltraStoreApi } from './voltra-store';
 // =============================================================================
 
 /**
+ * A timestamped note captured during a session (e.g. between sets).
+ */
+export interface SessionNote {
+  text: string;
+  timestamp: number;
+  setIndex: number;
+  exerciseId?: string;
+}
+
+/**
  * UI state machine for exercise sessions.
  *
  * First set: idle → preparing → ready → countdown → recording
@@ -124,6 +134,9 @@ export interface ExerciseSessionState {
   // Set log
   setLog: SetLogEntry[];
 
+  // Session notes (athlete quick-notes between sets)
+  sessionNotes: SessionNote[];
+
   // Error state
   error: string | null;
 
@@ -139,6 +152,9 @@ export interface ExerciseSessionState {
   startSession: (exercise: Exercise, plan: ExercisePlan) => void;
   loadCurrentSession: () => Promise<void>;
   stopSession: () => Promise<void>;
+
+  // Actions - Notes
+  addNote: (text: string) => void;
 
   // Actions - Dynamic plan building
   addPlannedSet: (set: PlannedSet) => void;
@@ -228,6 +244,7 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
         currentClusterStart: 0,
         pendingClusters: [],
         setLog: [],
+        sessionNotes: [],
         error: null,
 
         // Derived state (will be computed)
@@ -268,6 +285,7 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
             currentClusterStart: 0,
             pendingClusters: [],
             setLog: [],
+            sessionNotes: [],
             error: null,
             ...computeDerivedState(session),
           });
@@ -333,6 +351,23 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
 
           // Persist final state
           await persistSession(get, 'completed', termination.reason);
+        },
+
+        // =====================================================================
+        // Notes
+        // =====================================================================
+
+        addNote: (text: string) => {
+          const { session, sessionNotes } = get();
+          if (!session) return;
+
+          const note: SessionNote = {
+            text,
+            timestamp: Date.now(),
+            setIndex: session.completedSets.length,
+            exerciseId: session.exercise.id,
+          };
+          set({ sessionNotes: [...sessionNotes, note] });
         },
 
         // =====================================================================

@@ -19,5 +19,8 @@ export * from './velocity-profile';
 // Manual log data (free weight set logging)
 export * from './manual-log';
 
+// Workout plan data (coach-programmed plans)
+export * from './workout-plan';
+
 // Storage adapters
 export * from './adapters';

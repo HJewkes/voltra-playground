@@ -13,6 +13,7 @@ import {
   estimateSetRIR,
   getRepMeanConcentricForce,
 } from '@voltras/workout-analytics';
+import type { SessionNote } from '@/stores/exercise-session-store';
 import { fromStoredSessionSet } from './exercise-session-converters';
 import type { StoredExerciseSession, StoredSessionSet } from './exercise-session-schema';
 
@@ -37,6 +38,12 @@ export interface ExportedSessionSummary {
   estimatedE1RM: number | null;
 }
 
+export interface ExportedNote {
+  text: string;
+  afterSet: number;
+  time: string;
+}
+
 export interface ExportedSession {
   sessionId: string;
   exerciseId: string;
@@ -44,7 +51,13 @@ export interface ExportedSession {
   date: string;
   duration: string;
   sets: ExportedSetData[];
+  notes: ExportedNote[];
   summary: ExportedSessionSummary;
+}
+
+function formatTime(timestamp: number): string {
+  const d = new Date(timestamp);
+  return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
 function formatDuration(startTime: number, endTime: number | null): string {
@@ -88,8 +101,13 @@ function exportStoredSet(stored: StoredSessionSet, setIndex: number): ExportedSe
 
 /**
  * Convert a stored session to the export JSON format.
+ *
+ * @param sessionNotes - Optional notes from the session store (not persisted in stored schema)
  */
-export function exportSession(session: StoredExerciseSession): ExportedSession {
+export function exportSession(
+  session: StoredExerciseSession,
+  sessionNotes: SessionNote[] = [],
+): ExportedSession {
   const sets = session.completedSets.map((s, i) => exportStoredSet(s, i));
 
   const totalReps = sets.reduce((sum, s) => sum + s.reps, 0);
@@ -99,6 +117,12 @@ export function exportSession(session: StoredExerciseSession): ExportedSession {
       ? round(sets.reduce((sum, s) => sum + s.meanVelocity, 0) / sets.length, 2)
       : 0;
 
+  const notes: ExportedNote[] = sessionNotes.map((n) => ({
+    text: n.text,
+    afterSet: n.setIndex,
+    time: formatTime(n.timestamp),
+  }));
+
   return {
     sessionId: session.id,
     exerciseId: session.exerciseId,
@@ -106,6 +130,7 @@ export function exportSession(session: StoredExerciseSession): ExportedSession {
     date: new Date(session.startTime).toISOString().split('T')[0],
     duration: formatDuration(session.startTime, session.endTime),
     sets,
+    notes,
     summary: {
       totalSets: sets.length,
       totalReps,
@@ -120,6 +145,6 @@ export function exportSession(session: StoredExerciseSession): ExportedSession {
  * Convert multiple sessions to export JSON string.
  */
 export function exportSessionsToJSON(sessions: StoredExerciseSession[]): string {
-  const exported = sessions.map(exportSession);
+  const exported = sessions.map((s) => exportSession(s, []));
   return JSON.stringify(exported, null, 2);
 }

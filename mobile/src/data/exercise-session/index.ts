@@ -42,6 +42,7 @@ export {
   type ExportedSession,
   type ExportedSetData,
   type ExportedSessionSummary,
+  type ExportedNote,
   exportSession,
   exportSessionsToJSON,
 } from './session-export';
