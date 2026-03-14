@@ -4,24 +4,26 @@
  * Unified screen for standard and discovery exercise sessions.
  * Renders different content based on ExerciseSessionUIState.
  *
- * State → UI mapping:
+ * State x UI mapping:
  * - preparing: "Setting weight..." spinner
- * - ready: SetTargetCard + START button
+ * - ready: DiscoveryStepCard (discovery) or SetTargetCard (standard) + START button
  * - countdown: 3-2-1 countdown display
  * - recording: Rep counter + velocity (auto-stops)
  * - processing: Brief spinner
  * - resting: Rest timer + next set preview
- * - results: RecommendationCard (discovery) or ExerciseSessionSummaryCard (standard)
+ * - results: RecommendationCard + DiscoveryProfileSummary (discovery) or ExerciseSessionSummaryCard (standard)
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, ActivityIndicator, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useShallow } from 'zustand/react/shallow';
 import { getSemanticColors } from '@titan-design/react-ui';
 
 // Domain imports
 import type { Exercise } from '@/domain/exercise';
 import type { ExercisePlan } from '@/domain/workout';
+import { TrainingGoal } from '@/domain/planning';
 
 // Store imports
 import {
@@ -32,12 +34,19 @@ import {
   type VoltraStoreApi,
 } from '@/stores';
 
+// Hook imports
+import { useDiscoverySession } from '@/hooks/use-discovery-session';
+
 // Data imports
 import type { ExerciseSessionRepository } from '@/data/exercise-session';
 
 // Component imports
 import { RecordingDisplayView, LiveMetrics } from '@/components/recording';
-import { RecommendationCard } from '@/components/planning';
+import {
+  RecommendationCard,
+  DiscoveryStepCard,
+  DiscoveryProfileSummary,
+} from '@/components/planning';
 import {
   SetTargetCard,
   ExerciseSessionProgress,
@@ -81,24 +90,65 @@ export function ExerciseScreen({
   onComplete,
   onNewSession,
 }: ExerciseScreenProps) {
-  // Subscribe to session state (module-level singleton)
-  const uiState = useExerciseSessionStore((s) => s.uiState);
-  const session = useExerciseSessionStore((s) => s.session);
-  const currentSetIndex = useExerciseSessionStore((s) => s.currentSetIndex);
-  const currentPlannedSet = useExerciseSessionStore((s) => s.currentPlannedSet);
-  const restCountdown = useExerciseSessionStore((s) => s.restCountdown);
-  const startCountdown = useExerciseSessionStore((s) => s.startCountdown);
-  const isDiscovery = useExerciseSessionStore((s) => s.isDiscovery);
-  const terminationReason = useExerciseSessionStore((s) => s.terminationReason);
-  const terminationMessage = useExerciseSessionStore((s) => s.terminationMessage);
-  const recommendation = useExerciseSessionStore((s) => s.recommendation);
-  const error = useExerciseSessionStore((s) => s.error);
+  // Subscribe to session core state (ui phase, active set, discovery flag, error)
+  const { uiState, session, currentSetIndex, currentPlannedSet, isDiscovery, error } =
+    useExerciseSessionStore(
+      useShallow((s) => ({
+        uiState: s.uiState,
+        session: s.session,
+        currentSetIndex: s.currentSetIndex,
+        currentPlannedSet: s.currentPlannedSet,
+        isDiscovery: s.isDiscovery,
+        error: s.error,
+      })),
+    );
+
+  // Subscribe to session timing and results state
+  const { restCountdown, startCountdown, terminationReason, terminationMessage, recommendation } =
+    useExerciseSessionStore(
+      useShallow((s) => ({
+        restCountdown: s.restCountdown,
+        startCountdown: s.startCountdown,
+        terminationReason: s.terminationReason,
+        terminationMessage: s.terminationMessage,
+        recommendation: s.recommendation,
+      })),
+    );
 
   // Subscribe to recording state (module-level singleton)
-  const repCount = useRecordingStore((s) => s.repCount);
-  const lastRepPeakVelocity = useRecordingStore((s) => s.lastRepPeakVelocity);
-  const lastSet = useRecordingStore((s) => s.lastSet);
-  const _recordingUIState = useRecordingStore((s) => s.uiState);
+  const { repCount, lastRepPeakVelocity, lastSet } = useRecordingStore(
+    useShallow((s) => ({
+      repCount: s.repCount,
+      lastRepPeakVelocity: s.lastRepPeakVelocity,
+      lastSet: s.lastSet,
+    })),
+  );
+
+  // Discovery session hook - adaptive step-by-step guidance
+  const exerciseType = exercise.movementPattern === 'isolation' ? 'isolation' : 'compound';
+  const discoveryGoal = plan.goal ?? TrainingGoal.HYPERTROPHY;
+  const { state: discoveryState, actions: discoveryActions } = useDiscoverySession(
+    exercise.id,
+    exerciseType as 'compound' | 'isolation',
+    discoveryGoal
+  );
+
+  // Track whether discovery has been initialized
+  const discoveryInitializedRef = useRef(false);
+
+  // Initialize discovery on mount for discovery sessions
+  useEffect(() => {
+    if (isDiscovery && !discoveryInitializedRef.current) {
+      discoveryInitializedRef.current = true;
+      discoveryActions.initialize();
+    }
+  }, [isDiscovery, discoveryActions]);
+
+  // Feed completed sets into the discovery hook
+  useEffect(() => {
+    if (!isDiscovery || !lastSet || uiState !== 'recording') return;
+    discoveryActions.recordSet(lastSet);
+  }, [isDiscovery, lastSet, uiState, discoveryActions]);
 
   // Initialize session on mount, dispose on unmount
   useEffect(() => {
@@ -114,6 +164,7 @@ export function ExerciseScreen({
     exerciseSessionStore.getState().prepareFirstSet();
 
     return () => {
+      discoveryInitializedRef.current = false;
       exerciseSessionStore.getState().dispose();
     };
   }, [exercise, plan, voltraStore, repository]);
@@ -188,6 +239,10 @@ export function ExerciseScreen({
           ? 'resting'
           : 'idle';
 
+  // Discovery-aware current step
+  const hasDiscoveryStep =
+    isDiscovery && discoveryState.currentStep && discoveryState.uiPhase === 'active';
+
   // Results need scrolling, other states use flex layout
   if (uiState === 'results') {
     return (
@@ -195,26 +250,35 @@ export function ExerciseScreen({
         <ScrollView className="flex-1" contentContainerClassName="p-4">
           {session &&
             (isDiscovery && recommendation ? (
-              <RecommendationCard
-                recommendation={{
-                  workingWeight: recommendation.workingWeight,
-                  repRange: recommendation.repRange,
-                  warmupSets: recommendation.warmupSets.map((s) => ({
-                    weight: s.weight,
-                    reps: s.reps,
-                    purpose: s.purpose ?? 'warmup',
-                    restSeconds: s.restSeconds ?? 90,
-                  })),
-                  confidence: recommendation.confidence,
-                  explanation: recommendation.explanation,
-                  estimated1RM: recommendation.estimated1RM,
-                  profile: recommendation.profile,
-                }}
-                exerciseId={exercise.id}
-                goal={plan.goal!}
-                onStartTraining={onNewSession}
-                onDiscoverAnother={onComplete}
-              />
+              <>
+                <RecommendationCard
+                  recommendation={{
+                    workingWeight: recommendation.workingWeight,
+                    repRange: recommendation.repRange,
+                    warmupSets: recommendation.warmupSets.map((s) => ({
+                      weight: s.weight,
+                      reps: s.reps,
+                      purpose: s.purpose ?? 'warmup',
+                      restSeconds: s.restSeconds ?? 90,
+                    })),
+                    confidence: recommendation.confidence,
+                    explanation: recommendation.explanation,
+                    estimated1RM: recommendation.estimated1RM,
+                    profile: recommendation.profile,
+                  }}
+                  exerciseId={exercise.id}
+                  goal={plan.goal!}
+                  onStartTraining={onNewSession}
+                  onDiscoverAnother={onComplete}
+                />
+                {discoveryState.completedResults.length > 0 && (
+                  <DiscoveryProfileSummary
+                    completedSets={discoveryState.completedResults}
+                    estimated1RM={recommendation.estimated1RM}
+                    confidence={recommendation.confidence}
+                  />
+                )}
+              </>
             ) : (
               <ExerciseSessionSummaryCard
                 session={session}
@@ -254,15 +318,23 @@ export function ExerciseScreen({
             </View>
           )}
 
-          {/* Ready state */}
-          {uiState === 'ready' && currentPlannedSet && (
-            <SetTargetCard
-              setNumber={currentSetIndex + 1}
-              totalSets={plan.sets.length}
-              plannedSet={currentPlannedSet}
-              isDiscovery={isDiscovery}
-            />
-          )}
+          {/* Ready state - discovery uses adaptive DiscoveryStepCard */}
+          {uiState === 'ready' &&
+            currentPlannedSet &&
+            (hasDiscoveryStep ? (
+              <DiscoveryStepCard
+                step={discoveryState.currentStep!}
+                phase={discoveryState.discoveryState.phase}
+                completedCount={discoveryState.completedResults.length}
+              />
+            ) : (
+              <SetTargetCard
+                setNumber={currentSetIndex + 1}
+                totalSets={plan.sets.length}
+                plannedSet={currentPlannedSet}
+                isDiscovery={isDiscovery}
+              />
+            ))}
 
           {/* Countdown / Recording / Resting states */}
           {(uiState === 'countdown' || uiState === 'recording' || uiState === 'resting') && (

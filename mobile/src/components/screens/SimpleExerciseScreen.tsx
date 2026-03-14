@@ -9,6 +9,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, Alert } from 'react-native';
 import { useStore } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -45,12 +46,19 @@ export function SimpleExerciseScreen() {
   const isConnected = useConnectionStore(selectIsConnected);
   const voltraStore = useConnectionStore((s) => s.getPrimaryDevice());
 
-  const mode = useStore(voltraStore!, (s) => s.mode);
-  const weight = useStore(voltraStore!, (s) => s.weight);
+  // Group device state into a single subscription
+  const { mode, weight } = useStore(
+    voltraStore!,
+    useShallow((s) => ({ mode: s.mode, weight: s.weight })),
+  );
 
   const recordingStore = useMemo(() => createRecordingStore(), []);
-  const repCount = useStore(recordingStore, (s) => s.repCount);
-  const lastRepPeakVelocity = useStore(recordingStore, (s) => s.lastRepPeakVelocity);
+
+  // Group recording display state into a single subscription
+  const { repCount, lastRepPeakVelocity } = useStore(
+    recordingStore,
+    useShallow((s) => ({ repCount: s.repCount, lastRepPeakVelocity: s.lastRepPeakVelocity })),
+  );
 
   const [exerciseState, setExerciseState] = useState<ExerciseState>('idle');
   const [countdown, setCountdown] = useState(3);
