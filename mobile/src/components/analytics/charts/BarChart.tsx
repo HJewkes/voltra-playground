@@ -8,7 +8,7 @@
 import React, { useMemo } from 'react';
 import { View, Text } from 'react-native';
 import Svg, { Rect, Line } from 'react-native-svg';
-import { getSemanticColors, alpha } from '@titan-design/react-ui';
+import { getSemanticColors } from '@titan-design/react-ui';
 
 const t = getSemanticColors('dark');
 
@@ -39,7 +39,7 @@ export function BarChart({
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
 
-  const { bars, maxValue } = useMemo(() => {
+  const { bars } = useMemo(() => {
     if (data.length === 0) return { bars: [], maxValue: 0 };
 
     const max = Math.max(...data.map((d) => d.value), 1);

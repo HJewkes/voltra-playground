@@ -6,7 +6,6 @@
 
 import React, { useMemo } from 'react';
 import { View, Text } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { Card, CardContent, getSemanticColors, alpha } from '@titan-design/react-ui';
 import type { StoredExerciseSession } from '@/data/exercise-session';
 import { computeExerciseFrequency } from '@/domain/history/services/cross-session-analytics';
