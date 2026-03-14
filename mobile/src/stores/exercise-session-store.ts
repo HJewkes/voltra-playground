@@ -611,23 +611,16 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
           const newCountdown = restCountdown - 1;
           const newElapsed = restElapsedMs + 1000;
 
-          if (newCountdown <= COUNTDOWN_SECONDS && newCountdown > 0) {
-            // Transition to countdown phase (last 3 seconds of rest)
+          if (newCountdown <= 0) {
+            // Rest complete — stop timer, wait for user to start next set
             clearTimers();
             const clearedSession = session ? clearRest(session) : session;
             set({
               session: clearedSession,
-              uiState: 'countdown',
-              startCountdown: newCountdown,
+              uiState: 'idle',
               restCountdown: 0,
               restElapsedMs: newElapsed,
             });
-            startCountdownTimer(get, set);
-          } else if (newCountdown <= 0) {
-            // Rest complete - start recording
-            clearTimers();
-            set({ restElapsedMs: newElapsed });
-            transitionToRecording(get, set);
           } else {
             set({ restCountdown: newCountdown, restElapsedMs: newElapsed });
           }
