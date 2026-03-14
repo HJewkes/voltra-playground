@@ -18,21 +18,19 @@ import { devtools } from 'zustand/middleware';
 import {
   type Set as AnalyticsSet,
   type WorkoutSample,
-  type Rep,
   createSet,
   addSampleToSet,
   completeSet,
   getSetVelocityLossPct,
   getSetRepVelocities,
-  getSetMeanVelocity,
   estimateSetRIR,
   getRepPeakVelocity,
-  MovementPhase,
 } from '@voltras/workout-analytics';
 
 // App imports
 import { type CompletedSet, createCompletedSet } from '@/domain/workout';
 import { getLiveEffortMessage } from '@/domain/workout';
+import { TelemetryRingBuffer } from '@/domain/workout/telemetry-ring-buffer';
 import { isDebugTelemetryEnabled } from '@/data/provider';
 
 // =============================================================================
@@ -139,6 +137,7 @@ function createInitialState(): Pick<
  */
 export function createRecordingStore(): RecordingStoreApi {
   let analyticsSet = createSet();
+  const telemetryBuffer = new TelemetryRingBuffer();
 
   const store = createStore<RecordingState>()(
     devtools(
@@ -158,6 +157,7 @@ export function createRecordingStore(): RecordingStoreApi {
 
         startRecording: (exerciseId?: string, exerciseName?: string) => {
           analyticsSet = createSet();
+          telemetryBuffer.clear();
           set({
             ...createInitialState(),
             uiState: 'recording',
@@ -203,6 +203,9 @@ export function createRecordingStore(): RecordingStoreApi {
         processSample: (sample: WorkoutSample) => {
           if (!get().isRecording) return;
 
+          // O(1) push into ring buffer (ref-based, no re-render)
+          telemetryBuffer.push(sample);
+
           // Accumulate samples if debug telemetry is enabled
           if (isDebugTelemetryEnabled()) {
             const currentSamples = get().allSamples;
@@ -238,6 +241,7 @@ export function createRecordingStore(): RecordingStoreApi {
 
         reset: () => {
           analyticsSet = createSet();
+          telemetryBuffer.clear();
           set({ ...createInitialState(), _analyticsSet: analyticsSet });
         },
       }),
@@ -245,11 +249,15 @@ export function createRecordingStore(): RecordingStoreApi {
     )
   );
 
-  return store;
+  return Object.assign(store, {
+    getTelemetryBuffer: () => telemetryBuffer,
+  });
 }
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export type RecordingStoreApi = StoreApi<RecordingState>;
+export type RecordingStoreApi = StoreApi<RecordingState> & {
+  getTelemetryBuffer: () => TelemetryRingBuffer;
+};
