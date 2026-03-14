@@ -23,3 +23,11 @@ export type { ExerciseSessionActionButtonsProps } from './ExerciseSessionActionB
 // Resume session prompt
 export { ResumeSessionPrompt } from './ResumeSessionPrompt';
 export type { ResumeSessionPromptProps } from './ResumeSessionPrompt';
+
+// Auto-regulation UI
+export { LoadSuggestionCard } from './LoadSuggestionCard';
+export type { LoadSuggestionCardProps } from './LoadSuggestionCard';
+export { VelocityWarning } from './VelocityWarning';
+export type { VelocityWarningProps } from './VelocityWarning';
+export { JunkVolumeAlert } from './JunkVolumeAlert';
+export type { JunkVolumeAlertProps } from './JunkVolumeAlert';

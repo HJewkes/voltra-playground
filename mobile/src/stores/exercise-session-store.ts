@@ -65,6 +65,13 @@ import {
   type RestTimerCueSettings,
 } from '@/domain/notifications/rest-timer-cues';
 
+// Auto-regulation engine
+import {
+  computeAutoRegulation,
+  type AutoRegulationState,
+} from '@/domain/planning/auto-regulation';
+import { TrainingGoal } from '@/domain/planning/types';
+
 // Recording store for intra-set recording
 import type { RecordingStoreApi } from './recording-store';
 
@@ -112,6 +119,9 @@ export interface ExerciseSessionState {
   // For discovery sessions - computed on demand
   velocityProfile: LoadVelocityProfile | null;
   recommendation: WorkingWeightRecommendation | null;
+
+  // Auto-regulation state (computed after each set)
+  autoRegulation: AutoRegulationState | null;
 
   // Error state
   error: string | null;
@@ -207,6 +217,7 @@ export const exerciseSessionStore: ExerciseSessionStoreApi = createStore<Exercis
       terminationMessage: null,
       velocityProfile: null,
       recommendation: null,
+      autoRegulation: null,
       error: null,
 
       // Derived state
@@ -240,6 +251,7 @@ export const exerciseSessionStore: ExerciseSessionStoreApi = createStore<Exercis
           terminationMessage: null,
           velocityProfile: null,
           recommendation: null,
+          autoRegulation: null,
           error: null,
           ...computeDerivedState(session),
         });
@@ -335,6 +347,7 @@ export const exerciseSessionStore: ExerciseSessionStoreApi = createStore<Exercis
           terminationMessage: null,
           velocityProfile: null,
           recommendation: null,
+          autoRegulation: null,
           error: null,
           ...computeDerivedState(null),
         });
@@ -557,13 +570,23 @@ function handleContinueToRest(
   originalSession: ExerciseSession,
   updatedSession: ExerciseSession
 ): void {
-  const restSeconds = originalSession.plan.defaultRestSeconds || DEFAULT_REST_SECONDS;
+  // Compute auto-regulation signals for between-set UI
+  const arGoal = updatedSession.plan.goal ?? TrainingGoal.HYPERTROPHY;
+  const arType: 'compound' | 'isolation' =
+    updatedSession.exercise.movementPattern === 'isolation' ? 'isolation' : 'compound';
+  const arSets = updatedSession.plan.sets.filter((s) => !s.isWarmup).length;
+  const autoReg = computeAutoRegulation(updatedSession, arGoal, arType, arSets);
+
+  const restSeconds = autoReg.restSeconds > 0
+    ? autoReg.restSeconds
+    : (originalSession.plan.defaultRestSeconds || DEFAULT_REST_SECONDS);
   const sessionWithRest = startRest(updatedSession, restSeconds);
 
   set({
     session: sessionWithRest,
     uiState: 'resting',
     restCountdown: restSeconds,
+    autoRegulation: autoReg,
     ...computeDerivedState(sessionWithRest),
   });
 
