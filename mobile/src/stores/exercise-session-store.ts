@@ -58,7 +58,8 @@ import {
 // Data layer
 import type { ExerciseSessionRepository } from '@/data/exercise-session';
 import { toStoredExerciseSession } from '@/data/exercise-session';
-import { getRecordingRepository, isDebugTelemetryEnabled } from '@/data/provider';
+import { getRecordingRepository, getVelocityProfileRepository, isDebugTelemetryEnabled } from '@/data/provider';
+import type { StoredVelocityProfile } from '@/data/velocity-profile';
 import type { SampleRecording } from '@/data/recordings';
 
 // Recording store for intra-set recording
@@ -886,6 +887,38 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
     const recommendation = goal ? generateWorkingWeightRecommendation(profile, goal) : null;
 
     set({ velocityProfile: profile, recommendation });
+
+    // Persist the velocity profile for cross-session survival
+    persistVelocityProfile(session.exercise.id, profile, dataPoints);
+  }
+
+  async function persistVelocityProfile(
+    exerciseId: string,
+    profile: LoadVelocityProfile,
+    dataPoints: LoadVelocityDataPoint[]
+  ) {
+    try {
+      const repo = getVelocityProfileRepository();
+      const existing = await repo.get(exerciseId);
+      const sessionCount = (existing?.sessionCount ?? 0) + 1;
+
+      const stored: StoredVelocityProfile = {
+        exerciseId,
+        profile,
+        dataPoints: dataPoints.map((dp) => ({
+          weight: dp.weight,
+          velocity: dp.velocity,
+          date: dp.timestamp ?? Date.now(),
+        })),
+        baseline: null,
+        lastUpdated: Date.now(),
+        sessionCount,
+      };
+
+      await repo.save(exerciseId, stored);
+    } catch (err) {
+      console.warn('[ExerciseSessionStore] Failed to persist velocity profile:', err);
+    }
   }
 
   return store;

@@ -17,6 +17,10 @@ import {
   createRecordingRepository,
   type RecordingRepository,
 } from './recordings/recording-repository';
+import {
+  createVelocityProfileRepository,
+  type VelocityProfileRepository,
+} from './velocity-profile/velocity-profile-repository';
 
 // Re-export debug config for convenience (consumers can import from provider)
 export { isDebugTelemetryEnabled, setDebugTelemetryEnabled } from './debug-config';
@@ -48,6 +52,7 @@ export function setTestAdapter(adapter: StorageAdapter | null): void {
   _sessionRepository = null;
   _exerciseRepository = null;
   _recordingRepository = null;
+  _velocityProfileRepository = null;
 }
 
 // =============================================================================
@@ -57,6 +62,7 @@ export function setTestAdapter(adapter: StorageAdapter | null): void {
 let _sessionRepository: ExerciseSessionRepository | null = null;
 let _exerciseRepository: ExerciseRepository | null = null;
 let _recordingRepository: RecordingRepository | null = null;
+let _velocityProfileRepository: VelocityProfileRepository | null = null;
 
 /**
  * Get the exercise session repository singleton.
@@ -86,4 +92,14 @@ export function getRecordingRepository(): RecordingRepository {
     _recordingRepository = createRecordingRepository(getAdapter());
   }
   return _recordingRepository;
+}
+
+/**
+ * Get the velocity profile repository singleton.
+ */
+export function getVelocityProfileRepository(): VelocityProfileRepository {
+  if (!_velocityProfileRepository) {
+    _velocityProfileRepository = createVelocityProfileRepository(getAdapter());
+  }
+  return _velocityProfileRepository;
 }

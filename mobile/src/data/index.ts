@@ -13,5 +13,8 @@ export * from './exercise-session';
 // Preferences data (device and connection settings)
 export * from './preferences';
 
+// Velocity profile data (load-velocity profiles per exercise)
+export * from './velocity-profile';
+
 // Storage adapters
 export * from './adapters';

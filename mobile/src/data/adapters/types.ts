@@ -82,6 +82,10 @@ export const STORAGE_KEYS = {
   LAST_DEVICE: 'voltra:preferences:lastDevice',
   AUTO_RECONNECT: 'voltra:preferences:autoReconnect',
 
+  // Velocity profiles (load-velocity profiles per exercise)
+  VELOCITY_PROFILES_INDEX: 'voltra:velocity-profiles:index',
+  VELOCITY_PROFILE_PREFIX: 'voltra:velocity-profiles:',
+
   // Migration
   STORAGE_VERSION: 'voltra:version',
 } as const;
