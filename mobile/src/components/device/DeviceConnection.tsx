@@ -155,7 +155,7 @@ export function DeviceConnection({
       );
     }
     return (
-      <View className="flex-1 items-center justify-center bg-surface-400 p-6">
+      <View className="flex-1 items-center justify-center bg-background-base p-6">
         <ActivityIndicator size="large" color={t['brand-primary']} />
         <Text className="mt-4 text-text-secondary">Restoring connection...</Text>
       </View>
@@ -202,7 +202,7 @@ export function DeviceConnection({
 
   if (variant === 'guard') {
     return (
-      <View className="flex-1 items-center justify-center bg-surface-400 p-6">
+      <View className="flex-1 items-center justify-center bg-background-base p-6">
         {connectionUI}
       </View>
     );

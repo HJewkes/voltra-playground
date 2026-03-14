@@ -107,7 +107,7 @@ export function HistoryScreen() {
 
   return (
     <ScrollView
-      className="flex-1 bg-surface-400"
+      className="flex-1 bg-background-base"
       refreshControl={
         <RefreshControl
           refreshing={isLoading}

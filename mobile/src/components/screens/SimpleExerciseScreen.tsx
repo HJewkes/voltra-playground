@@ -17,6 +17,7 @@ import { Button, getSemanticColors } from '@titan-design/react-ui';
 import { TrainingModeNames } from '@/domain/device';
 import { useConnectionStore, selectIsConnected, createRecordingStore } from '@/stores';
 import { RecordingDisplayView, WorkoutControls } from '@/components/recording';
+import type { VoltraStoreApi } from '@/stores/voltra-store';
 
 const t = getSemanticColors('dark');
 
@@ -35,8 +36,23 @@ export function SimpleExerciseScreen() {
   const isConnected = useConnectionStore(selectIsConnected);
   const voltraStore = useConnectionStore((s) => s.getPrimaryDevice());
 
-  const mode = useStore(voltraStore!, (s) => s.mode);
-  const weight = useStore(voltraStore!, (s) => s.weight);
+  useEffect(() => {
+    if (!isConnected) {
+      router.replace('/');
+    }
+  }, [isConnected, router]);
+
+  if (!voltraStore) return null;
+
+  return <SimpleExerciseContent voltraStore={voltraStore} />;
+}
+
+function SimpleExerciseContent({ voltraStore }: { voltraStore: VoltraStoreApi }) {
+  const router = useRouter();
+  const isConnected = useConnectionStore(selectIsConnected);
+
+  const mode = useStore(voltraStore, (s) => s.mode);
+  const weight = useStore(voltraStore, (s) => s.weight);
 
   const recordingStore = useMemo(() => createRecordingStore(), []);
   const repCount = useStore(recordingStore, (s) => s.repCount);
@@ -48,13 +64,7 @@ export function SimpleExerciseScreen() {
 
   const modeName = TrainingModeNames[mode] ?? 'Unknown';
 
-  // Handle disconnection: navigate to connection screen
-  useEffect(() => {
-    if (!isConnected) {
-      cleanupCountdown();
-      router.replace('/');
-    }
-  }, [isConnected, router]);
+
 
   function cleanupCountdown() {
     if (countdownRef.current) {

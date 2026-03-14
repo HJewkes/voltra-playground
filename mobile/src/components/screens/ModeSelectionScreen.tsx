@@ -5,7 +5,7 @@
  * Uses granular Zustand selectors to minimize re-renders.
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useStore } from 'zustand';
@@ -69,12 +69,6 @@ export function ModeSelectionScreen() {
   const router = useRouter();
   const isConnected = useConnectionStore(selectIsConnected);
   const voltraStore = useConnectionStore((s) => s.getPrimaryDevice());
-  const disconnectAll = useConnectionStore((s) => s.disconnectAll);
-
-  const mode = useStore(voltraStore!, (s) => s.mode);
-  const setMode = useStore(voltraStore!, (s) => s.setMode);
-
-  const [showDisconnectMenu, setShowDisconnectMenu] = useState(false);
 
   useEffect(() => {
     if (!isConnected) {
@@ -82,41 +76,30 @@ export function ModeSelectionScreen() {
     }
   }, [isConnected, router]);
 
-  const handleDisconnect = async () => {
-    setShowDisconnectMenu(false);
-    await disconnectAll();
-  };
+  if (!voltraStore) return null;
+
+  return <ModeSelectionContent voltraStore={voltraStore} />;
+}
+
+function ModeSelectionContent({ voltraStore }: { voltraStore: VoltraStoreApi }) {
+  const router = useRouter();
+  const mode = useStore(voltraStore, (s) => s.mode);
+  const setMode = useStore(voltraStore, (s) => s.setMode);
 
   const showConfig = mode !== TrainingMode.Idle;
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-400">
+    <SafeAreaView className="flex-1 bg-background-base">
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 pt-2 pb-1">
         <Text className="text-lg font-semibold text-text-primary">Training Mode</Text>
-        <View className="relative">
-          <TouchableOpacity
-            onPress={() => setShowDisconnectMenu((v) => !v)}
-            activeOpacity={0.7}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="cog-outline" size={24} color={t['text-secondary']} />
-          </TouchableOpacity>
-          {showDisconnectMenu && (
-            <View className="absolute right-0 top-8 z-10 rounded-lg bg-surface-300 p-1 shadow-lg">
-              <TouchableOpacity
-                onPress={handleDisconnect}
-                className="flex-row items-center gap-2 rounded-md px-4 py-2.5"
-                activeOpacity={0.7}
-              >
-                <Ionicons name="bluetooth-outline" size={16} color={t['status-error']} />
-                <Text style={{ color: t['status-error'] }} className="text-sm font-medium">
-                  Disconnect
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
+        <TouchableOpacity
+          onPress={() => router.push('/settings')}
+          activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="cog-outline" size={24} color={t['text-secondary']} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView className="flex-1">
@@ -156,7 +139,7 @@ export function ModeSelectionScreen() {
           </Section>
 
           {/* Per-mode config */}
-          <ModeConfig mode={mode} voltraStore={voltraStore!} />
+          <ModeConfig mode={mode} voltraStore={voltraStore} />
 
           {/* Start exercise button */}
           {showConfig && (
