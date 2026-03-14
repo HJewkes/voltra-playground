@@ -9,6 +9,7 @@ import React from 'react';
 import { TouchableOpacity, Text, View, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { alpha, getSemanticColors } from '@titan-design/react-ui';
+import { webStyle } from '@/utils/web-style';
 
 const t = getSemanticColors('dark');
 
@@ -43,14 +44,14 @@ export function AddSetButton({ onPress, disabled, setCount }: AddSetButtonProps)
             ? alpha('#fff', 0.06)
             : alpha(t['brand-primary'], 0.3),
           ...Platform.select({
-            web: disabled ? {
+            web: disabled ? webStyle({
               boxShadow: `inset 0 1px 3px ${alpha('#000', 0.4)}`,
-            } as any : {
+            }) : webStyle({
               boxShadow: [
                 `0 2px 4px ${alpha('#000', 0.4)}`,
                 `inset 0 1px 0 ${alpha(t['brand-primary'], 0.15)}`,
               ].join(', '),
-            } as any,
+            }),
             default: disabled ? {} : {
               shadowColor: '#000',
               shadowOffset: { width: 0, height: 2 },

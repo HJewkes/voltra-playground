@@ -20,6 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { Surface, getSemanticColors, alpha } from '@titan-design/react-ui';
+import { webStyle } from '@/utils/web-style';
 
 import { TrainingMode, TrainingModeNames } from '@/domain/device';
 import { createEmptyPlan } from '@/domain/workout';
@@ -387,19 +388,6 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
 
       await sessionStore.getState().prepareFirstSet();
       sessionStore.getState().startFirstSet();
-
-      // In mock mode, auto-generate a rep plan from the session's planned sets
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (typeof window !== 'undefined' && (window as any).__mockBLE) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const mock = (window as any).__mockBLE as {
-          setRepPlan?: (reps: ReturnType<typeof generateMockRepPlan>) => void;
-        };
-        const plan = sessionStore.getState().session?.plan;
-        if (plan && mock.setRepPlan) {
-          mock.setRepPlan(generateMockRepPlan(plan));
-        }
-      }
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e);
       Alert.alert('Error', `Failed to start: ${message}`);
@@ -424,6 +412,22 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
     });
     return unsubscribe;
   }, [voltraStore, recordingStore, isRecording]);
+
+  // Sync mock rep plan with recording start (not handleStart) to avoid off-by-one
+  useEffect(() => {
+    if (uiState !== 'recording') return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (typeof window === 'undefined' || !(window as any).__mockBLE) return;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mock = (window as any).__mockBLE as {
+      setRepPlan?: (reps: ReturnType<typeof generateMockRepPlan>) => void;
+    };
+    const plan = sessionStore.getState().session?.plan;
+    if (plan && mock.setRepPlan) {
+      mock.setRepPlan(generateMockRepPlan(plan));
+    }
+  }, [uiState, sessionStore]);
 
   const handleTempoChange = useCallback((key: keyof TempoTarget, v: number) => {
     setTargetTempo((prev) => ({ ...prev, [key]: v }));
@@ -691,9 +695,9 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
           borderTopWidth: 1,
           borderTopColor: alpha('#fff', 0.04),
           ...Platform.select({
-            web: {
+            web: webStyle({
               boxShadow: `0 -4px 12px ${alpha('#000', 0.3)}`,
-            } as any,
+            }),
             default: {
               shadowColor: '#000',
               shadowOffset: { width: 0, height: -4 },
@@ -794,9 +798,9 @@ function ModeDrawer({
           paddingTop: 4,
           paddingBottom: 12,
           ...Platform.select({
-            web: {
+            web: webStyle({
               boxShadow: `0 8px 24px ${alpha('#000', 0.5)}`,
-            } as any,
+            }),
             default: {
               shadowColor: '#000',
               shadowOffset: { width: 0, height: 8 },

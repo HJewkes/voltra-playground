@@ -10,6 +10,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { View, Text, PanResponder, Platform } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { alpha, getSemanticColors } from '@titan-design/react-ui';
+import { webStyle } from '@/utils/web-style';
 
 const t = getSemanticColors('dark');
 
@@ -219,7 +220,7 @@ export function VerticalWeightJog({ weight, onWeightChange, disabled = false }: 
             minWidth: 72,
             minHeight: 60,
             ...Platform.select({
-              web: {
+              web: webStyle({
                 boxShadow: [
                   `0 3px 6px ${alpha('#000', 0.3)}`,
                   `0 1px 2px ${alpha('#000', 0.2)}`,
@@ -228,7 +229,7 @@ export function VerticalWeightJog({ weight, onWeightChange, disabled = false }: 
                 cursor: disabled ? 'default' : 'ns-resize',
                 touchAction: 'none',
                 userSelect: 'none',
-              } as any,
+              }),
               default: {
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 3 },
@@ -246,9 +247,9 @@ export function VerticalWeightJog({ weight, onWeightChange, disabled = false }: 
               color: t['brand-primary'],
               textAlign: 'center',
               ...Platform.select({
-                web: {
+                web: webStyle({
                   textShadow: `0 -1px 0 ${alpha('#000', 0.5)}, 0 1px 0 ${alpha('#fff', 0.12)}`,
-                } as any,
+                }),
                 default: {
                   textShadowColor: alpha('#000', 0.4),
                   textShadowOffset: { width: 0, height: -1 },

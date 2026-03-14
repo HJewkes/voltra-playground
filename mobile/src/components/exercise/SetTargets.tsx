@@ -13,6 +13,7 @@
 import React, { useCallback } from 'react';
 import { View, Text, TouchableOpacity, Platform } from 'react-native';
 import { alpha, getSemanticColors } from '@titan-design/react-ui';
+import { webStyle } from '@/utils/web-style';
 import { ScrollDial } from './ScrollDial';
 import type { TempoTarget } from '@/domain/workout';
 
@@ -257,7 +258,7 @@ function EnablePill({
         borderRadius: 10,
         backgroundColor: active ? alpha(t['brand-primary'], 0.15) : '#1a1a1a',
         ...Platform.select({
-          web: {
+          web: webStyle({
             boxShadow: active
               ? [
                   `0 1px 2px ${alpha('#000', 0.4)}`,
@@ -267,7 +268,7 @@ function EnablePill({
                   `inset 0 1px 3px ${alpha('#000', 0.4)}`,
                   `0 1px 0 ${alpha('#fff', 0.04)}`,
                 ].join(', '),
-          } as any,
+          }),
           default: {
             shadowColor: '#000',
             shadowOffset: { width: 0, height: active ? 1 : 0 },
@@ -283,9 +284,9 @@ function EnablePill({
           fontWeight: active ? '700' : '500',
           color: active ? t['brand-primary'] : t['text-disabled'],
           ...Platform.select({
-            web: active ? {
+            web: active ? webStyle({
               textShadow: `0 0 8px ${alpha(t['brand-primary'], 0.4)}`,
-            } as any : {},
+            }) : webStyle({}),
             default: {},
           }),
         }}
@@ -306,9 +307,9 @@ function Divider() {
         height: 40,
         backgroundColor: alpha('#000', 0.4),
         ...Platform.select({
-          web: {
+          web: webStyle({
             boxShadow: `1px 0 0 ${alpha('#fff', 0.04)}`,
-          } as any,
+          }),
           default: {},
         }),
       }}

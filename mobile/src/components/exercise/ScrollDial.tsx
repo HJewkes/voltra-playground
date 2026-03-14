@@ -18,6 +18,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { alpha, getSemanticColors } from '@titan-design/react-ui';
+import { webStyle } from '@/utils/web-style';
 
 const t = getSemanticColors('dark');
 
@@ -237,7 +238,7 @@ export function ScrollDial({
           borderRadius: 12,
           backgroundColor: '#0d0d0d',
           ...Platform.select({
-            web: {
+            web: webStyle({
               boxShadow: [
                 `inset 0 6px 10px ${alpha('#000', 0.5)}`,
                 `inset 0 -6px 10px ${alpha('#000', 0.5)}`,
@@ -247,7 +248,7 @@ export function ScrollDial({
               cursor: disabled ? 'default' : 'ns-resize',
               touchAction: 'none',
               userSelect: 'none',
-            } as any,
+            }),
             default: {
               shadowColor: '#000',
               shadowOffset: { width: 0, height: 2 },
@@ -278,14 +279,14 @@ export function ScrollDial({
               borderRadius: 6,
               backgroundColor: alpha('#fff', 0.1),
               ...Platform.select({
-                web: {
+                web: webStyle({
                   boxShadow: [
                     `0 2px 4px ${alpha('#000', 0.5)}`,
                     `0 -1px 2px ${alpha('#000', 0.4)}`,
                     `inset 0 1px 0 ${alpha('#fff', 0.12)}`,
                     `inset 0 -1px 0 ${alpha('#000', 0.2)}`,
                   ].join(', '),
-                } as any,
+                }),
                 default: {},
               }),
             }}
@@ -297,9 +298,9 @@ export function ScrollDial({
                 color: activeColor,
                 textAlign: 'center',
                 ...Platform.select({
-                  web: {
+                  web: webStyle({
                     textShadow: `0 1px 2px ${alpha('#000', 0.5)}`,
-                  } as any,
+                  }),
                   default: {
                     textShadowColor: alpha('#000', 0.4),
                     textShadowOffset: { width: 0, height: 1 },
@@ -328,9 +329,9 @@ export function ScrollDial({
             borderTopLeftRadius: 12,
             borderTopRightRadius: 12,
             ...Platform.select({
-              web: {
+              web: webStyle({
                 background: `linear-gradient(to bottom, ${alpha('#0d0d0d', 0.85)} 0%, transparent 100%)`,
-              } as any,
+              }),
               default: {},
             }),
           }}
@@ -348,9 +349,9 @@ export function ScrollDial({
             borderBottomLeftRadius: 12,
             borderBottomRightRadius: 12,
             ...Platform.select({
-              web: {
+              web: webStyle({
                 background: `linear-gradient(to top, ${alpha('#0d0d0d', 0.85)} 0%, transparent 100%)`,
-              } as any,
+              }),
               default: {},
             }),
           }}

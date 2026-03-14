@@ -212,4 +212,61 @@ describe('Recording Store', () => {
       expect(store.getState().velocityTrend).toHaveLength(2);
     });
   });
+
+  // ===========================================================================
+  // Regression: rep count accuracy (off-by-one prevention)
+  // ===========================================================================
+
+  describe('rep count accuracy', () => {
+    it('N full rep cycles produce exactly N reps', () => {
+      const store = createRecordingStore();
+      store.getState().startRecording('ex1', 'Curl');
+
+      const n = 5;
+      const phases = Array.from({ length: n }, () => fullRepPhases()).flat();
+      feedPhases(store.getState().processSample.bind(null), phases);
+
+      expect(store.getState().repCount).toBe(5);
+    });
+
+    it('ECC samples then IDLE break then 3 reps yields 3 reps (not 4)', () => {
+      const store = createRecordingStore();
+      store.getState().startRecording('ex1', 'Curl');
+
+      feedPhases(store.getState().processSample.bind(null), [
+        MovementPhase.ECCENTRIC,
+        MovementPhase.ECCENTRIC,
+        MovementPhase.ECCENTRIC,
+      ]);
+
+      feedPhases(store.getState().processSample.bind(null), [
+        MovementPhase.IDLE,
+        MovementPhase.IDLE,
+        MovementPhase.IDLE,
+      ]);
+
+      const repPhases = Array.from({ length: 3 }, () => fullRepPhases()).flat();
+      feedPhases(store.getState().processSample.bind(null), repPhases);
+
+      expect(store.getState().repCount).toBe(3);
+    });
+
+    it('initial IDLE burst then 3 reps yields 3 reps', () => {
+      const store = createRecordingStore();
+      store.getState().startRecording('ex1', 'Curl');
+
+      feedPhases(store.getState().processSample.bind(null), [
+        MovementPhase.IDLE,
+        MovementPhase.IDLE,
+        MovementPhase.IDLE,
+        MovementPhase.IDLE,
+        MovementPhase.IDLE,
+      ]);
+
+      const repPhases = Array.from({ length: 3 }, () => fullRepPhases()).flat();
+      feedPhases(store.getState().processSample.bind(null), repPhases);
+
+      expect(store.getState().repCount).toBe(3);
+    });
+  });
 });

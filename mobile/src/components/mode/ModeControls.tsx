@@ -6,6 +6,8 @@ import { useShallow } from 'zustand/react/shallow';
 import Slider from '@react-native-community/slider';
 import { Platform } from 'react-native';
 import { Section, SectionContent, Surface, getSemanticColors, alpha } from '@titan-design/react-ui';
+import { webStyle } from '@/utils/web-style';
+import type { WebStyle } from '@/utils/web-style';
 import { TrainingMode } from '@/domain/device';
 import type { TempoTarget } from '@/domain/workout';
 import { ScrollDial } from '@/components/exercise';
@@ -198,14 +200,14 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 ...Platform.select({
-                  web: {
+                  web: webStyle({
                     boxShadow: [
                       `0 4px 8px ${alpha('#000', 0.3)}`,
                       `0 1px 3px ${alpha('#000', 0.2)}`,
                     ].join(', '),
                     borderTop: `1px solid ${alpha('#fff', 0.1)}`,
                     borderBottom: `1px solid ${alpha('#000', 0.2)}`,
-                  } as any,
+                  }),
                   default: {
                     shadowColor: '#000',
                     shadowOffset: { width: 0, height: 4 },
@@ -223,9 +225,9 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
                 style={{
                   color: t['brand-primary'],
                   ...Platform.select({
-                    web: {
+                    web: webStyle({
                       textShadow: `0 -1px 0 ${alpha('#000', 0.5)}, 0 1px 0 ${alpha('#fff', 0.12)}`,
-                    } as any,
+                    }),
                     default: {
                       textShadowColor: alpha('#000', 0.4),
                       textShadowOffset: { width: 0, height: -1 },
@@ -358,7 +360,7 @@ function TempoColumn({
             borderRadius: 10,
             backgroundColor: enabled ? alpha(t['brand-primary'], 0.15) : '#1a1a1a',
             ...Platform.select({
-              web: {
+              web: webStyle({
                 boxShadow: enabled
                   ? [
                       `0 1px 2px ${alpha('#000', 0.4)}`,
@@ -368,7 +370,7 @@ function TempoColumn({
                       `inset 0 1px 3px ${alpha('#000', 0.4)}`,
                       `0 1px 0 ${alpha('#fff', 0.04)}`,
                     ].join(', '),
-              } as any,
+              }),
               default: {
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: enabled ? 1 : 0 },
@@ -384,9 +386,9 @@ function TempoColumn({
               fontWeight: enabled ? '700' : '500',
               color: enabled ? t['brand-primary'] : disabledColor,
               ...Platform.select({
-                web: enabled ? {
+                web: enabled ? webStyle({
                   textShadow: `0 0 8px ${alpha(t['brand-primary'], 0.4)}`,
-                } as any : {},
+                }) : webStyle({}),
                 default: {},
               }),
             }}
@@ -471,9 +473,9 @@ function CenterSlider({ value, min, max, step, color, onValueChange, onSlidingCo
         position: 'absolute', left: 0, right: 0, height: 6, borderRadius: 3,
         backgroundColor: '#1a1a1a',
         ...Platform.select({
-          web: {
+          web: webStyle({
             boxShadow: `inset 1px 2px 3px ${alpha('#000', 0.4)}, inset -1px -1px 2px ${alpha('#fff', 0.04)}`,
-          } as any,
+          }),
           default: {},
         }),
       }} />
@@ -483,9 +485,9 @@ function CenterSlider({ value, min, max, step, color, onValueChange, onSlidingCo
           position: 'absolute', left: `${barLeft}%`, width: `${barWidth}%`,
           height: 6, borderRadius: 3, backgroundColor: color,
           ...Platform.select({
-            web: {
+            web: webStyle({
               boxShadow: `0 0 4px ${alpha(color, 0.4)}, inset 0 1px 0 ${alpha('#fff', 0.15)}`,
-            } as any,
+            }),
             default: {},
           }),
         }} />
@@ -501,7 +503,7 @@ function CenterSlider({ value, min, max, step, color, onValueChange, onSlidingCo
         maximumTrackTintColor="transparent"
         thumbTintColor={isNeutral ? '#3a3a3a' : color}
         {...Platform.select({
-          web: { style: { filter: `drop-shadow(0 2px 3px ${alpha('#000', 0.4)})` } } as any,
+          web: { style: { filter: 'drop-shadow(0 2px 3px ' + alpha('#000', 0.4) + ')' } } as WebStyle,
           default: {},
         })}
       />
