@@ -16,3 +16,6 @@ export { ExerciseScreen } from './ExerciseScreen';
 export type { ExerciseScreenProps } from './ExerciseScreen';
 export { ExercisePickerScreen } from './ExercisePickerScreen';
 export type { ExercisePickerScreenProps } from './ExercisePickerScreen';
+
+// Training log calendar
+export { TrainingLogScreen } from './TrainingLogScreen';

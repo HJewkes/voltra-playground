@@ -1,7 +1,7 @@
 /**
  * HistoryScreen
  *
- * Exercise session history list with detail modal.
+ * Exercise session history with list and calendar views.
  * Pure orchestration - composes analytics and UI components.
  */
 
@@ -19,8 +19,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { Card, CardContent, VStack, Metric, MetricGroup, EmptyState, getSemanticColors, alpha } from '@titan-design/react-ui';
 import { getSessionRepository } from '@/data/provider';
 import type { StoredExerciseSession } from '@/data/exercise-session';
+import { TrainingLogScreen } from './TrainingLogScreen';
 
 const t = getSemanticColors('dark');
+
+type HistoryView = 'list' | 'calendar';
 
 /**
  * Format large numbers for display.
@@ -55,9 +58,59 @@ function calculateAggregateStats(sessions: StoredExerciseSession[]) {
 }
 
 /**
- * HistoryScreen - exercise session history list.
+ * Segmented control for switching between list and calendar views.
+ */
+function ViewToggle({
+  activeView,
+  onChangeView,
+}: {
+  activeView: HistoryView;
+  onChangeView: (view: HistoryView) => void;
+}) {
+  return (
+    <View
+      className="mb-4 flex-row rounded-lg p-1"
+      style={{ backgroundColor: t['surface-elevated'] }}
+    >
+      <TouchableOpacity
+        onPress={() => onChangeView('list')}
+        className="flex-1 items-center rounded-md py-2"
+        style={activeView === 'list' ? { backgroundColor: t['brand-primary'] } : undefined}
+      >
+        <Text
+          style={{
+            color: activeView === 'list' ? '#FFFFFF' : t['text-secondary'],
+            fontWeight: '600',
+            fontSize: 13,
+          }}
+        >
+          List
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => onChangeView('calendar')}
+        className="flex-1 items-center rounded-md py-2"
+        style={activeView === 'calendar' ? { backgroundColor: t['brand-primary'] } : undefined}
+      >
+        <Text
+          style={{
+            color: activeView === 'calendar' ? '#FFFFFF' : t['text-secondary'],
+            fontWeight: '600',
+            fontSize: 13,
+          }}
+        >
+          Calendar
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+/**
+ * HistoryScreen - exercise session history with view toggle.
  */
 export function HistoryScreen() {
+  const [activeView, setActiveView] = useState<HistoryView>('list');
   const [sessions, setSessions] = useState<StoredExerciseSession[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedSession, setSelectedSession] = useState<StoredExerciseSession | null>(null);
@@ -105,6 +158,17 @@ export function HistoryScreen() {
 
   const aggregateStats = useMemo(() => calculateAggregateStats(sessions), [sessions]);
 
+  if (activeView === 'calendar') {
+    return (
+      <View className="flex-1 bg-surface-400">
+        <View className="px-4 pt-4">
+          <ViewToggle activeView={activeView} onChangeView={setActiveView} />
+        </View>
+        <TrainingLogScreen />
+      </View>
+    );
+  }
+
   return (
     <ScrollView
       className="flex-1 bg-surface-400"
@@ -117,6 +181,9 @@ export function HistoryScreen() {
       }
     >
       <View className="p-4">
+        {/* View Toggle */}
+        <ViewToggle activeView={activeView} onChangeView={setActiveView} />
+
         {/* Aggregate Stats */}
         <Card elevation={1} style={{ marginBottom: 24 }}>
           <CardContent className="p-6">

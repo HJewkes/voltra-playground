@@ -7,3 +7,4 @@
 export * from './baseline-service';
 export * from './records-service';
 export * from './stats-service';
+export * from './training-log-service';
