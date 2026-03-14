@@ -343,11 +343,14 @@ function ActiveSetChart({
 }
 
 function PlannedSetRow({ planned }: { planned: PlannedSet }) {
+  const repText = planned.targetReps > 0
+    ? `${planned.targetReps} reps`
+    : 'open reps';
   return (
-    <View style={[rowStyle, { opacity: 0.4 }]}>
+    <View style={rowStyle}>
       <Text style={setLabelStyle}>Set {planned.setNumber}</Text>
       <Text style={detailStyle}>
-        {planned.targetReps} reps · {planned.weight} lbs
+        {repText} · {planned.weight} lbs
       </Text>
     </View>
   );
@@ -424,15 +427,26 @@ export function SetLog({
         );
       })}
 
-      {plannedSets.map((planned) => (
-        <Surface
-          key={planned.setNumber}
-          elevation={1}
-          className="rounded-xl p-3 mt-2"
-          style={{ opacity: 0.5 }}
-        >
-          <PlannedSetRow planned={planned} />
-        </Surface>
+      {plannedSets.map((planned, i) => (
+        <React.Fragment key={planned.setNumber}>
+          {i === 0 && (setLog.length > 0 || activeSet) && (
+            <View style={{ marginTop: 4, marginBottom: 4 }}>
+              <RestScrubber mode="editing" restSeconds={planned.restSeconds ?? defaultRestSeconds} />
+            </View>
+          )}
+          {i > 0 && (
+            <View style={{ marginTop: 4, marginBottom: 4 }}>
+              <RestScrubber mode="editing" restSeconds={planned.restSeconds ?? defaultRestSeconds} />
+            </View>
+          )}
+          <Surface
+            elevation={1}
+            className="rounded-xl p-3 mt-1"
+            style={{ opacity: 0.5 }}
+          >
+            <PlannedSetRow planned={planned} />
+          </Surface>
+        </React.Fragment>
       ))}
     </View>
   );
