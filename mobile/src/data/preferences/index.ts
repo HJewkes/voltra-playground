@@ -18,4 +18,6 @@ export {
   setHapticCuesEnabled,
   isAudioCuesEnabled,
   setAudioCuesEnabled,
+  isAICoachingEnabled,
+  setAICoachingEnabled,
 } from './preferences-storage';

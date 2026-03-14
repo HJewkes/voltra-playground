@@ -83,6 +83,7 @@ export const STORAGE_KEYS = {
   AUTO_RECONNECT: 'voltra:preferences:autoReconnect',
   HAPTIC_CUES_ENABLED: 'voltra:preferences:hapticCuesEnabled',
   AUDIO_CUES_ENABLED: 'voltra:preferences:audioCuesEnabled',
+  AI_COACHING_ENABLED: 'voltra:preferences:aiCoachingEnabled',
 
   // Migration
   STORAGE_VERSION: 'voltra:version',

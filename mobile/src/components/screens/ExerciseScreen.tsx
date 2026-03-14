@@ -4,61 +4,50 @@
  * Unified screen for standard and discovery exercise sessions.
  * Renders different content based on ExerciseSessionUIState.
  *
- * State x UI mapping:
+ * State → UI mapping:
  * - preparing: "Setting weight..." spinner
- * - ready: DiscoveryStepCard (discovery) or SetTargetCard (standard) + START button
+ * - ready: SetTargetCard + START button
  * - countdown: 3-2-1 countdown display
  * - recording: Rep counter + velocity (auto-stops)
  * - processing: Brief spinner
  * - resting: Rest timer + next set preview
- * - results: RecommendationCard + DiscoveryProfileSummary (discovery) or ExerciseSessionSummaryCard (standard)
+ * - results: RecommendationCard (discovery) or ExerciseSessionSummaryCard (standard)
  */
 
-import React, { useEffect, useRef } from 'react';
-import { View, Text, ActivityIndicator, ScrollView } from 'react-native';
+import React, { useEffect, useMemo, useRef, useCallback } from 'react';
+import { View, Text, ActivityIndicator, ScrollView, TouchableOpacity } from 'react-native';
+import { useStore } from 'zustand';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useShallow } from 'zustand/react/shallow';
+import { Ionicons } from '@expo/vector-icons';
 import { getSemanticColors } from '@titan-design/react-ui';
 
 // Domain imports
 import type { Exercise } from '@/domain/exercise';
 import type { ExercisePlan } from '@/domain/workout';
-import { TrainingGoal } from '@/domain/planning';
 
 // Store imports
 import {
-  exerciseSessionStore,
-  useExerciseSessionStore,
-  recordingStore,
-  useRecordingStore,
+  createExerciseSessionStore,
+  createRecordingStore,
+  coachingStore,
+  useCoachingStore,
   type VoltraStoreApi,
+  type AthleteReaction,
 } from '@/stores';
-
-// Hook imports
-import { useDiscoverySession } from '@/hooks/use-discovery-session';
-import { useExerciseProgression } from '@/hooks/use-exercise-progression';
 
 // Data imports
 import type { ExerciseSessionRepository } from '@/data/exercise-session';
 
 // Component imports
 import { RecordingDisplayView, LiveMetrics } from '@/components/recording';
-import {
-  RecommendationCard,
-  DiscoveryStepCard,
-  DiscoveryProfileSummary,
-} from '@/components/planning';
+import { RecommendationCard } from '@/components/planning';
 import {
   SetTargetCard,
   ExerciseSessionProgress,
   ExerciseSessionSummaryCard,
   ExerciseSessionActionButtons,
-  LoadSuggestionCard,
-  VelocityWarning,
-  JunkVolumeAlert,
-  ProgressionCard,
-  LastSessionBanner,
 } from '@/components/exercise';
+import { CoachingCueCard, CoachingSessionLog } from '@/components/coaching';
 
 const t = getSemanticColors('dark');
 
@@ -96,88 +85,48 @@ export function ExerciseScreen({
   onComplete,
   onNewSession,
 }: ExerciseScreenProps) {
-  // Subscribe to session core state (ui phase, active set, discovery flag, error)
-  const { uiState, session, currentSetIndex, currentPlannedSet, isDiscovery, error } =
-    useExerciseSessionStore(
-      useShallow((s) => ({
-        uiState: s.uiState,
-        session: s.session,
-        currentSetIndex: s.currentSetIndex,
-        currentPlannedSet: s.currentPlannedSet,
-        isDiscovery: s.isDiscovery,
-        error: s.error,
-      })),
-    );
+  // Create stores
+  const sessionStore = useMemo(() => createExerciseSessionStore(), []);
+  const recordingStore = useMemo(() => createRecordingStore(), []);
 
-  // Subscribe to session timing and results state
-  const { restCountdown, startCountdown, terminationReason, terminationMessage, recommendation, autoRegulation } =
-    useExerciseSessionStore(
-      useShallow((s) => ({
-        restCountdown: s.restCountdown,
-        startCountdown: s.startCountdown,
-        terminationReason: s.terminationReason,
-        terminationMessage: s.terminationMessage,
-        recommendation: s.recommendation,
-        autoRegulation: s.autoRegulation,
-      })),
-    );
+  // Subscribe to session state
+  const uiState = useStore(sessionStore, (s) => s.uiState);
+  const session = useStore(sessionStore, (s) => s.session);
+  const currentSetIndex = useStore(sessionStore, (s) => s.currentSetIndex);
+  const currentPlannedSet = useStore(sessionStore, (s) => s.currentPlannedSet);
+  const restCountdown = useStore(sessionStore, (s) => s.restCountdown);
+  const startCountdown = useStore(sessionStore, (s) => s.startCountdown);
+  const isDiscovery = useStore(sessionStore, (s) => s.isDiscovery);
+  const terminationReason = useStore(sessionStore, (s) => s.terminationReason);
+  const terminationMessage = useStore(sessionStore, (s) => s.terminationMessage);
+  const recommendation = useStore(sessionStore, (s) => s.recommendation);
+  const error = useStore(sessionStore, (s) => s.error);
 
-  // Subscribe to recording state (module-level singleton)
-  const { repCount, lastRepPeakVelocity, lastSet } = useRecordingStore(
-    useShallow((s) => ({
-      repCount: s.repCount,
-      lastRepPeakVelocity: s.lastRepPeakVelocity,
-      lastSet: s.lastSet,
-    })),
-  );
+  // Subscribe to recording state
+  const repCount = useStore(recordingStore, (s) => s.repCount);
+  const lastRepPeakVelocity = useStore(recordingStore, (s) => s.lastRepPeakVelocity);
+  const lastSet = useStore(recordingStore, (s) => s.lastSet);
+  const _recordingUIState = useStore(recordingStore, (s) => s.uiState);
 
-  // Progression tracking - compare against previous sessions
-  const { progression, lastSession } = useExerciseProgression(exercise.id, repository);
+  // Subscribe to coaching store
+  const activeCue = useCoachingStore((s) => s.activeCue);
+  const sessionLog = useCoachingStore((s) => s.sessionLog);
+  const logVisible = useCoachingStore((s) => s.logVisible);
+  const coachingEnabled = useCoachingStore((s) => s.enabled);
 
-  // Discovery session hook - adaptive step-by-step guidance
-  const exerciseType = exercise.movementPattern === 'isolation' ? 'isolation' : 'compound';
-  const discoveryGoal = plan.goal ?? TrainingGoal.HYPERTROPHY;
-  const { state: discoveryState, actions: discoveryActions } = useDiscoverySession(
-    exercise.id,
-    exerciseType as 'compound' | 'isolation',
-    discoveryGoal
-  );
-
-  // Track whether discovery has been initialized
-  const discoveryInitializedRef = useRef(false);
-
-  // Initialize discovery on mount for discovery sessions
-  useEffect(() => {
-    if (isDiscovery && !discoveryInitializedRef.current) {
-      discoveryInitializedRef.current = true;
-      discoveryActions.initialize();
-    }
-  }, [isDiscovery, discoveryActions]);
-
-  // Feed completed sets into the discovery hook
-  useEffect(() => {
-    if (!isDiscovery || !lastSet || uiState !== 'recording') return;
-    discoveryActions.recordSet(lastSet);
-  }, [isDiscovery, lastSet, uiState, discoveryActions]);
-
-  // Initialize session on mount, dispose on unmount
+  // Initialize session on mount
   useEffect(() => {
     // Bind stores
-    exerciseSessionStore.getState().bindRecordingStore(recordingStore);
-    exerciseSessionStore.getState().bindVoltraStore(voltraStore);
-    exerciseSessionStore.getState().bindRepository(repository);
+    sessionStore.getState().bindRecordingStore(recordingStore);
+    sessionStore.getState().bindVoltraStore(voltraStore);
+    sessionStore.getState().bindRepository(repository);
 
     // Start session
-    exerciseSessionStore.getState().startSession(exercise, plan);
+    sessionStore.getState().startSession(exercise, plan);
 
     // Prepare first set
-    exerciseSessionStore.getState().prepareFirstSet();
-
-    return () => {
-      discoveryInitializedRef.current = false;
-      exerciseSessionStore.getState().dispose();
-    };
-  }, [exercise, plan, voltraStore, repository]);
+    sessionStore.getState().prepareFirstSet();
+  }, [exercise, plan, voltraStore, repository, sessionStore, recordingStore]);
 
   // Sync recording store UI state based on session state
   useEffect(() => {
@@ -190,7 +139,7 @@ export function ExerciseScreen({
     } else {
       recordingStore.getState().setUIState('idle');
     }
-  }, [uiState]);
+  }, [uiState, recordingStore]);
 
   // Connect voltra telemetry to recording store
   // Subscribe to currentSample changes from the voltra store
@@ -206,31 +155,48 @@ export function ExerciseScreen({
     });
 
     return unsubscribe;
-  }, [voltraStore, uiState]);
+  }, [voltraStore, recordingStore, uiState]);
 
   // Handle set completion from recording store
   useEffect(() => {
     if (lastSet && uiState === 'recording') {
-      exerciseSessionStore.getState().onSetCompleted(lastSet);
+      sessionStore.getState().onSetCompleted(lastSet);
     }
-  }, [lastSet, uiState]);
+  }, [lastSet, uiState, sessionStore]);
+
+  // Flush queued coaching cues when rest begins
+  const prevUiStateRef = useRef(uiState);
+  useEffect(() => {
+    if (uiState === 'resting' && prevUiStateRef.current !== 'resting') {
+      coachingStore.getState().flushQueue();
+      coachingStore.getState().addSetMarker(currentSetIndex);
+    }
+    prevUiStateRef.current = uiState;
+  }, [uiState, currentSetIndex]);
+
+  // Reset coaching store on unmount
+  useEffect(() => {
+    return () => {
+      coachingStore.getState().reset();
+    };
+  }, []);
 
   // Handlers
   const handleStart = () => {
-    exerciseSessionStore.getState().startFirstSet();
+    sessionStore.getState().startFirstSet();
   };
 
   const handleSkipRest = () => {
-    exerciseSessionStore.getState().skipRest();
+    sessionStore.getState().skipRest();
   };
 
   const handleStopAndSave = () => {
-    exerciseSessionStore.getState().stopSession();
+    sessionStore.getState().stopSession();
   };
 
   const handleManualStop = () => {
     console.log('[ExerciseScreen] handleManualStop called');
-    exerciseSessionStore.getState().manualStopRecording();
+    sessionStore.getState().manualStopRecording();
   };
 
   const handleCancel = () => {
@@ -238,6 +204,18 @@ export function ExerciseScreen({
     voltraStore.getState().stopRecording().catch(() => {});
     onComplete?.();
   };
+
+  const handleDismissCue = useCallback(() => {
+    coachingStore.getState().dismissActiveCue();
+  }, []);
+
+  const handleReactToCue = useCallback((cueId: string, reaction: AthleteReaction) => {
+    coachingStore.getState().reactToCue(cueId, reaction);
+  }, []);
+
+  const handleToggleLog = useCallback(() => {
+    coachingStore.getState().toggleLog();
+  }, []);
 
   // Map session UI state to recording display UI state
   const displayUIState =
@@ -249,10 +227,6 @@ export function ExerciseScreen({
           ? 'resting'
           : 'idle';
 
-  // Discovery-aware current step
-  const hasDiscoveryStep =
-    isDiscovery && discoveryState.currentStep && discoveryState.uiPhase === 'active';
-
   // Results need scrolling, other states use flex layout
   if (uiState === 'results') {
     return (
@@ -260,35 +234,26 @@ export function ExerciseScreen({
         <ScrollView className="flex-1" contentContainerClassName="p-4">
           {session &&
             (isDiscovery && recommendation ? (
-              <>
-                <RecommendationCard
-                  recommendation={{
-                    workingWeight: recommendation.workingWeight,
-                    repRange: recommendation.repRange,
-                    warmupSets: recommendation.warmupSets.map((s) => ({
-                      weight: s.weight,
-                      reps: s.reps,
-                      purpose: s.purpose ?? 'warmup',
-                      restSeconds: s.restSeconds ?? 90,
-                    })),
-                    confidence: recommendation.confidence,
-                    explanation: recommendation.explanation,
-                    estimated1RM: recommendation.estimated1RM,
-                    profile: recommendation.profile,
-                  }}
-                  exerciseId={exercise.id}
-                  goal={plan.goal!}
-                  onStartTraining={onNewSession}
-                  onDiscoverAnother={onComplete}
-                />
-                {discoveryState.completedResults.length > 0 && (
-                  <DiscoveryProfileSummary
-                    completedSets={discoveryState.completedResults}
-                    estimated1RM={recommendation.estimated1RM}
-                    confidence={recommendation.confidence}
-                  />
-                )}
-              </>
+              <RecommendationCard
+                recommendation={{
+                  workingWeight: recommendation.workingWeight,
+                  repRange: recommendation.repRange,
+                  warmupSets: recommendation.warmupSets.map((s) => ({
+                    weight: s.weight,
+                    reps: s.reps,
+                    purpose: s.purpose ?? 'warmup',
+                    restSeconds: s.restSeconds ?? 90,
+                  })),
+                  confidence: recommendation.confidence,
+                  explanation: recommendation.explanation,
+                  estimated1RM: recommendation.estimated1RM,
+                  profile: recommendation.profile,
+                }}
+                exerciseId={exercise.id}
+                goal={plan.goal!}
+                onStartTraining={onNewSession}
+                onDiscoverAnother={onComplete}
+              />
             ) : (
               <ExerciseSessionSummaryCard
                 session={session}
@@ -306,16 +271,30 @@ export function ExerciseScreen({
   return (
     <SafeAreaView className="bg-background flex-1" edges={['top']}>
       <View className="flex-1 px-4 pt-2">
-        {/* Progress indicator with exercise name */}
+        {/* Progress indicator with exercise name + coaching log button */}
         {session && (
-          <ExerciseSessionProgress
-            exerciseName={exercise.name}
-            plannedSets={plan.sets}
-            completedSets={session.completedSets}
-            currentSetIndex={currentSetIndex}
-            isDiscovery={isDiscovery}
-            error={error}
-          />
+          <View className="flex-row items-start">
+            <View className="flex-1">
+              <ExerciseSessionProgress
+                exerciseName={exercise.name}
+                plannedSets={plan.sets}
+                completedSets={session.completedSets}
+                currentSetIndex={currentSetIndex}
+                isDiscovery={isDiscovery}
+                error={error}
+              />
+            </View>
+            {coachingEnabled && sessionLog.length > 0 && (
+              <TouchableOpacity
+                onPress={handleToggleLog}
+                className="ml-2 mt-1 rounded-full p-2"
+                style={{ backgroundColor: t['surface-elevated'] }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="chatbubbles-outline" size={20} color={t['brand-primary']} />
+              </TouchableOpacity>
+            )}
+          </View>
         )}
 
         {/* Main content area - fills remaining space */}
@@ -328,35 +307,15 @@ export function ExerciseScreen({
             </View>
           )}
 
-          {/* Ready state - discovery uses adaptive DiscoveryStepCard */}
-          {uiState === 'ready' &&
-            currentPlannedSet &&
-            (hasDiscoveryStep ? (
-              <DiscoveryStepCard
-                step={discoveryState.currentStep!}
-                phase={discoveryState.discoveryState.phase}
-                completedCount={discoveryState.completedResults.length}
-              />
-            ) : (
-              <>
-                {lastSession && currentSetIndex === 0 && (
-                  <LastSessionBanner
-                    exerciseName={lastSession.exerciseName}
-                    date={lastSession.date}
-                    weight={lastSession.weight}
-                    velocity={lastSession.velocity}
-                    sets={lastSession.sets}
-                    reps={lastSession.reps}
-                  />
-                )}
-                <SetTargetCard
-                  setNumber={currentSetIndex + 1}
-                  totalSets={plan.sets.length}
-                  plannedSet={currentPlannedSet}
-                  isDiscovery={isDiscovery}
-                />
-              </>
-            ))}
+          {/* Ready state */}
+          {uiState === 'ready' && currentPlannedSet && (
+            <SetTargetCard
+              setNumber={currentSetIndex + 1}
+              totalSets={plan.sets.length}
+              plannedSet={currentPlannedSet}
+              isDiscovery={isDiscovery}
+            />
+          )}
 
           {/* Countdown / Recording / Resting states */}
           {(uiState === 'countdown' || uiState === 'recording' || uiState === 'resting') && (
@@ -384,25 +343,14 @@ export function ExerciseScreen({
                 <LiveMetrics store={recordingStore} style={{ marginTop: 16 }} />
               )}
 
-              {/* Auto-regulation signals during rest */}
-              {uiState === 'resting' && autoRegulation && (
-                <View style={{ marginTop: 12, gap: 8 }}>
-                  {autoRegulation.junkVolumeAlert && (
-                    <JunkVolumeAlert alert={autoRegulation.junkVolumeAlert} />
-                  )}
-                  {autoRegulation.velocityWarning && (
-                    <VelocityWarning warning={autoRegulation.velocityWarning} />
-                  )}
-                  {autoRegulation.loadSuggestion && (
-                    <LoadSuggestionCard suggestion={autoRegulation.loadSuggestion} />
-                  )}
-                </View>
-              )}
-
-              {/* Progression comparison during rest */}
-              {uiState === 'resting' && progression && (
+              {/* AI coaching cue during rest */}
+              {uiState === 'resting' && coachingEnabled && activeCue && (
                 <View style={{ marginTop: 12 }}>
-                  <ProgressionCard progression={progression} />
+                  <CoachingCueCard
+                    cue={activeCue}
+                    onDismiss={handleDismissCue}
+                    onReact={handleReactToCue}
+                  />
                 </View>
               )}
             </View>
@@ -429,6 +377,15 @@ export function ExerciseScreen({
           />
         </View>
       </View>
+
+      {/* Coaching session log modal */}
+      {coachingEnabled && (
+        <CoachingSessionLog
+          visible={logVisible}
+          entries={sessionLog}
+          onClose={handleToggleLog}
+        />
+      )}
     </SafeAreaView>
   );
 }
