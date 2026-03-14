@@ -31,6 +31,7 @@ import { QuickConfig, VerticalWeightJog, SetLog } from '@/components/exercise';
 import type { TargetMode } from '@/components/exercise';
 import { MovementPhase } from '@voltras/workout-analytics';
 import type { VoltraStoreApi } from '@/stores/voltra-store';
+import { generateMockRepPlan } from './mock-rep-plan';
 
 const t = getSemanticColors('dark');
 
@@ -209,6 +210,19 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
 
       await sessionStore.getState().prepareFirstSet();
       sessionStore.getState().startFirstSet();
+
+      // In mock mode, auto-generate a rep plan from the session's planned sets
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (typeof window !== 'undefined' && (window as any).__mockBLE) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mock = (window as any).__mockBLE as {
+          setRepPlan?: (reps: ReturnType<typeof generateMockRepPlan>) => void;
+        };
+        const plan = sessionStore.getState().session?.plan;
+        if (plan && mock.setRepPlan) {
+          mock.setRepPlan(generateMockRepPlan(plan));
+        }
+      }
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e);
       Alert.alert('Error', `Failed to start: ${message}`);
@@ -323,13 +337,13 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
           </Surface>
 
           {/* Unified Set Log — each set renders its own Surface card */}
-          {(setLog.length > 0 || isRecording || uiState === 'resting' || plannedSetCount > 0) && (
+          {(setLog.length > 0 || isActive || uiState === 'resting' || plannedSetCount > 0) && (
             <View className="mt-3" />
           )}
-          {(setLog.length > 0 || isRecording || uiState === 'resting' || plannedSetCount > 0) && (
+          {(setLog.length > 0 || isActive || uiState === 'resting' || plannedSetCount > 0) && (
             <SetLog
               setLog={setLog}
-              activeSet={isRecording ? {
+              activeSet={isActive ? {
                 setIndex: currentSetIndex,
                 repCount,
                 weight: currentPlannedSet?.weight ?? weight,

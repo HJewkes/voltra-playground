@@ -2,15 +2,13 @@
  * RestScrubber — horizontal rest time dial that doubles as a progress bar.
  *
  * States:
- * - **Editing**: User scrubs left/right to set rest time in 15s increments (default 90s)
+ * - **Editing**: User scrubs left/right to set rest time in 15s increments
  * - **Resting**: Shows progress bar filling toward target, elapsed/target labels
  * - **Complete**: Fully filled, muted
- *
- * Sits between sets in the set list as a visual separator.
  */
 
-import React, { useRef } from 'react';
-import { View, Text, PanResponder, Platform } from 'react-native';
+import React, { useRef, useCallback } from 'react';
+import { View, Text, Platform } from 'react-native';
 import { alpha, getSemanticColors } from '@titan-design/react-ui';
 
 const t = getSemanticColors('dark');
@@ -19,17 +17,14 @@ const MIN_REST_S = 15;
 const MAX_REST_S = 300;
 const STEP_S = 15;
 const SCRUBBER_HEIGHT = 28;
+const DRAG_PX_PER_STEP = 20;
 
 type RestScrubberMode = 'editing' | 'resting' | 'complete';
 
 interface RestScrubberProps {
-  /** Rest time in seconds */
   restSeconds: number;
-  /** Called when user scrubs to change rest time */
   onRestChange?: (seconds: number) => void;
-  /** Current mode */
   mode: RestScrubberMode;
-  /** Elapsed rest time in ms (only used in 'resting' mode) */
   elapsedMs?: number;
 }
 
@@ -47,30 +42,29 @@ export function RestScrubber({
 }: RestScrubberProps) {
   const startXRef = useRef(0);
   const startValueRef = useRef(restSeconds);
+  const draggingRef = useRef(false);
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => mode === 'editing',
-      onMoveShouldSetPanResponder: () => mode === 'editing',
-      onPanResponderGrant: () => {
-        startXRef.current = 0;
-        startValueRef.current = restSeconds;
-      },
-      onPanResponderMove: (_evt, gestureState) => {
-        if (!onRestChange) return;
-        // Every 20px of horizontal drag = 1 step (15s)
-        const steps = Math.round(gestureState.dx / 20);
-        const newValue = Math.max(
-          MIN_REST_S,
-          Math.min(MAX_REST_S, startValueRef.current + steps * STEP_S),
-        );
-        if (newValue !== restSeconds) {
-          onRestChange(newValue);
-        }
-      },
-      onPanResponderRelease: () => {},
-    }),
-  ).current;
+  const handlePointerDown = useCallback((e: { nativeEvent: { pageX: number } }) => {
+    if (mode !== 'editing' || !onRestChange) return;
+    draggingRef.current = true;
+    startXRef.current = e.nativeEvent.pageX;
+    startValueRef.current = restSeconds;
+  }, [mode, onRestChange, restSeconds]);
+
+  const handlePointerMove = useCallback((e: { nativeEvent: { pageX: number } }) => {
+    if (!draggingRef.current || !onRestChange) return;
+    const dx = e.nativeEvent.pageX - startXRef.current;
+    const steps = Math.round(dx / DRAG_PX_PER_STEP);
+    const newValue = Math.max(
+      MIN_REST_S,
+      Math.min(MAX_REST_S, startValueRef.current + steps * STEP_S),
+    );
+    onRestChange(newValue);
+  }, [onRestChange]);
+
+  const handlePointerUp = useCallback(() => {
+    draggingRef.current = false;
+  }, []);
 
   const progress = mode === 'resting'
     ? Math.min(1, elapsedMs / (restSeconds * 1000))
@@ -99,6 +93,18 @@ export function RestScrubber({
       ? t['text-disabled']
       : t['text-tertiary'];
 
+  const webPointerProps = Platform.OS === 'web' ? {
+    onPointerDown: handlePointerDown,
+    onPointerMove: handlePointerMove,
+    onPointerUp: handlePointerUp,
+    onPointerLeave: handlePointerUp,
+    style: {
+      cursor: mode === 'editing' ? 'ew-resize' as const : 'default' as const,
+      userSelect: 'none' as const,
+      touchAction: 'none' as const,
+    },
+  } : {};
+
   return (
     <View
       style={{
@@ -106,7 +112,7 @@ export function RestScrubber({
         justifyContent: 'center',
         paddingHorizontal: 12,
       }}
-      {...(mode === 'editing' ? panResponder.panHandlers : {})}
+      {...(webPointerProps as any)}
     >
       {/* Track */}
       <View
@@ -117,7 +123,6 @@ export function RestScrubber({
           overflow: 'hidden',
         }}
       >
-        {/* Fill */}
         {progress > 0 && (
           <View
             style={{
@@ -131,32 +136,17 @@ export function RestScrubber({
       </View>
 
       {/* Label */}
-      <View
-        style={{
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          alignItems: 'center',
-        }}
-      >
+      <View style={{ position: 'absolute', left: 0, right: 0, alignItems: 'center' }}>
         <Text style={{ fontSize: 10, color: labelColor, fontVariant: ['tabular-nums'] }}>
           {label}
         </Text>
       </View>
 
-      {/* Scrub hint (editing mode only) */}
+      {/* Drag hint */}
       {mode === 'editing' && (
-        <View
-          style={{
-            position: 'absolute',
-            right: 12,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 2,
-          }}
-        >
+        <View style={{ position: 'absolute', right: 12 }}>
           <Text style={{ fontSize: 8, color: t['text-disabled'] }}>
-            {Platform.OS === 'web' ? '← drag →' : '◀ ▶'}
+            ← drag →
           </Text>
         </View>
       )}
