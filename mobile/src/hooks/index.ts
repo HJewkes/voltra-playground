@@ -12,3 +12,8 @@ export {
   type DiscoverySessionActions,
   type UseDiscoverySessionReturn,
 } from './use-discovery-session';
+
+export {
+  useExerciseProgression,
+  type UseExerciseProgressionReturn,
+} from './use-exercise-progression';
