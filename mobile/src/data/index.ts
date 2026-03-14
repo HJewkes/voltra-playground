@@ -16,5 +16,8 @@ export * from './preferences';
 // Velocity profile data (load-velocity profiles per exercise)
 export * from './velocity-profile';
 
+// Manual log data (free weight set logging)
+export * from './manual-log';
+
 // Storage adapters
 export * from './adapters';

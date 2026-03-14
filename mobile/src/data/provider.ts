@@ -21,6 +21,10 @@ import {
   createVelocityProfileRepository,
   type VelocityProfileRepository,
 } from './velocity-profile/velocity-profile-repository';
+import {
+  createManualLogRepository,
+  type ManualLogRepository,
+} from './manual-log/manual-log-repository';
 
 // Re-export debug config for convenience (consumers can import from provider)
 export { isDebugTelemetryEnabled, setDebugTelemetryEnabled } from './debug-config';
@@ -53,6 +57,7 @@ export function setTestAdapter(adapter: StorageAdapter | null): void {
   _exerciseRepository = null;
   _recordingRepository = null;
   _velocityProfileRepository = null;
+  _manualLogRepository = null;
 }
 
 // =============================================================================
@@ -63,6 +68,7 @@ let _sessionRepository: ExerciseSessionRepository | null = null;
 let _exerciseRepository: ExerciseRepository | null = null;
 let _recordingRepository: RecordingRepository | null = null;
 let _velocityProfileRepository: VelocityProfileRepository | null = null;
+let _manualLogRepository: ManualLogRepository | null = null;
 
 /**
  * Get the exercise session repository singleton.
@@ -102,4 +108,14 @@ export function getVelocityProfileRepository(): VelocityProfileRepository {
     _velocityProfileRepository = createVelocityProfileRepository(getAdapter());
   }
   return _velocityProfileRepository;
+}
+
+/**
+ * Get the manual log repository singleton.
+ */
+export function getManualLogRepository(): ManualLogRepository {
+  if (!_manualLogRepository) {
+    _manualLogRepository = createManualLogRepository(getAdapter());
+  }
+  return _manualLogRepository;
 }

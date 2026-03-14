@@ -18,3 +18,6 @@ export type { ExercisePickerScreenProps } from './ExercisePickerScreen';
 
 // Simplified screens (MVP)
 export { SimpleExerciseScreen } from './SimpleExerciseScreen';
+
+// Manual logging (free weight exercises)
+export { ManualLogScreen } from './ManualLogScreen';
