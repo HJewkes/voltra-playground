@@ -20,6 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { Surface, getSemanticColors, alpha } from '@titan-design/react-ui';
+import { webStyle } from '@/utils/web-style';
 
 import { TrainingMode, TrainingModeNames } from '@/domain/device';
 import { createEmptyPlan } from '@/domain/workout';
@@ -691,9 +692,9 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
           borderTopWidth: 1,
           borderTopColor: alpha('#fff', 0.04),
           ...Platform.select({
-            web: {
+            web: webStyle({
               boxShadow: `0 -4px 12px ${alpha('#000', 0.3)}`,
-            } as any,
+            }),
             default: {
               shadowColor: '#000',
               shadowOffset: { width: 0, height: -4 },
@@ -794,9 +795,9 @@ function ModeDrawer({
           paddingTop: 4,
           paddingBottom: 12,
           ...Platform.select({
-            web: {
+            web: webStyle({
               boxShadow: `0 8px 24px ${alpha('#000', 0.5)}`,
-            } as any,
+            }),
             default: {
               shadowColor: '#000',
               shadowOffset: { width: 0, height: 8 },

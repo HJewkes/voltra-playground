@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getSemanticColors, alpha } from '@titan-design/react-ui';
+import { webStyle } from '@/utils/web-style';
 
 import { MuscleGroup } from '@/domain/exercise/types';
 import { EXERCISE_CATALOG, type Exercise } from '@/domain/exercise/catalog';
@@ -114,9 +115,9 @@ export function ExercisePickerModal({
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
             ...Platform.select({
-              web: {
+              web: webStyle({
                 boxShadow: `0 -4px 24px ${alpha('#000', 0.5)}`,
-              } as any,
+              }),
               default: {
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: -4 },
