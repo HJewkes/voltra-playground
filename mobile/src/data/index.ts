@@ -15,3 +15,6 @@ export * from './preferences';
 
 // Storage adapters
 export * from './adapters';
+
+// Backup and restore
+export * from './backup';

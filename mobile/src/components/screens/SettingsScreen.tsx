@@ -9,7 +9,7 @@ import React from 'react';
 import { View, Text, ScrollView } from 'react-native';
 import { DataRow, Surface } from '@titan-design/react-ui';
 import { DeviceConnection } from '@/components/device';
-import { DevToolsSection, WorkoutCuesSection } from '@/components/settings';
+import { DataBackupSection, DevToolsSection } from '@/components/settings';
 import { selectBleEnvironment } from '@/stores';
 
 /**
@@ -26,8 +26,8 @@ export function SettingsScreen() {
           <DeviceConnection variant="card" />
         </View>
 
-        {/* Workout Cues Settings */}
-        <WorkoutCuesSection />
+        {/* Data Backup */}
+        <DataBackupSection />
 
         {/* Dev Tools (DEV only) */}
         {__DEV__ && <DevToolsSection />}
