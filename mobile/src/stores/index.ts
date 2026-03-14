@@ -13,12 +13,12 @@ export type {
   RecordingState as VoltraRecordingState, // Renamed to avoid conflict
 } from './voltra-store';
 
-// Recording store (factory for per-recording analytics)
-export { createRecordingStore } from './recording-store';
+// Recording store (singleton for per-recording analytics)
+export { recordingStore, useRecordingStore } from './recording-store';
 export type { RecordingState, RecordingStoreApi, RecordingUIState } from './recording-store';
 
-// Exercise session store (factory for multi-set orchestration)
-export { createExerciseSessionStore } from './exercise-session-store';
+// Exercise session store (singleton for multi-set orchestration)
+export { exerciseSessionStore, useExerciseSessionStore } from './exercise-session-store';
 export type {
   ExerciseSessionState,
   ExerciseSessionStoreApi,

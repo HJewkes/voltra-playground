@@ -11,28 +11,26 @@
  * - Build CompletedSet when recording stops
  */
 
-import { createStore, type StoreApi } from 'zustand';
+import { createStore, useStore, type StoreApi } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
 // Library imports
 import {
   type Set as AnalyticsSet,
   type WorkoutSample,
-  type Rep,
   createSet,
   addSampleToSet,
   completeSet,
   getSetVelocityLossPct,
   getSetRepVelocities,
-  getSetMeanVelocity,
   estimateSetRIR,
   getRepPeakVelocity,
-  MovementPhase,
 } from '@voltras/workout-analytics';
 
 // App imports
 import { type CompletedSet, createCompletedSet } from '@/domain/workout';
 import { getLiveEffortMessage } from '@/domain/workout';
+import { TelemetryRingBuffer } from '@/domain/workout/telemetry-ring-buffer';
 import { isDebugTelemetryEnabled } from '@/data/provider';
 
 // =============================================================================
@@ -131,125 +129,142 @@ function createInitialState(): Pick<
 }
 
 // =============================================================================
-// Store Factory
+// Singleton Store
 // =============================================================================
 
-/**
- * Create a recording store for managing single-set analytics.
- */
-export function createRecordingStore(): RecordingStoreApi {
-  let analyticsSet = createSet();
+let analyticsSet = createSet();
+const telemetryBuffer = new TelemetryRingBuffer();
 
-  const store = createStore<RecordingState>()(
-    devtools(
-      (set, get) => ({
-        ...createInitialState(),
+const _recordingStoreBase = createStore<RecordingState>()(
+  devtools(
+    (set, get) => ({
+      ...createInitialState(),
+      _analyticsSet: createSet(),
 
-        // Internal state
-        _analyticsSet: createSet(),
+      setUIState: (uiState: RecordingUIState) => {
+        set({ uiState });
+      },
 
-        // =======================================================================
-        // Actions
-        // =======================================================================
+      startRecording: (exerciseId?: string, exerciseName?: string) => {
+        analyticsSet = createSet();
+        telemetryBuffer.clear();
+        set({
+          ...createInitialState(),
+          uiState: 'recording',
+          isRecording: true,
+          exerciseId: exerciseId ?? null,
+          exerciseName: exerciseName ?? 'Workout',
+          startTime: Date.now(),
+          _analyticsSet: analyticsSet,
+        });
+      },
 
-        setUIState: (uiState: RecordingUIState) => {
-          set({ uiState });
-        },
+      stopRecording: (weight: number) => {
+        return stopRecordingAction(get, set, weight);
+      },
 
-        startRecording: (exerciseId?: string, exerciseName?: string) => {
-          analyticsSet = createSet();
-          set({
-            ...createInitialState(),
-            uiState: 'recording',
-            isRecording: true,
-            exerciseId: exerciseId ?? null,
-            exerciseName: exerciseName ?? 'Workout',
-            startTime: Date.now(),
-            _analyticsSet: analyticsSet,
-          });
-        },
+      processSample: (sample: WorkoutSample) => {
+        processSampleAction(get, set, sample);
+      },
 
-        stopRecording: (weight: number) => {
-          const state = get();
-          if (!state.isRecording || analyticsSet.reps.length === 0) {
-            set({ uiState: 'idle', isRecording: false });
-            return null;
-          }
+      reset: () => {
+        analyticsSet = createSet();
+        telemetryBuffer.clear();
+        set({ ...createInitialState(), _analyticsSet: analyticsSet });
+      },
+    }),
+    { name: 'recording-store' }
+  )
+);
 
-          // Finalize the set (trim trailing idle samples)
-          const finalSet = completeSet(analyticsSet);
+// =============================================================================
+// Actions (extracted to stay under ~30 lines each)
+// =============================================================================
 
-          const endTime = Date.now();
-          const startTime = state.startTime ?? endTime;
+function stopRecordingAction(
+  get: () => RecordingState,
+  set: (state: Partial<RecordingState>) => void,
+  weight: number
+): CompletedSet | null {
+  const state = get();
+  if (!state.isRecording || analyticsSet.reps.length === 0) {
+    set({ uiState: 'idle', isRecording: false });
+    return null;
+  }
 
-          // Build CompletedSet with app metadata
-          const completedSet = createCompletedSet(finalSet, {
-            exerciseId: state.exerciseId ?? 'unknown',
-            exerciseName: state.exerciseName,
-            weight,
-            startTime,
-            endTime,
-          });
+  const finalSet = completeSet(analyticsSet);
+  const endTime = Date.now();
+  const startTime = state.startTime ?? endTime;
 
-          set({
-            uiState: 'idle',
-            isRecording: false,
-            lastSet: completedSet,
-          });
+  const completedSet = createCompletedSet(finalSet, {
+    exerciseId: state.exerciseId ?? 'unknown',
+    exerciseName: state.exerciseName,
+    weight,
+    startTime,
+    endTime,
+  });
 
-          return completedSet;
-        },
+  set({ uiState: 'idle', isRecording: false, lastSet: completedSet });
+  return completedSet;
+}
 
-        processSample: (sample: WorkoutSample) => {
-          if (!get().isRecording) return;
+function processSampleAction(
+  get: () => RecordingState,
+  set: (state: Partial<RecordingState>) => void,
+  sample: WorkoutSample
+): void {
+  if (!get().isRecording) return;
 
-          // Accumulate samples if debug telemetry is enabled
-          if (isDebugTelemetryEnabled()) {
-            const currentSamples = get().allSamples;
-            set({ allSamples: [...currentSamples, sample] });
-          }
+  // O(1) push into ring buffer (ref-based, no re-render)
+  telemetryBuffer.push(sample);
 
-          // Feed sample through library pipeline
-          const prevRepCount = analyticsSet.reps.length;
-          analyticsSet = addSampleToSet(analyticsSet, sample);
-          const newRepCount = analyticsSet.reps.length;
+  if (isDebugTelemetryEnabled()) {
+    set({ allSamples: [...get().allSamples, sample] });
+  }
 
-          // New rep completed - update metrics
-          if (newRepCount > prevRepCount) {
-            const lastRep = analyticsSet.reps.at(-1)!;
+  const prevRepCount = analyticsSet.reps.length;
+  analyticsSet = addSampleToSet(analyticsSet, sample);
+  const newRepCount = analyticsSet.reps.length;
 
-            // Compute live metrics from library
-            const velocityLoss = getSetVelocityLossPct(analyticsSet);
-            const rirEstimate = estimateSetRIR(analyticsSet);
-            const velocityTrend = [...getSetRepVelocities(analyticsSet)];
+  if (newRepCount > prevRepCount) {
+    updateMetricsAfterNewRep(set, newRepCount);
+  }
+}
 
-            set({
-              repCount: newRepCount,
-              lastRepPeakVelocity: getRepPeakVelocity(lastRep),
-              velocityLoss: Math.abs(velocityLoss),
-              rpe: rirEstimate.rpe,
-              rir: rirEstimate.rir,
-              velocityTrend,
-              liveMessage: getLiveEffortMessage(rirEstimate.rpe, newRepCount),
-              _analyticsSet: analyticsSet,
-            });
-          }
-        },
+function updateMetricsAfterNewRep(
+  set: (state: Partial<RecordingState>) => void,
+  newRepCount: number
+): void {
+  const lastRep = analyticsSet.reps.at(-1)!;
+  const velocityLoss = getSetVelocityLossPct(analyticsSet);
+  const rirEstimate = estimateSetRIR(analyticsSet);
+  const velocityTrend = [...getSetRepVelocities(analyticsSet)];
 
-        reset: () => {
-          analyticsSet = createSet();
-          set({ ...createInitialState(), _analyticsSet: analyticsSet });
-        },
-      }),
-      { name: 'recording-store' }
-    )
-  );
+  set({
+    repCount: newRepCount,
+    lastRepPeakVelocity: getRepPeakVelocity(lastRep),
+    velocityLoss: Math.abs(velocityLoss),
+    rpe: rirEstimate.rpe,
+    rir: rirEstimate.rir,
+    velocityTrend,
+    liveMessage: getLiveEffortMessage(rirEstimate.rpe, newRepCount),
+    _analyticsSet: analyticsSet,
+  });
+}
 
-  return store;
+// Add telemetry buffer accessor
+// =============================================================================
+// Typed Hook
+// =============================================================================
+
+export function useRecordingStore<T>(selector: (state: RecordingState) => T): T {
+  return useStore(recordingStore, selector);
 }
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export type RecordingStoreApi = StoreApi<RecordingState>;
+export type RecordingStoreApi = StoreApi<RecordingState> & {
+  getTelemetryBuffer: () => TelemetryRingBuffer;
+};

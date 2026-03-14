@@ -14,4 +14,8 @@ export {
   clearLastDevice,
   isAutoReconnectEnabled,
   setAutoReconnectEnabled,
+  isHapticCuesEnabled,
+  setHapticCuesEnabled,
+  isAudioCuesEnabled,
+  setAudioCuesEnabled,
 } from './preferences-storage';

@@ -5,14 +5,22 @@
  * Each screen is a flat file, no nested components or hooks.
  */
 
-export { DashboardScreen } from './DashboardScreen';
+export { ConnectionScreen } from './ConnectionScreen';
 export { SettingsScreen } from './SettingsScreen';
 export { HistoryScreen } from './HistoryScreen';
 export { ModeSelectionScreen } from './ModeSelectionScreen';
 
 // Exercise session screens
-export { ExerciseSessionFlow } from './ExerciseSessionFlow';
 export { ExerciseScreen } from './ExerciseScreen';
 export type { ExerciseScreenProps } from './ExerciseScreen';
 export { ExercisePickerScreen } from './ExercisePickerScreen';
 export type { ExercisePickerScreenProps } from './ExercisePickerScreen';
+
+// Training log calendar
+export { TrainingLogScreen } from './TrainingLogScreen';
+
+// Analytics dashboard
+export { AnalyticsDashboard } from './AnalyticsDashboard';
+
+// Simplified screens (MVP)
+export { SimpleExerciseScreen } from './SimpleExerciseScreen';

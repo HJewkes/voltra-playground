@@ -35,8 +35,8 @@
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/slider": "^5.1.2",
     "@react-navigation/native": "^7.1.8",
-    "@titan-design/react-ui": "^0.1.0",
-    "@voltras/node-sdk": "^0.2.1",
+    "@titan-design/react-ui": "^0.1.1",
+    "@voltras/node-sdk": "^0.3.0",
     "@voltras/workout-analytics": "^0.2.0",
     "expo": "~54.0.31",
     "expo-constants": "~18.0.13",
@@ -65,6 +65,7 @@
   "devDependencies": {
     "@commitlint/cli": "^19.6.0",
     "@commitlint/config-conventional": "^19.6.0",
+    "@eslint-react/eslint-plugin": "^2.13.0",
     "@eslint/js": "^9.18.0",
     "@testing-library/react-native": "^13.0.0",
     "@types/react": "~19.1.0",

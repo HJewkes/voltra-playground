@@ -5,10 +5,16 @@
  */
 
 // Charts
-export { ForceCurveChart, VelocityTrendChart } from './charts';
+export { ForceCurveChart, VelocityTrendChart, BarChart, HorizontalBarChart, TrainingLoadGauge } from './charts';
+
+// Dashboard
+export { VolumeTrendCard, MuscleDistributionCard, TrainingLoadCard, PRTimelineCard, ExerciseFrequencyCard } from './dashboard';
 
 // History
 export { WorkoutListItem, WorkoutDetailModal, AggregateStats } from './history';
+
+// Calendar
+export { CalendarGrid, DayDetail, WeeklyVolumeCard } from './calendar';
 
 // Direct exports
 export { RepHistoryTable } from './RepHistoryTable';

@@ -8,7 +8,7 @@ const config = getDefaultConfig(__dirname);
 // Prioritize CJS builds over ESM to avoid import.meta errors
 config.resolver.unstable_conditionNames = [
   'browser',
-  'require', 
+  'require',
   'react-native',
 ];
 

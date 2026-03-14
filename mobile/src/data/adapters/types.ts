@@ -81,6 +81,8 @@ export const STORAGE_KEYS = {
   // Preferences
   LAST_DEVICE: 'voltra:preferences:lastDevice',
   AUTO_RECONNECT: 'voltra:preferences:autoReconnect',
+  HAPTIC_CUES_ENABLED: 'voltra:preferences:hapticCuesEnabled',
+  AUDIO_CUES_ENABLED: 'voltra:preferences:audioCuesEnabled',
 
   // Migration
   STORAGE_VERSION: 'voltra:version',

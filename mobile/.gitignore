@@ -36,6 +36,12 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# Google Play service account key
+google-services.json
+
 # generated native folders
 /ios
 /android
+
+# Planning workflow artifacts (working state, not committed)
+.plans/
