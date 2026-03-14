@@ -52,6 +52,9 @@ import {
   ExerciseSessionProgress,
   ExerciseSessionSummaryCard,
   ExerciseSessionActionButtons,
+  LoadSuggestionCard,
+  VelocityWarning,
+  JunkVolumeAlert,
 } from '@/components/exercise';
 
 const t = getSemanticColors('dark');
@@ -104,7 +107,7 @@ export function ExerciseScreen({
     );
 
   // Subscribe to session timing and results state
-  const { restCountdown, startCountdown, terminationReason, terminationMessage, recommendation } =
+  const { restCountdown, startCountdown, terminationReason, terminationMessage, recommendation, autoRegulation } =
     useExerciseSessionStore(
       useShallow((s) => ({
         restCountdown: s.restCountdown,
@@ -112,6 +115,7 @@ export function ExerciseScreen({
         terminationReason: s.terminationReason,
         terminationMessage: s.terminationMessage,
         recommendation: s.recommendation,
+        autoRegulation: s.autoRegulation,
       })),
     );
 
@@ -360,6 +364,21 @@ export function ExerciseScreen({
               {/* Live metrics during recording */}
               {uiState === 'recording' && (
                 <LiveMetrics store={recordingStore} style={{ marginTop: 16 }} />
+              )}
+
+              {/* Auto-regulation signals during rest */}
+              {uiState === 'resting' && autoRegulation && (
+                <View style={{ marginTop: 12, gap: 8 }}>
+                  {autoRegulation.junkVolumeAlert && (
+                    <JunkVolumeAlert alert={autoRegulation.junkVolumeAlert} />
+                  )}
+                  {autoRegulation.velocityWarning && (
+                    <VelocityWarning warning={autoRegulation.velocityWarning} />
+                  )}
+                  {autoRegulation.loadSuggestion && (
+                    <LoadSuggestionCard suggestion={autoRegulation.loadSuggestion} />
+                  )}
+                </View>
               )}
             </View>
           )}
