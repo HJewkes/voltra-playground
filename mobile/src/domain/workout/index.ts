@@ -80,6 +80,15 @@ export {
   getTerminationMessage,
 } from './session';
 
+// Re-export readiness assessment
+export {
+  type IntensityAdjustment,
+  type ReadinessAssessment,
+  deriveIntensityAdjustment,
+  assessReadiness,
+  isReadinessCheckCandidate,
+} from './session';
+
 // Re-export planners
 export {
   type StandardPlanOptions,

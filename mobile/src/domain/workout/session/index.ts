@@ -1,5 +1,5 @@
 /**
- * Session termination logic barrel export.
+ * Session logic barrel export.
  */
 
 export {
@@ -11,3 +11,11 @@ export {
   createUserStoppedTermination,
   getTerminationMessage,
 } from './termination';
+
+export {
+  type IntensityAdjustment,
+  type ReadinessAssessment,
+  deriveIntensityAdjustment,
+  assessReadiness,
+  isReadinessCheckCandidate,
+} from './readiness';
