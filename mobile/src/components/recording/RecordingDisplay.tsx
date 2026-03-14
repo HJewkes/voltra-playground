@@ -14,6 +14,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useStore } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import { getSemanticColors } from '@titan-design/react-ui';
 import type { RecordingUIState, RecordingStoreApi } from '@/stores';
 
@@ -268,9 +269,15 @@ export function RecordingDisplay({
   startCountdown,
   onSkipRest,
 }: RecordingDisplayProps) {
-  const uiState = useStore(store, (s) => s.uiState);
-  const repCount = useStore(store, (s) => s.repCount);
-  const lastRepPeakVelocity = useStore(store, (s) => s.lastRepPeakVelocity);
+  // Group display state into a single subscription
+  const { uiState, repCount, lastRepPeakVelocity } = useStore(
+    store,
+    useShallow((s) => ({
+      uiState: s.uiState,
+      repCount: s.repCount,
+      lastRepPeakVelocity: s.lastRepPeakVelocity,
+    })),
+  );
 
   return (
     <RecordingDisplayView
