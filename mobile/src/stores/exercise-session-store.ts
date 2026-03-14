@@ -79,6 +79,11 @@ import {
 } from '@/domain/planning/auto-regulation';
 import { TrainingGoal } from '@/domain/planning/types';
 
+// Coaching feedback loop
+import { executeCoachingLoop } from '@/domain/coaching/coaching-loop';
+import type { CoachingStoreApi } from '@/domain/coaching/coaching-store';
+import type { ClaudeApiConfig } from '@/domain/coaching/claude-api';
+
 // Recording store for intra-set recording
 import type { RecordingStoreApi } from './recording-store';
 
@@ -180,11 +185,14 @@ export interface ExerciseSessionState {
   bindRecordingStore: (store: RecordingStoreApi) => void;
   bindVoltraStore: (store: VoltraStoreApi) => void;
   bindRepository: (repo: ExerciseSessionRepository) => void;
+  bindCoachingStore: (store: CoachingStoreApi, config: ClaudeApiConfig) => void;
 
   // Internal
   _recordingStore: RecordingStoreApi | null;
   _voltraStore: VoltraStoreApi | null;
   _repository: ExerciseSessionRepository | null;
+  _coachingStore: CoachingStoreApi | null;
+  _claudeApiConfig: ClaudeApiConfig | null;
   _restTimerId: ReturnType<typeof setInterval> | null;
   _countdownTimerId: ReturnType<typeof setInterval> | null;
 }
@@ -203,6 +211,8 @@ const DEFAULT_REST_SECONDS = 90;
 let recordingStoreRef: RecordingStoreApi | null = null;
 let voltraStoreRef: VoltraStoreApi | null = null;
 let repositoryRef: ExerciseSessionRepository | null = null;
+let coachingStoreRef: CoachingStoreApi | null = null;
+let claudeApiConfigRef: ClaudeApiConfig | null = null;
 let restTimerId: ReturnType<typeof setInterval> | null = null;
 let countdownTimerId: ReturnType<typeof setInterval> | null = null;
 let cachedCueSettings: RestTimerCueSettings | null = null;
@@ -226,6 +236,8 @@ function createStoreInstance(): ExerciseSessionStoreApi {
   recordingStoreRef = null;
   voltraStoreRef = null;
   repositoryRef = null;
+  coachingStoreRef = null;
+  claudeApiConfigRef = null;
   restTimerId = null;
   countdownTimerId = null;
   cachedCueSettings = null;
@@ -267,6 +279,8 @@ function createStoreInstance(): ExerciseSessionStoreApi {
       _recordingStore: null,
       _voltraStore: null,
       _repository: null,
+      _coachingStore: null,
+      _claudeApiConfig: null,
       _restTimerId: null,
       _countdownTimerId: null,
 
@@ -465,6 +479,12 @@ function createStoreInstance(): ExerciseSessionStoreApi {
       bindRepository: (repo: ExerciseSessionRepository) => {
         repositoryRef = repo;
         set({ _repository: repo });
+      },
+
+      bindCoachingStore: (store: CoachingStoreApi, config: ClaudeApiConfig) => {
+        coachingStoreRef = store;
+        claudeApiConfigRef = config;
+        set({ _coachingStore: store, _claudeApiConfig: config });
       },
     }),
     { name: 'exercise-session-store' }
@@ -711,6 +731,15 @@ function handleContinueToRest(
 
   startRestTimer(get, set);
   persistSession(get, 'in_progress');
+
+  // Fire coaching loop asynchronously (non-blocking)
+  if (coachingStoreRef && claudeApiConfigRef) {
+    executeCoachingLoop(updatedSession, autoReg, coachingStoreRef, claudeApiConfigRef).catch(
+      (err: unknown) => {
+        console.warn('[ExerciseSessionStore] Coaching loop failed:', err);
+      }
+    );
+  }
 }
 
 function manualStopRecordingAction(
