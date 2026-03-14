@@ -65,6 +65,7 @@
   "devDependencies": {
     "@commitlint/cli": "^19.6.0",
     "@commitlint/config-conventional": "^19.6.0",
+    "@eslint-react/eslint-plugin": "^2.13.0",
     "@eslint/js": "^9.18.0",
     "@testing-library/react-native": "^13.0.0",
     "@types/react": "~19.1.0",

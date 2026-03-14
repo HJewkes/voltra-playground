@@ -7,6 +7,7 @@ import reactNativeA11yPlugin from 'eslint-plugin-react-native-a11y';
 import importPlugin from 'eslint-plugin-import';
 import checkFile from 'eslint-plugin-check-file';
 import globals from 'globals';
+import eslintReact from '@eslint-react/eslint-plugin';
 
 export default tseslint.config(
   // Global ignores
@@ -42,6 +43,8 @@ export default tseslint.config(
       'react-native-a11y': reactNativeA11yPlugin,
       import: importPlugin,
       'check-file': checkFile,
+      // Leak detection: web-api rules (event listeners, timers)
+      ...eslintReact.configs['web-api'].plugins,
     },
     languageOptions: {
       parserOptions: {
@@ -129,6 +132,14 @@ export default tseslint.config(
       'react-hooks/exhaustive-deps': 'warn',
 
       // =========================================================================
+      // Leak detection rules (@eslint-react/web-api)
+      // These rules catch missing cleanup for event listeners, intervals, timeouts.
+      // =========================================================================
+      '@eslint-react/web-api/no-leaked-event-listener': 'error',
+      '@eslint-react/web-api/no-leaked-interval': 'error',
+      '@eslint-react/web-api/no-leaked-timeout': 'error',
+
+      // =========================================================================
       // React Native rules
       // =========================================================================
       'react-native/no-unused-styles': 'error',
@@ -145,6 +156,26 @@ export default tseslint.config(
       'react-native-a11y/no-nested-touchables': 'error',
       'react-native-a11y/has-valid-accessibility-live-region': 'warn',
       'react-native-a11y/has-valid-accessibility-ignores-invert-colors': 'warn',
+    },
+  },
+
+  // =============================================================================
+  // Leak detection: no-leaked-conditional-rendering (requires typed linting)
+  // Only runs on source files (not tests) to keep type-checking overhead minimal.
+  // =============================================================================
+  {
+    files: ['src/**/*.{ts,tsx}', 'app/**/*.{ts,tsx}'],
+    ignores: ['**/__tests__/**', '**/*.test.{ts,tsx}'],
+    plugins: {
+      '@eslint-react': eslintReact,
+    },
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+      },
+    },
+    rules: {
+      '@eslint-react/no-leaked-conditional-rendering': 'warn',
     },
   },
 
