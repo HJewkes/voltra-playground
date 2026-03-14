@@ -121,6 +121,7 @@ export interface ExerciseSessionState {
   startSession: (exercise: Exercise, plan: ExercisePlan) => void;
   loadCurrentSession: () => Promise<void>;
   stopSession: () => Promise<void>;
+  dispose: () => void;
 
   // Actions - First set flow
   prepareFirstSet: () => Promise<void>;
@@ -272,6 +273,43 @@ export const exerciseSessionStore: ExerciseSessionStoreApi = createStore<Exercis
           restCountdown: 0,
         });
         startCountdownTimer(get, set);
+      },
+
+      dispose: () => {
+        const { uiState } = get();
+        const isActive =
+          uiState === 'recording' ||
+          uiState === 'countdown' ||
+          uiState === 'preparing' ||
+          uiState === 'resting';
+
+        clearTimers();
+
+        if (isActive && voltraStoreRef) {
+          voltraStoreRef
+            .getState()
+            .stopRecording()
+            .catch((err: unknown) => {
+              console.warn('[ExerciseSessionStore] dispose: failed to stop device:', err);
+            });
+        }
+
+        if (recordingStoreRef) {
+          recordingStoreRef.getState().reset();
+        }
+
+        set({
+          session: null,
+          uiState: 'idle',
+          restCountdown: 0,
+          startCountdown: 0,
+          terminationReason: null,
+          terminationMessage: null,
+          velocityProfile: null,
+          recommendation: null,
+          error: null,
+          ...computeDerivedState(null),
+        });
       },
 
       adjustWeight: async (weight: number) => {
