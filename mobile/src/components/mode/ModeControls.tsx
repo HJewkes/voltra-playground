@@ -1,10 +1,9 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { View, Text, PanResponder, TouchableOpacity } from 'react-native';
+import { View, Text, PanResponder, TouchableOpacity, Platform } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming } from 'react-native-reanimated';
 import { useStore } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import Slider from '@react-native-community/slider';
-import { Platform } from 'react-native';
 import { Section, SectionContent, Surface, getSemanticColors, alpha } from '@titan-design/react-ui';
 import { webStyle } from '@/utils/web-style';
 import type { WebStyle } from '@/utils/web-style';

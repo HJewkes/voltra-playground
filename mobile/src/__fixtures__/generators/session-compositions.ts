@@ -213,7 +213,7 @@ export function generateSessionFromComposition(
     const plannedSet = plannedSets[i];
     const repComposition = resolveComposition(spec.composition);
 
-    const { set, completedRepCount } = generateSetFromBehaviors(repComposition, {
+    const { set, completedRepCount: _completedRepCount } = generateSetFromBehaviors(repComposition, {
       weight: plannedSet.weight,
       exerciseId,
       exerciseName,

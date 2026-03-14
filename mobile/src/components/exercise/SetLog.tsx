@@ -8,10 +8,10 @@ import {
   getRepPeakVelocity,
   MovementPhase,
   type Rep,
+  type WorkoutSample,
 } from '@voltras/workout-analytics';
 import type { SetLogEntry, ClusterBoundary, PlannedSet, TempoTarget } from '@/domain/workout';
 import { getRPEColor } from '@/domain/workout';
-import type { WorkoutSample } from '@voltras/workout-analytics';
 import { SetCurveChart, RepCurveChart, SIGNAL_OPTIONS } from '@/components/analytics';
 import type { ChartSignal } from '@/components/analytics';
 import type { SessionNote } from '@/stores/exercise-session-store';

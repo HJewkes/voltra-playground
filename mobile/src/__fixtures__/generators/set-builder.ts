@@ -246,9 +246,9 @@ class SetBuilder {
         };
       }
 
-      let finalTargets = repTargets;
+      let _finalTargets = repTargets;
       if (baseRepTargets) {
-        finalTargets = deepMerge({}, BEHAVIOR_PRESETS[behavior], repTargets) as RepTargets;
+        _finalTargets = deepMerge({}, BEHAVIOR_PRESETS[behavior], repTargets) as RepTargets;
       }
 
       const generated = repBuilder()
