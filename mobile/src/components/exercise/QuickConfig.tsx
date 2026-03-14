@@ -106,6 +106,9 @@ function EnablePill({
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={`${label}${active ? ' (active)' : ''}`}
+      accessibilityHint="Tap to cycle through options"
       style={{
         paddingHorizontal: 12,
         paddingVertical: 5,

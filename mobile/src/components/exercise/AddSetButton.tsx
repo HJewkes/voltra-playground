@@ -26,6 +26,9 @@ export function AddSetButton({ onPress, disabled, setCount }: AddSetButtonProps)
         onPress={onPress}
         disabled={disabled}
         activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={`Add set to workout${setCount ? ` (${setCount} planned)` : ''}`}
+        accessibilityState={{ disabled: !!disabled }}
         style={{
           width: 56,
           height: 56,

@@ -42,6 +42,8 @@ export function CycleToggle<T extends string = string>({
     <TouchableOpacity
       onPress={handlePress}
       activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={`${currentLabel}, tap to switch`}
       style={{
         paddingHorizontal: 12,
         paddingVertical: 5,
