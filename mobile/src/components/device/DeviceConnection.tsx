@@ -8,7 +8,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
+import { View, Text, ActivityIndicator, Platform, useWindowDimensions } from 'react-native';
 import { useConnectionStore, selectIsConnected, selectBleEnvironment } from '@/stores';
 import { SCAN_DURATION, SCAN_INTERVAL } from '@/config';
 import { getSemanticColors, alpha } from '@titan-design/react-ui';
@@ -17,6 +17,17 @@ import { ConnectionCard } from './DeviceConnectionCard';
 import type { DiscoveredDevice } from '@/domain/device';
 
 const t = getSemanticColors('dark');
+
+/**
+ * Returns a responsive top padding for web so content sits in the upper
+ * portion of the viewport rather than dead-center. Scales with viewport
+ * height (20%), capped at 160px.
+ */
+function useWebTopPadding(): number | undefined {
+  const { height } = useWindowDimensions();
+  if (Platform.OS !== "web") return undefined;
+  return Math.min(height * 0.2, 160);
+}
 
 export interface DeviceConnectionProps {
   variant: 'inline' | 'card' | 'guard';
@@ -52,6 +63,7 @@ export function DeviceConnection({
   }));
 
   const canAutoScan = autoScan && !requiresUserGesture;
+  const webTopPadding = useWebTopPadding();
 
   const [connectingDeviceId, setConnectingDeviceId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -202,7 +214,10 @@ export function DeviceConnection({
 
   if (variant === 'guard') {
     return (
-      <View className="flex-1 items-center justify-center bg-surface-400 p-6">
+      <View
+        className={`flex-1 items-center bg-surface-400 p-6 ${webTopPadding === undefined ? 'justify-center' : 'pt-0'}`}
+        style={webTopPadding !== undefined ? { paddingTop: webTopPadding } : undefined}
+      >
         {connectionUI}
       </View>
     );
