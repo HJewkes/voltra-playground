@@ -136,20 +136,19 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
   }, [isReps]);
 
   const handleAddSet = useCallback(() => {
-    const store = sessionStore.getState();
-
     // Ensure session exists
-    if (!store.session) {
+    if (!sessionStore.getState().session) {
       const exercise = createExercise({ id: 'simple-exercise', name: modeName });
       const plan = createEmptyPlan('simple-exercise');
-      store.startSession(exercise, plan);
-      store.bindRecordingStore(recordingStore);
-      store.bindVoltraStore(voltraStore);
+      sessionStore.getState().startSession(exercise, plan);
+      sessionStore.getState().bindRecordingStore(recordingStore);
+      sessionStore.getState().bindVoltraStore(voltraStore);
     }
 
-    const setNumber = (store.session?.plan.sets.length ?? 0) + 1;
+    // Read fresh state after potential session creation
+    const currentSets = sessionStore.getState().session?.plan.sets.length ?? 0;
     const planned: PlannedSet = {
-      setNumber,
+      setNumber: currentSets + 1,
       weight,
       targetReps: effortEnabled && isReps ? targetReps : 0,
       rirTarget: effortEnabled && !isReps ? rirTarget : 0,

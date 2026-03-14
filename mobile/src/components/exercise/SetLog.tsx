@@ -11,9 +11,16 @@ import {
 import type { SetLogEntry, ClusterBoundary, PlannedSet, TempoTarget } from '@/domain/workout';
 import { getRPEColor } from '@/domain/workout';
 import type { WorkoutSample } from '@voltras/workout-analytics';
-import { SetCurveChart } from '@/components/analytics';
+import { SetCurveChart, RepCurveChart } from '@/components/analytics';
 import { RestScrubber } from './RestScrubber';
 import { TempoBar } from './TempoBar';
+import { CycleToggle, type CycleToggleOption } from './CycleToggle';
+
+type ChartView = 'set' | 'rep';
+const VIEW_OPTIONS: readonly CycleToggleOption<ChartView>[] = [
+  { value: 'set', label: 'Set' },
+  { value: 'rep', label: 'Rep' },
+];
 
 const t = getSemanticColors('dark');
 
@@ -287,14 +294,49 @@ function ActiveSetRow({
       )}
 
       {chart && chart.samples.length > 0 && (
-        <View style={{ paddingHorizontal: 4, paddingTop: 4, paddingBottom: 8 }}>
-          <SetCurveChart
-            samples={chart.samples}
-            width={chartWidth}
-            height={140}
-            expectedDurationMs={chart.expectedDurationMs}
-          />
-        </View>
+        <ActiveSetChart
+          chart={chart}
+          telemetry={telemetry}
+          chartWidth={chartWidth}
+        />
+      )}
+    </View>
+  );
+}
+
+function ActiveSetChart({
+  chart,
+  telemetry,
+  chartWidth,
+}: {
+  chart: ActiveChartData;
+  telemetry?: ActiveTelemetry | null;
+  chartWidth: number;
+}) {
+  const [view, setView] = useState<ChartView>('set');
+
+  return (
+    <View style={{ paddingHorizontal: 4, paddingTop: 4, paddingBottom: 8 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-start', marginBottom: 4 }}>
+        <CycleToggle options={VIEW_OPTIONS} value={view} onChange={setView} />
+      </View>
+      {view === 'set' ? (
+        <SetCurveChart
+          samples={chart.samples}
+          width={chartWidth}
+          height={140}
+          expectedDurationMs={chart.expectedDurationMs}
+        />
+      ) : (
+        <RepCurveChart
+          samples={chart.samples}
+          width={chartWidth}
+          height={140}
+          repPhaseDurations={telemetry?.repPhaseDurations ?? []}
+          currentPhase={telemetry?.currentPhase ?? MovementPhase.IDLE}
+          phaseElapsedMs={telemetry?.phaseElapsedMs ?? 0}
+          targetTempo={telemetry?.targetTempo}
+        />
       )}
     </View>
   );
