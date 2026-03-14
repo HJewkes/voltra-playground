@@ -25,7 +25,12 @@ import type { Exercise } from '@/domain/exercise';
 import type { ExercisePlan } from '@/domain/workout';
 
 // Store imports
-import { createExerciseSessionStore, createRecordingStore, type VoltraStoreApi } from '@/stores';
+import {
+  exerciseSessionStore,
+  useExerciseSessionStore,
+  createRecordingStore,
+  type VoltraStoreApi,
+} from '@/stores';
 
 // Data imports
 import type { ExerciseSessionRepository } from '@/data/exercise-session';
@@ -76,22 +81,21 @@ export function ExerciseScreen({
   onComplete,
   onNewSession,
 }: ExerciseScreenProps) {
-  // Create stores
-  const sessionStore = useMemo(() => createExerciseSessionStore(), []);
+  // Create recording store (per-screen instance, not singleton)
   const recordingStore = useMemo(() => createRecordingStore(), []);
 
-  // Subscribe to session state
-  const uiState = useStore(sessionStore, (s) => s.uiState);
-  const session = useStore(sessionStore, (s) => s.session);
-  const currentSetIndex = useStore(sessionStore, (s) => s.currentSetIndex);
-  const currentPlannedSet = useStore(sessionStore, (s) => s.currentPlannedSet);
-  const restCountdown = useStore(sessionStore, (s) => s.restCountdown);
-  const startCountdown = useStore(sessionStore, (s) => s.startCountdown);
-  const isDiscovery = useStore(sessionStore, (s) => s.isDiscovery);
-  const terminationReason = useStore(sessionStore, (s) => s.terminationReason);
-  const terminationMessage = useStore(sessionStore, (s) => s.terminationMessage);
-  const recommendation = useStore(sessionStore, (s) => s.recommendation);
-  const error = useStore(sessionStore, (s) => s.error);
+  // Subscribe to session state (module-level singleton)
+  const uiState = useExerciseSessionStore((s) => s.uiState);
+  const session = useExerciseSessionStore((s) => s.session);
+  const currentSetIndex = useExerciseSessionStore((s) => s.currentSetIndex);
+  const currentPlannedSet = useExerciseSessionStore((s) => s.currentPlannedSet);
+  const restCountdown = useExerciseSessionStore((s) => s.restCountdown);
+  const startCountdown = useExerciseSessionStore((s) => s.startCountdown);
+  const isDiscovery = useExerciseSessionStore((s) => s.isDiscovery);
+  const terminationReason = useExerciseSessionStore((s) => s.terminationReason);
+  const terminationMessage = useExerciseSessionStore((s) => s.terminationMessage);
+  const recommendation = useExerciseSessionStore((s) => s.recommendation);
+  const error = useExerciseSessionStore((s) => s.error);
 
   // Subscribe to recording state
   const repCount = useStore(recordingStore, (s) => s.repCount);
@@ -102,16 +106,16 @@ export function ExerciseScreen({
   // Initialize session on mount
   useEffect(() => {
     // Bind stores
-    sessionStore.getState().bindRecordingStore(recordingStore);
-    sessionStore.getState().bindVoltraStore(voltraStore);
-    sessionStore.getState().bindRepository(repository);
+    exerciseSessionStore.getState().bindRecordingStore(recordingStore);
+    exerciseSessionStore.getState().bindVoltraStore(voltraStore);
+    exerciseSessionStore.getState().bindRepository(repository);
 
     // Start session
-    sessionStore.getState().startSession(exercise, plan);
+    exerciseSessionStore.getState().startSession(exercise, plan);
 
     // Prepare first set
-    sessionStore.getState().prepareFirstSet();
-  }, [exercise, plan, voltraStore, repository, sessionStore, recordingStore]);
+    exerciseSessionStore.getState().prepareFirstSet();
+  }, [exercise, plan, voltraStore, repository, recordingStore]);
 
   // Sync recording store UI state based on session state
   useEffect(() => {
@@ -145,26 +149,26 @@ export function ExerciseScreen({
   // Handle set completion from recording store
   useEffect(() => {
     if (lastSet && uiState === 'recording') {
-      sessionStore.getState().onSetCompleted(lastSet);
+      exerciseSessionStore.getState().onSetCompleted(lastSet);
     }
-  }, [lastSet, uiState, sessionStore]);
+  }, [lastSet, uiState]);
 
   // Handlers
   const handleStart = () => {
-    sessionStore.getState().startFirstSet();
+    exerciseSessionStore.getState().startFirstSet();
   };
 
   const handleSkipRest = () => {
-    sessionStore.getState().skipRest();
+    exerciseSessionStore.getState().skipRest();
   };
 
   const handleStopAndSave = () => {
-    sessionStore.getState().stopSession();
+    exerciseSessionStore.getState().stopSession();
   };
 
   const handleManualStop = () => {
     console.log('[ExerciseScreen] handleManualStop called');
-    sessionStore.getState().manualStopRecording();
+    exerciseSessionStore.getState().manualStopRecording();
   };
 
   const handleCancel = () => {
