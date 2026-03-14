@@ -359,7 +359,25 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
       </ScrollView>
 
       {/* Pinned start/stop */}
-      <View className="px-4 pb-4 pt-2">
+      <View
+        className="px-4 pb-4 pt-3"
+        style={{
+          borderTopWidth: 1,
+          borderTopColor: alpha('#fff', 0.04),
+          ...Platform.select({
+            web: {
+              boxShadow: `0 -4px 12px ${alpha('#000', 0.3)}`,
+            } as any,
+            default: {
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: -4 },
+              shadowOpacity: 0.2,
+              shadowRadius: 8,
+              elevation: 8,
+            },
+          }),
+        }}
+      >
         <WorkoutControls
           isActive={uiState === 'recording' || uiState === 'countdown'}
           onStart={handleStart}
