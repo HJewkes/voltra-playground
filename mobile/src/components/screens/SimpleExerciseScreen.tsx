@@ -322,40 +322,38 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
             )}
           </Surface>
 
-          {/* Unified Set Log — telemetry, charts, rest, history all in one */}
+          {/* Unified Set Log — each set renders its own Surface card */}
           {(setLog.length > 0 || isRecording || uiState === 'resting' || plannedSetCount > 0) && (
-            <Surface elevation={1} className="mt-2 rounded-xl p-3">
-              <SetLog
-                setLog={setLog}
-                activeSet={isRecording ? {
-                  setIndex: currentSetIndex,
-                  repCount,
-                  weight: currentPlannedSet?.weight ?? weight,
-                  targetReps: currentPlannedSet?.targetReps ?? null,
-                } : null}
-                activeChart={isRecording ? {
-                  samples: liveSamples,
-                  expectedDurationMs: expectedSetDurationMs,
-                } : null}
-                activeTelemetry={isRecording ? {
-                  rpe,
-                  rir,
-                  currentPhase,
-                  phaseElapsedMs,
-                  repPhaseDurations,
-                  targetTempo: currentPlannedSet?.targetTempo,
-                  liveMessage: liveMessage || undefined,
-                } : null}
-                plannedSets={isRecording
-                  ? (session?.plan.sets.slice(currentSetIndex + 1) ?? [])
-                  : (session?.plan.sets.slice(session.completedSets.length) ?? [])
-                }
-                totalSets={session?.plan.sets.length ?? null}
-                isResting={uiState === 'resting'}
-                restElapsedMs={restElapsedMs}
-                defaultRestSeconds={session?.plan.defaultRestSeconds}
-              />
-            </Surface>
+            <SetLog
+              setLog={setLog}
+              activeSet={isRecording ? {
+                setIndex: currentSetIndex,
+                repCount,
+                weight: currentPlannedSet?.weight ?? weight,
+                targetReps: currentPlannedSet?.targetReps ?? null,
+              } : null}
+              activeChart={isRecording ? {
+                samples: liveSamples,
+                expectedDurationMs: expectedSetDurationMs,
+              } : null}
+              activeTelemetry={isRecording ? {
+                rpe,
+                rir,
+                currentPhase,
+                phaseElapsedMs,
+                repPhaseDurations,
+                targetTempo: currentPlannedSet?.targetTempo,
+                liveMessage: liveMessage || undefined,
+              } : null}
+              plannedSets={isRecording
+                ? (session?.plan.sets.slice(currentSetIndex + 1) ?? [])
+                : (session?.plan.sets.slice(session.completedSets.length) ?? [])
+              }
+              totalSets={session?.plan.sets.length ?? null}
+              isResting={uiState === 'resting'}
+              restElapsedMs={restElapsedMs}
+              defaultRestSeconds={session?.plan.defaultRestSeconds}
+            />
           )}
         </View>
       </ScrollView>

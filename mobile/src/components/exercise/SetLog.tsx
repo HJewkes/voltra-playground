@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, useWindowDimensions, type TextStyle, type ViewStyle } from 'react-native';
-import { getSemanticColors, alpha } from '@titan-design/react-ui';
+import { Surface, getSemanticColors, alpha } from '@titan-design/react-ui';
 import {
   getSetMeanVelocity,
   estimateSetRIR,
@@ -375,16 +375,24 @@ export function SetLog({
   return (
     <View>
       {activeSet && (
-        <ActiveSetRow {...activeSet} chart={activeChart} telemetry={activeTelemetry} />
+        <Surface
+          elevation={1}
+          className="rounded-xl p-3 mt-2"
+          style={{ borderLeftWidth: 3, borderLeftColor: t['brand-primary'] }}
+        >
+          <ActiveSetRow {...activeSet} chart={activeChart} telemetry={activeTelemetry} />
+        </Surface>
       )}
 
       {/* Rest scrubber between active set and most recent completed set */}
       {isResting && setLog.length > 0 && (
-        <RestScrubber
-          mode="resting"
-          restSeconds={defaultRestSeconds}
-          elapsedMs={restElapsedMs}
-        />
+        <View style={{ marginTop: 4, marginBottom: 4 }}>
+          <RestScrubber
+            mode="resting"
+            restSeconds={defaultRestSeconds}
+            elapsedMs={restElapsedMs}
+          />
+        </View>
       )}
 
       {reversedLog.map((entry, i) => {
@@ -393,27 +401,38 @@ export function SetLog({
 
         return (
           <React.Fragment key={entry.set.id}>
-            <CompletedSetRow
-              entry={entry}
-              setNumber={setNumber}
-              expanded={expandedSet === entry.set.id}
-              onToggle={() =>
-                setExpandedSet((prev) => (prev === entry.set.id ? null : entry.set.id))
-              }
-            />
+            <Surface elevation={1} className="rounded-xl p-3 mt-2">
+              <CompletedSetRow
+                entry={entry}
+                setNumber={setNumber}
+                expanded={expandedSet === entry.set.id}
+                onToggle={() =>
+                  setExpandedSet((prev) => (prev === entry.set.id ? null : entry.set.id))
+                }
+              />
+            </Surface>
             {/* Rest scrubber between consecutive completed sets */}
             {!isLastReversed && (
-              <RestScrubber
-                mode="complete"
-                restSeconds={defaultRestSeconds}
-              />
+              <View style={{ marginTop: 4, marginBottom: 4 }}>
+                <RestScrubber
+                  mode="complete"
+                  restSeconds={defaultRestSeconds}
+                />
+              </View>
             )}
           </React.Fragment>
         );
       })}
 
       {plannedSets.map((planned) => (
-        <PlannedSetRow key={planned.setNumber} planned={planned} />
+        <Surface
+          key={planned.setNumber}
+          elevation={1}
+          className="rounded-xl p-3 mt-2"
+          style={{ opacity: 0.5 }}
+        >
+          <PlannedSetRow planned={planned} />
+        </Surface>
       ))}
     </View>
   );
