@@ -99,7 +99,7 @@ export function ExerciseScreen({
   const lastSet = useStore(recordingStore, (s) => s.lastSet);
   const _recordingUIState = useStore(recordingStore, (s) => s.uiState);
 
-  // Initialize session on mount
+  // Initialize session on mount, dispose on unmount
   useEffect(() => {
     // Bind stores
     sessionStore.getState().bindRecordingStore(recordingStore);
@@ -111,6 +111,10 @@ export function ExerciseScreen({
 
     // Prepare first set
     sessionStore.getState().prepareFirstSet();
+
+    return () => {
+      sessionStore.getState().dispose();
+    };
   }, [exercise, plan, voltraStore, repository, sessionStore, recordingStore]);
 
   // Sync recording store UI state based on session state

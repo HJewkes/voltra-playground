@@ -121,6 +121,7 @@ export interface ExerciseSessionState {
   startSession: (exercise: Exercise, plan: ExercisePlan) => void;
   loadCurrentSession: () => Promise<void>;
   stopSession: () => Promise<void>;
+  dispose: () => void;
 
   // Actions - First set flow
   prepareFirstSet: () => Promise<void>;
@@ -281,6 +282,43 @@ export function createExerciseSessionStore(): ExerciseSessionStoreApi {
 
           // Persist final state
           await persistSession(get, 'completed', termination.reason);
+        },
+
+        dispose: () => {
+          const { uiState } = get();
+          const isActive =
+            uiState === 'recording' ||
+            uiState === 'countdown' ||
+            uiState === 'preparing' ||
+            uiState === 'resting';
+
+          clearTimers();
+
+          if (isActive && voltraStore) {
+            voltraStore
+              .getState()
+              .stopRecording()
+              .catch((err: unknown) => {
+                console.warn('[ExerciseSessionStore] dispose: failed to stop device:', err);
+              });
+          }
+
+          if (recordingStore) {
+            recordingStore.getState().reset();
+          }
+
+          set({
+            session: null,
+            uiState: 'idle',
+            restCountdown: 0,
+            startCountdown: 0,
+            terminationReason: null,
+            terminationMessage: null,
+            velocityProfile: null,
+            recommendation: null,
+            error: null,
+            ...computeDerivedState(null),
+          });
         },
 
         // =====================================================================
