@@ -7,6 +7,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   assessReadiness,
+  assessReadinessAuto,
+  applyReadinessWeightAdjustment,
   deriveIntensityAdjustment,
   isReadinessCheckCandidate,
 } from '../readiness';
@@ -166,5 +168,126 @@ describe('isReadinessCheckCandidate()', () => {
 
     expect(isReadinessCheckCandidate(0, set, null)).toBe(false);
     expect(isReadinessCheckCandidate(0, set, createBaseline('bench', []))).toBe(false);
+  });
+});
+
+// =============================================================================
+// assessReadinessAuto
+// =============================================================================
+
+
+describe('assessReadinessAuto()', () => {
+  it('returns seeded result with no zone comparison when baseline is null', () => {
+    const set = mockCompletedSet({ weight: 135, velocities: [0.6, 0.55] });
+
+    const result = assessReadinessAuto(set, null);
+
+    expect(result.seededBaseline).toBe(true);
+    expect(result.seededDataPoint).toEqual({ weight: 135, velocity: 0.6 });
+    expect(result.assessment).not.toBeNull();
+    expect(result.assessment!.hasBaseline).toBe(false);
+    expect(result.assessment!.adjustment.suggestion).toContain('baseline saved');
+  });
+
+  it('returns seeded result when baseline has no data points', () => {
+    const set = mockCompletedSet({ weight: 135, velocities: [0.6, 0.55] });
+    const baseline = createBaseline('bench', []);
+
+    const result = assessReadinessAuto(set, baseline);
+
+    expect(result.seededBaseline).toBe(true);
+    expect(result.seededDataPoint).not.toBeNull();
+    expect(result.seededDataPoint!.weight).toBe(135);
+  });
+
+  it('returns null assessment when set has no measurable velocity', () => {
+    const set = mockCompletedSet({ weight: 135, repCount: 0 });
+    const baseline = createBaseline('bench', [{ weight: 135, velocity: 0.6 }]);
+
+    const result = assessReadinessAuto(set, baseline);
+
+    expect(result.assessment).toBeNull();
+    expect(result.seededBaseline).toBe(false);
+  });
+
+  it('delegates to assessReadiness when baseline has data', () => {
+    const set = mockCompletedSet({ weight: 135, velocities: [0.6, 0.55] });
+    const baseline = createBaseline('bench', [{ weight: 135, velocity: 0.6 }]);
+
+    const result = assessReadinessAuto(set, baseline);
+
+    expect(result.seededBaseline).toBe(false);
+    expect(result.seededDataPoint).toBeNull();
+    expect(result.assessment).not.toBeNull();
+    expect(result.assessment!.hasBaseline).toBe(true);
+    expect(result.assessment!.estimate.zone).toBe('green');
+  });
+
+  it('returns red zone when velocity is well below baseline', () => {
+    const set = mockCompletedSet({ weight: 135, velocities: [0.48, 0.44] });
+    const baseline = createBaseline('bench', [{ weight: 135, velocity: 0.6 }]);
+
+    const result = assessReadinessAuto(set, baseline);
+
+    expect(result.assessment!.estimate.zone).toBe('red');
+    expect(result.seededBaseline).toBe(false);
+  });
+});
+
+// =============================================================================
+// applyReadinessWeightAdjustment
+// =============================================================================
+
+describe('applyReadinessWeightAdjustment()', () => {
+  it('returns current weight unchanged for green zone', () => {
+    const assessment = {
+      estimate: { zone: 'green' as const, velocityRatio: 0.98, confidence: 0.9 },
+      adjustment: { loadMultiplier: 1.0, suggestion: 'proceed as planned' },
+      hasBaseline: true,
+    };
+
+    expect(applyReadinessWeightAdjustment(200, assessment)).toBe(200);
+  });
+
+  it('returns current weight unchanged for yellow zone', () => {
+    const assessment = {
+      estimate: { zone: 'yellow' as const, velocityRatio: 0.9, confidence: 0.8 },
+      adjustment: { loadMultiplier: 0.95, suggestion: 'consider reducing 5%' },
+      hasBaseline: true,
+    };
+
+    expect(applyReadinessWeightAdjustment(200, assessment)).toBe(200);
+  });
+
+  it('reduces weight by 10% and rounds to nearest 5 lbs for red zone', () => {
+    const assessment = {
+      estimate: { zone: 'red' as const, velocityRatio: 0.8, confidence: 0.7 },
+      adjustment: { loadMultiplier: 0.9, suggestion: 'reduce load 10%' },
+      hasBaseline: true,
+    };
+
+    // 200 * 0.9 = 180 → rounds to 180
+    expect(applyReadinessWeightAdjustment(200, assessment)).toBe(180);
+  });
+
+  it('rounds to nearest 5 lbs', () => {
+    const assessment = {
+      estimate: { zone: 'red' as const, velocityRatio: 0.75, confidence: 0.7 },
+      adjustment: { loadMultiplier: 0.9, suggestion: 'reduce load 10%' },
+      hasBaseline: true,
+    };
+
+    // 155 * 0.9 = 139.5 → rounds to 140
+    expect(applyReadinessWeightAdjustment(155, assessment)).toBe(140);
+  });
+
+  it('floors at 45 lbs (empty bar) for very light starting weight', () => {
+    const assessment = {
+      estimate: { zone: 'red' as const, velocityRatio: 0.75, confidence: 0.7 },
+      adjustment: { loadMultiplier: 0.9, suggestion: 'reduce load 10%' },
+      hasBaseline: true,
+    };
+
+    expect(applyReadinessWeightAdjustment(45, assessment)).toBe(45);
   });
 });

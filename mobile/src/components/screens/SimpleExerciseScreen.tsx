@@ -23,7 +23,7 @@ import { generateMockRepPlan } from './mock-rep-plan';
 import { registerCoachConsole } from '@/utils/coach-console';
 import { useExerciseProgression } from '@/hooks/use-exercise-progression';
 import { getSessionRepository } from '@/data/provider';
-import { assessReadiness } from '@/domain/workout';
+import { assessReadinessAuto, applyReadinessWeightAdjustment } from '@/domain/workout';
 import type { ReadinessAssessment } from '@/domain/workout';
 
 import { buildRepeatLastSessionPlan } from '@/domain/history/services/progression-service';
@@ -86,6 +86,7 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
 
   // Readiness assessment: computed after the first set completes, before working sets
   const [readiness, setReadiness] = useState<ReadinessAssessment | null>(null);
+  const [redAdjustedWeight, setRedAdjustedWeight] = useState<number | null>(null);
 
   useEffect(() => {
     // Only assess on first rest after first set
@@ -104,11 +105,22 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
         })))
         .filter((dp) => dp.velocity > 0);
 
-      if (dataPoints.length === 0) return;
+      const baseline = dataPoints.length > 0
+        ? { exerciseId, dataPoints, lastUpdated: Date.now() }
+        : null;
 
-      const baseline = { exerciseId, dataPoints, lastUpdated: Date.now() };
-      const result = assessReadiness(firstEntry.set, baseline);
-      setReadiness(result);
+      const { assessment } = assessReadinessAuto(firstEntry.set, baseline);
+      if (!assessment) return;
+
+      setReadiness(assessment);
+
+      if (assessment.estimate.zone === 'red') {
+        const adjusted = applyReadinessWeightAdjustment(weight, assessment);
+        if (adjusted !== weight) {
+          voltraStore.getState().setWeight(adjusted);
+          setRedAdjustedWeight(adjusted);
+        }
+      }
     });
   // setLog.length and uiState are the reactive signal; firstEntry is derived
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -118,6 +130,7 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
   useEffect(() => {
     if (sess.uiState === 'idle' || sess.uiState === 'preparing') {
       setReadiness(null);
+      setRedAdjustedWeight(null);
     }
   }, [sess.uiState]);
 
@@ -294,6 +307,14 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
           {isResting && readiness && (
             <View className="mt-3">
               <ReadinessIndicator assessment={readiness} />
+              {redAdjustedWeight !== null && (
+                <Text
+                  className="mt-2 text-center text-sm font-medium"
+                  style={{ color: t['status-error'] }}
+                >
+                  Load auto-reduced to {redAdjustedWeight} lbs due to fatigue
+                </Text>
+              )}
             </View>
           )}
           {isResting && progression && (
