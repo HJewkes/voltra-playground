@@ -15,6 +15,7 @@ import { MuscleDistributionCard } from '@/components/analytics/dashboard/MuscleD
 import { TrainingLoadCard } from '@/components/analytics/dashboard/TrainingLoadCard';
 import { ExerciseFrequencyCard } from '@/components/analytics/dashboard/ExerciseFrequencyCard';
 import { StreakCard } from '@/components/analytics/dashboard/StreakCard';
+import { DeloadBanner } from '@/components/analytics/dashboard/DeloadBanner';
 
 const t = getSemanticColors('dark');
 
@@ -40,6 +41,7 @@ export function AnalyticsDashboard({ sessions, isLoading, onRefresh }: Analytics
       }
     >
       <View className="p-4">
+        <DeloadBanner sessions={sessions} />
         <StreakCard sessions={sessions} />
         <VolumeTrendCard sessions={sessions} />
         <PRTimelineCard sessions={sessions} />
