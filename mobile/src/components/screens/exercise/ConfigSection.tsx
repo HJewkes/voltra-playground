@@ -42,6 +42,7 @@ export interface ConfigSectionProps {
   isActive: boolean;
   onAddSet: (targets: QuickConfigTargets) => void;
   plannedSetCount: number;
+  lastSessionWeight?: number;
 }
 
 export const ConfigSection = forwardRef<ConfigSectionRef, ConfigSectionProps>(
@@ -60,6 +61,7 @@ export const ConfigSection = forwardRef<ConfigSectionRef, ConfigSectionProps>(
       isActive,
       onAddSet,
       plannedSetCount,
+      lastSessionWeight,
     },
     ref,
   ) {
@@ -118,6 +120,7 @@ export const ConfigSection = forwardRef<ConfigSectionRef, ConfigSectionProps>(
               weight={weight}
               onWeightChange={(w: number) => { voltraStore.getState().setWeight(w); }}
               disabled={isActive}
+              lastSessionWeight={lastSessionWeight}
             />
           }
           onAddSet={handleAddSet}

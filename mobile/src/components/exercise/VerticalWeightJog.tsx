@@ -47,9 +47,11 @@ interface VerticalWeightJogProps {
   weight: number;
   onWeightChange: (w: number) => void;
   disabled?: boolean;
+  /** Weight from the last session, shown as a "Last: XX lbs" hint. */
+  lastSessionWeight?: number;
 }
 
-export function VerticalWeightJog({ weight, onWeightChange, disabled = false }: VerticalWeightJogProps) {
+export function VerticalWeightJog({ weight, onWeightChange, disabled = false, lastSessionWeight }: VerticalWeightJogProps) {
   const [localWeight, setLocalWeight] = useState(weight);
   const displacement = useRef(0);
   const tickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -276,6 +278,11 @@ export function VerticalWeightJog({ weight, onWeightChange, disabled = false }: 
       >
         lbs
       </Text>
+      {lastSessionWeight !== undefined && (
+        <Text style={{ marginTop: 2, fontSize: 9, fontWeight: '500', color: t['text-tertiary'], textAlign: 'center' }}>
+          {`Last: ${lastSessionWeight} lbs`}
+        </Text>
+      )}
     </View>
   );
 }
