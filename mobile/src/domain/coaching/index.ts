@@ -26,3 +26,15 @@ export type {
   PreviousCoachingCue,
   VelocityWarningSeverity,
 } from './types';
+
+export { getCoachingCue, DEFAULT_MODEL } from './claude-api';
+export { parseCoachingResponse, createFallbackCue } from './response-parser';
+
+export type {
+  CoachingCue,
+  TextCue,
+  LoadAdjustmentCue,
+  EncouragementCue,
+  CoachingApiConfig,
+  TokenUsage,
+} from './claude-api-types';
