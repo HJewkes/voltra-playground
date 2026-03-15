@@ -31,9 +31,68 @@ export interface AutoPlan {
   summary: string;
 }
 
+/** Pre-filled plan data for a suggested exercise. */
+export interface SuggestionPlan {
+  exercise: Exercise;
+  plan: ExercisePlan;
+  weight: number;
+  sets: number;
+  repsPerSet: number;
+}
+
+const DEFAULT_SUGGESTION_WEIGHT = 45;
+const DEFAULT_SUGGESTION_SETS = 3;
+const DEFAULT_SUGGESTION_REPS = 8;
+
 // =============================================================================
 // Public API
 // =============================================================================
+
+/**
+ * Build a session plan for a suggested exercise.
+ *
+ * If history exists, repeats the last session's weight/sets/reps.
+ * Otherwise, returns sensible defaults (45 lbs, 3x8).
+ */
+export function buildSuggestionPlan(
+  sessions: StoredExerciseSession[],
+  exerciseId: string,
+  catalog: Record<string, Exercise>,
+): SuggestionPlan | null {
+  const exercise = catalog[exerciseId];
+  if (!exercise) return null;
+
+  const banner = buildLastSessionBanner(sessions, exerciseId);
+
+  if (banner) {
+    const plan = buildRepeatLastSessionPlan(banner);
+    const repsPerSet = banner.sets > 0 ? Math.round(banner.reps / banner.sets) : 0;
+    return { exercise, plan, weight: banner.weight, sets: banner.sets, repsPerSet };
+  }
+
+  const defaultPlan: ExercisePlan = {
+    exerciseId,
+    sets: Array.from({ length: DEFAULT_SUGGESTION_SETS }, (_, i) => ({
+      setNumber: i + 1,
+      weight: DEFAULT_SUGGESTION_WEIGHT,
+      targetReps: DEFAULT_SUGGESTION_REPS,
+      rirTarget: 0,
+      isWarmup: false,
+      restSeconds: 90,
+    })),
+    defaultRestSeconds: 90,
+    generatedAt: Date.now(),
+    generatedBy: 'manual',
+  };
+
+  return {
+    exercise,
+    plan: defaultPlan,
+    weight: DEFAULT_SUGGESTION_WEIGHT,
+    sets: DEFAULT_SUGGESTION_SETS,
+    repsPerSet: DEFAULT_SUGGESTION_REPS,
+  };
+}
 
 /**
  * Generate a one-tap workout plan from history.

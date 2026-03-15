@@ -4,6 +4,7 @@
  * Displays the top workout suggestion from WorkoutSuggestionService.
  * Shown on the exercise screen when no workout is active (above ConfigSection).
  * Includes a "Start" button that calls onStart with the suggested exercise ID.
+ * Shows weight/sets/reps when history is available.
  */
 
 import React from 'react';
@@ -20,6 +21,8 @@ const t = getSemanticColors('dark');
 
 export interface SuggestionCardProps {
   suggestion: ExerciseSuggestion;
+  /** Weight/sets/reps from last session, if available. */
+  historyLabel?: string;
   onStart: (exerciseId: string) => void;
 }
 
@@ -29,9 +32,9 @@ export interface SuggestionCardProps {
 
 /**
  * SuggestionCard — compact card showing the top suggested exercise with a
- * one-tap Start button.
+ * one-tap Start button. Shows last-session stats when available.
  */
-export function SuggestionCard({ suggestion, onStart }: SuggestionCardProps) {
+export function SuggestionCard({ suggestion, historyLabel, onStart }: SuggestionCardProps) {
   return (
     <Card
       elevation={1}
@@ -50,7 +53,11 @@ export function SuggestionCard({ suggestion, onStart }: SuggestionCardProps) {
             <Text className="text-base font-bold text-text-primary">
               {suggestion.exerciseName}
             </Text>
-            <Text className="mt-0.5 text-xs text-text-disabled">{suggestion.reason}</Text>
+            {historyLabel ? (
+              <Text className="mt-0.5 text-xs text-text-secondary">{historyLabel}</Text>
+            ) : (
+              <Text className="mt-0.5 text-xs text-text-disabled">{suggestion.reason}</Text>
+            )}
           </View>
 
           <Pressable
