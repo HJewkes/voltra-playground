@@ -1,9 +1,12 @@
 /**
  * Coaching Store
  *
- * Manages AI coaching cue lifecycle during exercise sessions.
- * Handles cue queuing (during recording), display (during rest),
- * athlete reactions, and session coaching log.
+ * Responsible for: AI coaching cue lifecycle — queuing cues during recording, flushing to
+ * display during rest, recording athlete reactions, and maintaining the session coaching log.
+ * NOT responsible for: generating cues (owned by AI coaching service) or session state.
+ *
+ * Key state: activeCue, cueQueue, sessionLog, enabled, logVisible
+ * Key actions: enqueue, flush, react, dismiss
  */
 
 import { createStore, useStore, type StoreApi } from 'zustand';

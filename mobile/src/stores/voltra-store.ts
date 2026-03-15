@@ -1,24 +1,14 @@
 /**
  * Voltra Store
  *
- * Factory function that creates a Zustand store for one Voltra device.
- * Thin reactive wrapper over SDK's VoltraClient.
+ * Responsible for: per-device identity, connection state, training mode/weight settings,
+ * and converting raw TelemetryFrames to WorkoutSamples.
+ * NOT responsible for: rep detection, set aggregation, or analytics (all in recording-store).
  *
- * Responsibilities:
- * - Device identity and settings
- * - Connection state management
- * - Recording lifecycle (start/stop)
- * - Raw telemetry frame tracking
- * - Convert TelemetryFrame to WorkoutSample
+ * Key state: connectionState, deviceId, deviceName, weight, mode, lastFrame
+ * Key actions: setMode, setWeight, connect, disconnect
  *
- * NOT responsible for (moved to recording-store):
- * - Rep detection and counting
- * - Rep/set aggregation
- * - Analytics computation (SetMetrics, RPE, RIR)
- *
- * Usage:
- *   const voltra = createVoltraStore(client, deviceId, deviceName);
- *   const weight = useStore(voltra, s => s.weight);
+ * Created per-device via createVoltraStore(client, deviceId, deviceName).
  */
 
 import { createStore, type StoreApi } from 'zustand';

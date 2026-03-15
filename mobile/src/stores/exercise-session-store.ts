@@ -1,20 +1,14 @@
 /**
  * Exercise Session Store
  *
- * Unified engine for discovery and standard exercise sessions.
- * Orchestrates multi-set recording, rest timers, and termination.
+ * Responsible for: session lifecycle, multi-set orchestration, rest timers, termination rules,
+ * and persistence to ExerciseSessionRepository.
+ * NOT responsible for: intra-set rep detection or analytics (delegated to recording-store).
  *
- * Responsibilities:
- * - Session lifecycle (start, stop, resume)
- * - UI state machine (preparing, ready, countdown, recording, processing, resting, results)
- * - Timer management (rest timer, countdown)
- * - Coordinate with recording-store for intra-set rep detection
- * - Apply termination rules after each set
- * - Persist to ExerciseSessionRepository
+ * Key state: uiState, session, currentSetIndex, completedSets, restSecondsRemaining
+ * Key actions: prepareFirstSet, startFirstSet, onSetCompleted, dispose
  *
- * Two-layer UI state:
- * - ExerciseSessionUIState (this store): session-level state
- * - RecordingUIState (recording-store): intra-set state
+ * Two-layer UI state: ExerciseSessionUIState (session-level) + RecordingUIState (intra-set).
  */
 
 import { createStore, useStore, type StoreApi } from 'zustand';

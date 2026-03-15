@@ -1,10 +1,12 @@
 /**
  * Connection Store
  *
- * Singleton Zustand store that manages the fleet of connected Voltra devices.
- * Handles scanning, connection, auto-reconnect, and auto-scan logic.
+ * Responsible for: BLE device fleet management — scanning, connecting, disconnecting,
+ * auto-reconnect, auto-scan, and primary device selection.
+ * NOT responsible for: device-level telemetry or settings (owned by voltra-store per device).
  *
- * Uses @voltras/node-sdk's VoltraManager for device discovery and connection.
+ * Key state: devices (Map<id, VoltraStoreApi>), isScanning, primaryDeviceId, error
+ * Key actions: scan, connect, disconnect, restoreLastConnection
  */
 
 import { create } from 'zustand';
