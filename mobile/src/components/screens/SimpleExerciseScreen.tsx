@@ -28,7 +28,7 @@ import type { ReadinessAssessment } from '@/domain/workout';
 
 import { buildRepeatLastSessionPlan } from '@/domain/history/services/progression-service';
 import { suggestNextExercise } from '@/domain/history/services/workout-suggestion-service';
-import { autoPlanWorkout } from '@/domain/planning/auto-plan-service';
+import { autoPlanWorkout, buildSuggestionPlan } from '@/domain/planning/auto-plan-service';
 import { assembleSessionDebrief, type SessionDebriefData } from '@/domain/history/services/session-debrief-service';
 import type { StoredExerciseSession } from '@/data/exercise-session';
 import { EXERCISE_CATALOG, createExercise } from '@/domain/exercise';
@@ -205,10 +205,29 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
     return suggestions[0] ?? null;
   }, [isActive, sess.setLog.length, recentSessions]);
 
-  const handleStartSuggestion = useCallback((exerciseId: string) => {
-    const exercise = EXERCISE_CATALOG[exerciseId] ?? createExercise({ id: exerciseId, name: exerciseId });
-    handleNextExercise(exercise);
-  }, [handleNextExercise]);
+  const suggestionPlan = useMemo(() => {
+    if (!topSuggestion) return null;
+    return buildSuggestionPlan(recentSessions, topSuggestion.exerciseId, EXERCISE_CATALOG);
+  }, [topSuggestion, recentSessions]);
+
+  const suggestionHistoryLabel = useMemo(() => {
+    if (!suggestionPlan || !topSuggestion) return undefined;
+    // Only show history label when the plan came from actual session history
+    const hasHistory = recentSessions.some(
+      (s) => s.exerciseId === topSuggestion.exerciseId && s.status === 'completed',
+    );
+    if (!hasHistory) return undefined;
+    return `${suggestionPlan.weight} lbs \u00b7 ${suggestionPlan.sets}\u00d7${suggestionPlan.repsPerSet}`;
+  }, [suggestionPlan, topSuggestion, recentSessions]);
+
+  const handleStartSuggestion = useCallback((_exerciseId: string) => {
+    if (!suggestionPlan) return;
+    sessionStore.getState().startSession(suggestionPlan.exercise, suggestionPlan.plan);
+    sessionStore.getState().bindRecordingStore(recordingStore);
+    sessionStore.getState().bindVoltraStore(voltraStore);
+    voltraStore.getState().setWeight(suggestionPlan.weight);
+    sessionStore.getState().prepareFirstSet();
+  }, [suggestionPlan, sessionStore, recordingStore, voltraStore]);
 
   // Auto-plan: one-tap workout from history
   const autoPlan = useMemo(() => {
@@ -280,7 +299,7 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
             <AutoPlanCard autoPlan={autoPlan} onStart={handleStartAutoPlan} onChange={() => setPickerVisible(true)} />
           )}
           {topSuggestion && !showLastSessionBanner && !autoPlan && (
-            <SuggestionCard suggestion={topSuggestion} onStart={handleStartSuggestion} />
+            <SuggestionCard suggestion={topSuggestion} historyLabel={suggestionHistoryLabel} onStart={handleStartSuggestion} />
           )}
           {showLastSessionBanner && (
             <LastSessionBanner
