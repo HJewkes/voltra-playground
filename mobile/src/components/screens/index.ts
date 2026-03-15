@@ -10,9 +10,8 @@ export { SettingsScreen } from './SettingsScreen';
 export { HistoryScreen } from './HistoryScreen';
 export { ModeSelectionScreen } from './ModeSelectionScreen';
 
-// Exercise session screens
-export { ExerciseScreen } from './ExerciseScreen';
-export type { ExerciseScreenProps } from './ExerciseScreen';
+// Exercise session screen (plan-as-you-go flow)
+export { SimpleExerciseScreen } from './SimpleExerciseScreen';
 export { ExercisePickerScreen } from './ExercisePickerScreen';
 export type { ExercisePickerScreenProps } from './ExercisePickerScreen';
 
@@ -21,6 +20,3 @@ export { TrainingLogScreen } from './TrainingLogScreen';
 
 // Analytics dashboard
 export { AnalyticsDashboard } from './AnalyticsDashboard';
-
-// Simplified screens (MVP)
-export { SimpleExerciseScreen } from './SimpleExerciseScreen';
