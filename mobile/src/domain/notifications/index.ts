@@ -12,6 +12,9 @@ export type { HapticIntensity } from './haptic-service';
 export { playAudioCue, isAudioSupported } from './audio-cue-service';
 export type { AudioCueType } from './audio-cue-service';
 
+// Text-to-speech for coaching cues
+export { speakCue, stopSpeaking, isTTSSupported } from './tts-service';
+
 // Rest timer cue orchestration
 export {
   fireRestTimerCues,

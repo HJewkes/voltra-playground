@@ -15,6 +15,8 @@ import { CoachingCueCard } from '@/components/coaching/CoachingCueCard';
 import { CoachingSessionLog } from '@/components/coaching/CoachingSessionLog';
 import { useCoachingStore, coachingStore } from '@/stores/coaching-store';
 import type { AthleteReaction } from '@/stores/coaching-store';
+import { speakCue, stopSpeaking } from '@/domain/notifications';
+import { isVoiceCoachingEnabled } from '@/data/preferences';
 import type { ConfigSectionRef } from './ConfigSection';
 
 const t = getSemanticColors('dark');
@@ -87,6 +89,25 @@ export function WorkoutView({
     const enteredRest = uiState === 'resting' && prevUiStateRef.current !== 'resting';
     prevUiStateRef.current = uiState;
     if (enteredRest) coachingStore.getState().flushQueue();
+  }, [uiState]);
+
+  // Speak active cue via TTS when it becomes visible (if voice coaching is on).
+  const prevCueIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!activeCue || activeCue.id === prevCueIdRef.current) return;
+    prevCueIdRef.current = activeCue.id;
+
+    isVoiceCoachingEnabled().then((enabled) => {
+      if (enabled) speakCue(activeCue.message);
+    });
+  }, [activeCue]);
+
+  // Stop speech when leaving rest so cues don't bleed into the next set.
+  useEffect(() => {
+    if (uiState !== 'resting') {
+      stopSpeaking();
+      prevCueIdRef.current = null;
+    }
   }, [uiState]);
 
   const handleDismiss = useCallback(() => {
