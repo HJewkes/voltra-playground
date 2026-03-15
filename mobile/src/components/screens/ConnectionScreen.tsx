@@ -9,7 +9,7 @@ export function ConnectionScreen() {
       title="Voltra"
       subtitle="Connect your device to get started"
     >
-      <Redirect href="/modes" />
+      <Redirect href="/(tabs)/exercise" />
     </DeviceConnection>
   );
 }

@@ -40,7 +40,7 @@ export function SimpleExerciseScreen() {
   const voltraStore = useConnectionStore((s) => s.getPrimaryDevice());
 
   useEffect(() => {
-    if (!isConnected) router.replace('/');
+    if (!isConnected) router.replace('/' as never);
   }, [isConnected, router]);
 
   if (!voltraStore) return null;
@@ -154,15 +154,21 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
 
   return (
     <SafeAreaView className="flex-1 bg-surface-400" edges={['top']}>
-      <Pressable onPress={toggleDrawer} style={{ opacity: isRecording ? 0.5 : 1 }} accessibilityRole="button" accessibilityLabel={`${modeName} — tap to switch mode`}>
-        <View className="flex-row items-center justify-center px-4 pt-2 pb-1 gap-2">
-          <Ionicons name={MODE_META[mode]?.icon ?? 'barbell-outline'} size={18} color={t['brand-primary']} />
-          <Text className="text-base font-bold text-text-primary">{modeName}</Text>
-          <Animated.View style={chevronStyle}>
-            <Ionicons name="chevron-down" size={16} color={t['text-tertiary']} />
-          </Animated.View>
-        </View>
-      </Pressable>
+      <View className="flex-row items-center justify-between px-4 pt-2 pb-1">
+        <View className="w-8" />
+        <Pressable onPress={toggleDrawer} style={{ opacity: isRecording ? 0.5 : 1 }} accessibilityRole="button" accessibilityLabel={`${modeName} — tap to switch mode`}>
+          <View className="flex-row items-center gap-2">
+            <Ionicons name={MODE_META[mode]?.icon ?? 'barbell-outline'} size={18} color={t['brand-primary']} />
+            <Text className="text-base font-bold text-text-primary">{modeName}</Text>
+            <Animated.View style={chevronStyle}>
+              <Ionicons name="chevron-down" size={16} color={t['text-tertiary']} />
+            </Animated.View>
+          </View>
+        </Pressable>
+        <Pressable onPress={() => router.push('/settings')} hitSlop={10}>
+          <Ionicons name="cog-outline" size={22} color={t['text-secondary']} />
+        </Pressable>
+      </View>
 
       {drawerOpen && <ModeDrawer currentMode={mode} onSelect={handleSelectMode} onClose={toggleDrawer} />}
       <ExerciseBreadcrumbs completedExercises={completedExercises} currentExerciseName={sess.session?.exercise.name ?? modeName} />
