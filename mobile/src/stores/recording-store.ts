@@ -311,6 +311,7 @@ function flushRepMetrics(
   newRepCount: number,
   timestamp: number,
 ): void {
+  const state = get();
   const lastRep = ts.analyticsSet.reps.at(-1)!;
   const velocityLoss = getSetVelocityLossPct(ts.analyticsSet);
   const rirEstimate = estimateSetRIR(ts.analyticsSet);
@@ -327,10 +328,25 @@ function flushRepMetrics(
     liveMessage: getLiveEffortMessage(rirEstimate.rpe, newRepCount),
     liveSamples: [...ts.liveSamples],
     _analyticsSet: ts.analyticsSet,
+    // Also update phase tracking — rep completion coincides with a phase change
+    // (CON starts when the analytics library detects a new rep)
+    currentPhase: ts.lastPhase ?? state.currentPhase,
+    phaseElapsedMs: 0,
+    phaseStartTime: timestamp,
+    repPhaseDurations: [],
   };
 
+  // Record duration of previous phase before resetting
+  if (state.currentPhase !== MovementPhaseEnum.IDLE && state.phaseStartTime > 0) {
+    const prevDuration = timestamp - state.phaseStartTime;
+    if (prevDuration > 0) {
+      // Don't append — new rep clears phase durations, but record the final phase of the previous rep
+      update.repPhaseDurations = [];
+    }
+  }
+
   if (ts.debugSamples.length > 0) {
-    update.allSamples = [...get().allSamples, ...ts.debugSamples];
+    update.allSamples = [...state.allSamples, ...ts.debugSamples];
     ts.debugSamples = [];
   }
 
@@ -346,10 +362,18 @@ function flushThrottled(
   ts: ThrottleState,
   timestamp: number,
 ): void {
-  const update: Partial<RecordingState> = {};
+  const state = get();
+  const update: Partial<RecordingState> = {
+    liveSamples: [...ts.liveSamples],
+  };
+
+  // Update elapsed time in current phase so TempoBar ticks live
+  if (state.phaseStartTime > 0) {
+    update.phaseElapsedMs = timestamp - state.phaseStartTime;
+  }
 
   if (ts.debugSamples.length > 0) {
-    update.allSamples = [...get().allSamples, ...ts.debugSamples];
+    update.allSamples = [...state.allSamples, ...ts.debugSamples];
     ts.debugSamples = [];
   }
 
