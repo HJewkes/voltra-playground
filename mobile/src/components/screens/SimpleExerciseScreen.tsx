@@ -135,6 +135,7 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
             exerciseSetupNotes={sess.session?.exercise.equipmentSetup?.notes}
             restElapsedMs={sess.restElapsedMs} defaultRestSeconds={sess.session?.plan.defaultRestSeconds}
             onPlannedRestChange={(setIdx, secs) => sessionStore.getState().updatePlannedSetRest(setIdx, secs)}
+            autoRegulation={sess.autoRegulation}
           />
         </View>
       </ScrollView>

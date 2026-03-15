@@ -1,14 +1,23 @@
 /**
- * WorkoutView — SetLog with active telemetry, charts, and rest display.
+ * WorkoutView — SetLog with active telemetry, charts, rest display, and coaching cues.
  */
 
-import React, { useMemo } from 'react';
-import { View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import { TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { getSemanticColors } from '@titan-design/react-ui';
 
 import type { PlannedSet, SetLogEntry } from '@/domain/workout';
-import { SetLog } from '@/components/exercise';
+import { SetLog, LoadSuggestionCard, VelocityWarning, JunkVolumeAlert } from '@/components/exercise';
 import type { ActiveChartData } from '@/components/exercise/SetLog';
+import type { AutoRegulationState } from '@/domain/planning/auto-regulation';
+import { CoachingCueCard } from '@/components/coaching/CoachingCueCard';
+import { CoachingSessionLog } from '@/components/coaching/CoachingSessionLog';
+import { useCoachingStore, coachingStore } from '@/stores/coaching-store';
+import type { AthleteReaction } from '@/stores/coaching-store';
 import type { ConfigSectionRef } from './ConfigSection';
+
+const t = getSemanticColors('dark');
 
 export interface WorkoutViewProps {
   configRef: React.RefObject<ConfigSectionRef | null>;
@@ -36,6 +45,7 @@ export interface WorkoutViewProps {
   restElapsedMs: number;
   defaultRestSeconds: number | undefined;
   onPlannedRestChange: (setIdx: number, secs: number) => void;
+  autoRegulation: AutoRegulationState | null;
 }
 
 export function WorkoutView({
@@ -64,7 +74,33 @@ export function WorkoutView({
   restElapsedMs,
   defaultRestSeconds,
   onPlannedRestChange,
+  autoRegulation,
 }: WorkoutViewProps) {
+  const activeCue = useCoachingStore((s) => s.activeCue);
+  const sessionLog = useCoachingStore((s) => s.sessionLog);
+  const logVisible = useCoachingStore((s) => s.logVisible);
+  const isResting = uiState === 'resting';
+
+  // Flush queued cues when rest begins. Guard: never during recording.
+  const prevUiStateRef = useRef(uiState);
+  useEffect(() => {
+    const enteredRest = uiState === 'resting' && prevUiStateRef.current !== 'resting';
+    prevUiStateRef.current = uiState;
+    if (enteredRest) coachingStore.getState().flushQueue();
+  }, [uiState]);
+
+  const handleDismiss = useCallback(() => {
+    coachingStore.getState().dismissActiveCue();
+  }, []);
+
+  const handleReact = useCallback((cueId: string, reaction: AthleteReaction) => {
+    coachingStore.getState().reactToCue(cueId, reaction);
+  }, []);
+
+  const handleToggleLog = useCallback(() => {
+    coachingStore.getState().toggleLog();
+  }, []);
+
   const showSetLog = setLog.length > 0 || isActive || uiState === 'resting' || plannedSetCount > 0;
 
   const expectedSetDurationMs = useMemo(() => {
@@ -110,6 +146,40 @@ export function WorkoutView({
         restElapsedMs={restElapsedMs}
         defaultRestSeconds={defaultRestSeconds}
         onPlannedRestChange={onPlannedRestChange}
+      />
+      {isResting && autoRegulation && (
+        <View style={{ gap: 8, marginTop: 8 }}>
+          {autoRegulation.velocityWarning && (
+            <VelocityWarning warning={autoRegulation.velocityWarning} />
+          )}
+          {autoRegulation.junkVolumeAlert && (
+            <JunkVolumeAlert alert={autoRegulation.junkVolumeAlert} />
+          )}
+          {autoRegulation.loadSuggestion && (
+            <LoadSuggestionCard suggestion={autoRegulation.loadSuggestion} />
+          )}
+        </View>
+      )}
+      {isResting && activeCue && (
+        <View className="mt-2">
+          <CoachingCueCard cue={activeCue} onDismiss={handleDismiss} onReact={handleReact} />
+        </View>
+      )}
+      {isResting && sessionLog.length > 0 && (
+        <TouchableOpacity
+          className="mt-2 flex-row items-center self-end"
+          onPress={handleToggleLog}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityLabel="View coaching log"
+          accessibilityRole="button"
+        >
+          <Ionicons name="chatbubble-ellipses-outline" size={16} color={t['text-tertiary']} />
+        </TouchableOpacity>
+      )}
+      <CoachingSessionLog
+        visible={logVisible}
+        entries={sessionLog}
+        onClose={handleToggleLog}
       />
     </>
   );
