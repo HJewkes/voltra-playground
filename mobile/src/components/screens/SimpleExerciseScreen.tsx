@@ -35,7 +35,6 @@ import { WorkoutControls } from '@/components/recording';
 import { AdvancedAccordion } from '@/components/mode';
 import { QuickConfig, VerticalWeightJog, SetLog, ExercisePickerModal } from '@/components/exercise';
 import type { TargetMode } from '@/components/exercise';
-import { MovementPhase } from '@voltras/workout-analytics';
 import type { VoltraStoreApi } from '@/stores/voltra-store';
 import { generateMockRepPlan } from './mock-rep-plan';
 import { registerCoachConsole } from '@/utils/coach-console';
@@ -132,6 +131,12 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
   const session = useStore(sessionStore, (s) => s.session);
   const exerciseSetupNotes = session?.exercise.equipmentSetup?.notes;
 
+  // Bind stores once on mount — voltraStore may change identity if device reconnects
+  useEffect(() => {
+    sessionStore.getState().bindRecordingStore(recordingStore);
+    sessionStore.getState().bindVoltraStore(voltraStore);
+  }, [sessionStore, recordingStore, voltraStore]);
+
   // Register coach console for browser monitoring (web only)
   useEffect(() => {
     registerCoachConsole(recordingStore, sessionStore);
@@ -177,8 +182,6 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
       const planWithSets = { ...emptyPlan, sets: plannedSets };
 
       sessionStore.getState().startSession(exercise, planWithSets);
-      sessionStore.getState().bindRecordingStore(recordingStore);
-      sessionStore.getState().bindVoltraStore(voltraStore);
 
       // Sync device weight to first set
       const firstWeight = plannedSets[0]?.weight;
@@ -186,7 +189,7 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
         voltraStore.getState().setWeight(firstWeight);
       }
     },
-    [sessionStore, recordingStore, voltraStore],
+    [sessionStore, voltraStore],
   );
 
   // Clipboard plan import
@@ -245,8 +248,6 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
 
     const plan = createEmptyPlan(exercise.id);
     sessionStore.getState().startSession(exercise, plan);
-    sessionStore.getState().bindRecordingStore(recordingStore);
-    sessionStore.getState().bindVoltraStore(voltraStore);
 
     if (exercise.equipmentSetup?.cablePath) {
       const cableMode = exercise.movementPattern === 'pull'
@@ -258,7 +259,7 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
     }
 
     setPickerVisible(false);
-  }, [sessionStore, recordingStore, voltraStore, modeName, mode, setMode]);
+  }, [sessionStore, modeName, mode, setMode]);
 
   // Plan-aware next exercise: advance to next in plan or open picker
   const handlePlanNextExercise = useCallback(() => {
@@ -328,8 +329,6 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
       const exercise = createExercise({ id: 'simple-exercise', name: modeName });
       const plan = createEmptyPlan('simple-exercise');
       sessionStore.getState().startSession(exercise, plan);
-      sessionStore.getState().bindRecordingStore(recordingStore);
-      sessionStore.getState().bindVoltraStore(voltraStore);
     }
 
     // Read fresh state after potential session creation
@@ -345,7 +344,7 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
     };
 
     sessionStore.getState().addPlannedSet(planned);
-  }, [sessionStore, recordingStore, voltraStore, weight, effortEnabled, isReps, targetReps, rirTarget, tempoEnabled, targetTempo, modeName]);
+  }, [sessionStore, weight, effortEnabled, isReps, targetReps, rirTarget, tempoEnabled, targetTempo, modeName]);
 
   const toggleDrawer = useCallback(() => {
     if (isRecording) return;
@@ -371,8 +370,6 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
         const exercise = createExercise({ id: 'simple-exercise', name: modeName });
         const plan = createEmptyPlan('simple-exercise');
         store.startSession(exercise, plan);
-        store.bindRecordingStore(recordingStore);
-        store.bindVoltraStore(voltraStore);
 
         const planned: PlannedSet = {
           setNumber: 1,
@@ -392,7 +389,7 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
       const message = e instanceof Error ? e.message : String(e);
       Alert.alert('Error', `Failed to start: ${message}`);
     }
-  }, [sessionStore, recordingStore, voltraStore, weight, effortEnabled, isReps, targetReps, rirTarget, tempoEnabled, targetTempo, modeName]);
+  }, [sessionStore, weight, effortEnabled, isReps, targetReps, rirTarget, tempoEnabled, targetTempo, modeName]);
 
   const handleStop = useCallback(async () => {
     await sessionStore.getState().stopSession();
