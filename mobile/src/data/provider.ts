@@ -18,6 +18,18 @@ import {
   createRecordingRepository,
   type RecordingRepository,
 } from './recordings/recording-repository';
+import {
+  createManualLogRepository,
+  type ManualLogRepository,
+} from './manual-log/manual-log-repository';
+import {
+  createWorkoutPlanRepository,
+  type WorkoutPlanRepository,
+} from './workout-plan/workout-plan-repository';
+import {
+  createVelocityProfileRepository,
+  type VelocityProfileRepository,
+} from './velocity-profile/velocity-profile-repository';
 
 // Re-export debug config for convenience (consumers can import from provider)
 export { isDebugTelemetryEnabled, setDebugTelemetryEnabled } from './debug-config';
@@ -63,6 +75,9 @@ export function setTestAdapter(adapter: StorageAdapter | null): void {
   _sessionRepository = null;
   _exerciseRepository = null;
   _recordingRepository = null;
+  _manualLogRepository = null;
+  _workoutPlanRepository = null;
+  _velocityProfileRepository = null;
 }
 
 // =============================================================================
@@ -72,6 +87,9 @@ export function setTestAdapter(adapter: StorageAdapter | null): void {
 let _sessionRepository: ExerciseSessionRepository | null = null;
 let _exerciseRepository: ExerciseRepository | null = null;
 let _recordingRepository: RecordingRepository | null = null;
+let _manualLogRepository: ManualLogRepository | null = null;
+let _workoutPlanRepository: WorkoutPlanRepository | null = null;
+let _velocityProfileRepository: VelocityProfileRepository | null = null;
 
 /**
  * Get the exercise session repository singleton.
@@ -101,4 +119,34 @@ export function getRecordingRepository(): RecordingRepository {
     _recordingRepository = createRecordingRepository(getAdapter());
   }
   return _recordingRepository;
+}
+
+/**
+ * Get the manual log repository singleton.
+ */
+export function getManualLogRepository(): ManualLogRepository {
+  if (!_manualLogRepository) {
+    _manualLogRepository = createManualLogRepository(getAdapter());
+  }
+  return _manualLogRepository;
+}
+
+/**
+ * Get the workout plan repository singleton.
+ */
+export function getWorkoutPlanRepository(): WorkoutPlanRepository {
+  if (!_workoutPlanRepository) {
+    _workoutPlanRepository = createWorkoutPlanRepository(getAdapter());
+  }
+  return _workoutPlanRepository;
+}
+
+/**
+ * Get the velocity profile repository singleton.
+ */
+export function getVelocityProfileRepository(): VelocityProfileRepository {
+  if (!_velocityProfileRepository) {
+    _velocityProfileRepository = createVelocityProfileRepository(getMMKVAdapter());
+  }
+  return _velocityProfileRepository;
 }

@@ -39,6 +39,7 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
       'react-native': path.resolve(__dirname, './test/react-native-mock.ts'),
+      'react-native-svg': path.resolve(__dirname, './test/react-native-svg-mock.ts'),
     },
   },
 });

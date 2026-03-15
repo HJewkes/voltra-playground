@@ -85,6 +85,10 @@ export const STORAGE_KEYS = {
   AUDIO_CUES_ENABLED: 'voltra:preferences:audioCuesEnabled',
   AI_COACHING_ENABLED: 'voltra:preferences:aiCoachingEnabled',
 
+  // Velocity profiles
+  VELOCITY_PROFILES_INDEX: 'voltra:velocity-profiles:index',
+  VELOCITY_PROFILE_PREFIX: 'voltra:velocity-profiles:',
+
   // Migration
   STORAGE_VERSION: 'voltra:version',
 } as const;

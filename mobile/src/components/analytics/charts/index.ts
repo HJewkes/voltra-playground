@@ -15,3 +15,8 @@ export type { HorizontalBarChartProps, HorizontalBarItem } from './HorizontalBar
 
 export { TrainingLoadGauge } from './TrainingLoadGauge';
 export type { TrainingLoadGaugeProps } from './TrainingLoadGauge';
+
+export { RepCurveChart } from './RepCurveChart';
+
+export { SetCurveChart, SIGNAL_OPTIONS } from './SetCurveChart';
+export type { ChartSignal } from './SetCurveChart';
