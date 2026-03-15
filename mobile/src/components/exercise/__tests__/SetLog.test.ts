@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { computeClusterMeanVelocity } from '../set-log-utils';
 import { getSetMeanVelocity, estimateSetRIR } from '@voltras/workout-analytics';
 
-import { computeClusterMeanVelocity } from '../SetLog';
 import {
   mockCompletedSet,
   mockRep,
