@@ -16,6 +16,7 @@ import type { CompletedSet } from './completed-set';
 import type { Exercise } from '@/domain/exercise';
 import type { ExercisePlan, PlannedSet } from './plan';
 import type { WorkoutSample } from '@voltras/workout-analytics';
+import type { PRBadge } from '@/domain/history/services/pr-detector';
 
 // =============================================================================
 // Cluster / Pause-Set Types
@@ -44,6 +45,8 @@ export interface SetLogEntry {
   clusters: ClusterBoundary[];
   /** Raw telemetry samples for chart replay */
   samples?: WorkoutSample[];
+  /** PR badges earned by this set */
+  prBadges?: PRBadge[];
 }
 
 /**

@@ -6,7 +6,6 @@ function createIconSet() {
   Icon.getImageSource = () => Promise.resolve({ uri: '' });
   return Icon;
 }
-
 export const Ionicons = createIconSet();
 export const MaterialIcons = createIconSet();
 export const AntDesign = createIconSet();
