@@ -19,3 +19,9 @@ export {
   assessReadiness,
   isReadinessCheckCandidate,
 } from './readiness';
+
+export {
+  type FatigueTrend,
+  type SessionFatigueResult,
+  computeSessionFatigue,
+} from './session-fatigue';
