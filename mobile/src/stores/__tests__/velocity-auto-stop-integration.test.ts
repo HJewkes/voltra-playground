@@ -1,23 +1,17 @@
 /**
  * Velocity Auto-Stop Integration Tests
  *
- * Tests the full pipeline: recording store processes samples with declining
- * velocity, triggers auto-stop callback, and the exercise-session-store
- * completes the set.
+ * Tests the recording store auto-stop pipeline: config, warmup guards,
+ * rep count guards, and callback lifecycle.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { type WorkoutSample, MovementPhase } from '@voltras/workout-analytics';
 import { createRecordingStore, type RecordingStoreApi } from '../recording-store';
-import { isDebugTelemetryEnabled } from '@/data/provider';
 
 vi.mock('@/data/provider', () => ({
   isDebugTelemetryEnabled: vi.fn(() => false),
 }));
-
-// =============================================================================
-// Helpers
-// =============================================================================
 
 let sampleSeq = 0;
 let sampleTime = 1000;
@@ -43,7 +37,6 @@ function feedRepWithVelocity(
   samplesPerPhase = 3,
 ): void {
   const process = store.getState().processSample;
-
   for (let i = 0; i < samplesPerPhase; i++) {
     process(createSample(MovementPhase.CONCENTRIC, {
       velocity,
@@ -52,11 +45,7 @@ function feedRepWithVelocity(
     }));
   }
   for (let i = 0; i < samplesPerPhase; i++) {
-    process(createSample(MovementPhase.HOLD, {
-      velocity: 0,
-      position: 1.0,
-      force: 50,
-    }));
+    process(createSample(MovementPhase.HOLD, { velocity: 0, position: 1.0, force: 50 }));
   }
   for (let i = 0; i < samplesPerPhase; i++) {
     process(createSample(MovementPhase.ECCENTRIC, {
@@ -66,17 +55,9 @@ function feedRepWithVelocity(
     }));
   }
   for (let i = 0; i < samplesPerPhase; i++) {
-    process(createSample(MovementPhase.IDLE, {
-      velocity: 0,
-      position: 0,
-      force: 0,
-    }));
+    process(createSample(MovementPhase.IDLE, { velocity: 0, position: 0, force: 0 }));
   }
 }
-
-// =============================================================================
-// Tests
-// =============================================================================
 
 describe('Velocity Auto-Stop Integration', () => {
   let store: RecordingStoreApi;
@@ -94,8 +75,6 @@ describe('Velocity Auto-Stop Integration', () => {
     store.setOnAutoStop(onAutoStop);
 
     store.getState().startRecording('bench', 'Bench');
-
-    // Feed 5 reps with declining velocity
     feedRepWithVelocity(store, 0.8);
     feedRepWithVelocity(store, 0.7);
     feedRepWithVelocity(store, 0.5);
@@ -112,7 +91,6 @@ describe('Velocity Auto-Stop Integration', () => {
     store.setOnAutoStop(onAutoStop);
 
     store.getState().startRecording('bench', 'Bench');
-
     feedRepWithVelocity(store, 0.8);
     feedRepWithVelocity(store, 0.7);
     feedRepWithVelocity(store, 0.5);
@@ -129,7 +107,6 @@ describe('Velocity Auto-Stop Integration', () => {
     store.setOnAutoStop(onAutoStop);
 
     store.getState().startRecording('bench', 'Bench');
-
     feedRepWithVelocity(store, 0.8);
     feedRepWithVelocity(store, 0.3);
 
@@ -147,7 +124,6 @@ describe('Velocity Auto-Stop Integration', () => {
     feedRepWithVelocity(store, 0.7);
     feedRepWithVelocity(store, 0.5);
 
-    // Start a new recording -- tracker should reset
     store.getState().startRecording('bench', 'Bench');
     feedRepWithVelocity(store, 0.8);
     feedRepWithVelocity(store, 0.75);

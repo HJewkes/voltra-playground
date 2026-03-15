@@ -623,6 +623,7 @@ function createStoreInstance(): ExerciseSessionStoreApi {
         }
 
         if (recordingStoreRef) {
+          recordingStoreRef.setOnAutoStop(null);
           recordingStoreRef.getState().reset();
         }
 
@@ -1114,7 +1115,54 @@ async function transitionToRecording(
     }
   }
 
+  // Configure velocity auto-stop for this set
+  const isWarmup = currentPlannedSet?.isWarmup ?? false;
+  recordingStoreRef.setIsWarmupSet(isWarmup);
+  configureAutoStop(get, set);
+
   recordingStoreRef.getState().startRecording(session.exercise.id, session.exercise.name);
+}
+
+// =============================================================================
+// Velocity Auto-Stop
+// =============================================================================
+
+function configureAutoStop(
+  get: () => ExerciseSessionState,
+  set: (state: Partial<ExerciseSessionState>) => void,
+): void {
+  if (!recordingStoreRef) return;
+
+  Promise.all([isVelocityAutoStopEnabled(), getVelocityAutoStopThreshold()])
+    .then(([enabled, thresholdPct]) => {
+      if (!recordingStoreRef) return;
+      recordingStoreRef.setAutoStopConfig({ enabled, thresholdPct });
+      recordingStoreRef.setOnAutoStop((result) => {
+        handleAutoStop(get, set, result.velocityLossPct);
+      });
+    })
+    .catch((err: unknown) => {
+      console.warn('[ExerciseSessionStore] Failed to load auto-stop config:', err);
+    });
+}
+
+function handleAutoStop(
+  get: () => ExerciseSessionState,
+  set: (state: Partial<ExerciseSessionState>) => void,
+  velocityLossPct: number,
+): void {
+  if (!recordingStoreRef || get().uiState !== 'recording') return;
+
+  const message = `Auto-stopped: velocity dropped ${Math.round(velocityLossPct)}%`;
+  console.log(`[ExerciseSessionStore] ${message}`);
+
+  set({ autoStopMessage: message });
+
+  const weight = get().currentPlannedSet?.weight ?? 0;
+  const completedSet = recordingStoreRef.getState().stopRecording(weight);
+  if (completedSet) {
+    get().onSetCompleted(completedSet);
+  }
 }
 
 // =============================================================================

@@ -29,6 +29,14 @@ import {
 
 import { type CompletedSet, createCompletedSet } from '@/domain/workout';
 import { getLiveEffortMessage } from '@/domain/workout';
+import {
+  type VelocityAutoStopConfig,
+  type VelocityAutoStopTracker,
+  type VelocityAutoStopResult,
+  DEFAULT_AUTO_STOP_CONFIG,
+  createAutoStopTracker,
+  evaluateAutoStop,
+} from '@/domain/workout/velocity-auto-stop';
 import { TelemetryRingBuffer } from '@/domain/workout/telemetry-ring-buffer';
 import { isDebugTelemetryEnabled } from '@/data/provider';
 
@@ -56,13 +64,10 @@ export interface RecordingState {
   rpe: number;
   rir: number;
   velocityTrend: number[];
-
-  // Tempo tracking
   currentPhase: MovementPhase;
   phaseStartTime: number;
   phaseElapsedMs: number;
   repPhaseDurations: { phase: MovementPhase; durationMs: number }[];
-
   liveMessage: string;
   liveSamples: WorkoutSample[];
   allSamples: WorkoutSample[];
@@ -128,6 +133,10 @@ interface ThrottleState {
   liveSamples: WorkoutSample[];
   setCallCount: number;
   sampleCount: number;
+  autoStopTracker: VelocityAutoStopTracker;
+  autoStopConfig: VelocityAutoStopConfig;
+  isWarmupSet: boolean;
+  onAutoStop: ((result: VelocityAutoStopResult) => void) | null;
 }
 
 function createThrottleState(): ThrottleState {
@@ -141,6 +150,10 @@ function createThrottleState(): ThrottleState {
     liveSamples: [],
     setCallCount: 0,
     sampleCount: 0,
+    autoStopTracker: createAutoStopTracker(),
+    autoStopConfig: { ...DEFAULT_AUTO_STOP_CONFIG },
+    isWarmupSet: false,
+    onAutoStop: null,
   };
 }
 
@@ -151,6 +164,9 @@ function createThrottleState(): ThrottleState {
 export type RecordingStoreApi = StoreApi<RecordingState> & {
   getTelemetryBuffer: () => TelemetryRingBuffer;
   _getThrottleStats: () => { setCallCount: number; sampleCount: number };
+  setAutoStopConfig: (config: VelocityAutoStopConfig) => void;
+  setIsWarmupSet: (isWarmup: boolean) => void;
+  setOnAutoStop: (cb: ((result: VelocityAutoStopResult) => void) | null) => void;
 };
 
 // =============================================================================
@@ -206,6 +222,15 @@ export function createRecordingStore(): RecordingStoreApi {
     setCallCount: ts.setCallCount,
     sampleCount: ts.sampleCount,
   });
+  storeApi.setAutoStopConfig = (config: VelocityAutoStopConfig) => {
+    ts.autoStopConfig = config;
+  };
+  storeApi.setIsWarmupSet = (isWarmup: boolean) => {
+    ts.isWarmupSet = isWarmup;
+  };
+  storeApi.setOnAutoStop = (cb) => {
+    ts.onAutoStop = cb;
+  };
 
   return storeApi;
 }
@@ -224,6 +249,7 @@ function resetThrottleState(ts: ThrottleState): void {
   ts.liveSamples = [];
   ts.setCallCount = 0;
   ts.sampleCount = 0;
+  ts.autoStopTracker = createAutoStopTracker();
 }
 
 // =============================================================================
@@ -272,7 +298,6 @@ function processSampleAction(
 
   ts.sampleCount++;
 
-  // --- Hot path: no Zustand set(), no re-renders ---
   ts.telemetryBuffer.push(sample);
   ts.liveSamples.push(sample);
 
@@ -285,7 +310,6 @@ function processSampleAction(
   ts.analyticsSet = addSampleToSet(ts.analyticsSet, sample);
   const newRepCount = ts.analyticsSet.reps.length;
 
-  // --- Cold path: Zustand set() only on meaningful changes ---
   const phaseChanged = ts.lastPhase !== null && sample.phase !== ts.lastPhase;
   ts.lastPhase = sample.phase;
 
@@ -328,19 +352,15 @@ function flushRepMetrics(
     liveMessage: getLiveEffortMessage(rirEstimate.rpe, newRepCount),
     liveSamples: [...ts.liveSamples],
     _analyticsSet: ts.analyticsSet,
-    // Also update phase tracking — rep completion coincides with a phase change
-    // (CON starts when the analytics library detects a new rep)
     currentPhase: ts.lastPhase ?? state.currentPhase,
     phaseElapsedMs: 0,
     phaseStartTime: timestamp,
     repPhaseDurations: [],
   };
 
-  // Record duration of previous phase before resetting
   if (state.currentPhase !== MovementPhaseEnum.IDLE && state.phaseStartTime > 0) {
     const prevDuration = timestamp - state.phaseStartTime;
     if (prevDuration > 0) {
-      // Don't append — new rep clears phase durations, but record the final phase of the previous rep
       update.repPhaseDurations = [];
     }
   }
@@ -354,6 +374,19 @@ function flushRepMetrics(
   ts.dirty = false;
   ts.setCallCount++;
   set(update);
+
+  // Evaluate velocity auto-stop after rep metrics are flushed
+  if (ts.onAutoStop && ts.autoStopConfig.enabled) {
+    const result = evaluateAutoStop(
+      ts.analyticsSet,
+      ts.autoStopTracker,
+      ts.autoStopConfig,
+      ts.isWarmupSet,
+    );
+    if (result.shouldStop) {
+      ts.onAutoStop(result);
+    }
+  }
 }
 
 function flushThrottled(
@@ -367,7 +400,6 @@ function flushThrottled(
     liveSamples: [...ts.liveSamples],
   };
 
-  // Update elapsed time in current phase so TempoBar ticks live
   if (state.phaseStartTime > 0) {
     update.phaseElapsedMs = timestamp - state.phaseStartTime;
   }
@@ -398,7 +430,6 @@ function flushPhaseChange(
     liveSamples: [...ts.liveSamples],
   };
 
-  // Record duration of previous phase
   if (state.currentPhase !== MovementPhaseEnum.IDLE && state.phaseStartTime > 0) {
     const prevDuration = now - state.phaseStartTime;
     if (prevDuration > 0) {
@@ -409,7 +440,6 @@ function flushPhaseChange(
     }
   }
 
-  // New rep starting — clear phase durations
   if (sample.phase === MovementPhaseEnum.CONCENTRIC && state.currentPhase !== MovementPhaseEnum.HOLD) {
     update.repPhaseDurations = [];
   }
