@@ -63,7 +63,7 @@ import {
 } from '@/domain/vbt/profile';
 
 // Data layer
-import type { ExerciseSessionRepository } from '@/data/exercise-session';
+import type { ExerciseSessionRepository, SessionNote } from '@/data/exercise-session';
 import { toStoredExerciseSession } from '@/data/exercise-session';
 import { getRecordingRepository, isDebugTelemetryEnabled } from '@/data/provider';
 import type { SampleRecording } from '@/data/recordings';
@@ -105,15 +105,9 @@ import type { VoltraStoreApi } from './voltra-store';
 // Types
 // =============================================================================
 
-/**
- * A timestamped note captured during a session (e.g. between sets).
- */
-export interface SessionNote {
-  text: string;
-  timestamp: number;
-  setIndex: number;
-  exerciseId?: string;
-}
+// SessionNote is defined in the data layer to break the circular import:
+// exercise-session-store → data/exercise-session → session-export → exercise-session-store
+export type { SessionNote } from '@/data/exercise-session';
 
 /**
  * UI state machine for exercise sessions.

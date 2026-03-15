@@ -13,9 +13,21 @@ import {
   estimateSetRIR,
   getRepMeanConcentricForce,
 } from '@voltras/workout-analytics';
-import type { SessionNote } from '@/stores/exercise-session-store';
 import { fromStoredSessionSet } from './exercise-session-converters';
 import type { StoredExerciseSession, StoredSessionSet } from './exercise-session-schema';
+
+/**
+ * A timestamped note captured during a session (e.g. between sets).
+ * Defined here to avoid a circular dependency: exercise-session-store
+ * imports data/exercise-session, which (via session-export.ts) previously
+ * imported back from exercise-session-store, causing a TDZ crash.
+ */
+export interface SessionNote {
+  text: string;
+  timestamp: number;
+  setIndex: number;
+  exerciseId?: string;
+}
 
 export interface ExportedSetData {
   setNumber: number;
