@@ -46,6 +46,7 @@ google-services.json
 # Playwright
 test-results/
 playwright-report/
+.playwright-mcp/
 
 # Planning workflow artifacts (working state, not committed)
 .plans/
