@@ -12,3 +12,7 @@ export type { WeightPickerProps } from './inputs';
 // Navigation
 export { LinkCard } from './navigation';
 export type { LinkCardProps } from './navigation';
+
+// Onboarding
+export { ContextualTooltip } from './ContextualTooltip';
+export type { ContextualTooltipProps } from './ContextualTooltip';

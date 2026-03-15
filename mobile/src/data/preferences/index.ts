@@ -7,6 +7,13 @@
 // Schema types
 export type { Device } from './preferences-schema';
 
+// Onboarding milestones
+export type { OnboardingMilestone } from './onboarding-milestones';
+export {
+  isOnboardingMilestoneSeen,
+  markOnboardingMilestoneSeen,
+} from './onboarding-milestones';
+
 // Storage functions
 export {
   getLastDevice,

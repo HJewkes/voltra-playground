@@ -88,6 +88,9 @@ export const STORAGE_KEYS = {
   VELOCITY_AUTO_STOP_ENABLED: 'voltra:preferences:velocityAutoStopEnabled',
   VELOCITY_AUTO_STOP_THRESHOLD: 'voltra:preferences:velocityAutoStopThreshold',
 
+  // Onboarding milestones (one-time contextual tips)
+  ONBOARDING_MILESTONE_PREFIX: 'voltra:onboarding:milestone:',
+
   // Velocity profiles
   VELOCITY_PROFILES_INDEX: 'voltra:velocity-profiles:index',
   VELOCITY_PROFILE_PREFIX: 'voltra:velocity-profiles:',

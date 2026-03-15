@@ -23,6 +23,7 @@ import { RestScrubber } from './RestScrubber';
 import { TempoBar } from './TempoBar';
 import { CycleToggle, type CycleToggleOption } from './CycleToggle';
 import { QuickNote } from './QuickNote';
+import { ContextualTooltip } from '@/components/ui';
 
 type ChartView = 'set' | 'rep';
 const VIEW_OPTIONS: readonly CycleToggleOption<ChartView>[] = [
@@ -404,6 +405,34 @@ function ActiveSetRow({
         >
           {telemetry.liveMessage}
         </Text>
+      )}
+
+      {/* Contextual onboarding — shown once per concept, self-dismissing */}
+      {repCount === 1 && telemetry?.meanVelocity !== undefined && telemetry.meanVelocity > 0 && (
+        <ContextualTooltip
+          milestone="velocity_explained"
+          title="Mean concentric velocity"
+          body="This number (m/s) measures how fast you moved the bar. Higher is more explosive; lower means the load is heavier relative to your strength."
+          style={{ marginHorizontal: 12, marginTop: 6 }}
+        />
+      )}
+
+      {repCount >= 3 && (telemetry?.velocityLoss ?? 0) >= 0.1 && (
+        <ContextualTooltip
+          milestone="velocity_loss_explained"
+          title="Velocity loss — fatigue signal"
+          body="Your bar speed has dropped from your first rep. A 20%+ drop typically means your muscles are near their limit for this set."
+          style={{ marginHorizontal: 12, marginTop: 6 }}
+        />
+      )}
+
+      {hasMetrics && telemetry.rpe > 0 && (
+        <ContextualTooltip
+          milestone="rpe_explained"
+          title="RPE — rate of perceived exertion"
+          body="Scale of 1–10 estimating how hard the set was. RPE 10 = maximum effort, RPE 7–8 = 2–3 reps left in the tank."
+          style={{ marginHorizontal: 12, marginTop: 6 }}
+        />
       )}
 
       {chart && chart.samples.length > 0 && (
