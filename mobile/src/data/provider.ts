@@ -7,6 +7,7 @@
  */
 
 import { AsyncStorageAdapter } from './adapters/async-storage-adapter';
+import { MMKVAdapter } from './adapters/mmkv-adapter';
 import type { StorageAdapter } from './adapters/types';
 import {
   createExerciseSessionRepository,
@@ -26,10 +27,11 @@ export { isDebugTelemetryEnabled, setDebugTelemetryEnabled } from './debug-confi
 // =============================================================================
 
 let _adapter: StorageAdapter | null = null;
+let _mmkvAdapter: StorageAdapter | null = null;
 
 /**
- * Get the storage adapter singleton.
- * Returns AsyncStorageAdapter by default.
+ * Get the default storage adapter singleton (AsyncStorage).
+ * Used for large data: sessions, recordings, manual logs, workout plans.
  */
 export function getAdapter(): StorageAdapter {
   if (!_adapter) {
@@ -39,11 +41,24 @@ export function getAdapter(): StorageAdapter {
 }
 
 /**
+ * Get the MMKV storage adapter singleton.
+ * Used for small, frequently-accessed data: preferences, velocity profiles,
+ * exercise catalog state. Synchronous reads are ~30x faster than AsyncStorage.
+ */
+export function getMMKVAdapter(): StorageAdapter {
+  if (!_mmkvAdapter) {
+    _mmkvAdapter = new MMKVAdapter();
+  }
+  return _mmkvAdapter;
+}
+
+/**
  * Set a test adapter for mocking in tests.
  * Clears all cached repositories.
  */
 export function setTestAdapter(adapter: StorageAdapter | null): void {
   _adapter = adapter;
+  _mmkvAdapter = adapter;
   // Clear cached repositories so they use the new adapter
   _sessionRepository = null;
   _exerciseRepository = null;
@@ -73,7 +88,7 @@ export function getSessionRepository(): ExerciseSessionRepository {
  */
 export function getExerciseRepository(): ExerciseRepository {
   if (!_exerciseRepository) {
-    _exerciseRepository = createExerciseRepository(getAdapter());
+    _exerciseRepository = createExerciseRepository(getMMKVAdapter());
   }
   return _exerciseRepository;
 }
