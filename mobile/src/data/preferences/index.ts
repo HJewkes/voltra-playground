@@ -20,11 +20,8 @@ export {
   setAudioCuesEnabled,
   isAICoachingEnabled,
   setAICoachingEnabled,
-<<<<<<< HEAD
-=======
   isVoiceCoachingEnabled,
   setVoiceCoachingEnabled,
->>>>>>> origin/main
   isVelocityAutoStopEnabled,
   setVelocityAutoStopEnabled,
   getVelocityAutoStopThreshold,
