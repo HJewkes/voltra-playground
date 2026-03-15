@@ -16,7 +16,7 @@ const t = getSemanticColors('dark');
 
 const MIN_REST_S = 15;
 const MAX_REST_S = 300;
-const STEP_S = 15;
+const STEP_S = 5;
 const SCRUBBER_HEIGHT = 32;
 
 type RestScrubberMode = 'editing' | 'resting' | 'complete';

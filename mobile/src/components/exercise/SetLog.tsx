@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, useWindowDimensions, type TextStyle, type ViewStyle } from 'react-native';
-import Animated from 'react-native-reanimated';
+import { View, Text, Pressable, Alert, useWindowDimensions, type TextStyle, type ViewStyle } from 'react-native';
 import { Surface, getSemanticColors, alpha } from '@titan-design/react-ui';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -11,6 +10,7 @@ import {
   type Rep,
   type WorkoutSample,
 } from '@voltras/workout-analytics';
+import { computeClusterMeanVelocity } from './set-log-utils';
 export { computeClusterMeanVelocity } from './set-log-utils';
 import type { SetLogEntry, ClusterBoundary, PlannedSet, TempoTarget } from '@/domain/workout';
 import type { PRBadge } from '@/domain/history/services/pr-detector';
@@ -18,12 +18,10 @@ import { getRPEColor } from '@/domain/workout';
 import { SetCurveChart, RepCurveChart, SIGNAL_OPTIONS } from '@/components/analytics';
 import type { ChartSignal } from '@/components/analytics';
 import type { SessionNote } from '@/stores/exercise-session-store';
-import { useAmbientColor } from '@/hooks/use-ambient-color';
 import { RestScrubber } from './RestScrubber';
 import { TempoBar } from './TempoBar';
 import { CycleToggle, type CycleToggleOption } from './CycleToggle';
 import { QuickNote } from './QuickNote';
-import { ContextualTooltip } from '@/components/ui';
 
 type ChartView = 'set' | 'rep';
 const VIEW_OPTIONS: readonly CycleToggleOption<ChartView>[] = [
@@ -186,6 +184,18 @@ function CoachingCueBar({ cue }: { cue: CoachingCueData }) {
         {cue.text}
       </Text>
     </View>
+  );
+}
+
+// =============================================================================
+// Info Icon — replaces inline onboarding tooltips
+// =============================================================================
+
+function InfoIcon({ title, body }: { title: string; body: string }) {
+  return (
+    <Pressable onPress={() => Alert.alert(title, body)} hitSlop={8}>
+      <Ionicons name="information-circle-outline" size={14} color={t['text-tertiary']} />
+    </Pressable>
   );
 }
 
@@ -361,10 +371,16 @@ function ActiveSetRow({
           {repText} · {weight} lbs
         </Text>
         {hasMetrics ? (
-          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-            <Text style={[rpeStyle, { color: rpeColor }]}>
-              RPE {telemetry.rpe.toFixed(1)}
-            </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+              <Text style={[rpeStyle, { color: rpeColor }]}>
+                RPE {telemetry.rpe.toFixed(1)}
+              </Text>
+              <InfoIcon
+                title="RPE — rate of perceived exertion"
+                body="Scale of 1–10 estimating how hard the set was. RPE 10 = maximum effort, RPE 7–8 = 2–3 reps left in the tank."
+              />
+            </View>
             <Text style={rpeStyle}>
               RIR {telemetry.rir >= 5 ? '5+' : `~${Math.round(telemetry.rir)}`}
             </Text>
@@ -389,7 +405,20 @@ function ActiveSetRow({
 
       {(() => {
         const cue = getCoachingCue(repCount, telemetry, exerciseSetupNotes);
-        return cue ? <CoachingCueBar cue={cue} /> : null;
+        if (!cue) return null;
+        return (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <View style={{ flex: 1 }}>
+              <CoachingCueBar cue={cue} />
+            </View>
+            <View style={{ paddingRight: 12 }}>
+              <InfoIcon
+                title="Mean concentric velocity"
+                body="This number (m/s) measures how fast you moved the bar. Higher is more explosive; lower means the load is heavier relative to your strength. A 20%+ drop from your first rep typically means your muscles are near their limit."
+              />
+            </View>
+          </View>
+        );
       })()}
 
       {telemetry?.liveMessage && (
@@ -405,34 +434,6 @@ function ActiveSetRow({
         >
           {telemetry.liveMessage}
         </Text>
-      )}
-
-      {/* Contextual onboarding — shown once per concept, self-dismissing */}
-      {repCount === 1 && telemetry?.meanVelocity !== undefined && telemetry.meanVelocity > 0 && (
-        <ContextualTooltip
-          milestone="velocity_explained"
-          title="Mean concentric velocity"
-          body="This number (m/s) measures how fast you moved the bar. Higher is more explosive; lower means the load is heavier relative to your strength."
-          style={{ marginHorizontal: 12, marginTop: 6 }}
-        />
-      )}
-
-      {repCount >= 3 && (telemetry?.velocityLoss ?? 0) >= 0.1 && (
-        <ContextualTooltip
-          milestone="velocity_loss_explained"
-          title="Velocity loss — fatigue signal"
-          body="Your bar speed has dropped from your first rep. A 20%+ drop typically means your muscles are near their limit for this set."
-          style={{ marginHorizontal: 12, marginTop: 6 }}
-        />
-      )}
-
-      {hasMetrics && telemetry.rpe > 0 && (
-        <ContextualTooltip
-          milestone="rpe_explained"
-          title="RPE — rate of perceived exertion"
-          body="Scale of 1–10 estimating how hard the set was. RPE 10 = maximum effort, RPE 7–8 = 2–3 reps left in the tank."
-          style={{ marginHorizontal: 12, marginTop: 6 }}
-        />
       )}
 
       {chart && chart.samples.length > 0 && (
@@ -519,7 +520,7 @@ function PlannedSetRow({ planned }: { planned: PlannedSet }) {
 }
 
 // =============================================================================
-// Active set card — Surface with ambient velocity-color overlay
+// Active set card
 // =============================================================================
 
 function ActiveSetCard({
@@ -533,32 +534,13 @@ function ActiveSetCard({
   activeTelemetry: SetLogProps['activeTelemetry'];
   exerciseSetupNotes: SetLogProps['exerciseSetupNotes'];
 }) {
-  const velocityLoss = activeTelemetry?.velocityLoss ?? 0;
-  const isRecording = activeTelemetry !== null && activeTelemetry !== undefined;
-  const ambientStyle = useAmbientColor(velocityLoss, isRecording);
-
   return (
     <View style={{ marginTop: 8 }}>
       <Surface
         elevation={1}
         className="rounded-xl p-3"
-        style={{ borderLeftWidth: 3, borderLeftColor: t['brand-primary'], overflow: 'hidden' }}
+        style={{ borderLeftWidth: 3, borderLeftColor: t['brand-primary'] }}
       >
-        {/* Ambient tint — positioned absolutely so it does not affect layout */}
-        <Animated.View
-          style={[
-            {
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              borderRadius: 12,
-              pointerEvents: 'none',
-            },
-            ambientStyle,
-          ]}
-        />
         <ActiveSetRow
           {...activeSet}
           chart={activeChart}
@@ -640,7 +622,7 @@ export function SetLog({
         </View>
       )}
 
-      {/* Active set with ambient velocity tint */}
+      {/* Active set */}
       {activeSet && (
         <ActiveSetCard
           activeSet={activeSet}
