@@ -58,6 +58,14 @@ export function ManualLogScreen() {
 
   const weightRef = useRef<TextInput>(null);
   const repsRef = useRef<TextInput>(null);
+  const hideSuggestionsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cancel pending hide-suggestions timer on unmount
+  useEffect(() => {
+    return () => {
+      if (hideSuggestionsTimer.current) clearTimeout(hideSuggestionsTimer.current);
+    };
+  }, []);
 
   // Load today's logs and exercise name history on mount
   useEffect(() => {
@@ -145,7 +153,7 @@ export function ManualLogScreen() {
                 onFocus={() => setShowSuggestions(true)}
                 onBlur={() => {
                   // Delay to allow suggestion tap to register
-                  setTimeout(() => setShowSuggestions(false), 200);
+                  hideSuggestionsTimer.current = setTimeout(() => setShowSuggestions(false), 200);
                 }}
                 placeholder="e.g. SSB Squat"
                 placeholderTextColor={t['text-tertiary']}

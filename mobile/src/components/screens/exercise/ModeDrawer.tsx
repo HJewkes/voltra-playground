@@ -35,7 +35,18 @@ export interface ModeDrawerProps {
 
 export function ModeDrawer({ currentMode, onSelect, onClose }: ModeDrawerProps) {
   return (
-    <>
+    // Full-screen container sits above every sibling (header, breadcrumbs, scroll)
+    <View
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 50,
+      }}
+      pointerEvents="box-none"
+    >
       <Pressable
         onPress={onClose}
         style={{
@@ -44,13 +55,11 @@ export function ModeDrawer({ currentMode, onSelect, onClose }: ModeDrawerProps) 
           left: 0,
           right: 0,
           bottom: 0,
-          zIndex: 10,
           backgroundColor: alpha('#000', 0.4),
         }}
       />
       <View
         style={{
-          zIndex: 11,
           backgroundColor: '#1a1a1a',
           borderBottomLeftRadius: 16,
           borderBottomRightRadius: 16,
@@ -121,6 +130,6 @@ export function ModeDrawer({ currentMode, onSelect, onClose }: ModeDrawerProps) 
           })}
         </View>
       </View>
-    </>
+    </View>
   );
 }
