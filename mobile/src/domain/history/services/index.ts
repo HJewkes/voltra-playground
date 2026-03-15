@@ -12,3 +12,4 @@ export * from './session-history-service';
 export * from './training-log-service';
 export * from './cross-session-analytics';
 export * from './progression-service';
+export * from './streak-service';
