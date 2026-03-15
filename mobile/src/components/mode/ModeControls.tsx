@@ -176,7 +176,7 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
         return next;
       });
     };
-    el.addEventListener('wheel', wheelHandler.current, { passive: false });
+    el.addEventListener('wheel', wheelHandler.current, { passive: true });
   }, []);
 
   if (mode === TrainingMode.Idle) return null;
