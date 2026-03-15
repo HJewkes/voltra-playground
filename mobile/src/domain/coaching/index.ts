@@ -1,40 +1,39 @@
 /**
- * Coaching Domain
+ * domain/coaching - Claude-as-coach feedback loop.
  *
- * AI coaching context generation for Claude-powered coaching responses.
- * Assembles telemetry from workout, planning, and history domains
- * into structured prompts for the Claude Messages API.
+ * Provides AI coaching cues during workout sessions with a feedback loop:
+ * athlete reactions and compliance data inform subsequent coaching calls.
  */
 
-export {
-  buildCoachingContext,
-  toPrompt,
-  type BuildContextInput,
-  type AutoRegulationInput,
-} from './coaching-context-builder';
-
-export type {
-  CoachingContext,
-  SetSummary,
-  SessionContext,
-  FatigueTrend,
-  AthleteHistory,
-  HistoricalSession,
-  PersonalRecordSummary,
-  AutoRegulationSignals,
-  LoadSuggestionSummary,
-  PreviousCoachingCue,
-  VelocityWarningSeverity,
-} from './types';
-
-export { getCoachingCue, DEFAULT_MODEL } from './claude-api';
-export { parseCoachingResponse, createFallbackCue } from './response-parser';
-
+// Types
 export type {
   CoachingCue,
-  TextCue,
-  LoadAdjustmentCue,
-  EncouragementCue,
-  CoachingApiConfig,
-  TokenUsage,
-} from './claude-api-types';
+  CueReaction,
+  ReactedCue,
+  ComplianceOutcome,
+  CueComplianceRecord,
+  CoachingContext,
+} from './types';
+
+// Context builder
+export {
+  buildCoachingContext,
+  buildComplianceRecord,
+  assessCompliance,
+  toPrompt,
+} from './coaching-context-builder';
+
+// Claude API
+export { getCoachingCue, parseCoachingResponse, type ClaudeApiConfig } from './claude-api';
+
+// Store
+export {
+  coachingStore,
+  createCoachingStore,
+  useCoachingStore,
+  type CoachingState,
+  type CoachingStoreApi,
+} from './coaching-store';
+
+// Loop orchestration
+export { executeCoachingLoop } from './coaching-loop';
