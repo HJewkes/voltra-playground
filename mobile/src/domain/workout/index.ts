@@ -90,10 +90,13 @@ export {
 
 // Re-export readiness assessment
 export {
+  type AutoReadinessResult,
   type IntensityAdjustment,
   type ReadinessAssessment,
   deriveIntensityAdjustment,
   assessReadiness,
+  assessReadinessAuto,
+  applyReadinessWeightAdjustment,
   isReadinessCheckCandidate,
 } from './session';
 
