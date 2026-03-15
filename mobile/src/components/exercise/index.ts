@@ -24,6 +24,10 @@ export type { ExerciseSessionActionButtonsProps } from './ExerciseSessionActionB
 export { ResumeSessionPrompt } from './ResumeSessionPrompt';
 export type { ResumeSessionPromptProps } from './ResumeSessionPrompt';
 
+// Session fatigue gauge
+export { FatigueGauge } from './FatigueGauge';
+export type { FatigueGaugeProps } from './FatigueGauge';
+
 // Auto-regulation UI
 export { LoadSuggestionCard } from './LoadSuggestionCard';
 export type { LoadSuggestionCardProps } from './LoadSuggestionCard';

@@ -7,10 +7,11 @@ import { TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getSemanticColors } from '@titan-design/react-ui';
 
-import type { PlannedSet, SetLogEntry } from '@/domain/workout';
-import { SetLog, LoadSuggestionCard, VelocityWarning, JunkVolumeAlert } from '@/components/exercise';
+import type { PlannedSet, SetLogEntry, CompletedSet } from '@/domain/workout';
+import { SetLog, LoadSuggestionCard, VelocityWarning, JunkVolumeAlert, FatigueGauge } from '@/components/exercise';
 import type { ActiveChartData } from '@/components/exercise/SetLog';
 import type { AutoRegulationState } from '@/domain/planning/auto-regulation';
+import { computeSessionFatigue } from '@/domain/workout/session/session-fatigue';
 import { CoachingCueCard } from '@/components/coaching/CoachingCueCard';
 import { CoachingSessionLog } from '@/components/coaching/CoachingSessionLog';
 import { useCoachingStore, coachingStore } from '@/stores/coaching-store';
@@ -48,6 +49,8 @@ export interface WorkoutViewProps {
   defaultRestSeconds: number | undefined;
   onPlannedRestChange: (setIdx: number, secs: number) => void;
   autoRegulation: AutoRegulationState | null;
+  /** All completed sets in the session, used for fatigue gauge. */
+  completedSets: CompletedSet[];
 }
 
 export function WorkoutView({
@@ -77,11 +80,17 @@ export function WorkoutView({
   defaultRestSeconds,
   onPlannedRestChange,
   autoRegulation,
+  completedSets,
 }: WorkoutViewProps) {
   const activeCue = useCoachingStore((s) => s.activeCue);
   const sessionLog = useCoachingStore((s) => s.sessionLog);
   const logVisible = useCoachingStore((s) => s.logVisible);
   const isResting = uiState === 'resting';
+
+  const sessionFatigue = useMemo(
+    () => computeSessionFatigue(completedSets),
+    [completedSets],
+  );
 
   // Flush queued cues when rest begins. Guard: never during recording.
   const prevUiStateRef = useRef(uiState);
@@ -168,6 +177,9 @@ export function WorkoutView({
         defaultRestSeconds={defaultRestSeconds}
         onPlannedRestChange={onPlannedRestChange}
       />
+      {isResting && sessionFatigue && (
+        <FatigueGauge fatigue={sessionFatigue} style={{ marginTop: 8 }} />
+      )}
       {isResting && autoRegulation && (
         <View style={{ gap: 8, marginTop: 8 }}>
           {autoRegulation.velocityWarning && (
