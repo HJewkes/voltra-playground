@@ -76,6 +76,12 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
   const sessionRepo = useMemo(() => getSessionRepository(), []);
   const { progression, lastSession } = useExerciseProgression(exerciseId, sessionRepo);
 
+  // Pre-fill device weight from last session when exercise loads and device is at default
+  useEffect(() => {
+    if (!lastSession || deviceWeight !== 45) return;
+    voltraStore.getState().setWeight(lastSession.weight);
+  }, [lastSession, deviceWeight, voltraStore]);
+
   // Readiness assessment: computed after the first set completes, before working sets
   const [readiness, setReadiness] = useState<ReadinessAssessment | null>(null);
 
@@ -224,7 +230,7 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
               onRepeat={handleRepeatLastSession}
             />
           )}
-          <ConfigSection ref={configRef} voltraStore={voltraStore} weight={weight} eccentric={eccentric} setEccentric={setEccentric} chains={chains} inverseChains={inverseChains} setChains={setChains} setInverseChains={setInverseChains} showEccentric={mode === TrainingMode.WeightTraining || mode === TrainingMode.ResistanceBand} showChains={mode === TrainingMode.WeightTraining} isActive={isActive} onAddSet={handleAddSet} plannedSetCount={plannedSetCount} />
+          <ConfigSection ref={configRef} voltraStore={voltraStore} weight={weight} eccentric={eccentric} setEccentric={setEccentric} chains={chains} inverseChains={inverseChains} setChains={setChains} setInverseChains={setInverseChains} showEccentric={mode === TrainingMode.WeightTraining || mode === TrainingMode.ResistanceBand} showChains={mode === TrainingMode.WeightTraining} isActive={isActive} onAddSet={handleAddSet} plannedSetCount={plannedSetCount} lastSessionWeight={lastSession?.weight} />
           <WorkoutView
             configRef={configRef} setLog={sess.setLog} isActive={isActive} isRecording={isRecording}
             uiState={sess.uiState} plannedSetCount={plannedSetCount} currentSetIndex={sess.currentSetIndex}
