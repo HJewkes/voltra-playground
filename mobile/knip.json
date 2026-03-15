@@ -1,0 +1,25 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": ["app/**/*.{ts,tsx}", "scripts/**/*.ts"],
+  "project": ["src/**/*.{ts,tsx}", "app/**/*.{ts,tsx}", "scripts/**/*.ts"],
+  "ignore": [
+    ".expo/**",
+    "dist/**",
+    "coverage/**",
+    "android/**",
+    "ios/**",
+    "node_modules/**",
+    "**/*.d.ts",
+    "expo-env.d.ts",
+    "nativewind-env.d.ts",
+    "babel.config.js",
+    "metro.config.js",
+    "tailwind.config.js"
+  ],
+  "ignoreDependencies": [
+    "@voltras/node-sdk",
+    "@types/uuid",
+    "@types/web-bluetooth"
+  ],
+  "ignoreExportsUsedInFile": true
+}
