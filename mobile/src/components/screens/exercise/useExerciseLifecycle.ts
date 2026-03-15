@@ -133,6 +133,12 @@ export function useExerciseLifecycle(
 
   const handleStart = useCallback(async () => {
     try {
+      // Ensure device mode matches UI selection before starting
+      const deviceMode = voltraStore.getState().mode;
+      if (deviceMode !== mode) {
+        await voltraStore.getState().setMode(mode);
+      }
+
       const store = sessionStore.getState();
       if (!store.session || store.session.plan.sets.length === 0) {
         const targets = configRef.current?.getTargets() ?? DEFAULT_TARGETS;
@@ -145,7 +151,7 @@ export function useExerciseLifecycle(
       const message = e instanceof Error ? e.message : String(e);
       Alert.alert('Error', `Failed to start: ${message}`);
     }
-  }, [sessionStore, ensureSession, buildPlannedSet]);
+  }, [voltraStore, mode, sessionStore, ensureSession, buildPlannedSet]);
 
   const handleStop = useCallback(async () => { await sessionStore.getState().stopSession(); }, [sessionStore]);
 

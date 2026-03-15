@@ -210,7 +210,7 @@ export function createVoltraStore(
         chains: settings.chains ?? 0,
         inverseChains: settings.inverseChains ?? 0,
         eccentric: settings.eccentric ?? 0,
-        mode: settings.trainingMode ?? TrainingMode.Idle,
+        mode: settings.trainingMode ?? TrainingMode.WeightTraining,
       });
     });
     subscriptions.push(settingsSub);
@@ -253,7 +253,7 @@ export function createVoltraStore(
           chains: client?.settings?.chains ?? 0,
           inverseChains: client?.settings?.inverseChains ?? 0,
           eccentric: client?.settings?.eccentric ?? 0,
-          mode: client?.settings?.mode ?? TrainingMode.Idle,
+          mode: client?.settings?.mode ?? TrainingMode.WeightTraining,
 
           // Device Status
           battery: client?.settings?.battery ?? null,
