@@ -43,5 +43,9 @@ google-services.json
 /ios
 /android
 
+# Playwright
+test-results/
+playwright-report/
+
 # Planning workflow artifacts (working state, not committed)
 .plans/
