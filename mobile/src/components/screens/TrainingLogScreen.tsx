@@ -10,7 +10,7 @@ import { View, ScrollView, RefreshControl } from 'react-native';
 import { getSemanticColors } from '@titan-design/react-ui';
 import { getSessionRepository } from '@/data/provider';
 import type { StoredExerciseSession } from '@/data/exercise-session';
-import { type TrainingLevel } from '@/domain/planning/types';
+import { TrainingLevel } from '@/domain/planning/types';
 import {
   groupSessionsByDate,
   getWorkoutDates,
