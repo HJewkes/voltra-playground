@@ -28,6 +28,8 @@ import {
   type ExerciseSession,
   type PlannedSet,
   type TerminationReason,
+  type ClusterBoundary,
+  type SetLogEntry,
   createExerciseSession,
   getSessionCurrentSetIndex,
   getCurrentPlannedSet,
@@ -38,6 +40,7 @@ import {
   clearRest,
   checkTermination,
   createUserStoppedTermination,
+  MovementPhase,
   type SupersetConfig,
   type SupersetState,
   createSupersetState,
@@ -68,7 +71,6 @@ import { isHapticCuesEnabled, isAudioCuesEnabled } from '@/data/preferences';
 
 // Notification cues for rest timer
 import {
-  fireRestTimerCues,
   type RestTimerCueSettings,
 } from '@/domain/notifications/rest-timer-cues';
 
@@ -93,6 +95,16 @@ import type { VoltraStoreApi } from './voltra-store';
 // =============================================================================
 // Types
 // =============================================================================
+
+/**
+ * A timestamped note captured during a session (e.g. between sets).
+ */
+export interface SessionNote {
+  text: string;
+  timestamp: number;
+  setIndex: number;
+  exerciseId?: string;
+}
 
 /**
  * UI state machine for exercise sessions.
@@ -135,6 +147,23 @@ export interface ExerciseSessionState {
   // Auto-regulation state (computed after each set)
   autoRegulation: AutoRegulationState | null;
 
+  // Idle detection
+  idleSinceMs: number | null;
+
+  // Count-up rest
+  restElapsedMs: number;
+  restStartTime: number | null;
+
+  // Cluster tracking (for pause sets)
+  currentClusterStart: number;
+  pendingClusters: ClusterBoundary[];
+
+  // Set log
+  setLog: SetLogEntry[];
+
+  // Session notes (athlete quick-notes between sets)
+  sessionNotes: SessionNote[];
+
   // Error state
   error: string | null;
 
@@ -164,6 +193,13 @@ export interface ExerciseSessionState {
   loadCurrentSession: () => Promise<void>;
   stopSession: () => Promise<void>;
   dispose: () => void;
+
+  // Actions - Notes
+  addNote: (text: string) => void;
+
+  // Actions - Dynamic plan building
+  addPlannedSet: (set: PlannedSet) => void;
+  updatePlannedSetRest: (setIndex: number, restSeconds: number) => void;
 
   // Actions - First set flow
   prepareFirstSet: () => Promise<void>;
@@ -195,6 +231,10 @@ export interface ExerciseSessionState {
   _claudeApiConfig: ClaudeApiConfig | null;
   _restTimerId: ReturnType<typeof setInterval> | null;
   _countdownTimerId: ReturnType<typeof setInterval> | null;
+  _idleUnsubscribe: (() => void) | null;
+  _onPhaseChange: (phase: MovementPhase, repCount: number) => void;
+  _autoTransitionToRest: () => void;
+  _onLiftingResumedFromRest: () => void;
 }
 
 // =============================================================================
@@ -203,6 +243,16 @@ export interface ExerciseSessionState {
 
 const COUNTDOWN_SECONDS = 3;
 const DEFAULT_REST_SECONDS = 90;
+
+/** Thresholds for idle detection and pause-set clustering */
+export const SESSION_DEFAULTS = {
+  /** ms idle before auto-rest triggers */
+  idleThreshold: 7000,
+  /** ms rest before new set (vs intra-set pause) */
+  pauseSetThreshold: 20000,
+  /** ms to debounce brief pauses at lockout */
+  idleDebounce: 2000,
+};
 
 // =============================================================================
 // Module-level State
@@ -216,6 +266,7 @@ let claudeApiConfigRef: ClaudeApiConfig | null = null;
 let restTimerId: ReturnType<typeof setInterval> | null = null;
 let countdownTimerId: ReturnType<typeof setInterval> | null = null;
 let cachedCueSettings: RestTimerCueSettings | null = null;
+let idleTimerId: ReturnType<typeof setTimeout> | null = null;
 
 async function loadCueSettings(): Promise<RestTimerCueSettings> {
   if (cachedCueSettings) return cachedCueSettings;
@@ -241,6 +292,7 @@ function createStoreInstance(): ExerciseSessionStoreApi {
   restTimerId = null;
   countdownTimerId = null;
   cachedCueSettings = null;
+  idleTimerId = null;
 
   return createStore<ExerciseSessionState>()(
     devtools(
@@ -256,6 +308,13 @@ function createStoreInstance(): ExerciseSessionStoreApi {
       velocityProfile: null,
       recommendation: null,
       autoRegulation: null,
+      idleSinceMs: null,
+      restElapsedMs: 0,
+      restStartTime: null,
+      currentClusterStart: 0,
+      pendingClusters: [],
+      setLog: [],
+      sessionNotes: [],
       error: null,
 
       // Derived state
@@ -283,6 +342,85 @@ function createStoreInstance(): ExerciseSessionStoreApi {
       _claudeApiConfig: null,
       _restTimerId: null,
       _countdownTimerId: null,
+      _idleUnsubscribe: null,
+
+      // =======================================================================
+      // Idle Detection & Cluster Tracking
+      // =======================================================================
+
+      _onPhaseChange: (phase: MovementPhase, _repCount: number) => {
+        const state = get();
+        const isIdlePhase = phase === MovementPhase.IDLE || phase === MovementPhase.HOLD;
+        const isActivePhase = phase === MovementPhase.CONCENTRIC || phase === MovementPhase.ECCENTRIC;
+
+        if (state.uiState === 'recording') {
+          if (isIdlePhase && state.idleSinceMs === null) {
+            set({ idleSinceMs: Date.now() });
+            if (idleTimerId) clearTimeout(idleTimerId);
+            idleTimerId = setTimeout(() => {
+              idleTimerId = null;
+              if (get().uiState === 'recording' && get().idleSinceMs !== null) {
+                set({ idleSinceMs: null });
+                get()._autoTransitionToRest();
+              }
+            }, SESSION_DEFAULTS.idleThreshold);
+          } else if (isActivePhase && state.idleSinceMs !== null) {
+            if (idleTimerId) {
+              clearTimeout(idleTimerId);
+              idleTimerId = null;
+            }
+            set({ idleSinceMs: null });
+          }
+        } else if (state.uiState === 'resting' && isActivePhase) {
+          get()._onLiftingResumedFromRest();
+        }
+      },
+
+      _autoTransitionToRest: () => {
+        if (!recordingStoreRef) return;
+        const state = get();
+        const weight = state.currentPlannedSet?.weight ?? 0;
+        const completedSet = recordingStoreRef.getState().stopRecording(weight);
+        if (completedSet) {
+          get().onSetCompleted(completedSet);
+        }
+      },
+
+      _onLiftingResumedFromRest: () => {
+        const { restStartTime } = get();
+        if (!restStartTime || !recordingStoreRef) return;
+        const elapsed = Date.now() - restStartTime;
+
+        if (elapsed < SESSION_DEFAULTS.pauseSetThreshold) {
+          const repCount = recordingStoreRef.getState().repCount;
+          const clusters = get().pendingClusters;
+          set({
+            pendingClusters: [
+              ...clusters,
+              {
+                repStart: get().currentClusterStart,
+                repEnd: repCount,
+                pauseAfterMs: elapsed,
+              },
+            ],
+            currentClusterStart: repCount,
+            uiState: 'recording',
+            restElapsedMs: 0,
+            restStartTime: null,
+            restCountdown: 0,
+          });
+          clearTimers();
+        } else {
+          clearTimers();
+          set({
+            uiState: 'countdown',
+            startCountdown: COUNTDOWN_SECONDS,
+            restCountdown: 0,
+            restStartTime: null,
+          });
+          startCountdownTimer(get, set);
+        }
+      },
 
       // =======================================================================
       // Lifecycle Actions
@@ -301,6 +439,13 @@ function createStoreInstance(): ExerciseSessionStoreApi {
           velocityProfile: null,
           recommendation: null,
           autoRegulation: null,
+          idleSinceMs: null,
+          restElapsedMs: 0,
+          restStartTime: null,
+          currentClusterStart: 0,
+          pendingClusters: [],
+          setLog: [],
+          sessionNotes: [],
           error: null,
           supersetConfig: null,
           supersetState: null,
@@ -326,6 +471,13 @@ function createStoreInstance(): ExerciseSessionStoreApi {
           velocityProfile: null,
           recommendation: null,
           autoRegulation: null,
+          idleSinceMs: null,
+          restElapsedMs: 0,
+          restStartTime: null,
+          currentClusterStart: 0,
+          pendingClusters: [],
+          setLog: [],
+          sessionNotes: [],
           error: null,
           supersetConfig: config,
           supersetState: ssState,
@@ -343,6 +495,54 @@ function createStoreInstance(): ExerciseSessionStoreApi {
       stopSession: async () => {
         if (get().isDisposed) return;
         await stopSessionAction(get, set);
+      },
+
+      // =======================================================================
+      // Notes
+      // =======================================================================
+
+      addNote: (text: string) => {
+        const { session, sessionNotes } = get();
+        if (!session) return;
+
+        const note: SessionNote = {
+          text,
+          timestamp: Date.now(),
+          setIndex: session.completedSets.length,
+          exerciseId: session.exercise.id,
+        };
+        set({ sessionNotes: [...sessionNotes, note] });
+      },
+
+      // =======================================================================
+      // Dynamic Plan Building
+      // =======================================================================
+
+      addPlannedSet: (plannedSet: PlannedSet) => {
+        const { session } = get();
+        if (!session) return;
+
+        const updatedPlan = {
+          ...session.plan,
+          sets: [...session.plan.sets, plannedSet],
+        };
+        const updatedSession = { ...session, plan: updatedPlan };
+
+        set({
+          session: updatedSession,
+          ...computeDerivedState(updatedSession),
+        });
+      },
+
+      updatePlannedSetRest: (setIndex: number, restSeconds: number) => {
+        const { session } = get();
+        if (!session) return;
+
+        const sets = session.plan.sets.map((s, i) =>
+          i === setIndex ? { ...s, restSeconds } : s,
+        );
+        const updatedSession = { ...session, plan: { ...session.plan, sets } };
+        set({ session: updatedSession });
       },
 
       // =======================================================================
@@ -425,6 +625,13 @@ function createStoreInstance(): ExerciseSessionStoreApi {
           velocityProfile: null,
           recommendation: null,
           autoRegulation: null,
+          idleSinceMs: null,
+          restElapsedMs: 0,
+          restStartTime: null,
+          currentClusterStart: 0,
+          pendingClusters: [],
+          setLog: [],
+          sessionNotes: [],
           error: null,
           supersetConfig: null,
           supersetState: null,
@@ -815,6 +1022,10 @@ function clearTimers(): void {
   if (countdownTimerId) {
     clearInterval(countdownTimerId);
     countdownTimerId = null;
+  }
+  if (idleTimerId) {
+    clearTimeout(idleTimerId);
+    idleTimerId = null;
   }
 }
 

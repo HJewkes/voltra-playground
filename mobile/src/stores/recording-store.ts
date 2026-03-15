@@ -16,11 +16,13 @@ import {
   type Set as AnalyticsSet,
   type WorkoutSample,
   type MovementPhase,
+  MovementPhase as MovementPhaseEnum,
   createSet,
   addSampleToSet,
   completeSet,
   getSetVelocityLossPct,
   getSetRepVelocities,
+  getSetMeanVelocity,
   estimateSetRIR,
   getRepPeakVelocity,
 } from '@voltras/workout-analytics';
@@ -49,11 +51,20 @@ export interface RecordingState {
   startTime: number | null;
   repCount: number;
   lastRepPeakVelocity: number | null;
+  meanVelocity: number;
   velocityLoss: number;
   rpe: number;
   rir: number;
   velocityTrend: number[];
+
+  // Tempo tracking
+  currentPhase: MovementPhase;
+  phaseStartTime: number;
+  phaseElapsedMs: number;
+  repPhaseDurations: { phase: MovementPhase; durationMs: number }[];
+
   liveMessage: string;
+  liveSamples: WorkoutSample[];
   allSamples: WorkoutSample[];
   lastSet: CompletedSet | null;
   setUIState: (state: RecordingUIState) => void;
@@ -71,8 +82,10 @@ export interface RecordingState {
 function createInitialState(): Pick<
   RecordingState,
   | 'uiState' | 'isRecording' | 'exerciseId' | 'exerciseName' | 'weight'
-  | 'startTime' | 'repCount' | 'lastRepPeakVelocity' | 'velocityLoss'
-  | 'rpe' | 'rir' | 'velocityTrend' | 'liveMessage' | 'allSamples' | 'lastSet'
+  | 'startTime' | 'repCount' | 'lastRepPeakVelocity' | 'meanVelocity'
+  | 'velocityLoss' | 'rpe' | 'rir' | 'velocityTrend'
+  | 'currentPhase' | 'phaseStartTime' | 'phaseElapsedMs' | 'repPhaseDurations'
+  | 'liveMessage' | 'liveSamples' | 'allSamples' | 'lastSet'
 > {
   return {
     uiState: 'idle',
@@ -83,11 +96,17 @@ function createInitialState(): Pick<
     startTime: null,
     repCount: 0,
     lastRepPeakVelocity: null,
+    meanVelocity: 0,
     velocityLoss: 0,
     rpe: 5,
     rir: 6,
     velocityTrend: [],
+    currentPhase: MovementPhaseEnum.IDLE,
+    phaseStartTime: 0,
+    phaseElapsedMs: 0,
+    repPhaseDurations: [],
     liveMessage: '',
+    liveSamples: [],
     allSamples: [],
     lastSet: null,
   };
@@ -106,6 +125,7 @@ interface ThrottleState {
   lastFlushTime: number;
   dirty: boolean;
   debugSamples: WorkoutSample[];
+  liveSamples: WorkoutSample[];
   setCallCount: number;
   sampleCount: number;
 }
@@ -118,6 +138,7 @@ function createThrottleState(): ThrottleState {
     lastFlushTime: 0,
     dirty: false,
     debugSamples: [],
+    liveSamples: [],
     setCallCount: 0,
     sampleCount: 0,
   };
@@ -179,7 +200,7 @@ export function createRecordingStore(): RecordingStoreApi {
     ),
   );
 
-  const storeApi = store as RecordingStoreApi;
+  const storeApi = store as unknown as RecordingStoreApi;
   storeApi.getTelemetryBuffer = () => ts.telemetryBuffer;
   storeApi._getThrottleStats = () => ({
     setCallCount: ts.setCallCount,
@@ -200,6 +221,7 @@ function resetThrottleState(ts: ThrottleState): void {
   ts.lastFlushTime = 0;
   ts.dirty = false;
   ts.debugSamples = [];
+  ts.liveSamples = [];
   ts.setCallCount = 0;
   ts.sampleCount = 0;
 }
@@ -252,6 +274,7 @@ function processSampleAction(
 
   // --- Hot path: no Zustand set(), no re-renders ---
   ts.telemetryBuffer.push(sample);
+  ts.liveSamples.push(sample);
 
   if (isDebugTelemetryEnabled()) {
     ts.debugSamples.push(sample);
@@ -272,7 +295,7 @@ function processSampleAction(
   }
 
   if (phaseChanged) {
-    flushThrottled(get, set, ts, sample.timestamp);
+    flushPhaseChange(get, set, ts, sample);
     return;
   }
 
@@ -296,11 +319,13 @@ function flushRepMetrics(
   const update: Partial<RecordingState> = {
     repCount: newRepCount,
     lastRepPeakVelocity: getRepPeakVelocity(lastRep),
+    meanVelocity: getSetMeanVelocity(ts.analyticsSet),
     velocityLoss: Math.abs(velocityLoss),
     rpe: rirEstimate.rpe,
     rir: rirEstimate.rir,
     velocityTrend,
     liveMessage: getLiveEffortMessage(rirEstimate.rpe, newRepCount),
+    liveSamples: [...ts.liveSamples],
     _analyticsSet: ts.analyticsSet,
   };
 
@@ -329,6 +354,48 @@ function flushThrottled(
   }
 
   ts.lastFlushTime = timestamp;
+  ts.dirty = false;
+  ts.setCallCount++;
+  set(update);
+}
+
+function flushPhaseChange(
+  get: () => RecordingState,
+  set: (state: Partial<RecordingState>) => void,
+  ts: ThrottleState,
+  sample: WorkoutSample,
+): void {
+  const state = get();
+  const now = sample.timestamp;
+  const update: Partial<RecordingState> = {
+    currentPhase: sample.phase,
+    phaseElapsedMs: 0,
+    phaseStartTime: now,
+    liveSamples: [...ts.liveSamples],
+  };
+
+  // Record duration of previous phase
+  if (state.currentPhase !== MovementPhaseEnum.IDLE && state.phaseStartTime > 0) {
+    const prevDuration = now - state.phaseStartTime;
+    if (prevDuration > 0) {
+      update.repPhaseDurations = [
+        ...state.repPhaseDurations,
+        { phase: state.currentPhase, durationMs: prevDuration },
+      ];
+    }
+  }
+
+  // New rep starting — clear phase durations
+  if (sample.phase === MovementPhaseEnum.CONCENTRIC && state.currentPhase !== MovementPhaseEnum.HOLD) {
+    update.repPhaseDurations = [];
+  }
+
+  if (ts.debugSamples.length > 0) {
+    update.allSamples = [...state.allSamples, ...ts.debugSamples];
+    ts.debugSamples = [];
+  }
+
+  ts.lastFlushTime = sample.timestamp;
   ts.dirty = false;
   ts.setCallCount++;
   set(update);

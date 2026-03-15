@@ -4,6 +4,7 @@
  * Components for the settings screen.
  */
 
+export { DataBackupSection } from './DataBackupSection';
 export { DevToolsSection } from './DevToolsSection';
 export { WorkoutCuesSection } from './WorkoutCuesSection';
 export { CoachingToggle } from '@/components/coaching';
