@@ -150,14 +150,12 @@ export function ScrollDial({
     if (Platform.OS !== 'web' || !drumRef.current) return;
     const el = drumRef.current as unknown as HTMLElement;
 
-    let startClientY = 0;
     let moved = false;
 
     const onDown = (e: PointerEvent) => {
       if (disabled) return;
       e.preventDefault();
       el.setPointerCapture(e.pointerId);
-      startClientY = e.clientY;
       moved = false;
       dragState.current = { startY: e.clientY, cumulative: 0, active: true, moved: false };
       offsetY.value = 0;

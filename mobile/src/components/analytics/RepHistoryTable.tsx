@@ -12,7 +12,6 @@ import type { Rep } from '@voltras/workout-analytics';
 import {
   getRepPeakVelocity,
   getRepPeakForce,
-  getRepTempo,
   getPhaseMovementDuration,
   getPhaseHoldDuration,
 } from '@voltras/workout-analytics';

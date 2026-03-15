@@ -25,16 +25,14 @@ import { createStore, type StoreApi } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
 // SDK imports
-import type {
-  VoltraClient,
-  TelemetryFrame,
-  VoltraConnectionState,
-  VoltraRecordingState,
+import {
+  TrainingMode,
+  toWorkoutSample,
+  type VoltraClient,
+  type TelemetryFrame,
+  type VoltraConnectionState,
+  type VoltraRecordingState,
 } from '@/domain/device';
-import { TrainingMode } from '@/domain/device';
-
-// Domain imports - Device adapter
-import { toWorkoutSample } from '@/domain/device';
 
 // Domain imports - Workout (hardware-agnostic)
 import type { WorkoutSample } from '@/domain/workout';

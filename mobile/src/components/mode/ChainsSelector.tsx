@@ -55,8 +55,8 @@ export function ChainsSelector({
         onChange={(v) => handleTypeChange(v as ChainType)}
         gap="sm"
       >
-        <Radio value="normal">Normal Chains</Radio>
-        <Radio value="inverse">Inverse Chains</Radio>
+        <Radio value="normal"><Text>Normal Chains</Text></Radio>
+        <Radio value="inverse"><Text>Inverse Chains</Text></Radio>
       </RadioGroup>
 
       {/* Weight picker for active chain type */}
