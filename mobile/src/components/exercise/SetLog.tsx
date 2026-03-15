@@ -10,6 +10,7 @@ import {
   type Rep,
   type WorkoutSample,
 } from '@voltras/workout-analytics';
+export { computeClusterMeanVelocity } from './set-log-utils';
 import type { SetLogEntry, ClusterBoundary, PlannedSet, TempoTarget } from '@/domain/workout';
 import type { PRBadge } from '@/domain/history/services/pr-detector';
 import { getRPEColor } from '@/domain/workout';
@@ -226,12 +227,7 @@ function PauseRow({ pauseMs }: { pauseMs: number }) {
   );
 }
 
-export function computeClusterMeanVelocity(reps: readonly Rep[], cluster: ClusterBoundary): number {
-  const clusterReps = reps.slice(cluster.repStart, cluster.repEnd);
-  if (clusterReps.length === 0) return 0;
-  const sum = clusterReps.reduce((acc, r) => acc + getRepPeakVelocity(r), 0);
-  return sum / clusterReps.length;
-}
+// computeClusterMeanVelocity moved to set-log-utils.ts, re-exported above
 
 function ClusterRow({
   cluster,
