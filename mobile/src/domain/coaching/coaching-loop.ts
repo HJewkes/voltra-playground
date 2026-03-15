@@ -15,6 +15,12 @@ import type { ClaudeApiConfig } from './claude-api';
 import { getCoachingCue } from './claude-api';
 import { buildCoachingContext } from './coaching-context-builder';
 
+export const BRIEF_CUE_THRESHOLD_MS = 10_000;
+
+export function resolveCueStyle(restElapsedMs: number): 'brief' | 'detailed' {
+  return restElapsedMs < BRIEF_CUE_THRESHOLD_MS ? 'brief' : 'detailed';
+}
+
 /**
  * Execute one iteration of the coaching feedback loop.
  *
@@ -25,16 +31,19 @@ export async function executeCoachingLoop(
   session: ExerciseSession,
   autoRegulation: AutoRegulationState | null,
   coachingStore: CoachingStoreApi,
-  apiConfig: ClaudeApiConfig
+  apiConfig: ClaudeApiConfig,
+  restElapsedMs = 0
 ): Promise<void> {
   const state = coachingStore.getState();
   if (!state.isEnabled) return;
 
   coachingStore.getState().setLoading(true);
 
+  const cueStyle = resolveCueStyle(restElapsedMs);
+
   try {
     const reactedCues = state.getReactedCues();
-    const context = buildCoachingContext(session, reactedCues, autoRegulation);
+    const context = buildCoachingContext(session, reactedCues, autoRegulation, cueStyle);
     const cue = await getCoachingCue(context, apiConfig);
 
     if (cue) {

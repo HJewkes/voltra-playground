@@ -932,6 +932,8 @@ function handleContinueToRest(
     session: sessionWithRest,
     uiState: 'resting',
     restCountdown: restSeconds,
+    restElapsedMs: 0,
+    restStartTime: Date.now(),
     autoRegulation: autoReg,
     ...computeDerivedState(sessionWithRest),
   });
@@ -989,8 +991,9 @@ function tickRestTimerAction(
   get: () => ExerciseSessionState,
   set: (state: Partial<ExerciseSessionState>) => void
 ): void {
-  const { restCountdown, session } = get();
+  const { restCountdown, restElapsedMs, session } = get();
   const newCountdown = restCountdown - 1;
+  const newElapsed = restElapsedMs + 1000;
 
   if (newCountdown <= COUNTDOWN_SECONDS && newCountdown > 0) {
     clearTimers();
@@ -1000,13 +1003,14 @@ function tickRestTimerAction(
       uiState: 'countdown',
       startCountdown: newCountdown,
       restCountdown: 0,
+      restElapsedMs: newElapsed,
     });
     startCountdownTimer(get, set);
   } else if (newCountdown <= 0) {
     clearTimers();
     transitionToRecording(get, set);
   } else {
-    set({ restCountdown: newCountdown });
+    set({ restCountdown: newCountdown, restElapsedMs: newElapsed });
   }
 }
 

@@ -97,4 +97,6 @@ export interface CoachingContext {
 
   /** Auto-regulation signals (load suggestion, velocity warning) */
   autoRegulationContext: string | null;
+
+  cueStyle: 'brief' | 'detailed';
 }

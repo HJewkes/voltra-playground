@@ -84,11 +84,11 @@ describe('ModeSelectionScreen', () => {
     expect(barrel.ModeSelectionScreen).toBeTypeOf('function');
   });
 
-  it('MODE_LIST from production contains seven training modes', async () => {
+  it('MODE_LIST from production contains six selectable training modes', async () => {
     const { MODE_LIST } = await import('../ModeSelectionScreen');
-    expect(MODE_LIST).toHaveLength(7);
+    expect(MODE_LIST).toHaveLength(6);
     const uniqueValues = new Set(MODE_LIST);
-    expect(uniqueValues.size).toBe(7);
+    expect(uniqueValues.size).toBe(6);
   });
 
   it('MODE_LIST from production includes expected modes', async () => {
@@ -96,7 +96,7 @@ describe('ModeSelectionScreen', () => {
     const { TrainingMode } = await import('@/domain/device');
     expect(MODE_LIST).toContain(TrainingMode.WeightTraining);
     expect(MODE_LIST).toContain(TrainingMode.ResistanceBand);
-    expect(MODE_LIST).toContain(TrainingMode.Idle);
+    expect(MODE_LIST).not.toContain(TrainingMode.Idle);
   });
 
   it('ECCENTRIC_MODES from production contains only ResistanceBand', async () => {

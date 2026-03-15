@@ -51,7 +51,7 @@ export async function setAutoReconnectEnabled(enabled: boolean): Promise<void> {
  * Defaults to true if not explicitly set.
  */
 export async function isHapticCuesEnabled(): Promise<boolean> {
-  const enabled = await asyncStorageAdapter.get<boolean>(STORAGE_KEYS.HAPTIC_CUES_ENABLED);
+  const enabled = await getMMKVAdapter().get<boolean>(STORAGE_KEYS.HAPTIC_CUES_ENABLED);
   return enabled ?? true;
 }
 
@@ -59,7 +59,7 @@ export async function isHapticCuesEnabled(): Promise<boolean> {
  * Enable or disable haptic cues during rest timer.
  */
 export async function setHapticCuesEnabled(enabled: boolean): Promise<void> {
-  await asyncStorageAdapter.set(STORAGE_KEYS.HAPTIC_CUES_ENABLED, enabled);
+  await getMMKVAdapter().set(STORAGE_KEYS.HAPTIC_CUES_ENABLED, enabled);
 }
 
 /**
@@ -67,7 +67,7 @@ export async function setHapticCuesEnabled(enabled: boolean): Promise<void> {
  * Defaults to true if not explicitly set.
  */
 export async function isAudioCuesEnabled(): Promise<boolean> {
-  const enabled = await asyncStorageAdapter.get<boolean>(STORAGE_KEYS.AUDIO_CUES_ENABLED);
+  const enabled = await getMMKVAdapter().get<boolean>(STORAGE_KEYS.AUDIO_CUES_ENABLED);
   return enabled ?? true;
 }
 
@@ -75,7 +75,7 @@ export async function isAudioCuesEnabled(): Promise<boolean> {
  * Enable or disable audio cues during rest timer.
  */
 export async function setAudioCuesEnabled(enabled: boolean): Promise<void> {
-  await asyncStorageAdapter.set(STORAGE_KEYS.AUDIO_CUES_ENABLED, enabled);
+  await getMMKVAdapter().set(STORAGE_KEYS.AUDIO_CUES_ENABLED, enabled);
 }
 
 /**
@@ -83,7 +83,7 @@ export async function setAudioCuesEnabled(enabled: boolean): Promise<void> {
  * Defaults to false if not explicitly set.
  */
 export async function isAICoachingEnabled(): Promise<boolean> {
-  const enabled = await asyncStorageAdapter.get<boolean>(STORAGE_KEYS.AI_COACHING_ENABLED);
+  const enabled = await getMMKVAdapter().get<boolean>(STORAGE_KEYS.AI_COACHING_ENABLED);
   return enabled ?? false;
 }
 
@@ -91,5 +91,34 @@ export async function isAICoachingEnabled(): Promise<boolean> {
  * Enable or disable AI coaching during sessions.
  */
 export async function setAICoachingEnabled(enabled: boolean): Promise<void> {
-  await asyncStorageAdapter.set(STORAGE_KEYS.AI_COACHING_ENABLED, enabled);
+  await getMMKVAdapter().set(STORAGE_KEYS.AI_COACHING_ENABLED, enabled);
+}
+
+export async function isVelocityAutoStopEnabled(): Promise<boolean> {
+  const enabled = await getMMKVAdapter().get<boolean>(
+    STORAGE_KEYS.VELOCITY_AUTO_STOP_ENABLED,
+  );
+  return enabled ?? false;
+}
+
+export async function setVelocityAutoStopEnabled(
+  enabled: boolean,
+): Promise<void> {
+  await getMMKVAdapter().set(STORAGE_KEYS.VELOCITY_AUTO_STOP_ENABLED, enabled);
+}
+
+export async function getVelocityAutoStopThreshold(): Promise<number> {
+  const threshold = await getMMKVAdapter().get<number>(
+    STORAGE_KEYS.VELOCITY_AUTO_STOP_THRESHOLD,
+  );
+  return threshold ?? 20;
+}
+
+export async function setVelocityAutoStopThreshold(
+  threshold: number,
+): Promise<void> {
+  await getMMKVAdapter().set(
+    STORAGE_KEYS.VELOCITY_AUTO_STOP_THRESHOLD,
+    threshold,
+  );
 }

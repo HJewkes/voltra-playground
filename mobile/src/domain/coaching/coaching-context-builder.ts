@@ -146,7 +146,8 @@ function truncateMessage(message: string, maxLen: number): string {
 export function buildCoachingContext(
   session: ExerciseSession,
   reactedCues: ReactedCue[],
-  autoRegulation: AutoRegulationState | null
+  autoRegulation: AutoRegulationState | null,
+  cueStyle: 'brief' | 'detailed' = 'brief'
 ): CoachingContext {
   const completedSetsSummary = session.completedSets.map((set, i) => {
     const velocity = getSetMeanVelocity(set.data);
@@ -175,6 +176,7 @@ export function buildCoachingContext(
     completedSetsSummary,
     previousCueFeedback,
     autoRegulationContext,
+    cueStyle,
   };
 }
 
@@ -233,11 +235,18 @@ export function toPrompt(context: CoachingContext): string {
     lines.push('');
   }
 
-  lines.push(
-    'Based on this data, provide a brief, actionable coaching cue for the next set.',
-    'If suggesting a weight change, specify the exact weight in lbs.',
-    'Keep the message under 2 sentences.'
-  );
+  if (context.cueStyle === 'brief') {
+    lines.push(
+      'Respond with a 3-5 words directive coaching cue.',
+      'If suggesting a weight change, specify the exact weight in lbs.'
+    );
+  } else {
+    lines.push(
+      'Based on this data, provide a brief, actionable coaching cue for the next set.',
+      'If suggesting a weight change, specify the exact weight in lbs.',
+      'Keep the message under 2 sentences.'
+    );
+  }
 
   return lines.join('\n');
 }

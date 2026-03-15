@@ -20,4 +20,8 @@ export {
   setAudioCuesEnabled,
   isAICoachingEnabled,
   setAICoachingEnabled,
+  isVelocityAutoStopEnabled,
+  setVelocityAutoStopEnabled,
+  getVelocityAutoStopThreshold,
+  setVelocityAutoStopThreshold,
 } from './preferences-storage';
