@@ -5,7 +5,7 @@
  * Expanded: multiline TextInput with Save button
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, Pressable, Keyboard, type ViewStyle, type TextStyle } from 'react-native';
 import { alpha, getSemanticColors } from '@titan-design/react-ui';
 import { Ionicons } from '@expo/vector-icons';
@@ -68,10 +68,17 @@ export function QuickNote({ onSave, placeholder = 'Add note...' }: QuickNoteProp
   const [expanded, setExpanded] = useState(false);
   const [text, setText] = useState('');
   const inputRef = useRef<TextInput>(null);
+  const focusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (focusTimer.current) clearTimeout(focusTimer.current);
+    };
+  }, []);
 
   function handleExpand() {
     setExpanded(true);
-    setTimeout(() => inputRef.current?.focus(), 50);
+    focusTimer.current = setTimeout(() => inputRef.current?.focus(), 50);
   }
 
   function handleSave() {
