@@ -1,8 +1,11 @@
 /**
  * Recording Store
  *
- * Manages state and analytics for a single recording session (set).
- * Processes WorkoutSamples through @voltras/workout-analytics pipeline.
+ * Responsible for: intra-set rep detection, analytics computation, and velocity auto-stop.
+ * NOT responsible for: session lifecycle, multi-set orchestration, or device connectivity.
+ *
+ * Key state: uiState, isRecording, repCount, meanVelocity, velocityLoss, rpe, rir, lastSet
+ * Key actions: processSample, startRecording, stopRecording, reset
  */
 import { createStore, useStore, type StoreApi } from 'zustand';
 import { devtools } from 'zustand/middleware';
