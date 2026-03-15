@@ -15,6 +15,8 @@ import {
   computeExerciseProgression,
   buildLastSessionBanner,
   computeProgressionFromHistory,
+  buildRepeatLastSessionPlan,
+  type LastSessionBanner,
 } from '../progression-service';
 
 // =============================================================================
@@ -377,5 +379,73 @@ describe('computeProgressionFromHistory', () => {
     ];
 
     expect(computeProgressionFromHistory(sessions, 'bench')).toBeNull();
+  });
+});
+
+// =============================================================================
+// buildRepeatLastSessionPlan
+// =============================================================================
+
+describe('buildRepeatLastSessionPlan', () => {
+  function makeBanner(overrides: Partial<LastSessionBanner> = {}): LastSessionBanner {
+    return {
+      exerciseId: 'bench',
+      exerciseName: 'Bench Press',
+      date: daysAgo(7),
+      weight: 135,
+      velocity: 0.6,
+      sets: 3,
+      reps: 24,
+      ...overrides,
+    };
+  }
+
+  it('creates one planned set per working set from the last session', () => {
+    const plan = buildRepeatLastSessionPlan(makeBanner({ sets: 3, reps: 24 }));
+    expect(plan.sets).toHaveLength(3);
+  });
+
+  it('assigns the last session weight to every planned set', () => {
+    const plan = buildRepeatLastSessionPlan(makeBanner({ weight: 185, sets: 2, reps: 16 }));
+    for (const set of plan.sets) {
+      expect(set.weight).toBe(185);
+    }
+  });
+
+  it('distributes total reps evenly across sets', () => {
+    const plan = buildRepeatLastSessionPlan(makeBanner({ sets: 4, reps: 20 }));
+    for (const set of plan.sets) {
+      expect(set.targetReps).toBe(5);
+    }
+  });
+
+  it('rounds reps when total does not divide evenly', () => {
+    const plan = buildRepeatLastSessionPlan(makeBanner({ sets: 3, reps: 25 }));
+    // 25/3 ≈ 8.33 → rounds to 8
+    for (const set of plan.sets) {
+      expect(set.targetReps).toBe(8);
+    }
+  });
+
+  it('marks all sets as working (not warmup)', () => {
+    const plan = buildRepeatLastSessionPlan(makeBanner());
+    for (const set of plan.sets) {
+      expect(set.isWarmup).toBe(false);
+    }
+  });
+
+  it('uses the exercise ID from the banner', () => {
+    const plan = buildRepeatLastSessionPlan(makeBanner({ exerciseId: 'squat' }));
+    expect(plan.exerciseId).toBe('squat');
+  });
+
+  it('assigns sequential set numbers', () => {
+    const plan = buildRepeatLastSessionPlan(makeBanner({ sets: 3 }));
+    expect(plan.sets.map((s) => s.setNumber)).toEqual([1, 2, 3]);
+  });
+
+  it('produces an empty plan when the banner has zero sets', () => {
+    const plan = buildRepeatLastSessionPlan(makeBanner({ sets: 0, reps: 0 }));
+    expect(plan.sets).toHaveLength(0);
   });
 });

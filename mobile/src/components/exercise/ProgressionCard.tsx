@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { View, Text } from 'react-native';
+import { Pressable, View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, CardContent, getSemanticColors, alpha } from '@titan-design/react-ui';
 import type {
@@ -33,6 +33,7 @@ export interface LastSessionBannerProps {
   velocity: number;
   sets: number;
   reps: number;
+  onRepeat?: () => void;
 }
 
 // =============================================================================
@@ -141,17 +142,35 @@ export function LastSessionBanner({
   velocity,
   sets,
   reps,
+  onRepeat,
 }: LastSessionBannerProps) {
   return (
     <View
       className="mb-3 rounded-lg px-3 py-2"
       style={{ backgroundColor: alpha(t['brand-primary'], 0.08) }}
     >
-      <View className="flex-row items-center">
-        <Ionicons name="time-outline" size={14} color={t['text-disabled']} />
-        <Text className="ml-1 text-xs text-text-disabled">
-          Last {exerciseName}: {formatTimeAgo(date)}
-        </Text>
+      <View className="flex-row items-center justify-between">
+        <View className="flex-row items-center">
+          <Ionicons name="time-outline" size={14} color={t['text-disabled']} />
+          <Text className="ml-1 text-xs text-text-disabled">
+            Last {exerciseName}: {formatTimeAgo(date)}
+          </Text>
+        </View>
+        {onRepeat && (
+          <Pressable
+            onPress={onRepeat}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Repeat last session"
+          >
+            <View className="flex-row items-center gap-1">
+              <Ionicons name="refresh-outline" size={14} color={t['brand-primary']} />
+              <Text className="text-xs font-semibold" style={{ color: t['brand-primary'] }}>
+                Repeat
+              </Text>
+            </View>
+          </Pressable>
+        )}
       </View>
       <Text className="mt-1 text-sm text-text-secondary">
         {weight} lbs @ {velocity} m/s &middot; {sets}x{reps} reps

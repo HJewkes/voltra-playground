@@ -6,6 +6,7 @@
  */
 
 import type { StoredExerciseSession, StoredSessionSet } from '@/data/exercise-session';
+import type { ExercisePlan, PlannedSet } from '@/domain/workout';
 
 // =============================================================================
 // Types
@@ -224,6 +225,35 @@ export function computeProgressionFromHistory(
   if (completed.length < 2) return null;
 
   return computeExerciseProgression(completed[0], completed[1]);
+}
+
+/**
+ * Build a repeat plan from a last-session banner.
+ *
+ * Creates one planned set per working set from the last session, preserving
+ * weight and distributing the total rep count evenly across all sets.
+ */
+export function buildRepeatLastSessionPlan(banner: LastSessionBanner): ExercisePlan {
+  const repsPerSet = banner.sets > 0
+    ? Math.round(banner.reps / banner.sets)
+    : 0;
+
+  const sets: PlannedSet[] = Array.from({ length: banner.sets }, (_, i) => ({
+    setNumber: i + 1,
+    weight: banner.weight,
+    targetReps: repsPerSet,
+    rirTarget: 0,
+    isWarmup: false,
+    restSeconds: 90,
+  }));
+
+  return {
+    exerciseId: banner.exerciseId,
+    sets,
+    defaultRestSeconds: 90,
+    generatedAt: Date.now(),
+    generatedBy: 'manual',
+  };
 }
 
 /** Get the max weight across working sets. */
