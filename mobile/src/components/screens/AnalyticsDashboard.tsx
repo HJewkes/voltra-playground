@@ -14,6 +14,7 @@ import { PRTimelineCard } from '@/components/analytics/dashboard/PRTimelineCard'
 import { MuscleDistributionCard } from '@/components/analytics/dashboard/MuscleDistributionCard';
 import { TrainingLoadCard } from '@/components/analytics/dashboard/TrainingLoadCard';
 import { ExerciseFrequencyCard } from '@/components/analytics/dashboard/ExerciseFrequencyCard';
+import { StreakCard } from '@/components/analytics/dashboard/StreakCard';
 
 const t = getSemanticColors('dark');
 
@@ -39,6 +40,7 @@ export function AnalyticsDashboard({ sessions, isLoading, onRefresh }: Analytics
       }
     >
       <View className="p-4">
+        <StreakCard sessions={sessions} />
         <VolumeTrendCard sessions={sessions} />
         <PRTimelineCard sessions={sessions} />
         <MuscleDistributionCard sessions={sessions} />
