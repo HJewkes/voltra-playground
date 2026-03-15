@@ -38,4 +38,4 @@ export {
 } from './exercise-session-repository';
 
 // Session export
-export { exportSession, exportSessionsToJSON } from './session-export';
+export { exportSession, exportSessionsToJSON, type SessionNote } from './session-export';
