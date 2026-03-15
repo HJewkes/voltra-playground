@@ -9,6 +9,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, Alert, RefreshControl, TouchableOpacity } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, CardContent, VStack, Metric, MetricGroup, EmptyState, getSemanticColors, alpha } from '@titan-design/react-ui';
 import { getSessionRepository } from '@/data/provider';
@@ -158,6 +159,14 @@ export function HistoryScreen() {
   useEffect(() => {
     loadSessions();
   }, [loadSessions]);
+
+  // Reload whenever the tab comes back into focus so data stays fresh
+  // after a workout is completed on the exercise tab.
+  useFocusEffect(
+    useCallback(() => {
+      loadSessions();
+    }, [loadSessions])
+  );
 
   const handleRefresh = useCallback(async () => {
     await loadSessions();
