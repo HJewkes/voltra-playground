@@ -1,151 +1,102 @@
-/**
- * ModeSelectionScreen
- *
- * Training mode selection with per-mode configuration.
- * Uses granular Zustand selectors to minimize re-renders.
- */
-
-import React, { useEffect, useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect } from 'react';
+import { ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useStore } from 'zustand';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  Card,
-  CardContent,
-  Section,
-  SectionContent,
-  getSemanticColors,
-} from '@titan-design/react-ui';
+import { Card, CardContent, Section, SectionContent, getSemanticColors } from '@titan-design/react-ui';
 import { useConnectionStore, selectIsConnected } from '@/stores';
 import { TrainingMode, TrainingModeNames } from '@/domain/device';
-import { WeightTrainingConfig, BasicModeConfig } from '@/components/mode';
 import type { VoltraStoreApi } from '@/stores/voltra-store';
 
 const t = getSemanticColors('dark');
 
-const MODE_DESCRIPTIONS: Record<TrainingMode, string> = {
-  [TrainingMode.Idle]: 'Standby mode',
-  [TrainingMode.WeightTraining]: 'Free weights & cables',
-  [TrainingMode.ResistanceBand]: 'Elastic resistance',
-  [TrainingMode.Rowing]: 'Row machine simulation',
-  [TrainingMode.Damper]: 'Fluid resistance',
-  [TrainingMode.CustomCurves]: 'User-defined profiles',
-  [TrainingMode.Isokinetic]: 'Constant velocity',
-  [TrainingMode.Isometric]: 'Static holds',
+type IconName = keyof typeof Ionicons.glyphMap;
+const MODE_META: Partial<Record<TrainingMode, { desc: string; icon: IconName }>> = {
+  [TrainingMode.WeightTraining]: { desc: 'Free weights & cables', icon: 'barbell-outline' },
+  [TrainingMode.ResistanceBand]: { desc: 'Elastic resistance', icon: 'fitness-outline' },
+  [TrainingMode.Rowing]: { desc: 'Row machine simulation', icon: 'boat-outline' },
+  [TrainingMode.Damper]: { desc: 'Fluid resistance', icon: 'water-outline' },
+  [TrainingMode.Isokinetic]: { desc: 'Constant velocity', icon: 'speedometer-outline' },
+  [TrainingMode.Isometric]: { desc: 'Static holds', icon: 'hand-left-outline' },
 };
 
-export const MODE_LIST = [
-  TrainingMode.WeightTraining,
-  TrainingMode.ResistanceBand,
-  TrainingMode.Rowing,
-  TrainingMode.Damper,
-  TrainingMode.Isokinetic,
-  TrainingMode.Isometric,
-  TrainingMode.Idle,
-] as const;
+export const MODE_LIST = Object.keys(MODE_META).map(Number) as TrainingMode[];
 
 export const ECCENTRIC_MODES = new Set<TrainingMode>([TrainingMode.ResistanceBand]);
-
-function ModeConfig({ mode, voltraStore }: { mode: TrainingMode; voltraStore: VoltraStoreApi }) {
-  if (mode === TrainingMode.WeightTraining) {
-    return <WeightTrainingConfig voltraStore={voltraStore} />;
-  }
-
-  if (mode === TrainingMode.Idle) {
-    return null;
-  }
-
-  return (
-    <BasicModeConfig
-      voltraStore={voltraStore}
-      showEccentric={ECCENTRIC_MODES.has(mode)}
-    />
-  );
-}
 
 export function ModeSelectionScreen() {
   const router = useRouter();
   const isConnected = useConnectionStore(selectIsConnected);
   const voltraStore = useConnectionStore((s) => s.getPrimaryDevice());
-  const disconnectAll = useConnectionStore((s) => s.disconnectAll);
-
-  const mode = useStore(voltraStore!, (s) => s.mode);
-  const setMode = useStore(voltraStore!, (s) => s.setMode);
-
-  const [showDisconnectMenu, setShowDisconnectMenu] = useState(false);
 
   useEffect(() => {
-    if (!isConnected) {
-      router.replace('/');
-    }
+    if (!isConnected) router.replace('/');
   }, [isConnected, router]);
 
-  const handleDisconnect = async () => {
-    setShowDisconnectMenu(false);
-    await disconnectAll();
-  };
+  if (!voltraStore) return null;
 
-  const showConfig = mode !== TrainingMode.Idle;
+  return <ModeSelectionInner voltraStore={voltraStore} />;
+}
+
+function ModeSelectionInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
+  const router = useRouter();
+  const mode = useStore(voltraStore, (s) => s.mode);
+  const setMode = useStore(voltraStore, (s) => s.setMode);
+  const deviceName = useStore(voltraStore, (s) => s.deviceName) ?? 'Voltra';
+  const { width } = useWindowDimensions();
+  const singleColumn = width < 400;
+
+  const handleSelectMode = (modeValue: TrainingMode) => {
+    setMode(modeValue);
+    router.push('/exercise');
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-surface-400">
-      {/* Header */}
-      <View className="flex-row items-center justify-between px-4 pt-2 pb-1">
-        <Text className="text-lg font-semibold text-text-primary">Training Mode</Text>
-        <View className="relative">
-          <TouchableOpacity
-            onPress={() => setShowDisconnectMenu((v) => !v)}
-            activeOpacity={0.7}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="cog-outline" size={24} color={t['text-secondary']} />
-          </TouchableOpacity>
-          {showDisconnectMenu && (
-            <View className="absolute right-0 top-8 z-10 rounded-lg bg-surface-300 p-1 shadow-lg">
-              <TouchableOpacity
-                onPress={handleDisconnect}
-                className="flex-row items-center gap-2 rounded-md px-4 py-2.5"
-                activeOpacity={0.7}
-              >
-                <Ionicons name="bluetooth-outline" size={16} color={t['status-error']} />
-                <Text style={{ color: t['status-error'] }} className="text-sm font-medium">
-                  Disconnect
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
+      <View className="px-4 pt-2 pb-1">
+        <View className="flex-row items-center gap-3">
+          <View className="h-2 w-2 rounded-full" style={{ backgroundColor: t['status-success'] }} />
+          <Text className="text-sm font-semibold text-text-primary">{deviceName}</Text>
         </View>
       </View>
 
       <ScrollView className="flex-1">
-        <View className="p-4">
-          {/* Mode grid */}
+        <View className="px-4 pb-4">
           <Section>
             <SectionContent>
-              <View className="flex-row flex-wrap gap-3">
+              <Text className="mb-3 text-center text-lg font-bold text-text-primary">
+                Select Training Mode
+              </Text>
+              <View className="flex-row flex-wrap gap-2">
                 {MODE_LIST.map((modeValue) => {
                   const isSelected = mode === modeValue;
+                  const meta = MODE_META[modeValue]!;
                   return (
-                    <View key={modeValue} className="w-[48%]">
+                    <View key={modeValue} style={{ width: singleColumn ? '100%' : '48%' }}>
                       <Card
                         variant={isSelected ? 'outline' : 'filled'}
                         elevation={isSelected ? 2 : 1}
                         isInteractive
-                        onPress={() => setMode(modeValue)}
+                        onPress={() => handleSelectMode(modeValue)}
                         borderColor={isSelected ? t['brand-primary'] : undefined}
+                        accessibilityState={{ selected: isSelected }}
                       >
-                        <CardContent>
-                          <Text
-                            className="text-base font-semibold"
-                            style={{ color: isSelected ? t['brand-primary'] : t['text-primary'] }}
-                          >
-                            {TrainingModeNames[modeValue]}
-                          </Text>
-                          <Text className="mt-1 text-xs text-text-tertiary">
-                            {MODE_DESCRIPTIONS[modeValue]}
-                          </Text>
+                        <CardContent className="flex-row items-center gap-3 px-4">
+                          <Ionicons
+                            name={meta.icon}
+                            size={18}
+                            color={isSelected ? t['brand-primary'] : t['text-secondary']}
+                          />
+                          <View className="flex-1">
+                            <Text
+                              className="text-xs font-semibold"
+                              style={{ color: isSelected ? t['brand-primary'] : t['text-primary'] }}
+                            >
+                              {TrainingModeNames[modeValue]}
+                            </Text>
+                            <Text className="text-[10px] text-text-tertiary">{meta.desc}</Text>
+                          </View>
                         </CardContent>
                       </Card>
                     </View>
@@ -154,23 +105,6 @@ export function ModeSelectionScreen() {
               </View>
             </SectionContent>
           </Section>
-
-          {/* Per-mode config */}
-          <ModeConfig mode={mode} voltraStore={voltraStore!} />
-
-          {/* Start exercise button */}
-          {showConfig && (
-            <View className="mt-4 px-2 pb-4">
-              <TouchableOpacity
-                onPress={() => router.push('/exercise')}
-                activeOpacity={0.8}
-                className="items-center rounded-xl py-4"
-                style={{ backgroundColor: t['brand-primary'] }}
-              >
-                <Text className="text-base font-bold text-white">Start Exercise</Text>
-              </TouchableOpacity>
-            </View>
-          )}
         </View>
       </ScrollView>
     </SafeAreaView>
