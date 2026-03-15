@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, useWindowDimensions, type TextStyle, type ViewStyle } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { Surface, getSemanticColors, alpha } from '@titan-design/react-ui';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -17,6 +18,7 @@ import { getRPEColor } from '@/domain/workout';
 import { SetCurveChart, RepCurveChart, SIGNAL_OPTIONS } from '@/components/analytics';
 import type { ChartSignal } from '@/components/analytics';
 import type { SessionNote } from '@/stores/exercise-session-store';
+import { useAmbientColor } from '@/hooks/use-ambient-color';
 import { RestScrubber } from './RestScrubber';
 import { TempoBar } from './TempoBar';
 import { CycleToggle, type CycleToggleOption } from './CycleToggle';
@@ -488,6 +490,58 @@ function PlannedSetRow({ planned }: { planned: PlannedSet }) {
 }
 
 // =============================================================================
+// Active set card — Surface with ambient velocity-color overlay
+// =============================================================================
+
+function ActiveSetCard({
+  activeSet,
+  activeChart,
+  activeTelemetry,
+  exerciseSetupNotes,
+}: {
+  activeSet: NonNullable<SetLogProps['activeSet']>;
+  activeChart: SetLogProps['activeChart'];
+  activeTelemetry: SetLogProps['activeTelemetry'];
+  exerciseSetupNotes: SetLogProps['exerciseSetupNotes'];
+}) {
+  const velocityLoss = activeTelemetry?.velocityLoss ?? 0;
+  const isRecording = activeTelemetry !== null && activeTelemetry !== undefined;
+  const ambientStyle = useAmbientColor(velocityLoss, isRecording);
+
+  return (
+    <View style={{ marginTop: 8 }}>
+      <Surface
+        elevation={1}
+        className="rounded-xl p-3"
+        style={{ borderLeftWidth: 3, borderLeftColor: t['brand-primary'], overflow: 'hidden' }}
+      >
+        {/* Ambient tint — positioned absolutely so it does not affect layout */}
+        <Animated.View
+          style={[
+            {
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              borderRadius: 12,
+              pointerEvents: 'none',
+            },
+            ambientStyle,
+          ]}
+        />
+        <ActiveSetRow
+          {...activeSet}
+          chart={activeChart}
+          telemetry={activeTelemetry}
+          exerciseSetupNotes={exerciseSetupNotes}
+        />
+      </Surface>
+    </View>
+  );
+}
+
+// =============================================================================
 // Main Component
 // =============================================================================
 
@@ -557,15 +611,14 @@ export function SetLog({
         </View>
       )}
 
-      {/* Active set with telemetry + chart */}
+      {/* Active set with ambient velocity tint */}
       {activeSet && (
-        <Surface
-          elevation={1}
-          className="rounded-xl p-3 mt-2"
-          style={{ borderLeftWidth: 3, borderLeftColor: t['brand-primary'] }}
-        >
-          <ActiveSetRow {...activeSet} chart={activeChart} telemetry={activeTelemetry} exerciseSetupNotes={exerciseSetupNotes} />
-        </Surface>
+        <ActiveSetCard
+          activeSet={activeSet}
+          activeChart={activeChart}
+          activeTelemetry={activeTelemetry}
+          exerciseSetupNotes={exerciseSetupNotes}
+        />
       )}
 
       {/* Rest scrubbers + planned (future) sets */}
