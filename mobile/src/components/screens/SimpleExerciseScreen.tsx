@@ -34,7 +34,7 @@ import type { StoredExerciseSession } from '@/data/exercise-session';
 import { EXERCISE_CATALOG, createExercise } from '@/domain/exercise';
 
 import {
-  ModeDrawer, MODE_META, PlanLoader, ConfigSection,
+  ModeDrawer, MODE_META, ConfigSection,
   ExerciseBreadcrumbs, NextExerciseButton, WorkoutView,
   useExerciseStores, useExerciseLifecycle,
 } from './exercise';
@@ -272,7 +272,7 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
 
       {drawerOpen && <ModeDrawer currentMode={mode} onSelect={handleSelectMode} onClose={toggleDrawer} />}
       <ExerciseBreadcrumbs completedExercises={completedExercises} currentExerciseName={sess.session?.exercise.name ?? modeName} />
-      <PlanLoader workoutPlan={workoutPlan} planExerciseIndex={planExerciseIndex} currentPlanExercise={currentPlanExercise} isActive={isActive} uiState={sess.uiState} onPlanLoaded={handlePlanLoaded} />
+      {/* PlanLoader removed — clipboard import replaced by Claude plan upload (VLT-08.26) */}
 
       <ScrollView className="flex-1" scrollEnabled={!isRecording}>
         <View className="px-4 pb-4">
