@@ -35,3 +35,21 @@ export type { JunkVolumeAlertProps } from './JunkVolumeAlert';
 // Progression tracking
 export { ProgressionCard, LastSessionBanner } from './ProgressionCard';
 export type { ProgressionCardProps, LastSessionBannerProps } from './ProgressionCard';
+
+// Telemetry redesign components
+export { ScrollDial } from './ScrollDial';
+export { JogPill } from './JogPill';
+export { CircularTimer } from './CircularTimer';
+export { CycleToggle } from './CycleToggle';
+export { TempoBar } from './TempoBar';
+export { SetLog } from './SetLog';
+export { RestCard } from './RestCard';
+export { RestScrubber } from './RestScrubber';
+export { SetTargets } from './SetTargets';
+export type { TargetMode } from './SetTargets';
+export { QuickConfig } from './QuickConfig';
+export { AddSetButton } from './AddSetButton';
+export { VerticalWeightJog } from './VerticalWeightJog';
+export { ExercisePickerModal } from './ExercisePickerModal';
+export { QuickNote } from './QuickNote';
+export { WorkoutSummary } from './WorkoutSummary';

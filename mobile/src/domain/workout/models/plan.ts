@@ -59,6 +59,9 @@ export interface PlannedSet {
 
   /** Target range of motion 0-1 (optional, for partial detection) */
   targetROM?: number;
+
+  /** Rest time after this set in seconds (default from plan if not specified) */
+  restSeconds?: number;
 }
 
 /**
