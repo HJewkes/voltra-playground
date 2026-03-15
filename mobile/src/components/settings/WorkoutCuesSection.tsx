@@ -1,7 +1,7 @@
 /**
  * WorkoutCuesSection
  *
- * Settings toggles for haptic and audio cues during rest timer.
+ * Settings toggles for haptic, audio, and voice cues during workouts.
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -13,6 +13,8 @@ import {
   setHapticCuesEnabled,
   isAudioCuesEnabled,
   setAudioCuesEnabled,
+  isVoiceCoachingEnabled,
+  setVoiceCoachingEnabled,
 } from '@/data/preferences';
 
 const t = getSemanticColors('dark');
@@ -20,15 +22,18 @@ const t = getSemanticColors('dark');
 export function WorkoutCuesSection() {
   const [hapticEnabled, setHapticEnabled] = useState(true);
   const [audioEnabled, setAudioEnabled] = useState(true);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
 
   useEffect(() => {
     async function load() {
-      const [haptic, audio] = await Promise.all([
+      const [haptic, audio, voice] = await Promise.all([
         isHapticCuesEnabled(),
         isAudioCuesEnabled(),
+        isVoiceCoachingEnabled(),
       ]);
       setHapticEnabled(haptic);
       setAudioEnabled(audio);
+      setVoiceEnabled(voice);
     }
     load();
   }, []);
@@ -41,6 +46,11 @@ export function WorkoutCuesSection() {
   const handleAudioToggle = useCallback((value: boolean) => {
     setAudioEnabled(value);
     setAudioCuesEnabled(value);
+  }, []);
+
+  const handleVoiceToggle = useCallback((value: boolean) => {
+    setVoiceEnabled(value);
+    setVoiceCoachingEnabled(value);
   }, []);
 
   return (
@@ -67,6 +77,14 @@ export function WorkoutCuesSection() {
             <Text className="text-xs text-text-disabled">Beep sounds during rest countdown</Text>
           </View>
           <Switch value={audioEnabled} onValueChange={handleAudioToggle}
+            trackColor={{ false: t['background-subtle'], true: t['brand-primary'] }} />
+        </View>
+        <View className="flex-row items-center justify-between py-2">
+          <View className="flex-1">
+            <Text className="text-text-primary">Voice Coaching</Text>
+            <Text className="text-xs text-text-disabled">Hear AI coaching cues spoken aloud</Text>
+          </View>
+          <Switch value={voiceEnabled} onValueChange={handleVoiceToggle}
             trackColor={{ false: t['background-subtle'], true: t['brand-primary'] }} />
         </View>
       </View>

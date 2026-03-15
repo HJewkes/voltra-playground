@@ -94,6 +94,25 @@ export async function setAICoachingEnabled(enabled: boolean): Promise<void> {
   await getMMKVAdapter().set(STORAGE_KEYS.AI_COACHING_ENABLED, enabled);
 }
 
+<<<<<<< HEAD
+=======
+/**
+ * Check if voice coaching (TTS) is enabled.
+ * Defaults to false if not explicitly set.
+ */
+export async function isVoiceCoachingEnabled(): Promise<boolean> {
+  const enabled = await getMMKVAdapter().get<boolean>(STORAGE_KEYS.VOICE_COACHING_ENABLED);
+  return enabled ?? false;
+}
+
+/**
+ * Enable or disable voice coaching (TTS) for coaching cues.
+ */
+export async function setVoiceCoachingEnabled(enabled: boolean): Promise<void> {
+  await getMMKVAdapter().set(STORAGE_KEYS.VOICE_COACHING_ENABLED, enabled);
+}
+
+>>>>>>> origin/main
 export async function isVelocityAutoStopEnabled(): Promise<boolean> {
   const enabled = await getMMKVAdapter().get<boolean>(
     STORAGE_KEYS.VELOCITY_AUTO_STOP_ENABLED,
