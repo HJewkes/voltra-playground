@@ -1,25 +1,36 @@
 /**
- * Minimal react-native-reanimated stub for vitest.
- *
- * Tests that import useAmbientColor (or any hook using Reanimated) hit this
- * stub. We expose enough surface to satisfy import-time resolution without
- * spinning up a UI runtime.
+ * Minimal react-native-reanimated mock for Vitest unit tests.
+ * Provides no-op implementations of animation primitives.
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+export function useSharedValue<T>(initial: T): { value: T } {
+  return { value: initial };
+}
 
-export const useSharedValue = (init: any) => ({ value: init });
-export const useAnimatedStyle = (fn: () => any) => fn();
-export const withTiming = (value: any) => value;
-export const interpolateColor = (_: number, __: number[], colors: string[]) => colors[0];
+export function useAnimatedStyle(fn: () => Record<string, unknown>) {
+  return fn();
+}
+
+export function withSpring<T>(value: T): T {
+  return value;
+}
+
+export function withTiming<T>(value: T): T {
+  return value;
+}
+
+export function interpolateColor(
+  _value: number,
+  _inputRange: number[],
+  outputRange: string[],
+): string {
+  return outputRange[0] ?? 'transparent';
+}
 
 const Animated = {
-  View: 'View',
-  Text: 'Text',
-  ScrollView: 'ScrollView',
-  FlatList: 'FlatList',
-  Image: 'Image',
-  createAnimatedComponent: (c: any) => c,
+  View: 'Animated.View',
+  Text: 'Animated.Text',
+  createAnimatedComponent: (c: unknown) => c,
 };
 
 export default Animated;
