@@ -17,7 +17,7 @@ import { webStyle } from '@/utils/web-style';
 import { TrainingMode, TrainingModeNames } from '@/domain/device';
 import { useConnectionStore, selectIsConnected } from '@/stores';
 import { WorkoutControls, ReadinessIndicator } from '@/components/recording';
-import { ExercisePickerModal, ProgressionCard, LastSessionBanner, SuggestionCard, AutoPlanCard } from '@/components/exercise';
+import { ExercisePickerModal, ProgressionCard, LastSessionBanner, SuggestionCard, AutoPlanCard, SessionDebrief } from '@/components/exercise';
 import type { VoltraStoreApi } from '@/stores/voltra-store';
 import { generateMockRepPlan } from './mock-rep-plan';
 import { registerCoachConsole } from '@/utils/coach-console';
@@ -29,6 +29,7 @@ import type { ReadinessAssessment } from '@/domain/workout';
 import { buildRepeatLastSessionPlan } from '@/domain/history/services/progression-service';
 import { suggestNextExercise } from '@/domain/history/services/workout-suggestion-service';
 import { autoPlanWorkout } from '@/domain/planning/auto-plan-service';
+import { assembleSessionDebrief, type SessionDebriefData } from '@/domain/history/services/session-debrief-service';
 import type { StoredExerciseSession } from '@/data/exercise-session';
 import { EXERCISE_CATALOG, createExercise } from '@/domain/exercise';
 
@@ -205,6 +206,30 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
     sessionStore.getState().prepareFirstSet();
   }, [autoPlan, sessionStore, recordingStore, voltraStore]);
 
+
+  // Session debrief: assemble when entering results state
+  const [debriefData, setDebriefData] = useState<SessionDebriefData | null>(null);
+
+  useEffect(() => {
+    if (sess.uiState !== 'results') {
+      setDebriefData(null);
+      return;
+    }
+
+    const currentSession = sess.session;
+    if (!currentSession) return;
+
+    void sessionRepo.getRecent(200).then((allHistory) => {
+      const currentExerciseNames = new Set(completedExercises.map((ce) => ce.name));
+      currentExerciseNames.add(currentSession.exercise.name);
+
+      const currentSessions = allHistory.filter((s) => currentExerciseNames.has(s.exerciseName ?? ''));
+      const debrief = assembleSessionDebrief(currentSessions, allHistory, EXERCISE_CATALOG);
+      setDebriefData(debrief);
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sess.uiState]);
+
   const showLastSessionBanner = !isActive && sess.setLog.length === 0 && !!lastSession;
   const isResting = sess.uiState === 'resting';
 
@@ -275,6 +300,9 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
             <View className="mt-3">
               <ProgressionCard progression={progression} />
             </View>
+          )}
+          {sess.uiState === 'results' && debriefData && (
+            <SessionDebrief debrief={debriefData} />
           )}
         </View>
       </ScrollView>
