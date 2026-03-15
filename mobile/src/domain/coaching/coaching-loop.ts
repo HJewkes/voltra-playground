@@ -12,23 +12,12 @@ import type { ExerciseSession } from '@/domain/workout';
 import type { AutoRegulationState } from '@/domain/planning/auto-regulation';
 import type { CoachingStoreApi } from './coaching-store';
 import type { ClaudeApiConfig } from './claude-api';
-import type { CueStyle } from './types';
 import { getCoachingCue } from './claude-api';
 import { buildCoachingContext } from './coaching-context-builder';
 
-/**
- * Rest duration threshold in milliseconds.
- * Cues delivered before this threshold are 'brief'; after are 'detailed'.
- */
 export const BRIEF_CUE_THRESHOLD_MS = 10_000;
 
-/**
- * Determine cue style based on how long into the rest period we are.
- *
- * Right after set completion (< 10s), use brief 3-5 word directives.
- * During extended rest (>= 10s), use detailed 1-2 sentence coaching.
- */
-export function resolveCueStyle(restElapsedMs: number): CueStyle {
+export function resolveCueStyle(restElapsedMs: number): 'brief' | 'detailed' {
   return restElapsedMs < BRIEF_CUE_THRESHOLD_MS ? 'brief' : 'detailed';
 }
 
@@ -37,10 +26,6 @@ export function resolveCueStyle(restElapsedMs: number): CueStyle {
  *
  * Called after each set completes, during the rest period.
  * Non-blocking: failures are swallowed since coaching is supplementary.
- *
- * @param restElapsedMs - Milliseconds elapsed since the set ended.
- *   Pass 0 (or omit) for an immediate post-set cue; pass the elapsed
- *   rest time for a mid-rest detailed cue.
  */
 export async function executeCoachingLoop(
   session: ExerciseSession,
@@ -58,12 +43,7 @@ export async function executeCoachingLoop(
 
   try {
     const reactedCues = state.getReactedCues();
-    const context = buildCoachingContext(
-      session,
-      reactedCues,
-      autoRegulation,
-      cueStyle
-    );
+    const context = buildCoachingContext(session, reactedCues, autoRegulation, cueStyle);
     const cue = await getCoachingCue(context, apiConfig);
 
     if (cue) {

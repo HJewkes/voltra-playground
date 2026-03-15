@@ -17,7 +17,7 @@ import { webStyle } from '@/utils/web-style';
 import { TrainingMode, TrainingModeNames } from '@/domain/device';
 import { useConnectionStore, selectIsConnected } from '@/stores';
 import { WorkoutControls, ReadinessIndicator } from '@/components/recording';
-import { ExercisePickerModal, ProgressionCard, LastSessionBanner } from '@/components/exercise';
+import { ExercisePickerModal, ProgressionCard, LastSessionBanner, SuggestionCard } from '@/components/exercise';
 import type { VoltraStoreApi } from '@/stores/voltra-store';
 import { generateMockRepPlan } from './mock-rep-plan';
 import { registerCoachConsole } from '@/utils/coach-console';
@@ -27,6 +27,7 @@ import { assessReadiness } from '@/domain/workout';
 import type { ReadinessAssessment } from '@/domain/workout';
 
 import { buildRepeatLastSessionPlan } from '@/domain/history/services/progression-service';
+import { suggestNextExercise } from '@/domain/history/services/workout-suggestion-service';
 import { EXERCISE_CATALOG, createExercise } from '@/domain/exercise';
 
 import {

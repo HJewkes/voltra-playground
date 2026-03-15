@@ -14,7 +14,6 @@ import type { AutoRegulationState } from '@/domain/planning/auto-regulation';
 import type {
   CoachingContext,
   CueComplianceRecord,
-  CueStyle,
   ComplianceOutcome,
   ReactedCue,
 } from './types';
@@ -148,7 +147,7 @@ export function buildCoachingContext(
   session: ExerciseSession,
   reactedCues: ReactedCue[],
   autoRegulation: AutoRegulationState | null,
-  cueStyle: CueStyle = 'brief'
+  cueStyle: 'brief' | 'detailed' = 'brief'
 ): CoachingContext {
   const completedSetsSummary = session.completedSets.map((set, i) => {
     const velocity = getSetMeanVelocity(set.data);
@@ -238,15 +237,14 @@ export function toPrompt(context: CoachingContext): string {
 
   if (context.cueStyle === 'brief') {
     lines.push(
-      'Provide a brief, actionable coaching cue: 3-5 words maximum, imperative directive only.',
-      'Examples: "Drive faster", "Drop 5 lbs", "Lock those hips".',
-      'No sentences. No explanation. Just the directive.'
+      'Respond with a 3-5 words directive coaching cue.',
+      'If suggesting a weight change, specify the exact weight in lbs.'
     );
   } else {
     lines.push(
-      'Based on this data, provide a detailed, actionable coaching cue for the next set.',
+      'Based on this data, provide a brief, actionable coaching cue for the next set.',
       'If suggesting a weight change, specify the exact weight in lbs.',
-      'Keep the message under 2 sentences with a brief explanation.'
+      'Keep the message under 2 sentences.'
     );
   }
 

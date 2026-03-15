@@ -74,14 +74,6 @@ export interface CueComplianceRecord {
 }
 
 /**
- * Whether the coaching cue should be brief (mid-workout) or detailed (rest period).
- *
- * - 'brief': 3-5 word imperative directives, used immediately after set completion
- * - 'detailed': 1-2 sentences with explanation, used during extended rest periods
- */
-export type CueStyle = 'brief' | 'detailed';
-
-/**
  * Structured context for Claude API calls, including feedback history.
  */
 export interface CoachingContext {
@@ -106,10 +98,5 @@ export interface CoachingContext {
   /** Auto-regulation signals (load suggestion, velocity warning) */
   autoRegulationContext: string | null;
 
-  /**
-   * Controls response length and depth.
-   * 'brief' = right after set (3-5 words). 'detailed' = extended rest (1-2 sentences).
-   * Defaults to 'brief' if not set.
-   */
-  cueStyle: CueStyle;
+  cueStyle: 'brief' | 'detailed';
 }

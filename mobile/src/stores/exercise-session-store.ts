@@ -67,7 +67,12 @@ import type { ExerciseSessionRepository } from '@/data/exercise-session';
 import { toStoredExerciseSession } from '@/data/exercise-session';
 import { getRecordingRepository, isDebugTelemetryEnabled } from '@/data/provider';
 import type { SampleRecording } from '@/data/recordings';
-import { isHapticCuesEnabled, isAudioCuesEnabled } from '@/data/preferences';
+import {
+  isHapticCuesEnabled,
+  isAudioCuesEnabled,
+  isVelocityAutoStopEnabled,
+  getVelocityAutoStopThreshold,
+} from '@/data/preferences';
 
 // Notification cues for rest timer
 import {
@@ -85,6 +90,10 @@ import { TrainingGoal } from '@/domain/planning/types';
 import { executeCoachingLoop } from '@/domain/coaching/coaching-loop';
 import type { CoachingStoreApi } from '@/domain/coaching/coaching-store';
 import type { ClaudeApiConfig } from '@/domain/coaching/claude-api';
+
+// PR detection and haptics
+import { buildPRSnapshot, detectPRs } from '@/domain/history/services/pr-detector';
+import { triggerNotificationHaptic } from '@/domain/notifications/haptic-service';
 
 // Recording store for intra-set recording
 import type { RecordingStoreApi } from './recording-store';
@@ -163,6 +172,9 @@ export interface ExerciseSessionState {
 
   // Session notes (athlete quick-notes between sets)
   sessionNotes: SessionNote[];
+
+  // Velocity auto-stop feedback message
+  autoStopMessage: string | null;
 
   // Error state
   error: string | null;
@@ -611,6 +623,7 @@ function createStoreInstance(): ExerciseSessionStoreApi {
         }
 
         if (recordingStoreRef) {
+          recordingStoreRef.setOnAutoStop(null);
           recordingStoreRef.getState().reset();
         }
 
@@ -826,6 +839,25 @@ async function onSetCompletedAction(
 
   const updatedSession = addCompletedSet(session, completedSet);
 
+  // Detect PRs and build set log entry
+  const prSnapshot = buildPRSnapshot(session.completedSets);
+  const prBadges = detectPRs(completedSet, prSnapshot);
+  const rawSamples = recordingStoreRef?.getState().allSamples;
+  const logEntry: SetLogEntry = {
+    set: completedSet,
+    clusters: get().pendingClusters,
+    samples: rawSamples && rawSamples.length > 0 ? [...rawSamples] : undefined,
+    prBadges: prBadges.length > 0 ? prBadges : undefined,
+  };
+  set({ setLog: [...get().setLog, logEntry], pendingClusters: [], currentClusterStart: 0 });
+
+  // Fire haptic for PR
+  if (prBadges.length > 0) {
+    triggerNotificationHaptic('success').catch((err: unknown) => {
+      console.warn('[ExerciseSessionStore] PR haptic failed:', err);
+    });
+  }
+
   // Superset path: rotate to next exercise
   if (supersetConfig && supersetState) {
     const result = advanceSuperset(supersetConfig, supersetState);
@@ -932,6 +964,8 @@ function handleContinueToRest(
     session: sessionWithRest,
     uiState: 'resting',
     restCountdown: restSeconds,
+    restElapsedMs: 0,
+    restStartTime: Date.now(),
     autoRegulation: autoReg,
     ...computeDerivedState(sessionWithRest),
   });
@@ -989,8 +1023,9 @@ function tickRestTimerAction(
   get: () => ExerciseSessionState,
   set: (state: Partial<ExerciseSessionState>) => void
 ): void {
-  const { restCountdown, session } = get();
+  const { restCountdown, restElapsedMs, session } = get();
   const newCountdown = restCountdown - 1;
+  const newElapsed = restElapsedMs + 1000;
 
   if (newCountdown <= COUNTDOWN_SECONDS && newCountdown > 0) {
     clearTimers();
@@ -1000,13 +1035,14 @@ function tickRestTimerAction(
       uiState: 'countdown',
       startCountdown: newCountdown,
       restCountdown: 0,
+      restElapsedMs: newElapsed,
     });
     startCountdownTimer(get, set);
   } else if (newCountdown <= 0) {
     clearTimers();
     transitionToRecording(get, set);
   } else {
-    set({ restCountdown: newCountdown });
+    set({ restCountdown: newCountdown, restElapsedMs: newElapsed });
   }
 }
 
@@ -1079,7 +1115,54 @@ async function transitionToRecording(
     }
   }
 
+  // Configure velocity auto-stop for this set
+  const isWarmup = currentPlannedSet?.isWarmup ?? false;
+  recordingStoreRef.setIsWarmupSet(isWarmup);
+  configureAutoStop(get, set);
+
   recordingStoreRef.getState().startRecording(session.exercise.id, session.exercise.name);
+}
+
+// =============================================================================
+// Velocity Auto-Stop
+// =============================================================================
+
+function configureAutoStop(
+  get: () => ExerciseSessionState,
+  set: (state: Partial<ExerciseSessionState>) => void,
+): void {
+  if (!recordingStoreRef) return;
+
+  Promise.all([isVelocityAutoStopEnabled(), getVelocityAutoStopThreshold()])
+    .then(([enabled, thresholdPct]) => {
+      if (!recordingStoreRef) return;
+      recordingStoreRef.setAutoStopConfig({ enabled, thresholdPct });
+      recordingStoreRef.setOnAutoStop((result) => {
+        handleAutoStop(get, set, result.velocityLossPct);
+      });
+    })
+    .catch((err: unknown) => {
+      console.warn('[ExerciseSessionStore] Failed to load auto-stop config:', err);
+    });
+}
+
+function handleAutoStop(
+  get: () => ExerciseSessionState,
+  set: (state: Partial<ExerciseSessionState>) => void,
+  velocityLossPct: number,
+): void {
+  if (!recordingStoreRef || get().uiState !== 'recording') return;
+
+  const message = `Auto-stopped: velocity dropped ${Math.round(velocityLossPct)}%`;
+  console.log(`[ExerciseSessionStore] ${message}`);
+
+  set({ autoStopMessage: message });
+
+  const weight = get().currentPlannedSet?.weight ?? 0;
+  const completedSet = recordingStoreRef.getState().stopRecording(weight);
+  if (completedSet) {
+    get().onSetCompleted(completedSet);
+  }
 }
 
 // =============================================================================

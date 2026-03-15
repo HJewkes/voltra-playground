@@ -130,3 +130,13 @@ export {
   getUpcomingExercises,
   getSupersetPlannedSet,
 } from './superset';
+
+// Velocity auto-stop
+export {
+  type VelocityAutoStopConfig,
+  type VelocityAutoStopResult,
+  type VelocityAutoStopTracker,
+  DEFAULT_AUTO_STOP_CONFIG,
+  createAutoStopTracker,
+  evaluateAutoStop,
+} from './velocity-auto-stop';

@@ -6,6 +6,7 @@
 
 export * from './baseline-service';
 export * from './exercise-picker-history';
+export * from './pr-detector';
 export * from './records-service';
 export * from './stats-service';
 export * from './session-history-service';

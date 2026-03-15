@@ -224,7 +224,7 @@ describe('buildCoachingContext', () => {
 describe('toPrompt', () => {
   it('generates a structured prompt string', () => {
     const session = buildTestSession([85], [[0.55, 0.52]]);
-    const context = buildCoachingContext(session, [], null);
+    const context = buildCoachingContext(session, [], null, 'detailed');
     const prompt = toPrompt(context);
 
     expect(prompt).toContain('Bench Press');

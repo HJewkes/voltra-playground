@@ -84,7 +84,10 @@ export const STORAGE_KEYS = {
   HAPTIC_CUES_ENABLED: 'voltra:preferences:hapticCuesEnabled',
   AUDIO_CUES_ENABLED: 'voltra:preferences:audioCuesEnabled',
   AI_COACHING_ENABLED: 'voltra:preferences:aiCoachingEnabled',
+<<<<<<< HEAD
+=======
   VOICE_COACHING_ENABLED: 'voltra:preferences:voiceCoachingEnabled',
+>>>>>>> origin/main
   VELOCITY_AUTO_STOP_ENABLED: 'voltra:preferences:velocityAutoStopEnabled',
   VELOCITY_AUTO_STOP_THRESHOLD: 'voltra:preferences:velocityAutoStopThreshold',
 

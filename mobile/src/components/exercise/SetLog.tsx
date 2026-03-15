@@ -11,6 +11,7 @@ import {
   type WorkoutSample,
 } from '@voltras/workout-analytics';
 import type { SetLogEntry, ClusterBoundary, PlannedSet, TempoTarget } from '@/domain/workout';
+import type { PRBadge } from '@/domain/history/services/pr-detector';
 import { getRPEColor } from '@/domain/workout';
 import { SetCurveChart, RepCurveChart, SIGNAL_OPTIONS } from '@/components/analytics';
 import type { ChartSignal } from '@/components/analytics';
@@ -188,6 +189,32 @@ function CoachingCueBar({ cue }: { cue: CoachingCueData }) {
 // Sub-components
 // =============================================================================
 
+// =============================================================================
+// PR Badge
+// =============================================================================
+
+function PRBadgeRow({ badges }: { badges: PRBadge[] }) {
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, paddingHorizontal: 12, paddingTop: 4 }}>
+      {badges.map((badge) => (
+        <View
+          key={badge.type}
+          style={{
+            backgroundColor: '#facc15',
+            borderRadius: 4,
+            paddingHorizontal: 6,
+            paddingVertical: 2,
+          }}
+        >
+          <Text style={{ fontSize: 11, fontWeight: '700', color: '#78350f' }}>
+            {badge.label}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 function PauseRow({ pauseMs }: { pauseMs: number }) {
   const sec = Math.round(pauseMs / 1000);
   return (
@@ -285,6 +312,10 @@ function CompletedSetRow({
           {cluster.pauseAfterMs !== null && <PauseRow pauseMs={cluster.pauseAfterMs} />}
         </React.Fragment>
       ))}
+
+      {entry.prBadges && entry.prBadges.length > 0 && (
+        <PRBadgeRow badges={entry.prBadges} />
+      )}
 
       {expanded && hasSamples && (
         <View style={{ paddingHorizontal: 4, paddingTop: 4, paddingBottom: 8 }}>

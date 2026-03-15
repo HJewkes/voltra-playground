@@ -53,3 +53,7 @@ export { VerticalWeightJog } from './VerticalWeightJog';
 export { ExercisePickerModal } from './ExercisePickerModal';
 export { QuickNote } from './QuickNote';
 export { WorkoutSummary } from './WorkoutSummary';
+
+// Workout suggestion
+export { SuggestionCard } from './SuggestionCard';
+export type { SuggestionCardProps } from './SuggestionCard';

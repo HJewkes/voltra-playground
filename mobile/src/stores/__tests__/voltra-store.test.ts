@@ -66,7 +66,7 @@ describe('VoltraStore', () => {
       expect(state.chains).toBe(0);
       expect(state.inverseChains).toBe(0);
       expect(state.eccentric).toBe(0);
-      expect(state.mode).toBe(TrainingMode.Idle);
+      expect(state.mode).toBe(TrainingMode.WeightTraining);
       expect(state.battery).toBeNull();
     });
 
