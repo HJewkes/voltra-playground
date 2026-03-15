@@ -25,6 +25,17 @@ export type {
   ExerciseSessionUIState,
 } from './exercise-session-store';
 
+// Coaching store (singleton for AI coaching cue management)
+export { createCoachingStore, coachingStore, useCoachingStore } from './coaching-store';
+export type {
+  CoachingState,
+  CoachingStoreApi,
+  CoachingCue,
+  CoachingCueType,
+  CoachingLogEntry,
+  AthleteReaction,
+} from './coaching-store';
+
 // Singleton stores
 export { useConnectionStore } from './connection-store';
 

@@ -77,3 +77,19 @@ export async function isAudioCuesEnabled(): Promise<boolean> {
 export async function setAudioCuesEnabled(enabled: boolean): Promise<void> {
   await asyncStorageAdapter.set(STORAGE_KEYS.AUDIO_CUES_ENABLED, enabled);
 }
+
+/**
+ * Check if AI coaching is enabled.
+ * Defaults to false if not explicitly set.
+ */
+export async function isAICoachingEnabled(): Promise<boolean> {
+  const enabled = await asyncStorageAdapter.get<boolean>(STORAGE_KEYS.AI_COACHING_ENABLED);
+  return enabled ?? false;
+}
+
+/**
+ * Enable or disable AI coaching during sessions.
+ */
+export async function setAICoachingEnabled(enabled: boolean): Promise<void> {
+  await asyncStorageAdapter.set(STORAGE_KEYS.AI_COACHING_ENABLED, enabled);
+}

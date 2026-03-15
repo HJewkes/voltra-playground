@@ -12,6 +12,7 @@ export * from './device';
 export * from './recording';
 export * from './analytics';
 export * from './planning';
+export * from './coaching';
 
 // Screens
 export * from './screens';
