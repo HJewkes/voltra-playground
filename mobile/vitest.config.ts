@@ -42,6 +42,7 @@ export default defineConfig({
       'react-native-svg': path.resolve(__dirname, './test/react-native-svg-mock.ts'),
       'react-native-mmkv': path.resolve(__dirname, './test/react-native-mmkv-mock.ts'),
       '@expo/vector-icons': path.resolve(__dirname, './test/expo-vector-icons-mock.ts'),
+      'react-native-worklets': path.resolve(__dirname, './test/react-native-worklets-mock.ts'),
     },
   },
 });
