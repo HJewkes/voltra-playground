@@ -58,6 +58,10 @@ export { ExercisePickerModal } from './ExercisePickerModal';
 export { QuickNote } from './QuickNote';
 export { WorkoutSummary } from './WorkoutSummary';
 
+// Session debrief
+export { SessionDebrief } from './SessionDebrief';
+export type { SessionDebriefProps } from './SessionDebrief';
+
 // Workout suggestion
 export { SuggestionCard } from './SuggestionCard';
 export type { SuggestionCardProps } from './SuggestionCard';
