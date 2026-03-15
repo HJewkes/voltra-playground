@@ -31,3 +31,7 @@ export { VelocityWarning } from './VelocityWarning';
 export type { VelocityWarningProps } from './VelocityWarning';
 export { JunkVolumeAlert } from './JunkVolumeAlert';
 export type { JunkVolumeAlertProps } from './JunkVolumeAlert';
+
+// Progression tracking
+export { ProgressionCard, LastSessionBanner } from './ProgressionCard';
+export type { ProgressionCardProps, LastSessionBannerProps } from './ProgressionCard';
