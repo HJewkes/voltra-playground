@@ -78,6 +78,12 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
   const sessionRepo = useMemo(() => getSessionRepository(), []);
   const { progression, lastSession } = useExerciseProgression(exerciseId, sessionRepo);
 
+  // Bind the repository so the session store can persist completed sessions.
+  // This mirrors ExerciseScreen's setup and must happen before any startSession call.
+  useEffect(() => {
+    sessionStore.getState().bindRepository(sessionRepo);
+  }, [sessionStore, sessionRepo]);
+
   // Pre-fill device weight from last session when exercise loads and device is at default
   useEffect(() => {
     if (!lastSession || deviceWeight !== 45) return;
