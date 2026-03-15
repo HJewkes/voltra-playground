@@ -106,3 +106,19 @@ export {
   getNextDiscoveryWeight,
   checkDiscoveryContinuation,
 } from './planners';
+
+// Superset / Circuit support
+export {
+  type SupersetConfig,
+  type SupersetSlot,
+  type SupersetState,
+  type SupersetAdvanceResult,
+  createSupersetState,
+  createSupersetConfig,
+  getCurrentSlot,
+  advanceSuperset,
+  isSupersetComplete,
+  getTotalSupersetSets,
+  getUpcomingExercises,
+  getSupersetPlannedSet,
+} from './superset';
