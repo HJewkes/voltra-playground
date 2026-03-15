@@ -61,3 +61,7 @@ export { WorkoutSummary } from './WorkoutSummary';
 // Workout suggestion
 export { SuggestionCard } from './SuggestionCard';
 export type { SuggestionCardProps } from './SuggestionCard';
+
+// Auto-plan
+export { AutoPlanCard } from './AutoPlanCard';
+export type { AutoPlanCardProps } from './AutoPlanCard';

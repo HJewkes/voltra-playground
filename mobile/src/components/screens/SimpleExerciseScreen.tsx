@@ -17,7 +17,7 @@ import { webStyle } from '@/utils/web-style';
 import { TrainingMode, TrainingModeNames } from '@/domain/device';
 import { useConnectionStore, selectIsConnected } from '@/stores';
 import { WorkoutControls, ReadinessIndicator } from '@/components/recording';
-import { ExercisePickerModal, ProgressionCard, LastSessionBanner, SuggestionCard } from '@/components/exercise';
+import { ExercisePickerModal, ProgressionCard, LastSessionBanner, SuggestionCard, AutoPlanCard } from '@/components/exercise';
 import type { VoltraStoreApi } from '@/stores/voltra-store';
 import { generateMockRepPlan } from './mock-rep-plan';
 import { registerCoachConsole } from '@/utils/coach-console';
@@ -28,6 +28,7 @@ import type { ReadinessAssessment } from '@/domain/workout';
 
 import { buildRepeatLastSessionPlan } from '@/domain/history/services/progression-service';
 import { suggestNextExercise } from '@/domain/history/services/workout-suggestion-service';
+import { autoPlanWorkout } from '@/domain/planning/auto-plan-service';
 import type { StoredExerciseSession } from '@/data/exercise-session';
 import { EXERCISE_CATALOG, createExercise } from '@/domain/exercise';
 
@@ -189,6 +190,21 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
     handleNextExercise(exercise);
   }, [handleNextExercise]);
 
+  // Auto-plan: one-tap workout from history
+  const autoPlan = useMemo(() => {
+    if (isActive || sess.setLog.length > 0 || workoutPlan) return null;
+    return autoPlanWorkout(recentSessions, EXERCISE_CATALOG);
+  }, [isActive, sess.setLog.length, recentSessions, workoutPlan]);
+
+  const handleStartAutoPlan = useCallback(() => {
+    if (!autoPlan) return;
+    sessionStore.getState().startSession(autoPlan.exercise, autoPlan.plan);
+    sessionStore.getState().bindRecordingStore(recordingStore);
+    sessionStore.getState().bindVoltraStore(voltraStore);
+    voltraStore.getState().setWeight(autoPlan.weight);
+    sessionStore.getState().prepareFirstSet();
+  }, [autoPlan, sessionStore, recordingStore, voltraStore]);
+
   const showLastSessionBanner = !isActive && sess.setLog.length === 0 && !!lastSession;
   const isResting = sess.uiState === 'resting';
 
@@ -216,7 +232,10 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
 
       <ScrollView className="flex-1" scrollEnabled={!isRecording}>
         <View className="px-4 pb-4">
-          {topSuggestion && !showLastSessionBanner && (
+          {autoPlan && !showLastSessionBanner && (
+            <AutoPlanCard autoPlan={autoPlan} onStart={handleStartAutoPlan} onChange={() => setPickerVisible(true)} />
+          )}
+          {topSuggestion && !showLastSessionBanner && !autoPlan && (
             <SuggestionCard suggestion={topSuggestion} onStart={handleStartSuggestion} />
           )}
           {showLastSessionBanner && (

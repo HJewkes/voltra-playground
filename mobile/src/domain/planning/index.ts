@@ -68,5 +68,8 @@ export {
   type AutoStopSignal,
 } from './auto-regulation';
 
+// Auto-plan
+export { autoPlanWorkout, type AutoPlan } from './auto-plan-service';
+
 // Strategies (for advanced usage)
 export * from './strategies';
