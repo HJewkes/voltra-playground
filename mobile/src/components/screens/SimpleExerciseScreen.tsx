@@ -28,6 +28,7 @@ import type { ReadinessAssessment } from '@/domain/workout';
 
 import { buildRepeatLastSessionPlan } from '@/domain/history/services/progression-service';
 import { suggestNextExercise } from '@/domain/history/services/workout-suggestion-service';
+import type { StoredExerciseSession } from '@/data/exercise-session';
 import { EXERCISE_CATALOG, createExercise } from '@/domain/exercise';
 
 import {
@@ -164,6 +165,24 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
     sessionStore.getState().prepareFirstSet();
   }, [lastSession, sessionStore, recordingStore, voltraStore]);
 
+  // Workout suggestions: load recent sessions when idle, compute top suggestion
+  const [recentSessions, setRecentSessions] = useState<StoredExerciseSession[]>([]);
+  useEffect(() => {
+    if (isActive) return;
+    void sessionRepo.getRecent(200).then(setRecentSessions);
+  }, [sessionRepo, isActive]);
+
+  const topSuggestion = useMemo(() => {
+    if (isActive || sess.setLog.length > 0) return null;
+    const suggestions = suggestNextExercise(recentSessions, EXERCISE_CATALOG, 1);
+    return suggestions[0] ?? null;
+  }, [isActive, sess.setLog.length, recentSessions]);
+
+  const handleStartSuggestion = useCallback((exerciseId: string) => {
+    const exercise = EXERCISE_CATALOG[exerciseId] ?? createExercise({ id: exerciseId, name: exerciseId });
+    handleNextExercise(exercise);
+  }, [handleNextExercise]);
+
   const showLastSessionBanner = !isActive && sess.setLog.length === 0 && !!lastSession;
   const isResting = sess.uiState === 'resting';
 
@@ -191,6 +210,9 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
 
       <ScrollView className="flex-1" scrollEnabled={!isRecording}>
         <View className="px-4 pb-4">
+          {topSuggestion && !showLastSessionBanner && (
+            <SuggestionCard suggestion={topSuggestion} onStart={handleStartSuggestion} />
+          )}
           {showLastSessionBanner && (
             <LastSessionBanner
               exerciseName={lastSession.exerciseName}

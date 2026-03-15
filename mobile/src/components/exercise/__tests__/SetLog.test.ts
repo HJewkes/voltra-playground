@@ -1,22 +1,7 @@
-import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { describe, it, expect } from 'vitest';
+import { computeClusterMeanVelocity } from '../set-log-utils';
 import { getSetMeanVelocity, estimateSetRIR } from '@voltras/workout-analytics';
 
-// Lazy import to avoid loading full component with native deps
-let computeClusterMeanVelocity: typeof import('../SetLog')['computeClusterMeanVelocity'];
-
-beforeAll(async () => {
-  // Mock all native-dependent modules before importing SetLog
-  vi.mock('react-native-reanimated', () => ({ default: {} }));
-  vi.mock('react-native-worklets', () => ({ default: {} }));
-  vi.mock('react-native-gesture-handler', () => ({}));
-  vi.mock('@expo/vector-icons', () => ({ Ionicons: {} }));
-  vi.mock('@react-native-community/slider', () => ({ default: 'Slider' }));
-  vi.mock('@titan-design/react-ui', () => ({
-    Surface: 'Surface', getSemanticColors: () => ({}), alpha: () => '',
-  }));
-  const mod = await import('../SetLog');
-  computeClusterMeanVelocity = mod.computeClusterMeanVelocity;
-});
 import {
   mockCompletedSet,
   mockRep,
