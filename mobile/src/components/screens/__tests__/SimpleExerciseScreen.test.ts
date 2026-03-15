@@ -206,7 +206,7 @@ vi.mock('../exercise', () => ({
     sessionStore: mockSessionStore,
     device: { mode: 0x0001, setMode: vi.fn(), weight: 50, eccentric: 50, setEccentric: vi.fn(), chains: 0, inverseChains: 0, setChains: vi.fn(), setInverseChains: vi.fn() },
     recording: { repCount: 0, rpe: 5, rir: 5, liveMessage: null, currentPhase: 0, phaseElapsedMs: 0, repPhaseDurations: [], liveSamples: [], meanVelocity: 0, velocityLoss: 0 },
-    session: { uiState: 'idle', setLog: [], restElapsedMs: 0, currentSetIndex: 0, currentPlannedSet: null, session: null },
+    session: { uiState: 'idle', setLog: [], restElapsedMs: 0, currentSetIndex: 0, currentPlannedSet: null, session: null, autoRegulation: null },
   }),
   useExerciseLifecycle: () => ({
     configRef: { current: null },

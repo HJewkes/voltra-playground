@@ -54,6 +54,7 @@ export function useExerciseStores(voltraStore: VoltraStoreApi) {
       currentSetIndex: s.currentSetIndex,
       currentPlannedSet: s.currentPlannedSet,
       session: s.session,
+      autoRegulation: s.autoRegulation,
     })),
   );
 
