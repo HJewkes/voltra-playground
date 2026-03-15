@@ -5,7 +5,7 @@
  * Session orchestration is delegated to exercise-session-store.
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, ScrollView, Pressable, Platform } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
@@ -16,11 +16,15 @@ import { webStyle } from '@/utils/web-style';
 
 import { TrainingMode, TrainingModeNames } from '@/domain/device';
 import { useConnectionStore, selectIsConnected } from '@/stores';
-import { WorkoutControls } from '@/components/recording';
-import { ExercisePickerModal } from '@/components/exercise';
+import { WorkoutControls, ReadinessIndicator } from '@/components/recording';
+import { ExercisePickerModal, ProgressionCard, LastSessionBanner } from '@/components/exercise';
 import type { VoltraStoreApi } from '@/stores/voltra-store';
 import { generateMockRepPlan } from './mock-rep-plan';
 import { registerCoachConsole } from '@/utils/coach-console';
+import { useExerciseProgression } from '@/hooks/use-exercise-progression';
+import { getSessionRepository } from '@/data/provider';
+import { assessReadiness } from '@/domain/workout';
+import type { ReadinessAssessment } from '@/domain/workout';
 
 import {
   ModeDrawer, MODE_META, PlanLoader, ConfigSection,
@@ -61,6 +65,48 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
   const { configRef, completedExercises, pickerVisible, setPickerVisible, workoutPlan, planExerciseIndex, currentPlanExercise, hasMorePlanExercises, handlePlanLoaded, handleNextExercise, handlePlanNextExercise, handleAddSet, handleStart, handleStop } = lifecycle;
 
   useEffect(() => { registerCoachConsole(recordingStore, sessionStore); }, [recordingStore, sessionStore]);
+
+  // Progression + last session banner for the current exercise
+  const exerciseId = sess.session?.exercise.id ?? '';
+  const sessionRepo = useMemo(() => getSessionRepository(), []);
+  const { progression, lastSession } = useExerciseProgression(exerciseId, sessionRepo);
+
+  // Readiness assessment: computed after the first set completes, before working sets
+  const [readiness, setReadiness] = useState<ReadinessAssessment | null>(null);
+
+  useEffect(() => {
+    // Only assess on first rest after first set
+    if (sess.uiState !== 'resting' || sess.setLog.length !== 1 || !exerciseId) return;
+
+    const firstEntry = sess.setLog[0];
+    if (!firstEntry || firstEntry.set.data.reps.length === 0) return;
+
+    void sessionRepo.getByExercise(exerciseId).then((sessions) => {
+      const dataPoints = sessions
+        .filter((s) => s.status === 'completed')
+        .flatMap((s) => s.completedSets.map((cs) => ({
+          weight: cs.weight,
+          velocity: cs.meanVelocity,
+          timestamp: cs.startTime,
+        })))
+        .filter((dp) => dp.velocity > 0);
+
+      if (dataPoints.length === 0) return;
+
+      const baseline = { exerciseId, dataPoints, lastUpdated: Date.now() };
+      const result = assessReadiness(firstEntry.set, baseline);
+      setReadiness(result);
+    });
+  // setLog.length and uiState are the reactive signal; firstEntry is derived
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sess.uiState, sess.setLog.length, exerciseId, sessionRepo]);
+
+  // Clear readiness when a new exercise session begins
+  useEffect(() => {
+    if (sess.uiState === 'idle' || sess.uiState === 'preparing') {
+      setReadiness(null);
+    }
+  }, [sess.uiState]);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerProgress = useSharedValue(0);
@@ -103,6 +149,9 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
 
   const nextExerciseName = hasMorePlanExercises ? workoutPlan!.exercises[planExerciseIndex + 1].exerciseName : null;
 
+  const showLastSessionBanner = !isActive && sess.setLog.length === 0 && !!lastSession;
+  const isResting = sess.uiState === 'resting';
+
   return (
     <SafeAreaView className="flex-1 bg-surface-400" edges={['top']}>
       <Pressable onPress={toggleDrawer} style={{ opacity: isRecording ? 0.5 : 1 }} accessibilityRole="button" accessibilityLabel={`${modeName} — tap to switch mode`}>
@@ -121,6 +170,16 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
 
       <ScrollView className="flex-1" scrollEnabled={!isRecording}>
         <View className="px-4 pb-4">
+          {showLastSessionBanner && (
+            <LastSessionBanner
+              exerciseName={lastSession.exerciseName}
+              date={lastSession.date}
+              weight={lastSession.weight}
+              velocity={lastSession.velocity}
+              sets={lastSession.sets}
+              reps={lastSession.reps}
+            />
+          )}
           <ConfigSection ref={configRef} voltraStore={voltraStore} weight={weight} eccentric={eccentric} setEccentric={setEccentric} chains={chains} inverseChains={inverseChains} setChains={setChains} setInverseChains={setInverseChains} showEccentric={mode === TrainingMode.WeightTraining || mode === TrainingMode.ResistanceBand} showChains={mode === TrainingMode.WeightTraining} isActive={isActive} onAddSet={handleAddSet} plannedSetCount={plannedSetCount} />
           <WorkoutView
             configRef={configRef} setLog={sess.setLog} isActive={isActive} isRecording={isRecording}
@@ -136,6 +195,16 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
             restElapsedMs={sess.restElapsedMs} defaultRestSeconds={sess.session?.plan.defaultRestSeconds}
             onPlannedRestChange={(setIdx, secs) => sessionStore.getState().updatePlannedSetRest(setIdx, secs)}
           />
+          {isResting && readiness && (
+            <View className="mt-3">
+              <ReadinessIndicator assessment={readiness} />
+            </View>
+          )}
+          {isResting && progression && (
+            <View className="mt-3">
+              <ProgressionCard progression={progression} />
+            </View>
+          )}
         </View>
       </ScrollView>
 
