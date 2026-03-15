@@ -26,6 +26,9 @@ import { getSessionRepository } from '@/data/provider';
 import { assessReadiness } from '@/domain/workout';
 import type { ReadinessAssessment } from '@/domain/workout';
 
+import { buildRepeatLastSessionPlan } from '@/domain/history/services/progression-service';
+import { EXERCISE_CATALOG, createExercise } from '@/domain/exercise';
+
 import {
   ModeDrawer, MODE_META, PlanLoader, ConfigSection,
   ExerciseBreadcrumbs, NextExerciseButton, WorkoutView,
@@ -149,6 +152,17 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
 
   const nextExerciseName = hasMorePlanExercises ? workoutPlan!.exercises[planExerciseIndex + 1].exerciseName : null;
 
+  const handleRepeatLastSession = useCallback(() => {
+    if (!lastSession) return;
+    const exercise = EXERCISE_CATALOG[lastSession.exerciseId] ?? createExercise({ id: lastSession.exerciseId, name: lastSession.exerciseName });
+    const plan = buildRepeatLastSessionPlan(lastSession);
+    sessionStore.getState().startSession(exercise, plan);
+    sessionStore.getState().bindRecordingStore(recordingStore);
+    sessionStore.getState().bindVoltraStore(voltraStore);
+    voltraStore.getState().setWeight(lastSession.weight);
+    sessionStore.getState().prepareFirstSet();
+  }, [lastSession, sessionStore, recordingStore, voltraStore]);
+
   const showLastSessionBanner = !isActive && sess.setLog.length === 0 && !!lastSession;
   const isResting = sess.uiState === 'resting';
 
@@ -184,6 +198,7 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
               velocity={lastSession.velocity}
               sets={lastSession.sets}
               reps={lastSession.reps}
+              onRepeat={handleRepeatLastSession}
             />
           )}
           <ConfigSection ref={configRef} voltraStore={voltraStore} weight={weight} eccentric={eccentric} setEccentric={setEccentric} chains={chains} inverseChains={inverseChains} setChains={setChains} setInverseChains={setInverseChains} showEccentric={mode === TrainingMode.WeightTraining || mode === TrainingMode.ResistanceBand} showChains={mode === TrainingMode.WeightTraining} isActive={isActive} onAddSet={handleAddSet} plannedSetCount={plannedSetCount} />
