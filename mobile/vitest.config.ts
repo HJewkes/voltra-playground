@@ -41,6 +41,7 @@ export default defineConfig({
       'react-native': path.resolve(__dirname, './test/react-native-mock.ts'),
       'react-native-svg': path.resolve(__dirname, './test/react-native-svg-mock.ts'),
       'react-native-mmkv': path.resolve(__dirname, './test/react-native-mmkv-mock.ts'),
+      '@op-engineering/op-sqlite': path.resolve(__dirname, './test/op-sqlite-mock.ts'),
       '@expo/vector-icons': path.resolve(__dirname, './test/expo-vector-icons-mock.ts'),
       'react-native-worklets': path.resolve(__dirname, './test/react-native-worklets-mock.ts'),
       'react-native-reanimated': path.resolve(__dirname, './test/react-native-reanimated-mock.ts'),
