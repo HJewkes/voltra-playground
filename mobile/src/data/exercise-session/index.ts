@@ -37,5 +37,13 @@ export {
   createExerciseSessionRepository,
 } from './exercise-session-repository';
 
+// SQLite repository (op-sqlite backed)
+export {
+  SQLiteExerciseSessionRepository,
+  createSQLiteExerciseSessionRepository,
+  openSessionDatabase,
+  type SessionDatabase,
+} from './sqlite-exercise-session-repository';
+
 // Session export
 export { exportSession, exportSessionsToJSON, type SessionNote } from './session-export';
