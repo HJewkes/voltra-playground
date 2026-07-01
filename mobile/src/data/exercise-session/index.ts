@@ -47,3 +47,17 @@ export {
 
 // Session export
 export { exportSession, exportSessionsToJSON, type SessionNote } from './session-export';
+
+// Crash-safe telemetry buffer + recovery (VLT-09.11)
+export {
+  TelemetryBuffer,
+  TELEMETRY_FLUSH_SAMPLE_COUNT,
+  TELEMETRY_FLUSH_INTERVAL_MS,
+  ensureSessionSchema,
+  loadBufferedSamples,
+  clearBufferedSamples,
+  replaySamplesToSet,
+  recoverInProgressSet,
+  type TelemetryBufferOptions,
+  type RecoveredSet,
+} from './telemetry-buffer';
