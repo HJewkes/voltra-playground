@@ -37,13 +37,13 @@ export {
   createExerciseSessionRepository,
 } from './exercise-session-repository';
 
-// SQLite repository (op-sqlite backed)
-export {
-  SQLiteExerciseSessionRepository,
-  createSQLiteExerciseSessionRepository,
-  openSessionDatabase,
-  type SessionDatabase,
-} from './sqlite-exercise-session-repository';
+// SQLite repository (op-sqlite backed) is intentionally NOT re-exported here.
+// op-sqlite is a native-only module; re-exporting its runtime values through
+// this cross-platform barrel drags it into the web bundle and breaks the web
+// build. Consumers that need it (tests, crash-recovery wiring) import directly
+// from './sqlite-exercise-session-repository'. The SessionDatabase type is
+// re-exported below because type-only exports are erased at build time.
+export type { SessionDatabase } from './sqlite-exercise-session-repository';
 
 // Session export
 export { exportSession, exportSessionsToJSON, type SessionNote } from './session-export';
