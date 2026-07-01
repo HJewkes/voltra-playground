@@ -73,6 +73,13 @@ import {
   fireRestTimerCues,
   type RestTimerCueSettings,
 } from '@/domain/notifications/rest-timer-cues';
+// Crash-safe telemetry recovery (VLT-09.31)
+import {
+  startSetBuffer,
+  finalizeSetBuffer,
+  recoverInterruptedSet as recoverInterruptedSetFromDb,
+} from '@/data/exercise-session/telemetry-recovery';
+import type { RecoveredSet } from '@/data/exercise-session/telemetry-buffer';
 
 // Auto-regulation engine
 import {
@@ -192,6 +199,7 @@ export interface ExerciseSessionState {
   startSession: (exercise: Exercise, plan: ExercisePlan) => void;
   startSupersetSession: (config: SupersetConfig) => void;
   loadCurrentSession: () => Promise<void>;
+  recoverInterruptedSet: () => Promise<RecoveredSet | null>;
   stopSession: () => Promise<void>;
   dispose: () => void;
 
@@ -503,6 +511,11 @@ function createStoreInstance(): ExerciseSessionStoreApi {
       loadCurrentSession: async () => {
         if (get().isDisposed) return;
         await loadCurrentSessionAction(get, set);
+      },
+
+      recoverInterruptedSet: async () => {
+        if (!repositoryRef) return null;
+        return recoverInterruptedSetFromDb(repositoryRef);
       },
 
       stopSession: async () => {
@@ -848,6 +861,10 @@ async function onSetCompletedAction(
 
   const updatedSession = addCompletedSet(session, completedSet);
 
+  // Set completed normally — discard its crash buffer so recovery can't
+  // double-count it (VLT-09.31). setIndex matches the record-start buffer.
+  await finalizeSetBuffer(session.id, session.completedSets.length);
+
   // Detect PRs and build set log entry
   const prSnapshot = buildPRSnapshot(session.completedSets);
   const prBadges = detectPRs(completedSet, prSnapshot);
@@ -1134,6 +1151,10 @@ async function transitionToRecording(
   const isWarmup = currentPlannedSet?.isWarmup ?? false;
   recordingStoreRef.setIsWarmupSet(isWarmup);
   configureAutoStop(get, set);
+
+  // Durably buffer this set's raw telemetry so it survives a crash (VLT-09.31).
+  // setIndex matches recoverInProgressSet's (session.completedSets.length).
+  startSetBuffer(session.id, session.completedSets.length);
 
   recordingStoreRef.getState().startRecording(session.exercise.id, session.exercise.name);
 }

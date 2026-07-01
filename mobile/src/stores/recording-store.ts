@@ -15,6 +15,7 @@ import { getLiveEffortMessage } from '@/domain/workout';
 import { type VelocityAutoStopConfig, type VelocityAutoStopTracker, type VelocityAutoStopResult, DEFAULT_AUTO_STOP_CONFIG, createAutoStopTracker, evaluateAutoStop } from '@/domain/workout/velocity-auto-stop';
 import { TelemetryRingBuffer } from '@/domain/workout/telemetry-ring-buffer';
 import { isDebugTelemetryEnabled } from '@/data/provider';
+import { bufferSample } from '@/data/exercise-session/telemetry-recovery';
 
 export type RecordingUIState = 'idle' | 'countdown' | 'recording' | 'resting';
 
@@ -81,6 +82,7 @@ function stopRecordingAction(get: () => RecordingState, set: (state: Partial<Rec
 
 function processSampleAction(get: () => RecordingState, set: (state: Partial<RecordingState>) => void, ts: ThrottleState, sample: WorkoutSample): void {
   if (!get().isRecording) return;
+  bufferSample(sample); // durably buffer the in-progress set for crash recovery (VLT-09.31)
   ts.sampleCount++; ts.telemetryBuffer.push(sample); ts.liveSamples.push(sample);
   if (isDebugTelemetryEnabled()) { ts.debugSamples.push(sample); ts.dirty = true; }
   const prevRepCount = ts.analyticsSet.reps.length; ts.analyticsSet = addSampleToSet(ts.analyticsSet, sample); const newRepCount = ts.analyticsSet.reps.length;
