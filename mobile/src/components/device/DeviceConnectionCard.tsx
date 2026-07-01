@@ -38,6 +38,7 @@ export interface ConnectionCardProps {
   environment: string;
   requiresUserGesture: boolean;
   hasScanned: boolean;
+  title: string;
   subtitle: string;
   error: string | null;
   onScan: () => void;
@@ -57,6 +58,7 @@ export function ConnectionCard({
   environment,
   requiresUserGesture,
   hasScanned,
+  title,
   subtitle,
   error,
   onScan,
@@ -73,7 +75,7 @@ export function ConnectionCard({
         <View className="mb-4 flex-row items-center justify-between">
           <View className="flex-row items-center">
             <Ionicons name="bluetooth-outline" size={24} color={t['text-disabled']} />
-            <Text className="ml-3 text-lg font-bold text-text-primary">Voltras</Text>
+            <Text className="ml-3 text-lg font-bold text-text-primary">{title}</Text>
           </View>
           {bleSupported && (
             <ScanButton

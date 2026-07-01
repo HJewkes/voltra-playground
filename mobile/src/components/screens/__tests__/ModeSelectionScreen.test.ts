@@ -107,18 +107,6 @@ describe('ModeSelectionScreen', () => {
     expect(ECCENTRIC_MODES.has(TrainingMode.Rowing)).toBe(false);
   });
 
-  it('Idle mode excludes config rendering', async () => {
-    const { TrainingMode } = await import('@/domain/device');
-    const showConfig = TrainingMode.Idle !== TrainingMode.Idle;
-    expect(showConfig).toBe(false);
-  });
-
-  it('non-Idle mode enables config rendering', async () => {
-    const { TrainingMode } = await import('@/domain/device');
-    const showConfig = TrainingMode.WeightTraining !== TrainingMode.Idle;
-    expect(showConfig).toBe(true);
-  });
-
   it('all training modes in MODE_LIST have human-readable names', async () => {
     const { MODE_LIST } = await import('../ModeSelectionScreen');
     const { TrainingModeNames } = await import('@/domain/device');
