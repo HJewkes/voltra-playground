@@ -63,3 +63,31 @@ jobs:
           echo "Coverage report generated"
         working-directory: mobile
 
+  # Regression gate: fails if react-doctor finds new error-severity issues
+  # in files changed vs main. Does NOT assert an absolute score (the repo's
+  # current baseline is well below the score react-doctor reports on a
+  # clean scan) - it only blocks new problems introduced by a diff.
+  mobile-react-doctor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # fetch-depth: 0 pulls all branches so `origin/main` is available
+          # locally for react-doctor to diff against.
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+        working-directory: mobile
+      - name: React Doctor regression gate (vs main)
+        run: |
+          npx react-doctor@latest mobile \
+            --scope changed \
+            --base origin/main \
+            --lint \
+            --no-color \
+            --no-score
+
