@@ -5,9 +5,6 @@
 export { ModeDrawer, MODE_META } from './ModeDrawer';
 export type { ModeDrawerProps } from './ModeDrawer';
 
-export { PlanLoader } from './PlanLoader';
-export type { PlanLoaderProps } from './PlanLoader';
-
 export { ConfigSection } from './ConfigSection';
 export type { ConfigSectionProps, ConfigSectionRef, QuickConfigTargets } from './ConfigSection';
 

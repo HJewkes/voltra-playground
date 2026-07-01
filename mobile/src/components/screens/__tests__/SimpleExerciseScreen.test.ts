@@ -196,7 +196,6 @@ vi.mock('@/components/exercise', () => ({
 vi.mock('../exercise', () => ({
   ModeDrawer: 'ModeDrawer',
   MODE_META: {},
-  PlanLoader: 'PlanLoader',
   ConfigSection: 'ConfigSection',
   ExerciseBreadcrumbs: 'ExerciseBreadcrumbs',
   NextExerciseButton: 'NextExerciseButton',
