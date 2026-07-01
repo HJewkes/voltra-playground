@@ -70,6 +70,7 @@ import {
 
 // Notification cues for rest timer
 import {
+  fireRestTimerCues,
   type RestTimerCueSettings,
 } from '@/domain/notifications/rest-timer-cues';
 
@@ -276,6 +277,18 @@ async function loadCueSettings(): Promise<RestTimerCueSettings> {
   ]);
   cachedCueSettings = { hapticEnabled, audioEnabled };
   return cachedCueSettings;
+}
+
+/**
+ * Fire rest-timer haptic/audio cues for the given seconds-remaining, per the
+ * user's loaded prefs. No-ops cleanly when settings aren't loaded yet;
+ * fireRestTimerCues itself no-ops when the value matches no cue threshold.
+ */
+function fireRestCues(secondsRemaining: number): void {
+  if (!cachedCueSettings) return;
+  void fireRestTimerCues(secondsRemaining, cachedCueSettings).catch((err: unknown) => {
+    console.warn('[ExerciseSessionStore] Rest cue failed:', err);
+  });
 }
 
 // =============================================================================
@@ -825,6 +838,14 @@ async function onSetCompletedAction(
     }
   }
 
+  // Refresh haptic/audio cue prefs for the upcoming rest period so the rest
+  // tick can fire cues per the user's current settings (respects live toggles).
+  // Supplementary — a settings-read failure must never break set completion.
+  cachedCueSettings = null;
+  await loadCueSettings().catch((err: unknown) => {
+    console.warn('[ExerciseSessionStore] Failed to load rest cue settings:', err);
+  });
+
   const updatedSession = addCompletedSet(session, completedSet);
 
   // Detect PRs and build set log entry
@@ -1015,7 +1036,13 @@ function tickRestTimerAction(
   const newCountdown = restCountdown - 1;
   const newElapsed = restElapsedMs + 1000;
 
+  // Warning cues at their thresholds (30s, 10s); no-op otherwise.
+  fireRestCues(newCountdown);
+
   if (newCountdown <= COUNTDOWN_SECONDS && newCountdown > 0) {
+    // Rest countdown has ended (handing off to the get-ready countdown):
+    // fire the "complete" cue.
+    fireRestCues(0);
     clearTimers();
     const clearedSession = session ? clearRest(session) : session;
     set({
