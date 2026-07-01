@@ -32,6 +32,7 @@ function useWebTopPadding(): number | undefined {
 export interface DeviceConnectionProps {
   variant: 'inline' | 'card' | 'guard';
   children?: React.ReactNode;
+  title?: string;
   subtitle?: string;
   autoScan?: boolean;
 }
@@ -39,6 +40,7 @@ export interface DeviceConnectionProps {
 export function DeviceConnection({
   variant,
   children,
+  title = 'Voltras',
   subtitle = 'Connect to your Voltra to continue',
   autoScan = true,
 }: DeviceConnectionProps) {
@@ -203,6 +205,7 @@ export function DeviceConnection({
       environment={environment}
       requiresUserGesture={requiresUserGesture}
       hasScanned={hasScanned}
+      title={title}
       subtitle={subtitle}
       error={error}
       onScan={doScan}
