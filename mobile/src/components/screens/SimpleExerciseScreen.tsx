@@ -55,6 +55,7 @@ export function SimpleExerciseScreen() {
 }
 
 function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
+  const router = useRouter();
   const { recordingStore, sessionStore, device, recording, session: sess } = useExerciseStores(voltraStore);
   const { mode, setMode, weight: deviceWeight, eccentric, setEccentric, chains, inverseChains, setChains, setInverseChains } = device;
 
