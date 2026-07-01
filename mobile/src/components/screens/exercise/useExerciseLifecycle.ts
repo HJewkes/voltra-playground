@@ -3,7 +3,7 @@
  * start/stop logic extracted from the main screen component.
  */
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 import type { StoreApi } from 'zustand';
 
@@ -14,6 +14,7 @@ import type { WorkoutPlan, WorkoutExercise } from '@/domain/workout/models/worko
 import { createExercise, EXERCISE_CATALOG } from '@/domain/exercise';
 import type { Exercise } from '@/domain/exercise';
 import type { VoltraStoreApi } from '@/stores/voltra-store';
+import { usePlanDeliveryStore } from '@/stores/plan-delivery-store';
 import type { ConfigSectionRef, QuickConfigTargets } from './ConfigSection';
 
 function workoutSetsToPlannedSets(exercise: WorkoutExercise): PlannedSet[] {
@@ -74,6 +75,16 @@ export function useExerciseLifecycle(
     setCompletedExercises([]);
     loadPlanExercise(plan, 0);
   }, [loadPlanExercise]);
+
+  // Consume a plan delivered from outside the screen (coaching channel, upload,
+  // deep link) via receiveWorkoutPlan → planDeliveryStore.
+  const pendingPlan = usePlanDeliveryStore((s) => s.pendingPlan);
+  const consumePendingPlan = usePlanDeliveryStore((s) => s.consumePendingPlan);
+  useEffect(() => {
+    if (!pendingPlan) return;
+    handlePlanLoaded(pendingPlan);
+    consumePendingPlan();
+  }, [pendingPlan, handlePlanLoaded, consumePendingPlan]);
 
   const archiveCurrentExercise = useCallback(() => {
     const cur = sessionStore.getState();
