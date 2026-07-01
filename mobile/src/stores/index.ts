@@ -36,6 +36,14 @@ export type {
   AthleteReaction,
 } from './coaching-store';
 
+export {
+  createPlanDeliveryStore,
+  planDeliveryStore,
+  usePlanDeliveryStore,
+  receiveWorkoutPlan,
+} from './plan-delivery-store';
+export type { PlanDeliveryState, PlanDeliveryStoreApi } from './plan-delivery-store';
+
 // Singleton stores
 export { useConnectionStore } from './connection-store';
 
