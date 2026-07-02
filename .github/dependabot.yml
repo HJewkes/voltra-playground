@@ -7,6 +7,25 @@ updates:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 5
+    # Expo/RN pins react-native + react + all expo-*/native modules as one
+    # coordinated set per SDK (upgraded via `expo install --fix`, not piecemeal).
+    # Individual Dependabot bumps of these break the SDK's version matching, so
+    # ignore them here and let the staged Expo SDK upgrade own them. See
+    # coordination/integration-plans/expo-sdk-54-to-57-upgrade-2026-07-02.md.
+    ignore:
+      - dependency-name: "expo"
+      - dependency-name: "expo-*"
+      - dependency-name: "react"
+      - dependency-name: "react-dom"
+      - dependency-name: "@types/react"
+      - dependency-name: "@types/react-dom"
+      - dependency-name: "react-native"
+      - dependency-name: "react-native-*"
+      - dependency-name: "@react-native-community/*"
+      - dependency-name: "@react-navigation/*"
+      # NativeWind v4 locks Tailwind to v3; v4 blocked until NativeWind v5.
+      - dependency-name: "tailwindcss"
+      - dependency-name: "nativewind"
     groups:
       dev-dependencies:
         patterns:
