@@ -81,7 +81,7 @@
     "@types/web-bluetooth": "^0.0.21",
     "@vitest/coverage-v8": "^4.0.0",
     "eslint": "^9.18.0",
-    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-import-resolver-typescript": "^4.4.5",
     "eslint-plugin-check-file": "^3.3.1",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-react": "^7.37.0",
@@ -93,12 +93,12 @@
     "knip": "^5.86.0",
     "lint-staged": "^15.3.0",
     "patch-package": "^8.0.1",
-    "prettier": "^3.4.0",
-    "prettier-plugin-tailwindcss": "^0.6.9",
+    "prettier": "^3.9.4",
+    "prettier-plugin-tailwindcss": "^0.8.0",
     "tsx": "^4.19.0",
     "typescript": "~5.9.2",
     "typescript-eslint": "^8.21.0",
-    "vitest": "^4.0.17"
+    "vitest": "^4.1.9"
   },
   "private": true,
   "optionalDependencies": {
