@@ -2,31 +2,33 @@
  * Audio Cue Service
  *
  * Plays short audio cues for rest timer warnings and completion.
- * Wraps expo-av with platform-safe lazy loading.
+ * Wraps expo-audio with platform-safe lazy loading.
  */
 
 import { Platform } from 'react-native';
 
 export type AudioCueType = 'warning' | 'complete';
 
-let audioModule: typeof import('expo-av') | null = null;
+let audioModule: typeof import('expo-audio') | null = null;
 let audioSupported = false;
 
 /**
- * Lazily load expo-av. Returns null on unsupported platforms.
+ * Lazily load expo-audio. Returns null on unsupported platforms.
  */
-async function ensureModule(): Promise<typeof import('expo-av') | null> {
+async function ensureModule(): Promise<typeof import('expo-audio') | null> {
   if (audioModule) return audioModule;
 
   try {
-    audioModule = await import('expo-av');
+    audioModule = await import('expo-audio');
     audioSupported = true;
 
-    // Configure audio session for mixing with other audio
+    // Configure audio session to duck other audio while a cue plays.
+    // (expo-audio: playsInSilentMode replaces expo-av's playsInSilentModeIOS;
+    // interruptionMode 'duckOthers' replaces shouldDuckAndroid.)
     if (Platform.OS !== 'web') {
-      await audioModule.Audio.setAudioModeAsync({
-        playsInSilentModeIOS: true,
-        shouldDuckAndroid: true,
+      await audioModule.setAudioModeAsync({
+        playsInSilentMode: true,
+        interruptionMode: 'duckOthers',
       });
     }
 
@@ -47,7 +49,7 @@ const CUE_CONFIG: Record<AudioCueType, { frequencyHz: number; durationMs: number
 };
 
 /**
- * Play an audio cue using an oscillator-style approach via expo-av.
+ * Play an audio cue using a generated tone via expo-audio.
  * Falls back to a silent no-op on unsupported platforms.
  */
 export async function playAudioCue(type: AudioCueType): Promise<void> {
@@ -57,20 +59,22 @@ export async function playAudioCue(type: AudioCueType): Promise<void> {
   const config = CUE_CONFIG[type];
 
   try {
-    // Use a generated tone via Audio.Sound with a data URI
-    // expo-av supports wav data URIs on native
+    // Generate a WAV tone data URI and play it through a one-shot player.
+    // expo-audio accepts a { uri } AudioSource; createAudioPlayer does not
+    // auto-play, so we set the volume and call play() explicitly.
     const wavDataUri = generateToneDataUri(config.frequencyHz, config.durationMs);
-    const { sound } = await mod.Audio.Sound.createAsync(
-      { uri: wavDataUri },
-      { shouldPlay: true, volume: 0.7 }
-    );
+    const player = mod.createAudioPlayer({ uri: wavDataUri });
+    player.volume = 0.7;
 
-    // Clean up after playback
-    sound.setOnPlaybackStatusUpdate((status) => {
-      if ('didJustFinish' in status && status.didJustFinish) {
-        sound.unloadAsync().catch(() => {});
+    // Free the native player once playback finishes.
+    const subscription = player.addListener('playbackStatusUpdate', (status) => {
+      if (status.didJustFinish) {
+        subscription.remove();
+        player.remove();
       }
     });
+
+    player.play();
   } catch {
     // Audio playback failed silently — not critical for workout flow
   }
