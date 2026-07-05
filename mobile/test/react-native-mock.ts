@@ -70,3 +70,34 @@ export const NativeEventEmitter = class {
 
 export const useWindowDimensions = () => ({ width: 375, height: 812, scale: 2, fontScale: 1 });
 export const useColorScheme = () => 'dark' as const;
+
+// Easing / Animated: titan's Workout organisms (e.g. VelocityStrip) evaluate
+// `Easing.bezier(...)` at MODULE scope, so merely importing the titan barrel runs
+// it — the stub must provide the API surface (identity easings + no-op animations)
+// or every domain test that transitively imports titan crashes at import time.
+const identityEasing = (t: number): number => t;
+export const Easing = {
+  bezier: () => identityEasing,
+  ease: identityEasing,
+  linear: identityEasing,
+  in: (fn: (t: number) => number = identityEasing) => fn,
+  out: (fn: (t: number) => number = identityEasing) => fn,
+  inOut: (fn: (t: number) => number = identityEasing) => fn,
+};
+
+const noopAnimation = { start: (cb?: () => void) => cb?.(), stop: () => {}, reset: () => {} };
+export const Animated = {
+  Value: class {
+    constructor(_value?: number) {}
+    setValue(): void {}
+    interpolate(): this {
+      return this;
+    }
+  },
+  timing: () => noopAnimation,
+  sequence: () => noopAnimation,
+  parallel: () => noopAnimation,
+  stagger: () => noopAnimation,
+  loop: () => noopAnimation,
+  View: 'Animated.View',
+};
