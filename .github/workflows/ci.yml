@@ -63,6 +63,23 @@ jobs:
           echo "Coverage report generated"
         working-directory: mobile
 
+  # Render tests: real RN-native rendering via jest-expo (VLT-03.07). Separate
+  # from mobile-test (vitest, node/logic) because RN's Flow source can't be
+  # transformed under vitest — jest-expo provides the RN transform + native mocks.
+  mobile-render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+        working-directory: mobile
+      - run: npm run test:render
+        working-directory: mobile
+
   # Regression gate: fails if react-doctor finds new error-severity issues
   # in files changed vs main. Does NOT assert an absolute score (the repo's
   # current baseline is well below the score react-doctor reports on a
