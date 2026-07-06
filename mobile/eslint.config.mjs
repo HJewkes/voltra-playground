@@ -89,7 +89,10 @@ export default tseslint.config(
       // Enforce type imports for better tree-shaking and clarity
       '@typescript-eslint/consistent-type-imports': [
         'error',
-        { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
+        // disallowTypeAnnotations:false keeps `typeof import('expo-av')` legal —
+        // the idiomatic way to type a lazily/dynamically imported module — while
+        // still enforcing `import type` for ordinary named type imports.
+        { prefer: 'type-imports', fixStyle: 'inline-type-imports', disallowTypeAnnotations: false },
       ],
       // Prevent accidental async in places that don't handle promises
       'no-async-promise-executor': 'error',
@@ -256,7 +259,10 @@ export default tseslint.config(
     rules: {
       'check-file/filename-naming-convention': [
         'error',
-        { '**/hooks/*.ts': '+([a-z])*([a-z0-9])' }, // Note: use* enforced by separate glob
+        // Hooks use kebab-case like the rest of the repo (use-ambient-color.ts).
+        // The previous `+([a-z])*([a-z0-9])` pattern forbade hyphens AND uppercase,
+        // so it matched neither kebab nor camelCase and flagged every real hook file.
+        { '**/hooks/*.ts': 'KEBAB_CASE' },
         { ignoreMiddleExtensions: true },
       ],
     },

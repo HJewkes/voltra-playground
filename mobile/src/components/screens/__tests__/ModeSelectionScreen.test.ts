@@ -2,9 +2,9 @@ import { describe, it, expect, vi } from 'vitest';
 import { createStore } from 'zustand';
 
 // Mock @/domain/device with real enum values from SDK, stub BLE classes
-vi.mock('@/domain/device', async (importOriginal) => {
-  // importOriginal resolves @/domain/device which re-exports from @voltras/node-sdk
-  // We need @voltras/node-sdk mocked first to prevent BLE resolution
+vi.mock('@/domain/device', async () => {
+  // @/domain/device re-exports from @voltras/node-sdk; we stub it entirely
+  // (below) so @voltras/node-sdk's BLE resolution never runs.
   return {
     TrainingMode: {
       Idle: 0x0000,

@@ -12,7 +12,7 @@ import {
   type VelocityAutoStopConfig,
   type VelocityAutoStopTracker,
 } from '../velocity-auto-stop';
-import { mockAnalyticsSet, mockRep } from '@/__fixtures__/generators';
+import { mockAnalyticsSet } from '@/__fixtures__/generators';
 
 // =============================================================================
 // Helpers
