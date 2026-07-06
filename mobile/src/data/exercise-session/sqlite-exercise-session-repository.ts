@@ -11,10 +11,7 @@
 
 import { open } from '@op-engineering/op-sqlite';
 import type { ExerciseSessionRepository } from './exercise-session-repository';
-import type {
-  StoredExerciseSession,
-  ExerciseSessionSummary,
-} from './exercise-session-schema';
+import type { StoredExerciseSession, ExerciseSessionSummary } from './exercise-session-schema';
 import { toExerciseSessionSummary } from './exercise-session-converters';
 import {
   rowToSession,
@@ -42,18 +39,15 @@ export interface SessionDatabase {
   close(): void;
 }
 
-const INSERT_SESSION =
-  `INSERT INTO exercise_sessions (id, exercise_id, exercise_name, start_time, end_time,
+const INSERT_SESSION = `INSERT INTO exercise_sessions (id, exercise_id, exercise_name, start_time, end_time,
    status, generated_by, termination_reason, schema_version, notes, plan_json, created_order)
    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
-const INSERT_SET =
-  `INSERT INTO session_sets (session_id, set_index, weight, chains, eccentric, start_time,
+const INSERT_SET = `INSERT INTO session_sets (session_id, set_index, weight, chains, eccentric, start_time,
    end_time, mean_velocity, estimated_rpe, estimated_rir, velocity_loss_percent, rep_numbers)
    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
-const INSERT_TELEMETRY =
-  `INSERT INTO telemetry_samples (session_id, set_index, rep_number, phase, sample_index, sample_json)
+const INSERT_TELEMETRY = `INSERT INTO telemetry_samples (session_id, set_index, rep_number, phase, sample_index, sample_json)
    VALUES (?, ?, ?, ?, ?, ?)`;
 
 export class SQLiteExerciseSessionRepository implements ExerciseSessionRepository {

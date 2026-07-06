@@ -46,13 +46,14 @@ export function SuggestionCard({ suggestion, historyLabel, onStart }: Suggestion
           <View className="mr-3 flex-1">
             <View className="mb-1 flex-row items-center gap-2">
               <Ionicons name="sparkles-outline" size={14} color={t['brand-primary']} />
-              <Text className="text-xs font-semibold uppercase tracking-wide" style={{ color: t['brand-primary'] }}>
+              <Text
+                className="text-xs font-semibold uppercase tracking-wide"
+                style={{ color: t['brand-primary'] }}
+              >
                 Suggested
               </Text>
             </View>
-            <Text className="text-base font-bold text-text-primary">
-              {suggestion.exerciseName}
-            </Text>
+            <Text className="text-base font-bold text-text-primary">{suggestion.exerciseName}</Text>
             {historyLabel ? (
               <Text className="mt-0.5 text-xs text-text-secondary">{historyLabel}</Text>
             ) : (

@@ -52,7 +52,15 @@ function buildTestSession(weights: number[], velocities: number[][]): ExerciseSe
   const exercise = createTestExercise({ id: 'bench', name: 'Bench Press' });
   const plan = planBuilder()
     .exerciseId('bench')
-    .sets(weights.map((w, i) => ({ weight: w, targetReps: 5, rirTarget: 2, isWarmup: false, setNumber: i + 1 })))
+    .sets(
+      weights.map((w, i) => ({
+        weight: w,
+        targetReps: 5,
+        rirTarget: 2,
+        isWarmup: false,
+        setNumber: i + 1,
+      }))
+    )
     .build();
 
   let session = createExerciseSession(exercise, plan);
@@ -118,7 +126,10 @@ describe('buildComplianceRecord', () => {
   it('builds a record when athlete followed advice and velocity improved', () => {
     const session = buildTestSession(
       [85, 80],
-      [[0.42, 0.40, 0.38], [0.51, 0.49, 0.47]]
+      [
+        [0.42, 0.4, 0.38],
+        [0.51, 0.49, 0.47],
+      ]
     );
 
     const cue = createReactedCue({
@@ -139,7 +150,7 @@ describe('buildComplianceRecord', () => {
   });
 
   it('builds a record when no follow-up set exists', () => {
-    const session = buildTestSession([85], [[0.42, 0.40, 0.38]]);
+    const session = buildTestSession([85], [[0.42, 0.4, 0.38]]);
 
     const cue = createReactedCue({
       afterSetIndex: 0,
@@ -162,7 +173,7 @@ describe('buildComplianceRecord', () => {
 
 describe('buildCoachingContext', () => {
   it('builds context with no previous cues', () => {
-    const session = buildTestSession([85], [[0.55, 0.52, 0.50]]);
+    const session = buildTestSession([85], [[0.55, 0.52, 0.5]]);
     const context = buildCoachingContext(session, [], null);
 
     expect(context.exerciseName).toBe('Bench Press');
@@ -174,7 +185,10 @@ describe('buildCoachingContext', () => {
   it('includes previous cue feedback with compliance info', () => {
     const session = buildTestSession(
       [85, 80],
-      [[0.42, 0.40], [0.51, 0.49]]
+      [
+        [0.42, 0.4],
+        [0.51, 0.49],
+      ]
     );
 
     const cue = createReactedCue({
@@ -236,7 +250,10 @@ describe('toPrompt', () => {
   it('includes previous feedback in prompt', () => {
     const session = buildTestSession(
       [85, 80],
-      [[0.42, 0.40], [0.51, 0.49]]
+      [
+        [0.42, 0.4],
+        [0.51, 0.49],
+      ]
     );
 
     const cue = createReactedCue({
@@ -428,15 +445,21 @@ describe('executeCoachingLoop', () => {
   it('includes reacted cues in context for multi-turn coherence', async () => {
     const session = buildTestSession(
       [85, 80, 80],
-      [[0.42, 0.40], [0.51, 0.49], [0.50, 0.48]]
+      [
+        [0.42, 0.4],
+        [0.51, 0.49],
+        [0.5, 0.48],
+      ]
     );
 
     const store = createCoachingStore();
-    store.getState().enqueueCue(createCue({
-      id: 'cue-first',
-      afterSetIndex: 0,
-      message: 'Drop to 80lbs',
-    }));
+    store.getState().enqueueCue(
+      createCue({
+        id: 'cue-first',
+        afterSetIndex: 0,
+        message: 'Drop to 80lbs',
+      })
+    );
     store.getState().reactToCue('cue-first', 'thumbs_up');
 
     let capturedBody = '';

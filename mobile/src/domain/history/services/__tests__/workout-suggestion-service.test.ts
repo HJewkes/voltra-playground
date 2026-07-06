@@ -12,7 +12,10 @@
 import { describe, it, expect } from 'vitest';
 import { suggestNextExercise } from '../workout-suggestion-service';
 import type { StoredExerciseSession } from '@/data/exercise-session';
-import { generateStoredSession, generateStoredSet } from '@/__fixtures__/generators/session-generator';
+import {
+  generateStoredSession,
+  generateStoredSet,
+} from '@/__fixtures__/generators/session-generator';
 import { EXERCISE_CATALOG } from '@/domain/exercise/catalog';
 
 // =============================================================================
@@ -29,7 +32,7 @@ function daysAgo(days: number): number {
 function makeSession(
   exerciseId: string,
   daysAgoCount: number,
-  setCount = 3,
+  setCount = 3
 ): StoredExerciseSession {
   return {
     ...generateStoredSession(),
@@ -82,10 +85,7 @@ describe('suggestNextExercise', () => {
 
 describe('recency scoring', () => {
   it('scores exercise done 10 days ago higher than one done 2 days ago', () => {
-    const sessions = [
-      makeSession('cable_chest_press', 10),
-      makeSession('cable_row', 2),
-    ];
+    const sessions = [makeSession('cable_chest_press', 10), makeSession('cable_row', 2)];
 
     const result = suggestNextExercise(sessions, MINI_CATALOG, 2, NOW);
 
@@ -118,8 +118,9 @@ describe('recency scoring', () => {
 describe('muscle group balance', () => {
   it('gives bonus to exercises with underrepresented muscle group', () => {
     // Lots of back sessions this week, no chest
-    const sessions = Array.from({ length: 6 }, (_, i) =>
-      makeSession('cable_row', i * 0.5), // recent back sessions
+    const sessions = Array.from(
+      { length: 6 },
+      (_, i) => makeSession('cable_row', i * 0.5) // recent back sessions
     );
 
     // Both exercises last done at same time — chest should outscore back due to bonus
@@ -130,7 +131,7 @@ describe('muscle group balance', () => {
       [...sessions, chestsession, rowSession],
       MINI_CATALOG,
       2,
-      NOW,
+      NOW
     );
 
     const chest = result.find((s) => s.exerciseId === 'cable_chest_press');
@@ -142,19 +143,14 @@ describe('muscle group balance', () => {
   it('penalises exercises with overrepresented muscle group', () => {
     // 10 sets of chest this week
     const chestSessions = Array.from({ length: 2 }, (_, i) =>
-      makeSession('cable_chest_press', i + 1, 5),
+      makeSession('cable_chest_press', i + 1, 5)
     );
 
     // Only 1 set of back this week
     const backSession = makeSession('cable_row', 3, 1);
 
     // Both exercises last done 3 days ago; back should outscore chest
-    const result = suggestNextExercise(
-      [...chestSessions, backSession],
-      MINI_CATALOG,
-      2,
-      NOW,
-    );
+    const result = suggestNextExercise([...chestSessions, backSession], MINI_CATALOG, 2, NOW);
 
     const chest = result.find((s) => s.exerciseId === 'cable_chest_press');
     const row = result.find((s) => s.exerciseId === 'cable_row');
@@ -166,12 +162,7 @@ describe('muscle group balance', () => {
     // No chest sessions this week, some back sets
     const backSessions = [makeSession('cable_row', 2, 4)];
 
-    const result = suggestNextExercise(
-      backSessions,
-      MINI_CATALOG,
-      2,
-      NOW,
-    );
+    const result = suggestNextExercise(backSessions, MINI_CATALOG, 2, NOW);
 
     const chest = result.find((s) => s.exerciseId === 'cable_chest_press');
     // Chest muscle group (chest) should be mentioned as low if reason triggers
@@ -194,10 +185,7 @@ describe('reason text', () => {
 
   it('says "Not done in N days" for exercises done ≥3 days ago with no muscle bonus', () => {
     // Both muscle groups equally represented this week
-    const sessions = [
-      makeSession('cable_chest_press', 4, 3),
-      makeSession('cable_row', 4, 3),
-    ];
+    const sessions = [makeSession('cable_chest_press', 4, 3), makeSession('cable_row', 4, 3)];
     const result = suggestNextExercise(sessions, MINI_CATALOG, 2, NOW);
 
     for (const suggestion of result) {
@@ -206,10 +194,7 @@ describe('reason text', () => {
   });
 
   it('provides a fallback reason for recently done exercises with no muscle imbalance', () => {
-    const sessions = [
-      makeSession('cable_chest_press', 1, 3),
-      makeSession('cable_row', 1, 3),
-    ];
+    const sessions = [makeSession('cable_chest_press', 1, 3), makeSession('cable_row', 1, 3)];
     const result = suggestNextExercise(sessions, MINI_CATALOG, 2, NOW);
 
     for (const suggestion of result) {

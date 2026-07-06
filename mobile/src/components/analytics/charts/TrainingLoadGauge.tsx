@@ -17,10 +17,7 @@ export interface TrainingLoadGaugeProps {
   width: number;
 }
 
-const STATUS_CONFIG: Record<
-  TrainingLoad['status'],
-  { color: string; label: string }
-> = {
+const STATUS_CONFIG: Record<TrainingLoad['status'], { color: string; label: string }> = {
   undertraining: { color: '#3B82F6', label: 'Undertraining' },
   optimal: { color: '#10B981', label: 'Optimal' },
   caution: { color: '#F59E0B', label: 'Caution' },
@@ -44,9 +41,7 @@ export function TrainingLoadGauge({ load, width }: TrainingLoadGaugeProps) {
     <View>
       {/* ACWR value */}
       <View className="mb-2 flex-row items-center justify-between">
-        <Text className="text-sm font-bold text-text-primary">
-          ACWR: {load.acwr.toFixed(2)}
-        </Text>
+        <Text className="text-sm font-bold text-text-primary">ACWR: {load.acwr.toFixed(2)}</Text>
         <Text className="text-xs font-semibold" style={{ color: config.color }}>
           {config.label}
         </Text>
@@ -91,14 +86,7 @@ export function TrainingLoadGauge({ load, width }: TrainingLoadGaugeProps) {
         />
 
         {/* Marker */}
-        <Rect
-          x={markerX - 3}
-          y={2}
-          width={6}
-          height={barHeight + 4}
-          rx={3}
-          fill={config.color}
-        />
+        <Rect x={markerX - 3} y={2} width={6} height={barHeight + 4} rx={3} fill={config.color} />
       </Svg>
 
       {/* Zone labels */}

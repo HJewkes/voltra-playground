@@ -35,15 +35,18 @@ interface SetCurveChartProps {
   signal?: ChartSignal;
 }
 
-const SIGNAL_CONFIG: Record<ChartSignal, {
-  label: string;
-  getValue: (s: WorkoutSample) => number;
-  unit: string;
-  color: string;
-  defaultMin: number;
-  defaultMax: number;
-  floorAtZero: boolean;
-}> = {
+const SIGNAL_CONFIG: Record<
+  ChartSignal,
+  {
+    label: string;
+    getValue: (s: WorkoutSample) => number;
+    unit: string;
+    color: string;
+    defaultMin: number;
+    defaultMax: number;
+    floorAtZero: boolean;
+  }
+> = {
   velocity: {
     label: 'Velocity',
     getValue: (s) => s.velocity,
@@ -179,7 +182,14 @@ export function SetCurveChart({
     <View>
       {/* Signal toggle (only when not externally controlled) */}
       {showToggle && (
-        <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', height: selectorHeight }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: selectorHeight,
+          }}
+        >
           <CycleToggle
             options={SIGNAL_OPTIONS}
             value={signal}
@@ -214,9 +224,7 @@ export function SetCurveChart({
           ))}
 
           {/* Data curve */}
-          {dataPath && (
-            <Path d={dataPath} stroke={config.color} strokeWidth={2} fill="none" />
-          )}
+          {dataPath && <Path d={dataPath} stroke={config.color} strokeWidth={2} fill="none" />}
 
           {/* Playhead */}
           {samples.length > 0 && (
@@ -253,26 +261,44 @@ export function SetCurveChart({
         </Svg>
 
         {/* Y-axis labels */}
-        <View style={{ position: 'absolute', left: 0, top: padding.top, width: padding.left - 4, alignItems: 'flex-end' }}>
+        <View
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: padding.top,
+            width: padding.left - 4,
+            alignItems: 'flex-end',
+          }}
+        >
           <Text style={{ fontSize: 9, color: t['text-disabled'] }}>
             {signal === 'velocity' ? maxVal.toFixed(1) : Math.round(maxVal)}
           </Text>
         </View>
-        <View style={{ position: 'absolute', left: 0, bottom: padding.bottom, width: padding.left - 4, alignItems: 'flex-end' }}>
+        <View
+          style={{
+            position: 'absolute',
+            left: 0,
+            bottom: padding.bottom,
+            width: padding.left - 4,
+            alignItems: 'flex-end',
+          }}
+        >
           <Text style={{ fontSize: 9, color: t['text-disabled'] }}>
             {signal === 'velocity' ? minVal.toFixed(1) : Math.round(minVal)}
           </Text>
         </View>
 
         {/* Time labels */}
-        <View style={{
-          position: 'absolute',
-          bottom: 1,
-          left: padding.left,
-          right: padding.right,
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-        }}>
+        <View
+          style={{
+            position: 'absolute',
+            bottom: 1,
+            left: padding.left,
+            right: padding.right,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+          }}
+        >
           <Text style={{ fontSize: 9, color: t['text-disabled'] }}>0s</Text>
           {samples.length > 0 && elapsedSec < totalSec - 1 && (
             <Text style={{ fontSize: 9, color: t['text-tertiary'] }}>{elapsedSec}s</Text>

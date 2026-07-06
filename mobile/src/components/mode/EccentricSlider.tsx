@@ -58,10 +58,7 @@ export function EccentricSlider({ value, onChange }: EccentricSliderProps) {
     <View>
       {/* Current value display */}
       <View className="mb-4 items-center">
-        <Text
-          className="text-4xl font-bold"
-          style={{ color: getValueColor() }}
-        >
+        <Text className="text-4xl font-bold" style={{ color: getValueColor() }}>
           {formatValue(localValue)}
         </Text>
         <Text className="text-sm text-text-tertiary">

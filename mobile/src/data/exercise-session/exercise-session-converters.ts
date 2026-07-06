@@ -64,11 +64,7 @@ export function toStoredExerciseSession(
     endTime: status === 'in_progress' ? null : Date.now(),
     plan: toStoredPlan(session.plan),
     completedSets: session.completedSets.map((set, index) =>
-      toStoredSessionSet(
-        set,
-        index,
-        index === lastSetIndex ? rawSamplesForLastSet : undefined
-      )
+      toStoredSessionSet(set, index, index === lastSetIndex ? rawSamplesForLastSet : undefined)
     ),
     status,
     terminationReason,
@@ -167,7 +163,9 @@ export function fromStoredExerciseSession(stored: StoredExerciseSession): Exerci
 
   const isLegacy = !stored.schemaVersion || stored.schemaVersion < SCHEMA_VERSION;
   const completedSets = isLegacy
-    ? stored.completedSets.map((s) => fromLegacyStoredSessionSet(s as unknown as LegacyStoredSessionSet))
+    ? stored.completedSets.map((s) =>
+        fromLegacyStoredSessionSet(s as unknown as LegacyStoredSessionSet)
+      )
     : stored.completedSets.map(fromStoredSessionSet);
 
   return {

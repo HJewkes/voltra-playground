@@ -15,9 +15,7 @@ export interface ManualSetLog {
   timestamp: number;
 }
 
-export function createManualSetLog(
-  data: Omit<ManualSetLog, 'id' | 'timestamp'>,
-): ManualSetLog {
+export function createManualSetLog(data: Omit<ManualSetLog, 'id' | 'timestamp'>): ManualSetLog {
   return {
     ...data,
     id: `manual-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,

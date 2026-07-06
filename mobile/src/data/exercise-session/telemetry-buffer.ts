@@ -23,11 +23,7 @@ import type { ExerciseSessionRepository } from './exercise-session-repository';
 import type { StoredExerciseSession } from './exercise-session-schema';
 import type { Scalar } from './sqlite-session-mappers';
 import type { SessionDatabase } from './sqlite-exercise-session-repository';
-import {
-  PHASE_RAW,
-  RAW_REP_NUMBER,
-  SESSION_SCHEMA_STATEMENTS,
-} from './sqlite-session-schema';
+import { PHASE_RAW, RAW_REP_NUMBER, SESSION_SCHEMA_STATEMENTS } from './sqlite-session-schema';
 
 /** Flush once this many samples are buffered in memory. */
 export const TELEMETRY_FLUSH_SAMPLE_COUNT = 50;
@@ -35,17 +31,14 @@ export const TELEMETRY_FLUSH_SAMPLE_COUNT = 50;
 /** Flush once this many ms of stream time have elapsed since the batch opened. */
 export const TELEMETRY_FLUSH_INTERVAL_MS = 1000;
 
-const INSERT_TELEMETRY =
-  `INSERT INTO telemetry_samples (session_id, set_index, rep_number, phase, sample_index, sample_json)
+const INSERT_TELEMETRY = `INSERT INTO telemetry_samples (session_id, set_index, rep_number, phase, sample_index, sample_json)
    VALUES (?, ?, ?, ?, ?, ?)`;
 
-const SELECT_BUFFERED =
-  `SELECT * FROM telemetry_samples
+const SELECT_BUFFERED = `SELECT * FROM telemetry_samples
    WHERE session_id = ? AND set_index = ? AND rep_number = ? AND phase = ?
    ORDER BY sample_index`;
 
-const DELETE_BUFFERED =
-  `DELETE FROM telemetry_samples
+const DELETE_BUFFERED = `DELETE FROM telemetry_samples
    WHERE session_id = ? AND set_index = ? AND rep_number = ? AND phase = ?`;
 
 export interface TelemetryBufferOptions {
@@ -124,7 +117,14 @@ export class TelemetryBuffer {
   }
 
   private rowParams(index: number, sample: WorkoutSample): Scalar[] {
-    return [this.sessionId, this.setIndex, RAW_REP_NUMBER, PHASE_RAW, index, JSON.stringify(sample)];
+    return [
+      this.sessionId,
+      this.setIndex,
+      RAW_REP_NUMBER,
+      PHASE_RAW,
+      index,
+      JSON.stringify(sample),
+    ];
   }
 
   private ensureSchema(): Promise<void> {

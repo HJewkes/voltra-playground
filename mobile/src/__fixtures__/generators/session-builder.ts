@@ -28,7 +28,13 @@ import type { ExerciseSession } from '@/domain/workout/models/session';
 import type { CompletedSet } from '@/domain/workout';
 import { TrainingGoal } from '@/domain/planning/types';
 import { planBuilder, type PlanTargets } from './plan-builder';
-import { setBuilder, SET_PRESETS, type SetTargets, type SetPreset, type RepBehavior } from './set-builder';
+import {
+  setBuilder,
+  SET_PRESETS,
+  type SetTargets,
+  type SetPreset,
+  type RepBehavior,
+} from './set-builder';
 
 // =============================================================================
 // Session-Level Types
@@ -289,8 +295,7 @@ class SessionBuilder {
   build(): ExerciseSession {
     // Resolve exercise
     const exercise =
-      this.targets.exercise ??
-      createTestExercise(this.targets.exerciseId ?? 'test_exercise');
+      this.targets.exercise ?? createTestExercise(this.targets.exerciseId ?? 'test_exercise');
 
     // Resolve plan
     let plan: ExercisePlan;

@@ -4,7 +4,13 @@ import { useRouter } from 'expo-router';
 import { useStore } from 'zustand';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, CardContent, Section, SectionContent, getSemanticColors } from '@titan-design/react-ui';
+import {
+  Card,
+  CardContent,
+  Section,
+  SectionContent,
+  getSemanticColors,
+} from '@titan-design/react-ui';
 import { useConnectionStore, selectIsConnected } from '@/stores';
 import { TrainingMode, TrainingModeNames } from '@/domain/device';
 import type { VoltraStoreApi } from '@/stores/voltra-store';
@@ -53,8 +59,8 @@ function ModeSelectionInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-400">
-      <View className="px-4 pt-2 pb-1">
+    <SafeAreaView className="bg-surface-400 flex-1">
+      <View className="px-4 pb-1 pt-2">
         <View className="flex-row items-center gap-3">
           <View className="h-2 w-2 rounded-full" style={{ backgroundColor: t['status-success'] }} />
           <Text className="text-sm font-semibold text-text-primary">{deviceName}</Text>

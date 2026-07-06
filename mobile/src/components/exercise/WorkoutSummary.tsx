@@ -101,7 +101,7 @@ function findMostCommonWeight(entries: SetLogEntry[]): number | null {
 
 export function buildTextSummary(
   exercises: WorkoutSummaryProps['exercises'],
-  totalDuration?: string,
+  totalDuration?: string
 ): string {
   const stats = exercises.map(deriveExerciseStats);
   const totalSets = exercises.reduce((sum, ex) => sum + ex.setCount, 0);
@@ -109,7 +109,7 @@ export function buildTextSummary(
   const lines: string[] = [];
   lines.push('Workout Complete');
   lines.push(
-    `${exercises.length} exercises | ${totalSets} sets${totalDuration ? ` | ${totalDuration}` : ''}`,
+    `${exercises.length} exercises | ${totalSets} sets${totalDuration ? ` | ${totalDuration}` : ''}`
   );
   lines.push('');
 
@@ -125,7 +125,7 @@ export function buildTextSummary(
       lines.push(
         s.rpeMin === s.rpeMax
           ? `  RPE: ${s.rpeMin.toFixed(1)}`
-          : `  RPE range: ${s.rpeMin.toFixed(1)} - ${s.rpeMax.toFixed(1)}`,
+          : `  RPE range: ${s.rpeMin.toFixed(1)} - ${s.rpeMax.toFixed(1)}`
       );
     }
     lines.push('');
@@ -150,7 +150,7 @@ function ExerciseRow({ stats }: { stats: ExerciseStats }) {
     details.push(
       stats.rpeMin === stats.rpeMax
         ? `RPE: ${stats.rpeMin.toFixed(1)}`
-        : `RPE range: ${stats.rpeMin.toFixed(1)} - ${stats.rpeMax.toFixed(1)}`,
+        : `RPE range: ${stats.rpeMin.toFixed(1)} - ${stats.rpeMax.toFixed(1)}`
     );
   }
 
@@ -165,7 +165,10 @@ function ExerciseRow({ stats }: { stats: ExerciseStats }) {
         </Text>
       </View>
       {details.map((detail, i) => (
-        <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2, paddingLeft: 4 }}>
+        <View
+          key={i}
+          style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2, paddingLeft: 4 }}
+        >
           <Text style={{ fontSize: 11, color: t['text-disabled'], marginRight: 6 }}>
             {i < details.length - 1 ? '\u251C' : '\u2514'}
           </Text>
@@ -193,7 +196,7 @@ export function WorkoutSummary({
   if (totalDuration) headerParts.push(totalDuration);
 
   return (
-    <Surface elevation={1} className="rounded-xl p-4 mt-3">
+    <Surface elevation={1} className="mt-3 rounded-xl p-4">
       {/* Header */}
       <View style={{ marginBottom: 8 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 }}>
@@ -221,7 +224,9 @@ export function WorkoutSummary({
       ))}
 
       {/* Divider */}
-      <View style={{ height: 1, backgroundColor: alpha('#fff', 0.06), marginTop: 4, marginBottom: 12 }} />
+      <View
+        style={{ height: 1, backgroundColor: alpha('#fff', 0.06), marginTop: 4, marginBottom: 12 }}
+      />
 
       {/* Action buttons */}
       <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -264,9 +269,7 @@ export function WorkoutSummary({
           accessibilityLabel="Start a new workout"
         >
           <Ionicons name="add-circle-outline" size={16} color="#fff" />
-          <Text style={{ fontSize: 13, fontWeight: '600', color: '#fff' }}>
-            Start New Workout
-          </Text>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: '#fff' }}>Start New Workout</Text>
         </TouchableOpacity>
       </View>
     </Surface>

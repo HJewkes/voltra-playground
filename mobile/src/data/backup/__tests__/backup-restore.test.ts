@@ -46,8 +46,30 @@ function createTestSession(id: string): StoredExerciseSession {
         reps: [
           {
             repNumber: 1,
-            concentric: { samples: [{ sequence: 1, timestamp: 0, phase: MovementPhase.CONCENTRIC, velocity: 0.5, force: 200, position: 0.3 }] },
-            eccentric: { samples: [{ sequence: 2, timestamp: 100, phase: MovementPhase.ECCENTRIC, velocity: 0.4, force: 180, position: 0.1 }] },
+            concentric: {
+              samples: [
+                {
+                  sequence: 1,
+                  timestamp: 0,
+                  phase: MovementPhase.CONCENTRIC,
+                  velocity: 0.5,
+                  force: 200,
+                  position: 0.3,
+                },
+              ],
+            },
+            eccentric: {
+              samples: [
+                {
+                  sequence: 2,
+                  timestamp: 100,
+                  phase: MovementPhase.ECCENTRIC,
+                  velocity: 0.4,
+                  force: 180,
+                  position: 0.1,
+                },
+              ],
+            },
           },
         ],
         startTime: 1700000000000,
@@ -83,7 +105,16 @@ function createTestRecording(id: string): SampleRecording {
     recordedAt: 1700000000000,
     durationMs: 5000,
     sampleCount: 1,
-    samples: [{ sequence: 1, timestamp: 0, phase: MovementPhase.CONCENTRIC, velocity: 0.5, force: 200, position: 0.3 }],
+    samples: [
+      {
+        sequence: 1,
+        timestamp: 0,
+        phase: MovementPhase.CONCENTRIC,
+        velocity: 0.5,
+        force: 200,
+        position: 0.3,
+      },
+    ],
     metadata: { deviceId: 'test-device' },
   };
 }
@@ -164,7 +195,12 @@ describe('Backup & Restore', () => {
         sessions: [],
         exercises: [],
         recordings: [],
-        preferences: { lastDevice: null, autoReconnect: true, hapticCuesEnabled: true, audioCuesEnabled: true },
+        preferences: {
+          lastDevice: null,
+          autoReconnect: true,
+          hapticCuesEnabled: true,
+          audioCuesEnabled: true,
+        },
       });
 
       const result = parseBackup(json);

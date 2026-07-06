@@ -32,10 +32,7 @@ function createTestSlots(count: number): SupersetSlot[] {
   }));
 }
 
-function createTestConfig(
-  slotCount = 2,
-  overrides?: Partial<SupersetConfig>
-): SupersetConfig {
+function createTestConfig(slotCount = 2, overrides?: Partial<SupersetConfig>): SupersetConfig {
   return createSupersetConfig(createTestSlots(slotCount), overrides);
 }
 

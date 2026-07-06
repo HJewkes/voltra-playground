@@ -5,10 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import {
-  planBuilder,
-  createTestExercise,
-} from '@/__fixtures__/generators';
+import { planBuilder, createTestExercise } from '@/__fixtures__/generators';
 import { mockCompletedSet } from '@/__fixtures__/generators/mock-helpers';
 import {
   createExerciseSession,

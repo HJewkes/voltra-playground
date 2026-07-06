@@ -20,10 +20,7 @@ export interface ExerciseFrequencyCardProps {
  * ExerciseFrequencyCard - top exercises by frequency.
  */
 export function ExerciseFrequencyCard({ sessions }: ExerciseFrequencyCardProps) {
-  const exercises = useMemo(
-    () => computeExerciseFrequency(sessions, 5),
-    [sessions]
-  );
+  const exercises = useMemo(() => computeExerciseFrequency(sessions, 5), [sessions]);
 
   return (
     <Card elevation={1} style={{ marginBottom: 16 }}>

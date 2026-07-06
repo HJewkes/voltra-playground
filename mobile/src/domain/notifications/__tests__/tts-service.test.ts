@@ -46,7 +46,9 @@ describe('speakCue', () => {
   });
 
   it('does not throw when expo-speech.speak throws', async () => {
-    mockSpeak.mockImplementation(() => { throw new Error('TTS error'); });
+    mockSpeak.mockImplementation(() => {
+      throw new Error('TTS error');
+    });
     await expect(speakCue('error cue')).resolves.toBeUndefined();
   });
 });

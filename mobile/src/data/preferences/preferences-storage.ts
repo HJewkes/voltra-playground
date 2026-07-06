@@ -110,32 +110,20 @@ export async function setVoiceCoachingEnabled(enabled: boolean): Promise<void> {
   await getMMKVAdapter().set(STORAGE_KEYS.VOICE_COACHING_ENABLED, enabled);
 }
 
-
 export async function isVelocityAutoStopEnabled(): Promise<boolean> {
-  const enabled = await getMMKVAdapter().get<boolean>(
-    STORAGE_KEYS.VELOCITY_AUTO_STOP_ENABLED,
-  );
+  const enabled = await getMMKVAdapter().get<boolean>(STORAGE_KEYS.VELOCITY_AUTO_STOP_ENABLED);
   return enabled ?? false;
 }
 
-export async function setVelocityAutoStopEnabled(
-  enabled: boolean,
-): Promise<void> {
+export async function setVelocityAutoStopEnabled(enabled: boolean): Promise<void> {
   await getMMKVAdapter().set(STORAGE_KEYS.VELOCITY_AUTO_STOP_ENABLED, enabled);
 }
 
 export async function getVelocityAutoStopThreshold(): Promise<number> {
-  const threshold = await getMMKVAdapter().get<number>(
-    STORAGE_KEYS.VELOCITY_AUTO_STOP_THRESHOLD,
-  );
+  const threshold = await getMMKVAdapter().get<number>(STORAGE_KEYS.VELOCITY_AUTO_STOP_THRESHOLD);
   return threshold ?? 20;
 }
 
-export async function setVelocityAutoStopThreshold(
-  threshold: number,
-): Promise<void> {
-  await getMMKVAdapter().set(
-    STORAGE_KEYS.VELOCITY_AUTO_STOP_THRESHOLD,
-    threshold,
-  );
+export async function setVelocityAutoStopThreshold(threshold: number): Promise<void> {
+  await getMMKVAdapter().set(STORAGE_KEYS.VELOCITY_AUTO_STOP_THRESHOLD, threshold);
 }

@@ -55,8 +55,7 @@ export function computeWorkoutStats(
   const avgPeakForce =
     reps.length > 0 ? reps.reduce((sum, r) => sum + getRepPeakForce(r), 0) / reps.length : 0;
 
-  const maxPeakForce =
-    reps.length > 0 ? Math.max(...reps.map((r) => getRepPeakForce(r))) : 0;
+  const maxPeakForce = reps.length > 0 ? Math.max(...reps.map((r) => getRepPeakForce(r))) : 0;
 
   const durations = reps.map((r) => getRepDuration(r));
   const avgRepDuration =

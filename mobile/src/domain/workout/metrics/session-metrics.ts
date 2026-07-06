@@ -293,8 +293,7 @@ export function computeFatigueEstimate(
   const firstVelocity = getSetMeanVelocity(firstSet.data);
   const currentVelocity = getSetMeanVelocity(currentSet.data);
 
-  const velocityRecoveryPercent =
-    firstVelocity > 0 ? (currentVelocity / firstVelocity) * 100 : 100;
+  const velocityRecoveryPercent = firstVelocity > 0 ? (currentVelocity / firstVelocity) * 100 : 100;
 
   let repDropPercent = 0;
   if (firstSet.weight === currentSet.weight) {

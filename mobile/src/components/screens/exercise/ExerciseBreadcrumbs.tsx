@@ -19,7 +19,10 @@ export interface ExerciseBreadcrumbsProps {
   currentExerciseName: string;
 }
 
-export function ExerciseBreadcrumbs({ completedExercises, currentExerciseName }: ExerciseBreadcrumbsProps) {
+export function ExerciseBreadcrumbs({
+  completedExercises,
+  currentExerciseName,
+}: ExerciseBreadcrumbsProps) {
   if (completedExercises.length === 0) return null;
 
   return (

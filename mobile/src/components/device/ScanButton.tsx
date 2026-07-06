@@ -57,7 +57,7 @@ export function ScanButton({
       {isScanning ? (
         <>
           <ActivityIndicator size="small" color={t['brand-primary']} />
-          <Text className="ml-2 text-sm font-medium text-primary-500">{scanningLabel}</Text>
+          <Text className="text-primary-500 ml-2 text-sm font-medium">{scanningLabel}</Text>
         </>
       ) : (
         <>

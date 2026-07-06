@@ -6,7 +6,13 @@
 
 import React from 'react';
 import { View, Text } from 'react-native';
-import { Card, CardHeader, CardTitle, CardContent, getSemanticColors } from '@titan-design/react-ui';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  getSemanticColors,
+} from '@titan-design/react-ui';
 import type { VolumeLandmarkComparison } from '@/domain/history';
 import { type TrainingLevel, VOLUME_LANDMARKS } from '@/domain/planning/types';
 
@@ -44,11 +50,7 @@ function formatMuscleGroup(name: string): string {
 /**
  * WeeklyVolumeCard - volume per muscle group with landmark comparison.
  */
-export function WeeklyVolumeCard({
-  comparisons,
-  level,
-  weekLabel,
-}: WeeklyVolumeCardProps) {
+export function WeeklyVolumeCard({ comparisons, level, weekLabel }: WeeklyVolumeCardProps) {
   const landmarks = VOLUME_LANDMARKS[level];
 
   if (comparisons.length === 0) {
@@ -58,9 +60,7 @@ export function WeeklyVolumeCard({
           <CardTitle>Weekly Volume</CardTitle>
         </CardHeader>
         <CardContent>
-          <Text className="text-sm text-text-disabled">
-            No volume data for {weekLabel}
-          </Text>
+          <Text className="text-sm text-text-disabled">No volume data for {weekLabel}</Text>
         </CardContent>
       </Card>
     );
@@ -105,7 +105,7 @@ export function WeeklyVolumeCard({
         ))}
 
         {/* Legend */}
-        <View className="mt-2 flex-row justify-between border-t border-surface-100 pt-2">
+        <View className="border-surface-100 mt-2 flex-row justify-between border-t pt-2">
           <LegendItem label="MEV" value={landmarks.mev} />
           <LegendItem label="MAV" value={landmarks.mav} />
           <LegendItem label="MRV" value={landmarks.mrv} />
@@ -133,7 +133,10 @@ function VolumeBar({
   const fillPercent = Math.min((sets / maxDisplay) * 100, 100);
 
   return (
-    <View className="h-2 overflow-hidden rounded-full" style={{ backgroundColor: t['surface-elevated'] }}>
+    <View
+      className="h-2 overflow-hidden rounded-full"
+      style={{ backgroundColor: t['surface-elevated'] }}
+    >
       <View
         className="h-full rounded-full"
         style={{

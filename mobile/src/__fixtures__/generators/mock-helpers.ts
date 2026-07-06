@@ -25,11 +25,7 @@
  * });
  */
 
-import type {
-  Phase,
-  Rep,
-  Set as AnalyticsSet,
-} from '@voltras/workout-analytics';
+import type { Phase, Rep, Set as AnalyticsSet } from '@voltras/workout-analytics';
 import { createCompletedSet, type CompletedSet } from '@/domain/workout/models/completed-set';
 
 /**
@@ -40,14 +36,16 @@ import { createCompletedSet, type CompletedSet } from '@/domain/workout/models/c
  *   getPhasePeakVelocity(phase) → peakVelocity
  *   getPhaseMeanForce(phase) → force
  */
-export function mockPhase(overrides: {
-  meanVelocity?: number;
-  peakVelocity?: number;
-  force?: number;
-  peakForce?: number;
-  duration?: number;
-  startTime?: number;
-} = {}): Phase {
+export function mockPhase(
+  overrides: {
+    meanVelocity?: number;
+    peakVelocity?: number;
+    force?: number;
+    peakForce?: number;
+    duration?: number;
+    startTime?: number;
+  } = {}
+): Phase {
   const {
     meanVelocity = 0.5,
     peakVelocity = meanVelocity * 1.3,
@@ -88,7 +86,7 @@ export function mockPhase(overrides: {
 export function mockRep(
   repNumber: number,
   concentricVelocity: number = 0.5,
-  eccentricVelocity: number = concentricVelocity * 0.5,
+  eccentricVelocity: number = concentricVelocity * 0.5
 ): Rep {
   return {
     repNumber,
@@ -112,13 +110,15 @@ export function mockRep(
  *
  * @param reps - Library Rep objects, or auto-generated from repCount/velocities
  */
-export function mockAnalyticsSet(options: {
-  reps?: readonly Rep[];
-  repCount?: number;
-  velocities?: number[];
-  startVelocity?: number;
-  velocityDeclinePerRep?: number;
-} = {}): AnalyticsSet {
+export function mockAnalyticsSet(
+  options: {
+    reps?: readonly Rep[];
+    repCount?: number;
+    velocities?: number[];
+    startVelocity?: number;
+    velocityDeclinePerRep?: number;
+  } = {}
+): AnalyticsSet {
   const {
     reps: explicitReps,
     repCount = 5,
@@ -135,7 +135,7 @@ export function mockAnalyticsSet(options: {
     reps = velocities.map((v, i) => mockRep(i + 1, v));
   } else {
     reps = Array.from({ length: repCount }, (_, i) =>
-      mockRep(i + 1, Math.max(0.2, startVelocity - i * velocityDeclinePerRep)),
+      mockRep(i + 1, Math.max(0.2, startVelocity - i * velocityDeclinePerRep))
     );
   }
 
@@ -161,21 +161,23 @@ export function mockAnalyticsSet(options: {
  *   repCount: 8, startTime: 1000, endTime: 2000,
  * })
  */
-export function mockCompletedSet(overrides: {
-  id?: string;
-  exerciseId?: string;
-  exerciseName?: string;
-  weight?: number;
-  chains?: number;
-  eccentricOffset?: number;
-  startTime?: number;
-  endTime?: number;
-  repCount?: number;
-  velocities?: number[];
-  startVelocity?: number;
-  velocityDeclinePerRep?: number;
-  reps?: readonly Rep[];
-} = {}): CompletedSet {
+export function mockCompletedSet(
+  overrides: {
+    id?: string;
+    exerciseId?: string;
+    exerciseName?: string;
+    weight?: number;
+    chains?: number;
+    eccentricOffset?: number;
+    startTime?: number;
+    endTime?: number;
+    repCount?: number;
+    velocities?: number[];
+    startVelocity?: number;
+    velocityDeclinePerRep?: number;
+    reps?: readonly Rep[];
+  } = {}
+): CompletedSet {
   const {
     id,
     exerciseId = 'test_exercise',

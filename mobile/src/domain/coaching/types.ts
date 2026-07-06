@@ -45,10 +45,10 @@ export interface ReactedCue extends CoachingCue {
  * Whether the athlete followed the coaching advice.
  */
 export type ComplianceOutcome =
-  | 'followed'      // Used the suggested weight
-  | 'ignored'       // Stayed at original weight
-  | 'partial'       // Moved toward suggestion but not fully
-  | 'unknown';      // No completed set to compare
+  | 'followed' // Used the suggested weight
+  | 'ignored' // Stayed at original weight
+  | 'partial' // Moved toward suggestion but not fully
+  | 'unknown'; // No completed set to compare
 
 /**
  * Tracks whether a coaching cue was followed and what happened.

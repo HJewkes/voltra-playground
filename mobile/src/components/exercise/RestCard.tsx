@@ -46,9 +46,7 @@ export function RestCard({ restElapsedMs, restTargetMs, lastSetEntry, setNumber 
             borderRadius: 8,
           }}
         >
-          <Text style={{ fontSize: 13, color: t['text-secondary'] }}>
-            Set {setNumber} complete
-          </Text>
+          <Text style={{ fontSize: 13, color: t['text-secondary'] }}>Set {setNumber} complete</Text>
           <Text style={{ fontSize: 13, color: t['text-tertiary'] }}>·</Text>
           <Text style={{ fontSize: 13, color: t['text-primary'], fontWeight: '600' }}>
             {repCount} reps

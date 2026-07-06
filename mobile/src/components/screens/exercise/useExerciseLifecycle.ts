@@ -25,7 +25,12 @@ function workoutSetsToPlannedSets(exercise: WorkoutExercise): PlannedSet[] {
     rirTarget: s.rirTarget ?? 0,
     isWarmup: s.type === 'warmup',
     targetTempo: s.tempoTarget
-      ? { concentric: s.tempoTarget.concentric, eccentric: s.tempoTarget.eccentric, pauseTop: s.tempoTarget.pauseTop, pauseBottom: s.tempoTarget.pauseBottom }
+      ? {
+          concentric: s.tempoTarget.concentric,
+          eccentric: s.tempoTarget.eccentric,
+          pauseTop: s.tempoTarget.pauseTop,
+          pauseBottom: s.tempoTarget.pauseBottom,
+        }
       : undefined,
     restSeconds: 90,
   }));
@@ -37,8 +42,11 @@ function resolveExercise(we: WorkoutExercise): Exercise {
 }
 
 const DEFAULT_TARGETS: QuickConfigTargets = {
-  effortEnabled: false, targetMode: 'reps',
-  targetReps: 0, rirTarget: 0, tempoEnabled: false,
+  effortEnabled: false,
+  targetMode: 'reps',
+  targetReps: 0,
+  rirTarget: 0,
+  tempoEnabled: false,
   targetTempo: { concentric: 0, eccentric: 0, pauseTop: 0, pauseBottom: 0 },
 };
 
@@ -49,32 +57,42 @@ export function useExerciseLifecycle(
   modeName: string,
   mode: number,
   setMode: (m: number) => void,
-  weight: number,
+  weight: number
 ) {
   const configRef = useRef<ConfigSectionRef>(null);
-  const [completedExercises, setCompletedExercises] = useState<{ name: string; setCount: number; setLog: SetLogEntry[] }[]>([]);
+  const [completedExercises, setCompletedExercises] = useState<
+    { name: string; setCount: number; setLog: SetLogEntry[] }[]
+  >([]);
   const [pickerVisible, setPickerVisible] = useState(false);
   const [workoutPlan, setWorkoutPlan] = useState<WorkoutPlan | null>(null);
   const [planExerciseIndex, setPlanExerciseIndex] = useState(0);
 
-  const loadPlanExercise = useCallback((plan: WorkoutPlan, idx: number) => {
-    const we = plan.exercises[idx];
-    if (!we) return;
-    const exercise = resolveExercise(we);
-    const plannedSets = workoutSetsToPlannedSets(we);
-    sessionStore.getState().startSession(exercise, { ...createEmptyPlan(exercise.id), sets: plannedSets });
-    sessionStore.getState().bindRecordingStore(recordingStore);
-    sessionStore.getState().bindVoltraStore(voltraStore);
-    const firstWeight = plannedSets[0]?.weight;
-    if (firstWeight && firstWeight > 0) voltraStore.getState().setWeight(firstWeight);
-  }, [sessionStore, recordingStore, voltraStore]);
+  const loadPlanExercise = useCallback(
+    (plan: WorkoutPlan, idx: number) => {
+      const we = plan.exercises[idx];
+      if (!we) return;
+      const exercise = resolveExercise(we);
+      const plannedSets = workoutSetsToPlannedSets(we);
+      sessionStore
+        .getState()
+        .startSession(exercise, { ...createEmptyPlan(exercise.id), sets: plannedSets });
+      sessionStore.getState().bindRecordingStore(recordingStore);
+      sessionStore.getState().bindVoltraStore(voltraStore);
+      const firstWeight = plannedSets[0]?.weight;
+      if (firstWeight && firstWeight > 0) voltraStore.getState().setWeight(firstWeight);
+    },
+    [sessionStore, recordingStore, voltraStore]
+  );
 
-  const handlePlanLoaded = useCallback((plan: WorkoutPlan) => {
-    setWorkoutPlan(plan);
-    setPlanExerciseIndex(0);
-    setCompletedExercises([]);
-    loadPlanExercise(plan, 0);
-  }, [loadPlanExercise]);
+  const handlePlanLoaded = useCallback(
+    (plan: WorkoutPlan) => {
+      setWorkoutPlan(plan);
+      setPlanExerciseIndex(0);
+      setCompletedExercises([]);
+      loadPlanExercise(plan, 0);
+    },
+    [loadPlanExercise]
+  );
 
   // Consume a plan delivered from outside the screen (coaching channel, upload,
   // deep link) via receiveWorkoutPlan → planDeliveryStore.
@@ -93,17 +111,20 @@ export function useExerciseLifecycle(
     setCompletedExercises((prev) => [...prev, { name, setCount: count, setLog: [...cur.setLog] }]);
   }, [sessionStore, modeName]);
 
-  const handleNextExercise = useCallback((exercise: Exercise) => {
-    archiveCurrentExercise();
-    sessionStore.getState().startSession(exercise, createEmptyPlan(exercise.id));
-    sessionStore.getState().bindRecordingStore(recordingStore);
-    sessionStore.getState().bindVoltraStore(voltraStore);
-    if (exercise.equipmentSetup?.cablePath) {
-      const cableMode = exercise.movementPattern === 'pull' ? TrainingMode.WeightTraining : mode;
-      if (cableMode !== mode) setMode(cableMode);
-    }
-    setPickerVisible(false);
-  }, [archiveCurrentExercise, sessionStore, recordingStore, voltraStore, mode, setMode]);
+  const handleNextExercise = useCallback(
+    (exercise: Exercise) => {
+      archiveCurrentExercise();
+      sessionStore.getState().startSession(exercise, createEmptyPlan(exercise.id));
+      sessionStore.getState().bindRecordingStore(recordingStore);
+      sessionStore.getState().bindVoltraStore(voltraStore);
+      if (exercise.equipmentSetup?.cablePath) {
+        const cableMode = exercise.movementPattern === 'pull' ? TrainingMode.WeightTraining : mode;
+        if (cableMode !== mode) setMode(cableMode);
+      }
+      setPickerVisible(false);
+    },
+    [archiveCurrentExercise, sessionStore, recordingStore, voltraStore, mode, setMode]
+  );
 
   const handlePlanNextExercise = useCallback(() => {
     archiveCurrentExercise();
@@ -116,31 +137,43 @@ export function useExerciseLifecycle(
     }
   }, [archiveCurrentExercise, workoutPlan, planExerciseIndex, loadPlanExercise]);
 
-  const buildPlannedSet = useCallback((targets: QuickConfigTargets, setNumber: number): PlannedSet => {
-    const isReps = targets.targetMode === 'reps';
-    return {
-      setNumber, weight,
-      targetReps: targets.effortEnabled && isReps ? targets.targetReps : 0,
-      rirTarget: targets.effortEnabled && !isReps ? targets.rirTarget : 0,
-      isWarmup: false,
-      targetTempo: targets.tempoEnabled ? targets.targetTempo : undefined,
-      restSeconds: 90,
-    };
-  }, [weight]);
+  const buildPlannedSet = useCallback(
+    (targets: QuickConfigTargets, setNumber: number): PlannedSet => {
+      const isReps = targets.targetMode === 'reps';
+      return {
+        setNumber,
+        weight,
+        targetReps: targets.effortEnabled && isReps ? targets.targetReps : 0,
+        rirTarget: targets.effortEnabled && !isReps ? targets.rirTarget : 0,
+        isWarmup: false,
+        targetTempo: targets.tempoEnabled ? targets.targetTempo : undefined,
+        restSeconds: 90,
+      };
+    },
+    [weight]
+  );
 
   const ensureSession = useCallback(() => {
     if (!sessionStore.getState().session) {
-      sessionStore.getState().startSession(createExercise({ id: 'simple-exercise', name: modeName }), createEmptyPlan('simple-exercise'));
+      sessionStore
+        .getState()
+        .startSession(
+          createExercise({ id: 'simple-exercise', name: modeName }),
+          createEmptyPlan('simple-exercise')
+        );
       sessionStore.getState().bindRecordingStore(recordingStore);
       sessionStore.getState().bindVoltraStore(voltraStore);
     }
   }, [sessionStore, recordingStore, voltraStore, modeName]);
 
-  const handleAddSet = useCallback((targets: QuickConfigTargets) => {
-    ensureSession();
-    const currentSets = sessionStore.getState().session?.plan.sets.length ?? 0;
-    sessionStore.getState().addPlannedSet(buildPlannedSet(targets, currentSets + 1));
-  }, [ensureSession, sessionStore, buildPlannedSet]);
+  const handleAddSet = useCallback(
+    (targets: QuickConfigTargets) => {
+      ensureSession();
+      const currentSets = sessionStore.getState().session?.plan.sets.length ?? 0;
+      sessionStore.getState().addPlannedSet(buildPlannedSet(targets, currentSets + 1));
+    },
+    [ensureSession, sessionStore, buildPlannedSet]
+  );
 
   const handleStart = useCallback(async () => {
     try {
@@ -164,16 +197,25 @@ export function useExerciseLifecycle(
     }
   }, [voltraStore, mode, sessionStore, ensureSession, buildPlannedSet]);
 
-  const handleStop = useCallback(async () => { await sessionStore.getState().stopSession(); }, [sessionStore]);
+  const handleStop = useCallback(async () => {
+    await sessionStore.getState().stopSession();
+  }, [sessionStore]);
 
   return {
     configRef,
     completedExercises,
-    pickerVisible, setPickerVisible,
-    workoutPlan, planExerciseIndex,
+    pickerVisible,
+    setPickerVisible,
+    workoutPlan,
+    planExerciseIndex,
     currentPlanExercise: workoutPlan?.exercises[planExerciseIndex] ?? null,
-    hasMorePlanExercises: workoutPlan !== null && planExerciseIndex < workoutPlan.exercises.length - 1,
-    handlePlanLoaded, handleNextExercise, handlePlanNextExercise,
-    handleAddSet, handleStart, handleStop,
+    hasMorePlanExercises:
+      workoutPlan !== null && planExerciseIndex < workoutPlan.exercises.length - 1,
+    handlePlanLoaded,
+    handleNextExercise,
+    handlePlanNextExercise,
+    handleAddSet,
+    handleStart,
+    handleStop,
   };
 }

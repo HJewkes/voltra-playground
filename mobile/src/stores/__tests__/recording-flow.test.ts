@@ -201,11 +201,7 @@ describe('Recording Flow Integration', () => {
 
     it('completes a set through session store orchestration', async () => {
       const exercise = createTestExercise(EXERCISE_ID);
-      const plan = planBuilder()
-        .workingSets(3)
-        .workingWeight(WEIGHT_LBS)
-        .targetReps(5)
-        .build();
+      const plan = planBuilder().workingSets(3).workingWeight(WEIGHT_LBS).targetReps(5).build();
 
       exerciseSessionStore.getState().startSession(exercise, plan);
 
@@ -279,11 +275,7 @@ describe('Recording Flow Integration', () => {
 
     it('accumulates completed sets across multiple recordings', async () => {
       const exercise = createTestExercise(EXERCISE_ID);
-      const plan = planBuilder()
-        .workingSets(3)
-        .workingWeight(WEIGHT_LBS)
-        .targetReps(3)
-        .build();
+      const plan = planBuilder().workingSets(3).workingWeight(WEIGHT_LBS).targetReps(3).build();
 
       exerciseSessionStore.getState().startSession(exercise, plan);
 
@@ -324,11 +316,7 @@ describe('Recording Flow Integration', () => {
 
     it('terminates session after all planned sets complete', async () => {
       const exercise = createTestExercise(EXERCISE_ID);
-      const plan = planBuilder()
-        .workingSets(2)
-        .workingWeight(WEIGHT_LBS)
-        .targetReps(3)
-        .build();
+      const plan = planBuilder().workingSets(2).workingWeight(WEIGHT_LBS).targetReps(3).build();
 
       exerciseSessionStore.getState().startSession(exercise, plan);
 

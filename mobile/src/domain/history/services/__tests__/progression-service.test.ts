@@ -23,9 +23,7 @@ import {
 // Test Helpers
 // =============================================================================
 
-function createSession(
-  overrides: Partial<StoredExerciseSession> = {},
-): StoredExerciseSession {
+function createSession(overrides: Partial<StoredExerciseSession> = {}): StoredExerciseSession {
   return { ...generateStoredSession(), ...overrides };
 }
 
@@ -56,17 +54,13 @@ describe('computeExerciseProgression', () => {
     const previous = createSession({
       exerciseId: 'bench',
       exerciseName: 'Bench Press',
-      completedSets: [
-        generateStoredSet({ weight: 100, repCount: 8, startingVelocity: 0.6 }),
-      ],
+      completedSets: [generateStoredSet({ weight: 100, repCount: 8, startingVelocity: 0.6 })],
     });
 
     const current = createSession({
       exerciseId: 'bench',
       exerciseName: 'Bench Press',
-      completedSets: [
-        generateStoredSet({ weight: 100, repCount: 8, startingVelocity: 0.7 }),
-      ],
+      completedSets: [generateStoredSet({ weight: 100, repCount: 8, startingVelocity: 0.7 })],
     });
 
     const result = computeExerciseProgression(current, previous);
@@ -79,15 +73,11 @@ describe('computeExerciseProgression', () => {
 
   it('detects velocity decrease', () => {
     const previous = createSession({
-      completedSets: [
-        generateStoredSet({ weight: 100, repCount: 8, startingVelocity: 0.8 }),
-      ],
+      completedSets: [generateStoredSet({ weight: 100, repCount: 8, startingVelocity: 0.8 })],
     });
 
     const current = createSession({
-      completedSets: [
-        generateStoredSet({ weight: 100, repCount: 8, startingVelocity: 0.5 }),
-      ],
+      completedSets: [generateStoredSet({ weight: 100, repCount: 8, startingVelocity: 0.5 })],
     });
 
     const result = computeExerciseProgression(current, previous);
@@ -98,15 +88,11 @@ describe('computeExerciseProgression', () => {
 
   it('detects flat trend when change is minimal', () => {
     const previous = createSession({
-      completedSets: [
-        generateStoredSet({ weight: 100, repCount: 8, startingVelocity: 0.8 }),
-      ],
+      completedSets: [generateStoredSet({ weight: 100, repCount: 8, startingVelocity: 0.8 })],
     });
 
     const current = createSession({
-      completedSets: [
-        generateStoredSet({ weight: 100, repCount: 8, startingVelocity: 0.801 }),
-      ],
+      completedSets: [generateStoredSet({ weight: 100, repCount: 8, startingVelocity: 0.801 })],
     });
 
     const result = computeExerciseProgression(current, previous);
@@ -116,15 +102,11 @@ describe('computeExerciseProgression', () => {
 
   it('computes e1RM comparison', () => {
     const previous = createSession({
-      completedSets: [
-        generateStoredSet({ weight: 100, repCount: 5 }),
-      ],
+      completedSets: [generateStoredSet({ weight: 100, repCount: 5 })],
     });
 
     const current = createSession({
-      completedSets: [
-        generateStoredSet({ weight: 110, repCount: 5 }),
-      ],
+      completedSets: [generateStoredSet({ weight: 110, repCount: 5 })],
     });
 
     const result = computeExerciseProgression(current, previous);
@@ -157,15 +139,11 @@ describe('computeExerciseProgression', () => {
 
   it('includes delta percent', () => {
     const previous = createSession({
-      completedSets: [
-        generateStoredSet({ weight: 100, repCount: 10 }),
-      ],
+      completedSets: [generateStoredSet({ weight: 100, repCount: 10 })],
     });
 
     const current = createSession({
-      completedSets: [
-        generateStoredSet({ weight: 100, repCount: 5 }),
-      ],
+      completedSets: [generateStoredSet({ weight: 100, repCount: 5 })],
     });
 
     const result = computeExerciseProgression(current, previous);
@@ -242,18 +220,14 @@ describe('buildLastSessionBanner', () => {
         exerciseName: 'Bench Press',
         status: 'completed',
         startTime: daysAgo(7),
-        completedSets: [
-          generateStoredSet({ weight: 100, repCount: 8, startingVelocity: 0.6 }),
-        ],
+        completedSets: [generateStoredSet({ weight: 100, repCount: 8, startingVelocity: 0.6 })],
       }),
       createSession({
         exerciseId: 'bench',
         exerciseName: 'Bench Press',
         status: 'completed',
         startTime: daysAgo(1),
-        completedSets: [
-          generateStoredSet({ weight: 110, repCount: 8, startingVelocity: 0.55 }),
-        ],
+        completedSets: [generateStoredSet({ weight: 110, repCount: 8, startingVelocity: 0.55 })],
       }),
     ];
 
@@ -306,25 +280,19 @@ describe('computeProgressionFromHistory', () => {
         exerciseId: 'bench',
         status: 'completed',
         startTime: daysAgo(14),
-        completedSets: [
-          generateStoredSet({ weight: 90, repCount: 8 }),
-        ],
+        completedSets: [generateStoredSet({ weight: 90, repCount: 8 })],
       }),
       createSession({
         exerciseId: 'bench',
         status: 'completed',
         startTime: daysAgo(7),
-        completedSets: [
-          generateStoredSet({ weight: 100, repCount: 8 }),
-        ],
+        completedSets: [generateStoredSet({ weight: 100, repCount: 8 })],
       }),
       createSession({
         exerciseId: 'bench',
         status: 'completed',
         startTime: daysAgo(1),
-        completedSets: [
-          generateStoredSet({ weight: 110, repCount: 8 }),
-        ],
+        completedSets: [generateStoredSet({ weight: 110, repCount: 8 })],
       }),
     ];
 

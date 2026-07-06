@@ -47,12 +47,8 @@ export function AutoPlanCard({ autoPlan, onStart, onChange }: AutoPlanCardProps)
           </Text>
         </View>
 
-        <Text className="text-base font-bold text-text-primary">
-          {autoPlan.exercise.name}
-        </Text>
-        <Text className="mt-0.5 text-sm text-text-secondary">
-          {autoPlan.summary}
-        </Text>
+        <Text className="text-base font-bold text-text-primary">{autoPlan.exercise.name}</Text>
+        <Text className="mt-0.5 text-sm text-text-secondary">{autoPlan.summary}</Text>
 
         <View className="mt-3 flex-row items-center justify-between">
           <Pressable
@@ -61,10 +57,7 @@ export function AutoPlanCard({ autoPlan, onStart, onChange }: AutoPlanCardProps)
             accessibilityLabel="Change exercise"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text
-              className="text-sm font-medium"
-              style={{ color: t['brand-primary'] }}
-            >
+            <Text className="text-sm font-medium" style={{ color: t['brand-primary'] }}>
               Change
             </Text>
           </Pressable>

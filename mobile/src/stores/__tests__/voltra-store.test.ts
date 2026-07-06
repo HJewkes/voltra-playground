@@ -10,7 +10,16 @@ import { createVoltraStore, type VoltraStoreApi } from '../voltra-store';
 
 // Mock @/domain/device to avoid react-native-ble-plx parse errors
 vi.mock('@/domain/device', () => ({
-  TrainingMode: { Idle: 0, WeightTraining: 1, ResistanceBand: 2, Rowing: 3, Damper: 4, CustomCurves: 6, Isokinetic: 7, Isometric: 8 },
+  TrainingMode: {
+    Idle: 0,
+    WeightTraining: 1,
+    ResistanceBand: 2,
+    Rowing: 3,
+    Damper: 4,
+    CustomCurves: 6,
+    Isokinetic: 7,
+    Isometric: 8,
+  },
   TrainingModeNames: {},
   toWorkoutSample: vi.fn((frame: unknown) => frame),
   toWorkoutSamples: vi.fn((frames: unknown[]) => frames),
@@ -312,7 +321,14 @@ function createMockClient(): any {
   return {
     connectionState: 'connected' as const,
     recordingState: 'idle' as const,
-    settings: { weight: 0, chains: 0, inverseChains: 0, eccentric: 0, mode: TrainingMode.Idle, battery: null },
+    settings: {
+      weight: 0,
+      chains: 0,
+      inverseChains: 0,
+      eccentric: 0,
+      mode: TrainingMode.Idle,
+      battery: null,
+    },
     setWeight: vi.fn().mockResolvedValue(undefined),
     setChains: vi.fn().mockResolvedValue(undefined),
     setInverseChains: vi.fn().mockResolvedValue(undefined),

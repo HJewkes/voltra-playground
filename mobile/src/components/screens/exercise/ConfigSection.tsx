@@ -63,7 +63,7 @@ export const ConfigSection = forwardRef<ConfigSectionRef, ConfigSectionProps>(
       plannedSetCount,
       lastSessionWeight,
     },
-    ref,
+    ref
   ) {
     const [effortEnabled, setEffortEnabled] = useState(false);
     const [targetMode, setTargetMode] = useState<TargetMode>('reps');
@@ -71,12 +71,26 @@ export const ConfigSection = forwardRef<ConfigSectionRef, ConfigSectionProps>(
     const [rirTarget, setRirTarget] = useState(0);
     const [tempoEnabled, setTempoEnabled] = useState(false);
     const [targetTempo, setTargetTempo] = useState<TempoTarget>({
-      concentric: 0, eccentric: 0, pauseTop: 0, pauseBottom: 0,
+      concentric: 0,
+      eccentric: 0,
+      pauseTop: 0,
+      pauseBottom: 0,
     });
 
-    useImperativeHandle(ref, () => ({
-      getTargets: () => ({ effortEnabled, targetMode, targetReps, rirTarget, tempoEnabled, targetTempo }),
-    }), [effortEnabled, targetMode, targetReps, rirTarget, tempoEnabled, targetTempo]);
+    useImperativeHandle(
+      ref,
+      () => ({
+        getTargets: () => ({
+          effortEnabled,
+          targetMode,
+          targetReps,
+          rirTarget,
+          tempoEnabled,
+          targetTempo,
+        }),
+      }),
+      [effortEnabled, targetMode, targetReps, rirTarget, tempoEnabled, targetTempo]
+    );
 
     const isReps = targetMode === 'reps';
     const mainValue = isReps ? targetReps : rirTarget;
@@ -93,10 +107,13 @@ export const ConfigSection = forwardRef<ConfigSectionRef, ConfigSectionProps>(
       }
     }, [effortEnabled, targetMode]);
 
-    const handleTargetChange = useCallback((v: number) => {
-      if (isReps) setTargetReps(v);
-      else setRirTarget(v);
-    }, [isReps]);
+    const handleTargetChange = useCallback(
+      (v: number) => {
+        if (isReps) setTargetReps(v);
+        else setRirTarget(v);
+      },
+      [isReps]
+    );
 
     const handleAddSet = useCallback(() => {
       onAddSet({ effortEnabled, targetMode, targetReps, rirTarget, tempoEnabled, targetTempo });
@@ -107,7 +124,7 @@ export const ConfigSection = forwardRef<ConfigSectionRef, ConfigSectionProps>(
     }, []);
 
     return (
-      <Surface elevation={1} className="mt-1 rounded-xl py-3 px-2">
+      <Surface elevation={1} className="mt-1 rounded-xl px-2 py-3">
         <QuickConfig
           effortEnabled={effortEnabled}
           targetMode={targetMode}
@@ -118,7 +135,9 @@ export const ConfigSection = forwardRef<ConfigSectionRef, ConfigSectionProps>(
           weightSlot={
             <VerticalWeightJog
               weight={weight}
-              onWeightChange={(w: number) => { voltraStore.getState().setWeight(w); }}
+              onWeightChange={(w: number) => {
+                voltraStore.getState().setWeight(w);
+              }}
               disabled={isActive}
               lastSessionWeight={lastSessionWeight}
             />
@@ -130,7 +149,7 @@ export const ConfigSection = forwardRef<ConfigSectionRef, ConfigSectionProps>(
         />
         {(showEccentric || showChains) && !isActive && (
           <View
-            className="px-1 mt-2 pt-2"
+            className="mt-2 px-1 pt-2"
             style={{
               opacity: isActive ? 0.4 : 1,
               borderTopWidth: 1,
@@ -157,5 +176,5 @@ export const ConfigSection = forwardRef<ConfigSectionRef, ConfigSectionProps>(
         )}
       </Surface>
     );
-  },
+  }
 );

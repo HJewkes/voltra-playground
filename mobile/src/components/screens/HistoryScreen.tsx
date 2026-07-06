@@ -11,7 +11,16 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, Alert, RefreshControl, TouchableOpacity } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, CardContent, VStack, Metric, MetricGroup, EmptyState, getSemanticColors, alpha } from '@titan-design/react-ui';
+import {
+  Card,
+  CardContent,
+  VStack,
+  Metric,
+  MetricGroup,
+  EmptyState,
+  getSemanticColors,
+  alpha,
+} from '@titan-design/react-ui';
 import { getSessionRepository } from '@/data/provider';
 import type { StoredExerciseSession } from '@/data/exercise-session';
 import {
@@ -26,7 +35,6 @@ import { AnalyticsDashboard } from './AnalyticsDashboard';
 const t = getSemanticColors('dark');
 
 type HistoryView = 'list' | 'calendar' | 'analytics';
-
 
 function formatNumber(num: number): string {
   if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
@@ -196,7 +204,7 @@ export function HistoryScreen() {
 
   if (activeView === 'analytics') {
     return (
-      <View className="flex-1 bg-surface-400">
+      <View className="bg-surface-400 flex-1">
         <View className="px-4 pt-4">
           <ViewToggle activeView={activeView} onChangeView={setActiveView} />
         </View>
@@ -207,7 +215,7 @@ export function HistoryScreen() {
 
   if (activeView === 'calendar') {
     return (
-      <View className="flex-1 bg-surface-400">
+      <View className="bg-surface-400 flex-1">
         <View className="px-4 pt-4">
           <ViewToggle activeView={activeView} onChangeView={setActiveView} />
         </View>

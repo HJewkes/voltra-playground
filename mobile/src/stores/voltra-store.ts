@@ -176,7 +176,7 @@ export function createVoltraStore(
 
       // Convert current frame to sample (single conversion, not whole buffer)
       const sample = toWorkoutSample(frame);
-      
+
       // Add sample to buffer incrementally
       recentSamplesBuffer.push(sample);
       if (recentSamplesBuffer.length > MAX_RECENT_FRAMES) {

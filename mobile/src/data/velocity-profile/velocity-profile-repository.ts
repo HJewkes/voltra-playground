@@ -93,7 +93,7 @@ export class VelocityProfileRepositoryImpl implements VelocityProfileRepository 
 // =============================================================================
 
 export function createVelocityProfileRepository(
-  adapter: StorageAdapter,
+  adapter: StorageAdapter
 ): VelocityProfileRepository {
   return new VelocityProfileRepositoryImpl(adapter);
 }

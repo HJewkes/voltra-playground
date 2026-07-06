@@ -61,7 +61,7 @@ export interface ReadinessAssessment {
  */
 export function deriveIntensityAdjustment(
   zone: ReadinessEstimate['zone'],
-  velocityRatio: number,
+  velocityRatio: number
 ): IntensityAdjustment {
   switch (zone) {
     case 'green':
@@ -93,7 +93,7 @@ export function deriveIntensityAdjustment(
  */
 export function assessReadiness(
   warmupSet: CompletedSet,
-  baseline: VelocityBaseline,
+  baseline: VelocityBaseline
 ): ReadinessAssessment | null {
   const actualVelocity = getSetFirstRepVelocity(warmupSet.data);
   if (actualVelocity <= 0) return null;
@@ -127,7 +127,7 @@ export function assessReadiness(
 export function isReadinessCheckCandidate(
   setIndex: number,
   set: CompletedSet,
-  baseline: VelocityBaseline | null,
+  baseline: VelocityBaseline | null
 ): boolean {
   if (setIndex !== 0) return false;
   if (set.data.reps.length === 0) return false;
@@ -147,7 +147,7 @@ export function isReadinessCheckCandidate(
  */
 export function assessReadinessAuto(
   warmupSet: CompletedSet,
-  baseline: VelocityBaseline | null,
+  baseline: VelocityBaseline | null
 ): AutoReadinessResult {
   const actualVelocity = getSetFirstRepVelocity(warmupSet.data);
 
@@ -184,7 +184,7 @@ export function assessReadinessAuto(
  */
 export function applyReadinessWeightAdjustment(
   currentWeight: number,
-  assessment: ReadinessAssessment,
+  assessment: ReadinessAssessment
 ): number {
   if (assessment.estimate.zone !== 'red') return currentWeight;
 

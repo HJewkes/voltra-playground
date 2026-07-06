@@ -8,7 +8,13 @@
 import React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { ListItem, ListItemContent, ListItemTrailing, Surface, getSemanticColors } from '@titan-design/react-ui';
+import {
+  ListItem,
+  ListItemContent,
+  ListItemTrailing,
+  Surface,
+  getSemanticColors,
+} from '@titan-design/react-ui';
 import type { DiscoveredDevice } from '@/domain/device';
 
 const t = getSemanticColors('dark');

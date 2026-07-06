@@ -55,9 +55,7 @@ function createTestSet(
 ): CompletedSet {
   const { weight = 75, repCount = 8 } = options;
 
-  const velocities = Array.from({ length: repCount }, (_, i) =>
-    Math.max(0.2, 0.55 - i * 0.02)
-  );
+  const velocities = Array.from({ length: repCount }, (_, i) => Math.max(0.2, 0.55 - i * 0.02));
 
   return mockCompletedSet({
     exerciseId: 'cable_row',

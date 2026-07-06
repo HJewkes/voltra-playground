@@ -18,9 +18,7 @@ import { assembleSessionDebrief } from '../session-debrief-service';
 // Helpers
 // =============================================================================
 
-function createSession(
-  overrides: Partial<StoredExerciseSession> = {},
-): StoredExerciseSession {
+function createSession(overrides: Partial<StoredExerciseSession> = {}): StoredExerciseSession {
   return { ...generateStoredSession(), ...overrides };
 }
 
@@ -54,25 +52,17 @@ describe('assembleSessionDebrief', () => {
       exerciseId: 'cable_row',
       exerciseName: 'Seated Cable Row',
       startTime: daysAgo(3),
-      completedSets: [
-        generateStoredSet({ weight: 100, repCount: 8, startingVelocity: 0.6 }),
-      ],
+      completedSets: [generateStoredSet({ weight: 100, repCount: 8, startingVelocity: 0.6 })],
     });
 
     const current = createSession({
       exerciseId: 'cable_row',
       exerciseName: 'Seated Cable Row',
       startTime: Date.now(),
-      completedSets: [
-        generateStoredSet({ weight: 100, repCount: 8, startingVelocity: 0.7 }),
-      ],
+      completedSets: [generateStoredSet({ weight: 100, repCount: 8, startingVelocity: 0.7 })],
     });
 
-    const result = assembleSessionDebrief(
-      [current],
-      [current, previous],
-      EXERCISE_CATALOG,
-    );
+    const result = assembleSessionDebrief([current], [current, previous], EXERCISE_CATALOG);
 
     expect(result.progressionArrows).toHaveLength(1);
     expect(result.progressionArrows[0].exerciseName).toBe('Seated Cable Row');
@@ -151,7 +141,7 @@ describe('assembleSessionDebrief', () => {
     const result = assembleSessionDebrief(
       [session1, session2],
       [session1, session2],
-      EXERCISE_CATALOG,
+      EXERCISE_CATALOG
     );
 
     expect(result.recoveryNote).not.toBeNull();
@@ -163,42 +153,30 @@ describe('assembleSessionDebrief', () => {
       exerciseId: 'cable_row',
       exerciseName: 'Seated Cable Row',
       startTime: daysAgo(3),
-      completedSets: [
-        generateStoredSet({ weight: 100, repCount: 8, startingVelocity: 0.6 }),
-      ],
+      completedSets: [generateStoredSet({ weight: 100, repCount: 8, startingVelocity: 0.6 })],
     });
     const prevCurl = createSession({
       exerciseId: 'cable_curl',
       exerciseName: 'Cable Bicep Curl',
       startTime: daysAgo(3),
-      completedSets: [
-        generateStoredSet({ weight: 30, repCount: 12, startingVelocity: 0.5 }),
-      ],
+      completedSets: [generateStoredSet({ weight: 30, repCount: 12, startingVelocity: 0.5 })],
     });
 
     const currentRow = createSession({
       exerciseId: 'cable_row',
       exerciseName: 'Seated Cable Row',
       startTime: Date.now(),
-      completedSets: [
-        generateStoredSet({ weight: 100, repCount: 8, startingVelocity: 0.7 }),
-      ],
+      completedSets: [generateStoredSet({ weight: 100, repCount: 8, startingVelocity: 0.7 })],
     });
     const currentCurl = createSession({
       exerciseId: 'cable_curl',
       exerciseName: 'Cable Bicep Curl',
       startTime: Date.now(),
-      completedSets: [
-        generateStoredSet({ weight: 30, repCount: 12, startingVelocity: 0.6 }),
-      ],
+      completedSets: [generateStoredSet({ weight: 30, repCount: 12, startingVelocity: 0.6 })],
     });
 
     const allHistory = [currentRow, currentCurl, prevRow, prevCurl];
-    const result = assembleSessionDebrief(
-      [currentRow, currentCurl],
-      allHistory,
-      EXERCISE_CATALOG,
-    );
+    const result = assembleSessionDebrief([currentRow, currentCurl], allHistory, EXERCISE_CATALOG);
 
     expect(result.progressionArrows).toHaveLength(2);
     const names = result.progressionArrows.map((a) => a.exerciseName);
@@ -211,9 +189,7 @@ describe('assembleSessionDebrief', () => {
       exerciseId: 'cable_row',
       exerciseName: 'Seated Cable Row',
       startTime: Date.now(),
-      completedSets: [
-        generateStoredSet({ weight: 200, repCount: 10, startingVelocity: 1.5 }),
-      ],
+      completedSets: [generateStoredSet({ weight: 200, repCount: 10, startingVelocity: 1.5 })],
     });
 
     const result = assembleSessionDebrief([current], [current], EXERCISE_CATALOG);
@@ -229,29 +205,29 @@ describe('assembleSessionDebrief', () => {
       exerciseId: 'cable_row',
       exerciseName: 'Seated Cable Row',
       startTime: olderSetTime,
-      completedSets: [{
-        ...generateStoredSet({ weight: 200, repCount: 15, startingVelocity: 2.0 }),
-        startTime: olderSetTime,
-        endTime: olderSetTime + 60_000,
-      }],
+      completedSets: [
+        {
+          ...generateStoredSet({ weight: 200, repCount: 15, startingVelocity: 2.0 }),
+          startTime: olderSetTime,
+          endTime: olderSetTime + 60_000,
+        },
+      ],
     });
 
     const current = createSession({
       exerciseId: 'cable_row',
       exerciseName: 'Seated Cable Row',
       startTime: currentSetTime,
-      completedSets: [{
-        ...generateStoredSet({ weight: 100, repCount: 5, startingVelocity: 0.5 }),
-        startTime: currentSetTime,
-        endTime: currentSetTime + 60_000,
-      }],
+      completedSets: [
+        {
+          ...generateStoredSet({ weight: 100, repCount: 5, startingVelocity: 0.5 }),
+          startTime: currentSetTime,
+          endTime: currentSetTime + 60_000,
+        },
+      ],
     });
 
-    const result = assembleSessionDebrief(
-      [current],
-      [older, current],
-      EXERCISE_CATALOG,
-    );
+    const result = assembleSessionDebrief([current], [older, current], EXERCISE_CATALOG);
 
     expect(result.prBadges).toHaveLength(0);
   });

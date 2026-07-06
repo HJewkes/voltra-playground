@@ -9,7 +9,10 @@ describe('detectBLEEnvironment', () => {
   afterEach(() => {
     // Restore globals
     Object.defineProperty(globalThis, 'window', { value: originalWindow, configurable: true });
-    Object.defineProperty(globalThis, 'navigator', { value: originalNavigator, configurable: true });
+    Object.defineProperty(globalThis, 'navigator', {
+      value: originalNavigator,
+      configurable: true,
+    });
     Object.defineProperty(globalThis, 'process', { value: originalProcess, configurable: true });
   });
 

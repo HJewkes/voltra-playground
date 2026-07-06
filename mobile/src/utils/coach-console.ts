@@ -57,7 +57,7 @@ function round(value: number, decimals: number): number {
 
 export function registerCoachConsole(
   recordingStore: RecordingStoreApi,
-  sessionStore: ExerciseSessionStoreApi,
+  sessionStore: ExerciseSessionStoreApi
 ): void {
   if (Platform.OS !== 'web') return;
   if (typeof window === 'undefined') return;
@@ -108,9 +108,7 @@ export function registerCoachConsole(
         velocityLoss: round(rec.velocityLoss, 1),
         currentPhase: rec.currentPhase,
         velocityTrend: rec.velocityTrend.map((v) => round(v, 2)),
-        lastRepPeakVelocity: rec.lastRepPeakVelocity
-          ? round(rec.lastRepPeakVelocity, 2)
-          : null,
+        lastRepPeakVelocity: rec.lastRepPeakVelocity ? round(rec.lastRepPeakVelocity, 2) : null,
         isRecording: rec.isRecording,
         liveMessage: rec.liveMessage,
       };
@@ -150,9 +148,11 @@ export function registerCoachConsole(
 
     setMockPlan(reps: number, sets: number, restSeconds: number) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const mock = (window as any).__mockBLE as {
-        setRepPlan?: (reps: ReturnType<typeof generateMockRepPlan>) => void;
-      } | undefined;
+      const mock = (window as any).__mockBLE as
+        | {
+            setRepPlan?: (reps: ReturnType<typeof generateMockRepPlan>) => void;
+          }
+        | undefined;
 
       if (!mock?.setRepPlan) {
         console.warn('[CoachConsole] No __mockBLE found — start with ?mock URL param');
@@ -172,7 +172,7 @@ export function registerCoachConsole(
 
       mock.setRepPlan(generateMockRepPlan(plan));
       console.log(
-        `[CoachConsole] Mock plan set: ${reps} reps x ${sets} sets, ${restSeconds}s rest`,
+        `[CoachConsole] Mock plan set: ${reps} reps x ${sets} sets, ${restSeconds}s rest`
       );
     },
   };

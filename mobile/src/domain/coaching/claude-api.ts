@@ -21,7 +21,7 @@ const SYSTEM_PROMPT = [
   'You are a concise VBT (velocity-based training) coach embedded in a workout app.',
   'Your role is to give brief, actionable cues between sets.',
   'Focus on load adjustments, technique reminders, and motivation.',
-  'Reference the athlete\'s previous compliance with your suggestions when relevant.',
+  "Reference the athlete's previous compliance with your suggestions when relevant.",
   'If the athlete ignored your advice and performance declined, gently reinforce the suggestion.',
   'If they followed your advice and improved, acknowledge it briefly.',
   'Never exceed 2 sentences. Use specific numbers (weights, velocities) when available.',
@@ -62,10 +62,7 @@ export async function getCoachingCue(
   return parseCoachingResponse(response, context.currentSetIndex);
 }
 
-async function callClaudeApi(
-  userMessage: string,
-  config: ClaudeApiConfig
-): Promise<string | null> {
+async function callClaudeApi(userMessage: string, config: ClaudeApiConfig): Promise<string | null> {
   const baseUrl = config.baseUrl ?? 'https://api.anthropic.com';
   const model = config.model ?? CLAUDE_MODEL;
 
@@ -117,10 +114,7 @@ const DIRECTION_PATTERNS = {
  * Parse Claude's text response into a structured CoachingCue.
  * Extracts weight suggestions from natural language.
  */
-export function parseCoachingResponse(
-  text: string,
-  afterSetIndex: number
-): CoachingCue {
+export function parseCoachingResponse(text: string, afterSetIndex: number): CoachingCue {
   const weightMatch = text.match(WEIGHT_PATTERN);
   let suggestedWeight: number | null = null;
   let suggestedLoadDelta = 0;

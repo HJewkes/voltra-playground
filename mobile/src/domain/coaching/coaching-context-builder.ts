@@ -11,12 +11,7 @@
 import { getSetMeanVelocity } from '@voltras/workout-analytics';
 import type { ExerciseSession } from '@/domain/workout';
 import type { AutoRegulationState } from '@/domain/planning/auto-regulation';
-import type {
-  CoachingContext,
-  CueComplianceRecord,
-  ComplianceOutcome,
-  ReactedCue,
-} from './types';
+import type { CoachingContext, CueComplianceRecord, ComplianceOutcome, ReactedCue } from './types';
 
 // =============================================================================
 // Compliance Assessment
@@ -35,7 +30,7 @@ export function assessCompliance(
   if (actualWeight === null) return 'unknown';
   if (cue.suggestedLoadDelta === 0) return 'followed';
 
-  const targetWeight = cue.suggestedWeight ?? (previousWeight + cue.suggestedLoadDelta);
+  const targetWeight = cue.suggestedWeight ?? previousWeight + cue.suggestedLoadDelta;
   const delta = Math.abs(actualWeight - targetWeight);
 
   if (delta <= WEIGHT_TOLERANCE_LBS) return 'followed';
@@ -58,14 +53,10 @@ export function buildComplianceRecord(
   const setAfterCue = session.completedSets[cue.afterSetIndex + 1];
 
   const previousWeight = setBeforeCue?.weight ?? 0;
-  const previousVelocity = setBeforeCue
-    ? getSetMeanVelocity(setBeforeCue.data)
-    : null;
+  const previousVelocity = setBeforeCue ? getSetMeanVelocity(setBeforeCue.data) : null;
 
   const actualWeight = setAfterCue?.weight ?? null;
-  const actualVelocity = setAfterCue
-    ? getSetMeanVelocity(setAfterCue.data)
-    : null;
+  const actualVelocity = setAfterCue ? getSetMeanVelocity(setAfterCue.data) : null;
 
   const compliance = assessCompliance(cue, actualWeight, previousWeight);
   const summary = formatComplianceSummary(
@@ -116,10 +107,7 @@ function formatComplianceSummary(
   }
 }
 
-function formatVelocityChange(
-  current: number | null,
-  previous: number | null
-): string {
+function formatVelocityChange(current: number | null, previous: number | null): string {
   if (current === null || previous === null) return '';
   if (previous === 0) return `Velocity: ${current.toFixed(2)} m/s.`;
 
@@ -155,14 +143,10 @@ export function buildCoachingContext(
     return `Set ${i + 1}: ${set.weight}lbs x ${repCount} reps @ ${velocity.toFixed(2)} m/s`;
   });
 
-  const complianceRecords = reactedCues.map((cue) =>
-    buildComplianceRecord(cue, session)
-  );
+  const complianceRecords = reactedCues.map((cue) => buildComplianceRecord(cue, session));
 
   const previousCueFeedback = complianceRecords.map((record) => {
-    const reactionStr = record.cue.reaction
-      ? ` (athlete reacted: ${record.cue.reaction})`
-      : '';
+    const reactionStr = record.cue.reaction ? ` (athlete reacted: ${record.cue.reaction})` : '';
     return record.summary + reactionStr;
   });
 
@@ -180,18 +164,14 @@ export function buildCoachingContext(
   };
 }
 
-function formatAutoRegulation(
-  autoReg: AutoRegulationState | null
-): string | null {
+function formatAutoRegulation(autoReg: AutoRegulationState | null): string | null {
   if (!autoReg) return null;
 
   const parts: string[] = [];
 
   if (autoReg.loadSuggestion) {
     const { direction, suggestedWeight, reason } = autoReg.loadSuggestion;
-    parts.push(
-      `Load suggestion: ${direction} to ${suggestedWeight}lbs (${reason})`
-    );
+    parts.push(`Load suggestion: ${direction} to ${suggestedWeight}lbs (${reason})`);
   }
 
   if (autoReg.velocityWarning) {

@@ -34,14 +34,12 @@ const WEIGHT_BAND_LBS = 2.5;
  * adjustments (e.g. micro-plates) while still catching genuine load changes.
  */
 function findComparableSets(
-  completedSets: CompletedSet[],
+  completedSets: CompletedSet[]
 ): { first: CompletedSet; latest: CompletedSet } | null {
   if (completedSets.length < 2) return null;
 
   const latest = completedSets[completedSets.length - 1];
-  const first = completedSets.find(
-    (s) => Math.abs(s.weight - latest.weight) <= WEIGHT_BAND_LBS,
-  );
+  const first = completedSets.find((s) => Math.abs(s.weight - latest.weight) <= WEIGHT_BAND_LBS);
 
   if (!first || first === latest) return null;
 
@@ -61,9 +59,7 @@ function deriveTrend(score: number): FatigueTrend {
  * Returns null when there are fewer than two sets at the same weight —
  * fatigue cannot be assessed without a baseline and a comparison point.
  */
-export function computeSessionFatigue(
-  completedSets: CompletedSet[],
-): SessionFatigueResult | null {
+export function computeSessionFatigue(completedSets: CompletedSet[]): SessionFatigueResult | null {
   const pair = findComparableSets(completedSets);
   if (!pair) return null;
 

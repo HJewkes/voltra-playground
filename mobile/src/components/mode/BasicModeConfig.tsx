@@ -10,7 +10,13 @@ import React, { useState, useCallback } from 'react';
 import { View, Text } from 'react-native';
 import { useStore } from 'zustand';
 import Slider from '@react-native-community/slider';
-import { Section, SectionHeader, SectionContent, Surface, getSemanticColors } from '@titan-design/react-ui';
+import {
+  Section,
+  SectionHeader,
+  SectionContent,
+  Surface,
+  getSemanticColors,
+} from '@titan-design/react-ui';
 import { EccentricSlider } from './EccentricSlider';
 import type { VoltraStoreApi } from '@/stores/voltra-store';
 
@@ -35,7 +41,7 @@ export function BasicModeConfig({ voltraStore, showEccentric = false }: BasicMod
       setLocalWeight(rounded);
       setWeight(rounded);
     },
-    [setWeight],
+    [setWeight]
   );
 
   return (

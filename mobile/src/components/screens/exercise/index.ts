@@ -19,4 +19,4 @@ export type { WorkoutViewProps } from './WorkoutView';
 
 export { useExerciseStores } from './useExerciseStores';
 
-export { useExerciseLifecycle } from "./useExerciseLifecycle";
+export { useExerciseLifecycle } from './useExerciseLifecycle';

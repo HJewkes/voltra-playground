@@ -53,7 +53,7 @@ function buildLastSessionMap(sessions: StoredExerciseSession[]): Map<string, num
  */
 function buildWeeklyMuscleSetCounts(
   sessions: StoredExerciseSession[],
-  now: number,
+  now: number
 ): Map<MuscleGroup, number> {
   const cutoff = now - 7 * MS_PER_DAY;
   const map = new Map<MuscleGroup, number>();
@@ -71,10 +71,7 @@ function buildWeeklyMuscleSetCounts(
  * Derive the muscle group bonus/penalty for a given exercise.
  * Exercises targeting underrepresented muscle groups score +5; overrepresented score -3.
  */
-function muscleGroupAdjustment(
-  exerciseId: string,
-  weeklyCounts: Map<MuscleGroup, number>,
-): number {
+function muscleGroupAdjustment(exerciseId: string, weeklyCounts: Map<MuscleGroup, number>): number {
   const mg = EXERCISE_MUSCLE_GROUPS[exerciseId];
   if (!mg) return 0;
 
@@ -97,7 +94,7 @@ function buildReason(
   daysSinceLast: number,
   muscleAdj: number,
   exerciseId: string,
-  weeklyCounts: Map<MuscleGroup, number>,
+  weeklyCounts: Map<MuscleGroup, number>
 ): string {
   const mg = EXERCISE_MUSCLE_GROUPS[exerciseId];
 
@@ -138,7 +135,7 @@ export function suggestNextExercise(
   sessions: StoredExerciseSession[],
   catalog: Record<string, Exercise>,
   topN: number = 3,
-  now: number = Date.now(),
+  now: number = Date.now()
 ): ExerciseSuggestion[] {
   const lastSessionMap = buildLastSessionMap(sessions);
   const weeklyCounts = buildWeeklyMuscleSetCounts(sessions, now);

@@ -1,6 +1,11 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { View, Text, PanResponder, TouchableOpacity, Platform } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { useStore } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import Slider from '@react-native-community/slider';
@@ -65,7 +70,7 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
   const setEccentric = useStore(voltraStore, (s) => s.setEccentric);
   const { chains, inverseChains } = useStore(
     voltraStore,
-    useShallow((s) => ({ chains: s.chains, inverseChains: s.inverseChains })),
+    useShallow((s) => ({ chains: s.chains, inverseChains: s.inverseChains }))
   );
   const setChains = useStore(voltraStore, (s) => s.setChains);
   const setInverseChains = useStore(voltraStore, (s) => s.setInverseChains);
@@ -78,7 +83,10 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
   const pillStretch = useSharedValue(0); // -1..1 normalized displacement
 
   const stopTicking = useCallback(() => {
-    if (tickTimer.current) { clearTimeout(tickTimer.current); tickTimer.current = null; }
+    if (tickTimer.current) {
+      clearTimeout(tickTimer.current);
+      tickTimer.current = null;
+    }
   }, []);
 
   const startTicking = useCallback(() => {
@@ -109,30 +117,35 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
   const setWeightRef = useRef(setWeight);
   setWeightRef.current = setWeight;
 
-  const panResponder = useMemo(() =>
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > DEAD_ZONE,
-      onPanResponderGrant: () => {
-        displacement.current = 0;
-        pillStretch.value = 0;
-      },
-      onPanResponderMove: (_, g) => {
-        const wasActive = Math.abs(displacement.current) > DEAD_ZONE;
-        displacement.current = g.dx;
-        const clamped = Math.max(-MAX_STRETCH, Math.min(MAX_STRETCH, g.dx));
-        pillStretch.value = clamped / MAX_STRETCH;
-        if (!wasActive && Math.abs(g.dx) > DEAD_ZONE) startTickingRef.current();
-      },
-      onPanResponderRelease: () => {
-        displacement.current = 0;
-        stopTickingRef.current();
-        pillStretch.value = withSpring(0, { damping: 4, stiffness: 350, mass: 0.4 });
-        setLocalWeight((prev) => { setWeightRef.current(prev); return prev; });
-      },
-    }),
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  []);
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > DEAD_ZONE,
+        onPanResponderGrant: () => {
+          displacement.current = 0;
+          pillStretch.value = 0;
+        },
+        onPanResponderMove: (_, g) => {
+          const wasActive = Math.abs(displacement.current) > DEAD_ZONE;
+          displacement.current = g.dx;
+          const clamped = Math.max(-MAX_STRETCH, Math.min(MAX_STRETCH, g.dx));
+          pillStretch.value = clamped / MAX_STRETCH;
+          if (!wasActive && Math.abs(g.dx) > DEAD_ZONE) startTickingRef.current();
+        },
+        onPanResponderRelease: () => {
+          displacement.current = 0;
+          stopTickingRef.current();
+          pillStretch.value = withSpring(0, { damping: 4, stiffness: 350, mass: 0.4 });
+          setLocalWeight((prev) => {
+            setWeightRef.current(prev);
+            return prev;
+          });
+        },
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
 
   // Pill grows via padding in the drag direction — no scaleX, no counter-scale.
   // Parent centers the pill, so translateX compensates by half the extra padding
@@ -155,7 +168,7 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
       paddingRight: BASE_PAD_H + (s > 0 ? extra : 0),
       paddingTop: BASE_PAD_V,
       paddingBottom: BASE_PAD_V,
-      transform: [{ translateX: sign * extra / 2 }, { scaleY: 1 - visual * 0.15 }],
+      transform: [{ translateX: (sign * extra) / 2 }, { scaleY: 1 - visual * 0.15 }],
     };
   });
 
@@ -189,33 +202,38 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
     <Section>
       <SectionContent>
         <Surface elevation={1} className="rounded-xl p-3">
-          <Text className="mb-1 text-center text-[10px] font-medium text-text-tertiary">{label}</Text>
-          <View className="mb-2 items-center select-none">
+          <Text className="mb-1 text-center text-[10px] font-medium text-text-tertiary">
+            {label}
+          </Text>
+          <View className="mb-2 select-none items-center">
             <Animated.View
               ref={weightCallbackRef}
               {...panResponder.panHandlers}
-              style={[{
-                backgroundColor: alpha(t['brand-primary'], 0.15),
-                alignItems: 'center',
-                justifyContent: 'center',
-                ...Platform.select({
-                  web: webStyle({
-                    boxShadow: [
-                      `0 4px 8px ${alpha('#000', 0.3)}`,
-                      `0 1px 3px ${alpha('#000', 0.2)}`,
-                    ].join(', '),
-                    borderTop: `1px solid ${alpha('#fff', 0.1)}`,
-                    borderBottom: `1px solid ${alpha('#000', 0.2)}`,
+              style={[
+                {
+                  backgroundColor: alpha(t['brand-primary'], 0.15),
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  ...Platform.select({
+                    web: webStyle({
+                      boxShadow: [
+                        `0 4px 8px ${alpha('#000', 0.3)}`,
+                        `0 1px 3px ${alpha('#000', 0.2)}`,
+                      ].join(', '),
+                      borderTop: `1px solid ${alpha('#fff', 0.1)}`,
+                      borderBottom: `1px solid ${alpha('#000', 0.2)}`,
+                    }),
+                    default: {
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.3,
+                      shadowRadius: 8,
+                      elevation: 6,
+                    },
                   }),
-                  default: {
-                    shadowColor: '#000',
-                    shadowOffset: { width: 0, height: 4 },
-                    shadowOpacity: 0.3,
-                    shadowRadius: 8,
-                    elevation: 6,
-                  },
-                }),
-              }, pillStyle]}
+                },
+                pillStyle,
+              ]}
               accessibilityRole="adjustable"
               accessibilityLabel={`${localWeight} pounds`}
             >
@@ -260,14 +278,25 @@ export function ModeControls({ voltraStore, mode }: ModeControlsProps) {
 }
 
 export function AdvancedAccordion({
-  showEccentric, showChains,
-  eccentric, setEccentric,
-  chains, inverseChains, setChains, setInverseChains,
-  tempoEnabled, targetTempo, onToggleTempo, onTempoChange,
+  showEccentric,
+  showChains,
+  eccentric,
+  setEccentric,
+  chains,
+  inverseChains,
+  setChains,
+  setInverseChains,
+  tempoEnabled,
+  targetTempo,
+  onToggleTempo,
+  onTempoChange,
 }: {
-  showEccentric: boolean; showChains: boolean;
-  eccentric: number; setEccentric: (v: number) => Promise<void>;
-  chains: number; inverseChains: number;
+  showEccentric: boolean;
+  showChains: boolean;
+  eccentric: number;
+  setEccentric: (v: number) => Promise<void>;
+  chains: number;
+  inverseChains: number;
   setChains: (v: number) => Promise<void>;
   setInverseChains: (v: number) => Promise<void>;
   tempoEnabled?: boolean;
@@ -292,9 +321,7 @@ export function AdvancedAccordion({
 
   const hardwareControls = (
     <View style={{ flex: hasTempo ? 1 : undefined }}>
-      {showEccentric && (
-        <CompactEccentric value={eccentric} onChange={setEccentric} />
-      )}
+      {showEccentric && <CompactEccentric value={eccentric} onChange={setEccentric} />}
       {showChains && (
         <CompactChains
           chains={chains}
@@ -318,8 +345,8 @@ export function AdvancedAccordion({
           ▼
         </Animated.Text>
       </TouchableOpacity>
-      {expanded && (
-        hasTempo ? (
+      {expanded &&
+        (hasTempo ? (
           <View className="flex-row" style={{ gap: 8 }}>
             {hardwareControls}
             <TempoColumn
@@ -331,14 +358,16 @@ export function AdvancedAccordion({
           </View>
         ) : (
           hardwareControls
-        )
-      )}
+        ))}
     </View>
   );
 }
 
 function TempoColumn({
-  enabled, tempo, onToggle, onChange,
+  enabled,
+  tempo,
+  onToggle,
+  onChange,
 }: {
   enabled: boolean;
   tempo: TempoTarget;
@@ -385,9 +414,11 @@ function TempoColumn({
               fontWeight: enabled ? '700' : '500',
               color: enabled ? t['brand-primary'] : disabledColor,
               ...Platform.select({
-                web: enabled ? webStyle({
-                  textShadow: `0 0 8px ${alpha(t['brand-primary'], 0.4)}`,
-                }) : webStyle({}),
+                web: enabled
+                  ? webStyle({
+                      textShadow: `0 0 8px ${alpha(t['brand-primary'], 0.4)}`,
+                    })
+                  : webStyle({}),
                 default: {},
               }),
             }}
@@ -452,8 +483,19 @@ function dashZero(v: number): string {
 
 // Slider with a colored track that originates from the center rather than the left edge.
 // Both native tracks are neutral; an overlay bar shows the active range from center to thumb.
-function CenterSlider({ value, min, max, step, color, onValueChange, onSlidingComplete }: {
-  value: number; min: number; max: number; step: number;
+function CenterSlider({
+  value,
+  min,
+  max,
+  step,
+  color,
+  onValueChange,
+  onSlidingComplete,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  step: number;
   color: string;
   onValueChange: (v: number) => void;
   onSlidingComplete: (v: number) => void;
@@ -468,28 +510,40 @@ function CenterSlider({ value, min, max, step, color, onValueChange, onSlidingCo
   return (
     <View style={{ position: 'relative', justifyContent: 'center', height: 40 }}>
       {/* Neumorphic inset track */}
-      <View style={{
-        position: 'absolute', left: 0, right: 0, height: 6, borderRadius: 3,
-        backgroundColor: '#1a1a1a',
-        ...Platform.select({
-          web: webStyle({
-            boxShadow: `inset 1px 2px 3px ${alpha('#000', 0.4)}, inset -1px -1px 2px ${alpha('#fff', 0.04)}`,
-          }),
-          default: {},
-        }),
-      }} />
-      {/* Active bar from center to thumb */}
-      {!isNeutral && (
-        <View style={{
-          position: 'absolute', left: `${barLeft}%`, width: `${barWidth}%`,
-          height: 6, borderRadius: 3, backgroundColor: color,
+      <View
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          height: 6,
+          borderRadius: 3,
+          backgroundColor: '#1a1a1a',
           ...Platform.select({
             web: webStyle({
-              boxShadow: `0 0 4px ${alpha(color, 0.4)}, inset 0 1px 0 ${alpha('#fff', 0.15)}`,
+              boxShadow: `inset 1px 2px 3px ${alpha('#000', 0.4)}, inset -1px -1px 2px ${alpha('#fff', 0.04)}`,
             }),
             default: {},
           }),
-        }} />
+        }}
+      />
+      {/* Active bar from center to thumb */}
+      {!isNeutral && (
+        <View
+          style={{
+            position: 'absolute',
+            left: `${barLeft}%`,
+            width: `${barWidth}%`,
+            height: 6,
+            borderRadius: 3,
+            backgroundColor: color,
+            ...Platform.select({
+              web: webStyle({
+                boxShadow: `0 0 4px ${alpha(color, 0.4)}, inset 0 1px 0 ${alpha('#fff', 0.15)}`,
+              }),
+              default: {},
+            }),
+          }}
+        />
       )}
       <Slider
         value={value}
@@ -502,7 +556,9 @@ function CenterSlider({ value, min, max, step, color, onValueChange, onSlidingCo
         maximumTrackTintColor="transparent"
         thumbTintColor={isNeutral ? '#3a3a3a' : color}
         {...Platform.select({
-          web: { style: { filter: 'drop-shadow(0 2px 3px ' + alpha('#000', 0.4) + ')' } } as WebStyle,
+          web: {
+            style: { filter: 'drop-shadow(0 2px 3px ' + alpha('#000', 0.4) + ')' },
+          } as WebStyle,
           default: {},
         })}
       />
@@ -510,22 +566,34 @@ function CenterSlider({ value, min, max, step, color, onValueChange, onSlidingCo
   );
 }
 
-function CompactEccentric({ value, onChange }: { value: number; onChange: (v: number) => Promise<void> }) {
+function CompactEccentric({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (v: number) => Promise<void>;
+}) {
   const ECC_OFFSET = 195;
   const [slider, setSlider] = useState(Math.round(value) + ECC_OFFSET);
   const sliding = useRef(false);
 
-  useEffect(() => { if (!sliding.current) setSlider(Math.round(value) + ECC_OFFSET); }, [value]);
+  useEffect(() => {
+    if (!sliding.current) setSlider(Math.round(value) + ECC_OFFSET);
+  }, [value]);
 
   const display = slider - ECC_OFFSET;
-  const eccLabel = display > 0 ? `+${display}% overload` : display < 0 ? `${display}% underload` : 'Balanced';
-  const color = display > 0 ? t['status-success'] : display < 0 ? t['status-error'] : t['text-disabled'];
+  const eccLabel =
+    display > 0 ? `+${display}% overload` : display < 0 ? `${display}% underload` : 'Balanced';
+  const color =
+    display > 0 ? t['status-success'] : display < 0 ? t['status-error'] : t['text-disabled'];
 
   return (
     <View className="mt-1">
       <View className="mb-1 flex-row items-center justify-between">
         <Text className="text-xs font-medium text-text-tertiary">Eccentric</Text>
-        <Text className="text-xs font-semibold" style={{ color }}>{eccLabel}</Text>
+        <Text className="text-xs font-semibold" style={{ color }}>
+          {eccLabel}
+        </Text>
       </View>
       <CenterSlider
         value={slider}
@@ -533,15 +601,29 @@ function CompactEccentric({ value, onChange }: { value: number; onChange: (v: nu
         max={390}
         step={5}
         color={display > 0 ? t['brand-primary'] : t['status-error']}
-        onValueChange={(v: number) => { sliding.current = true; setSlider(Math.round(v)); }}
-        onSlidingComplete={(v: number) => { sliding.current = false; const r = Math.round(v); setSlider(r); onChange(r - ECC_OFFSET); }}
+        onValueChange={(v: number) => {
+          sliding.current = true;
+          setSlider(Math.round(v));
+        }}
+        onSlidingComplete={(v: number) => {
+          sliding.current = false;
+          const r = Math.round(v);
+          setSlider(r);
+          onChange(r - ECC_OFFSET);
+        }}
       />
     </View>
   );
 }
 
-function CompactChains({ chains, inverseChains, onChainsChange, onInverseChainsChange }: {
-  chains: number; inverseChains: number;
+function CompactChains({
+  chains,
+  inverseChains,
+  onChainsChange,
+  onInverseChainsChange,
+}: {
+  chains: number;
+  inverseChains: number;
   onChainsChange: (v: number) => Promise<void>;
   onInverseChainsChange: (v: number) => Promise<void>;
 }) {
@@ -550,7 +632,9 @@ function CompactChains({ chains, inverseChains, onChainsChange, onInverseChainsC
   const [slider, setSlider] = useState(combined + CHAIN_OFFSET);
   const sliding = useRef(false);
 
-  useEffect(() => { if (!sliding.current) setSlider(combined + CHAIN_OFFSET); }, [combined]);
+  useEffect(() => {
+    if (!sliding.current) setSlider(combined + CHAIN_OFFSET);
+  }, [combined]);
 
   const commit = async (v: number) => {
     sliding.current = false;
@@ -567,14 +651,17 @@ function CompactChains({ chains, inverseChains, onChainsChange, onInverseChainsC
   };
 
   const display = slider - CHAIN_OFFSET;
-  const chainLabel = display > 0 ? `+${display} lbs` : display < 0 ? `${display} lbs inverse` : 'Off';
+  const chainLabel =
+    display > 0 ? `+${display} lbs` : display < 0 ? `${display} lbs inverse` : 'Off';
   const color = display !== 0 ? t['brand-primary'] : t['text-disabled'];
 
   return (
     <View className="mt-1">
       <View className="mb-1 flex-row items-center justify-between">
         <Text className="text-xs font-medium text-text-tertiary">Chains</Text>
-        <Text className="text-xs font-semibold" style={{ color }}>{chainLabel}</Text>
+        <Text className="text-xs font-semibold" style={{ color }}>
+          {chainLabel}
+        </Text>
       </View>
       <CenterSlider
         value={slider}
@@ -582,7 +669,10 @@ function CompactChains({ chains, inverseChains, onChainsChange, onInverseChainsC
         max={200}
         step={1}
         color={display > 0 ? t['brand-primary'] : t['status-error']}
-        onValueChange={(v: number) => { sliding.current = true; setSlider(Math.round(v)); }}
+        onValueChange={(v: number) => {
+          sliding.current = true;
+          setSlider(Math.round(v));
+        }}
         onSlidingComplete={commit}
       />
     </View>

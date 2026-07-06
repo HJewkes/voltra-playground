@@ -23,9 +23,7 @@ import {
 // Test Helpers
 // =============================================================================
 
-function createSession(
-  overrides: Partial<StoredExerciseSession> = {}
-): StoredExerciseSession {
+function createSession(overrides: Partial<StoredExerciseSession> = {}): StoredExerciseSession {
   return { ...generateStoredSession(), ...overrides };
 }
 

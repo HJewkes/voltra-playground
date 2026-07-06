@@ -82,9 +82,13 @@ export function ConnectionCard({
               isScanning={isScanning || connectingDeviceId !== null}
               disabled={scanDisabled}
               onPress={onScan}
-              label={requiresUserGesture
-                ? connectedDevices.length > 0 ? 'Add Another' : 'Connect'
-                : 'Scan'}
+              label={
+                requiresUserGesture
+                  ? connectedDevices.length > 0
+                    ? 'Add Another'
+                    : 'Connect'
+                  : 'Scan'
+              }
               scanningLabel={connectingDeviceId ? 'Connecting' : 'Scanning'}
             />
           )}
@@ -137,7 +141,9 @@ export function ConnectionCard({
             style={{ backgroundColor: alpha(t['status-error'], 0.08) }}
           >
             <Ionicons name="alert-circle" size={18} color={t['status-error']} />
-            <Text className="ml-2 flex-1 text-xs" style={{ color: t['status-error'] }}>{error}</Text>
+            <Text className="ml-2 flex-1 text-xs" style={{ color: t['status-error'] }}>
+              {error}
+            </Text>
             <TouchableOpacity onPress={onDismissError}>
               <Ionicons name="close" size={16} color={t['text-disabled']} />
             </TouchableOpacity>
@@ -148,10 +154,18 @@ export function ConnectionCard({
   );
 }
 
-function ConnectedSection({ devices, onDisconnect }: { devices: { id: string; name: string }[]; onDisconnect: () => void }) {
+function ConnectedSection({
+  devices,
+  onDisconnect,
+}: {
+  devices: { id: string; name: string }[];
+  onDisconnect: () => void;
+}) {
   return (
     <View className="mb-4">
-      <Text className="mb-2 text-xs font-medium uppercase tracking-wide text-text-disabled">Connected</Text>
+      <Text className="mb-2 text-xs font-medium uppercase tracking-wide text-text-disabled">
+        Connected
+      </Text>
       <VStack gap={1}>
         {devices.map((device) => (
           <Surface key={device.id} elevation={0} className="rounded-xl bg-surface-input">
@@ -164,7 +178,10 @@ function ConnectedSection({ devices, onDisconnect }: { devices: { id: string; na
               </View>
               <ListItemContent title={device.name} subtitle="Connected" />
               <ListItemTrailing>
-                <View className="h-2 w-2 rounded-full" style={{ backgroundColor: t['status-success'] }} />
+                <View
+                  className="h-2 w-2 rounded-full"
+                  style={{ backgroundColor: t['status-success'] }}
+                />
               </ListItemTrailing>
             </ListItem>
           </Surface>
@@ -182,7 +199,12 @@ function ConnectedSection({ devices, onDisconnect }: { devices: { id: string; na
   );
 }
 
-function DiscoveredSection({ connectedDevices, discoveredDevices, connectingDeviceId, onConnect }: {
+function DiscoveredSection({
+  connectedDevices,
+  discoveredDevices,
+  connectingDeviceId,
+  onConnect,
+}: {
   connectedDevices: { id: string; name: string }[];
   discoveredDevices: DiscoveredDevice[];
   connectingDeviceId: string | null;
@@ -191,7 +213,9 @@ function DiscoveredSection({ connectedDevices, discoveredDevices, connectingDevi
   return (
     <View>
       {connectedDevices.length > 0 && (
-        <Text className="mb-2 text-xs font-medium uppercase tracking-wide text-text-disabled">Available</Text>
+        <Text className="mb-2 text-xs font-medium uppercase tracking-wide text-text-disabled">
+          Available
+        </Text>
       )}
       <VStack gap={1}>
         {discoveredDevices.map((device) => {
@@ -211,7 +235,14 @@ function DiscoveredSection({ connectedDevices, discoveredDevices, connectingDevi
   );
 }
 
-function EmptyStates({ connectedDevices, discoveredDevices, isScanning, connectingDeviceId, requiresUserGesture, hasScanned }: {
+function EmptyStates({
+  connectedDevices,
+  discoveredDevices,
+  isScanning,
+  connectingDeviceId,
+  requiresUserGesture,
+  hasScanned,
+}: {
   connectedDevices: { id: string; name: string }[];
   discoveredDevices: DiscoveredDevice[];
   isScanning: boolean;
@@ -220,7 +251,13 @@ function EmptyStates({ connectedDevices, discoveredDevices, isScanning, connecti
   hasScanned: boolean;
 }) {
   // No devices found (native)
-  if (!requiresUserGesture && connectedDevices.length === 0 && discoveredDevices.length === 0 && !isScanning && hasScanned) {
+  if (
+    !requiresUserGesture &&
+    connectedDevices.length === 0 &&
+    discoveredDevices.length === 0 &&
+    !isScanning &&
+    hasScanned
+  ) {
     return (
       <View className="items-center py-6">
         <Ionicons name="bluetooth-outline" size={36} color={t['text-disabled']} />
@@ -246,7 +283,9 @@ function EmptyStates({ connectedDevices, discoveredDevices, isScanning, connecti
   if (requiresUserGesture && connectedDevices.length > 0 && !connectingDeviceId) {
     return (
       <View className="items-center py-4">
-        <Text className="text-xs text-text-disabled">Click "Add Another" to connect additional devices</Text>
+        <Text className="text-xs text-text-disabled">
+          Click "Add Another" to connect additional devices
+        </Text>
       </View>
     );
   }

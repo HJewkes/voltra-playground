@@ -137,10 +137,9 @@ describe('executeCoachingLoop cue style', () => {
     let capturedBody = '';
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
       capturedBody = typeof init?.body === 'string' ? init.body : '';
-      return new Response(
-        JSON.stringify({ content: [{ type: 'text', text: 'Drive faster.' }] }),
-        { status: 200 },
-      );
+      return new Response(JSON.stringify({ content: [{ type: 'text', text: 'Drive faster.' }] }), {
+        status: 200,
+      });
     });
 
     await executeCoachingLoop(session, null, store, mockApiConfig);
@@ -157,10 +156,9 @@ describe('executeCoachingLoop cue style', () => {
     let capturedBody = '';
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
       capturedBody = typeof init?.body === 'string' ? init.body : '';
-      return new Response(
-        JSON.stringify({ content: [{ type: 'text', text: 'Lock hips.' }] }),
-        { status: 200 },
-      );
+      return new Response(JSON.stringify({ content: [{ type: 'text', text: 'Lock hips.' }] }), {
+        status: 200,
+      });
     });
 
     await executeCoachingLoop(session, null, store, mockApiConfig, 5_000);
@@ -178,8 +176,10 @@ describe('executeCoachingLoop cue style', () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
       capturedBody = typeof init?.body === 'string' ? init.body : '';
       return new Response(
-        JSON.stringify({ content: [{ type: 'text', text: 'Good velocity, drop 5 lbs next set.' }] }),
-        { status: 200 },
+        JSON.stringify({
+          content: [{ type: 'text', text: 'Good velocity, drop 5 lbs next set.' }],
+        }),
+        { status: 200 }
       );
     });
 

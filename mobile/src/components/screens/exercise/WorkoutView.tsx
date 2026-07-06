@@ -8,7 +8,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { getSemanticColors } from '@titan-design/react-ui';
 
 import type { PlannedSet, SetLogEntry, CompletedSet } from '@/domain/workout';
-import { SetLog, LoadSuggestionCard, VelocityWarning, JunkVolumeAlert, FatigueGauge } from '@/components/exercise';
+import {
+  SetLog,
+  LoadSuggestionCard,
+  VelocityWarning,
+  JunkVolumeAlert,
+  FatigueGauge,
+} from '@/components/exercise';
 import type { ActiveChartData } from '@/components/exercise/SetLog';
 import type { AutoRegulationState } from '@/domain/planning/auto-regulation';
 import { computeSessionFatigue } from '@/domain/workout/session/session-fatigue';
@@ -33,7 +39,7 @@ export interface WorkoutViewProps {
   repCount: number;
   weight: number;
   currentPlannedSet: PlannedSet | null;
-  liveSamples: ActiveChartData["samples"];
+  liveSamples: ActiveChartData['samples'];
   rpe: number;
   rir: number;
   currentPhase: number;
@@ -87,10 +93,7 @@ export function WorkoutView({
   const logVisible = useCoachingStore((s) => s.logVisible);
   const isResting = uiState === 'resting';
 
-  const sessionFatigue = useMemo(
-    () => computeSessionFatigue(completedSets),
-    [completedSets],
-  );
+  const sessionFatigue = useMemo(() => computeSessionFatigue(completedSets), [completedSets]);
 
   // Flush queued cues when rest begins. Guard: never during recording.
   const prevUiStateRef = useRef(uiState);
@@ -135,12 +138,19 @@ export function WorkoutView({
 
   const expectedSetDurationMs = useMemo(() => {
     const targets = configRef.current?.getTargets();
-    const tempo = currentPlannedSet?.targetTempo ?? (targets?.tempoEnabled ? targets.targetTempo : null);
+    const tempo =
+      currentPlannedSet?.targetTempo ?? (targets?.tempoEnabled ? targets.targetTempo : null);
     const targetRepsForDisplay = currentPlannedSet?.targetReps ?? null;
     const isReps = (targets?.targetMode ?? 'reps') === 'reps';
-    const reps = targetRepsForDisplay ?? (targets?.effortEnabled && isReps ? targets.targetReps : 10);
+    const reps =
+      targetRepsForDisplay ?? (targets?.effortEnabled && isReps ? targets.targetReps : 10);
     if (tempo && (tempo.concentric > 0 || tempo.eccentric > 0)) {
-      const repMs = ((tempo.concentric || 2) + (tempo.pauseTop || 0.5) + (tempo.eccentric || 3) + (tempo.pauseBottom || 1)) * 1000;
+      const repMs =
+        ((tempo.concentric || 2) +
+          (tempo.pauseTop || 0.5) +
+          (tempo.eccentric || 3) +
+          (tempo.pauseBottom || 1)) *
+        1000;
       return reps * repMs;
     }
     return 30_000;
@@ -153,22 +163,39 @@ export function WorkoutView({
       <View className="mt-3" />
       <SetLog
         setLog={setLog}
-        activeSet={isActive ? {
-          setIndex: currentSetIndex,
-          repCount,
-          weight: currentPlannedSet?.weight ?? weight,
-          targetReps: currentPlannedSet?.targetReps ?? null,
-        } : null}
-        activeChart={isRecording ? {
-          samples: liveSamples,
-          expectedDurationMs: expectedSetDurationMs,
-        } : null}
-        activeTelemetry={isRecording ? {
-          rpe, rir, currentPhase, phaseElapsedMs, repPhaseDurations,
-          targetTempo: currentPlannedSet?.targetTempo,
-          liveMessage: liveMessage || undefined,
-          meanVelocity, velocityLoss,
-        } : null}
+        activeSet={
+          isActive
+            ? {
+                setIndex: currentSetIndex,
+                repCount,
+                weight: currentPlannedSet?.weight ?? weight,
+                targetReps: currentPlannedSet?.targetReps ?? null,
+              }
+            : null
+        }
+        activeChart={
+          isRecording
+            ? {
+                samples: liveSamples,
+                expectedDurationMs: expectedSetDurationMs,
+              }
+            : null
+        }
+        activeTelemetry={
+          isRecording
+            ? {
+                rpe,
+                rir,
+                currentPhase,
+                phaseElapsedMs,
+                repPhaseDurations,
+                targetTempo: currentPlannedSet?.targetTempo,
+                liveMessage: liveMessage || undefined,
+                meanVelocity,
+                velocityLoss,
+              }
+            : null
+        }
         plannedSets={plannedSets}
         totalSets={totalSets}
         exerciseSetupNotes={exerciseSetupNotes}
@@ -209,11 +236,7 @@ export function WorkoutView({
           <Ionicons name="chatbubble-ellipses-outline" size={16} color={t['text-tertiary']} />
         </TouchableOpacity>
       )}
-      <CoachingSessionLog
-        visible={logVisible}
-        entries={sessionLog}
-        onClose={handleToggleLog}
-      />
+      <CoachingSessionLog visible={logVisible} entries={sessionLog} onClose={handleToggleLog} />
     </>
   );
 }

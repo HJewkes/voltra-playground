@@ -4,8 +4,12 @@ import { describe, it, expect, vi } from 'vitest';
 vi.mock('@/domain/device', () => ({
   VoltraManager: vi.fn(),
   detectBLEEnvironment: () => ({
-    environment: 'node', bleSupported: true, warningMessage: null,
-    isWeb: false, requiresUserGesture: false, forceMock: false,
+    environment: 'node',
+    bleSupported: true,
+    warningMessage: null,
+    isWeb: false,
+    requiresUserGesture: false,
+    forceMock: false,
   }),
 }));
 
@@ -52,7 +56,7 @@ describe('ConnectionScreen', () => {
     const path = await import('path');
     const indexPath = path.resolve(__dirname, '../index.ts');
     const content = fs.readFileSync(indexPath, 'utf-8');
-    expect(content).toContain("export { ConnectionScreen }");
+    expect(content).toContain('export { ConnectionScreen }');
   });
 
   it('selectIsConnected returns false when no device connected', async () => {

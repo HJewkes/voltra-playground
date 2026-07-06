@@ -28,7 +28,7 @@ export interface UseExerciseProgressionReturn {
  */
 export function useExerciseProgression(
   exerciseId: string,
-  repository: ExerciseSessionRepository,
+  repository: ExerciseSessionRepository
 ): UseExerciseProgressionReturn {
   const [progression, setProgression] = useState<ExerciseProgression | null>(null);
   const [lastSession, setLastSession] = useState<LastSessionBanner | null>(null);
@@ -52,7 +52,9 @@ export function useExerciseProgression(
     }
 
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [exerciseId, repository]);
 
   return { progression, lastSession, isLoading };

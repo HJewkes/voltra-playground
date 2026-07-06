@@ -21,7 +21,7 @@ import type { VelocityBaseline } from '@/domain/history/models';
 
 function createBaseline(
   exerciseId: string,
-  dataPoints: Array<{ weight: number; velocity: number }>,
+  dataPoints: Array<{ weight: number; velocity: number }>
 ): VelocityBaseline {
   return {
     exerciseId,
@@ -174,7 +174,6 @@ describe('isReadinessCheckCandidate()', () => {
 // =============================================================================
 // assessReadinessAuto
 // =============================================================================
-
 
 describe('assessReadinessAuto()', () => {
   it('returns seeded result with no zone comparison when baseline is null', () => {

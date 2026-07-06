@@ -38,7 +38,10 @@ describe('computeStreak — empty input', () => {
   });
 
   it('ignores non-completed sessions', () => {
-    const sessions = [makeSession(0, { status: 'abandoned' }), makeSession(1, { status: 'in_progress' })];
+    const sessions = [
+      makeSession(0, { status: 'abandoned' }),
+      makeSession(1, { status: 'in_progress' }),
+    ];
     expect(computeStreak(sessions)).toEqual({
       currentStreak: 0,
       longestStreak: 0,
@@ -120,7 +123,13 @@ describe('computeStreak — longestStreak', () => {
     vi.setSystemTime(new Date('2026-03-14T12:00:00'));
     // Long past streak: 10, 11, 12, 13, 14 days ago (5 days, no gaps)
     // Current streak: just today (1 day)
-    const pastStreak = [makeSession(10), makeSession(11), makeSession(12), makeSession(13), makeSession(14)];
+    const pastStreak = [
+      makeSession(10),
+      makeSession(11),
+      makeSession(12),
+      makeSession(13),
+      makeSession(14),
+    ];
     const sessions = [makeSession(0), ...pastStreak];
     const result = computeStreak(sessions);
     expect(result.longestStreak).toBe(5);
@@ -164,8 +173,12 @@ describe('computeStreak — weeklyConsistency', () => {
   it('caps at 100 even when exceeding target', () => {
     vi.setSystemTime(new Date('2026-03-14T12:00:00'));
     const sessions = [
-      makeSession(0), makeSession(1), makeSession(2),
-      makeSession(3), makeSession(4), makeSession(5),
+      makeSession(0),
+      makeSession(1),
+      makeSession(2),
+      makeSession(3),
+      makeSession(4),
+      makeSession(5),
     ];
     expect(computeStreak(sessions, 4).weeklyConsistency).toBe(100);
   });

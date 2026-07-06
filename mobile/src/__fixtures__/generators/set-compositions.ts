@@ -19,8 +19,12 @@ import { createCompletedSet, type CompletedSet } from '@/domain/workout';
 import { type RepBehavior, type RepBehaviorOptions, generateRepSamples } from './rep-behaviors';
 
 function makeSample(
-  sequence: number, timestamp: number, phase: MovementPhase,
-  position: number, velocity: number, force: number
+  sequence: number,
+  timestamp: number,
+  phase: MovementPhase,
+  position: number,
+  velocity: number,
+  force: number
 ): WorkoutSample {
   return { sequence, timestamp, phase, position, velocity, force };
 }
@@ -269,7 +273,10 @@ interface ProcessSetOptions {
 /**
  * Process samples through the library's set pipeline to produce a CompletedSet.
  */
-function processSetThroughPipeline(samples: WorkoutSample[], options: ProcessSetOptions): CompletedSet {
+function processSetThroughPipeline(
+  samples: WorkoutSample[],
+  options: ProcessSetOptions
+): CompletedSet {
   const { exerciseId, exerciseName, weight, startTime } = options;
 
   let analyticsSet = createSet();

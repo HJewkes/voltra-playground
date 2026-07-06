@@ -16,10 +16,7 @@ vi.mock('@/data/provider', () => ({
 let sampleSeq = 0;
 let sampleTime = 1000;
 
-function createSample(
-  phase: MovementPhase,
-  overrides?: Partial<WorkoutSample>,
-): WorkoutSample {
+function createSample(phase: MovementPhase, overrides?: Partial<WorkoutSample>): WorkoutSample {
   return {
     sequence: sampleSeq++,
     timestamp: (sampleTime += 50),
@@ -34,25 +31,29 @@ function createSample(
 function feedRepWithVelocity(
   store: RecordingStoreApi,
   velocity: number,
-  samplesPerPhase = 3,
+  samplesPerPhase = 3
 ): void {
   const process = store.getState().processSample;
   for (let i = 0; i < samplesPerPhase; i++) {
-    process(createSample(MovementPhase.CONCENTRIC, {
-      velocity,
-      position: 0.3 + (i * 0.2),
-      force: velocity * 200,
-    }));
+    process(
+      createSample(MovementPhase.CONCENTRIC, {
+        velocity,
+        position: 0.3 + i * 0.2,
+        force: velocity * 200,
+      })
+    );
   }
   for (let i = 0; i < samplesPerPhase; i++) {
     process(createSample(MovementPhase.HOLD, { velocity: 0, position: 1.0, force: 50 }));
   }
   for (let i = 0; i < samplesPerPhase; i++) {
-    process(createSample(MovementPhase.ECCENTRIC, {
-      velocity: velocity * 0.5,
-      position: 1.0 - (i * 0.3),
-      force: velocity * 150,
-    }));
+    process(
+      createSample(MovementPhase.ECCENTRIC, {
+        velocity: velocity * 0.5,
+        position: 1.0 - i * 0.3,
+        force: velocity * 150,
+      })
+    );
   }
   for (let i = 0; i < samplesPerPhase; i++) {
     process(createSample(MovementPhase.IDLE, { velocity: 0, position: 0, force: 0 }));

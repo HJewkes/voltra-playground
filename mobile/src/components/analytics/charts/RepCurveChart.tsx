@@ -26,15 +26,18 @@ const SIGNAL_OPTIONS: readonly CycleToggleOption<ChartSignal>[] = [
   { value: 'position', label: 'Position' },
 ];
 
-const SIGNAL_CONFIG: Record<ChartSignal, {
-  label: string;
-  getValue: (s: WorkoutSample) => number;
-  unit: string;
-  color: string;
-  defaultMin: number;
-  defaultMax: number;
-  floorAtZero: boolean;
-}> = {
+const SIGNAL_CONFIG: Record<
+  ChartSignal,
+  {
+    label: string;
+    getValue: (s: WorkoutSample) => number;
+    unit: string;
+    color: string;
+    defaultMin: number;
+    defaultMax: number;
+    floorAtZero: boolean;
+  }
+> = {
   velocity: {
     label: 'Velocity',
     getValue: (s) => s.velocity,
@@ -150,7 +153,7 @@ export function RepCurveChart({
   const repStartIdx = useMemo(() => findRepStartIndex(samples), [samples]);
   const repSamples = useMemo(
     () => (repStartIdx >= 0 ? samples.slice(repStartIdx) : []),
-    [samples, repStartIdx],
+    [samples, repStartIdx]
   );
 
   const isIdle = currentPhase === MovementPhase.IDLE && repSamples.length === 0;
@@ -228,7 +231,14 @@ export function RepCurveChart({
   return (
     <View>
       {/* Signal toggle */}
-      <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', height: selectorHeight }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: selectorHeight,
+        }}
+      >
         <CycleToggle
           options={SIGNAL_OPTIONS}
           value={signal}
@@ -238,16 +248,24 @@ export function RepCurveChart({
       </View>
 
       {/* Phase timing labels */}
-      <View style={{ flexDirection: 'row', height: labelRowHeight, marginLeft: padding.left, marginRight: padding.right }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          height: labelRowHeight,
+          marginLeft: padding.left,
+          marginRight: padding.right,
+        }}
+      >
         {phaseBands.map((band, i) => {
           const targetMs = getPhaseTargetMs(band.phase, targetTempo);
           const displayMs = band.isActive ? phaseElapsedMs : band.durationMs;
           const behind = isBehindPace(displayMs, targetMs);
           const label = PHASE_LABELS[band.phase] ?? '';
 
-          const timeStr = targetTempo && targetMs
-            ? `${formatPhaseMs(displayMs)}/${formatPhaseMs(targetMs)}`
-            : formatPhaseMs(displayMs);
+          const timeStr =
+            targetTempo && targetMs
+              ? `${formatPhaseMs(displayMs)}/${formatPhaseMs(targetMs)}`
+              : formatPhaseMs(displayMs);
 
           const labelColor = behind
             ? t['status-error']
@@ -263,10 +281,7 @@ export function RepCurveChart({
                 alignItems: 'center',
               }}
             >
-              <Text
-                numberOfLines={1}
-                style={{ fontSize: 9, fontWeight: '600', color: labelColor }}
-              >
+              <Text numberOfLines={1} style={{ fontSize: 9, fontWeight: '600', color: labelColor }}>
                 {label} {timeStr}
               </Text>
             </View>
@@ -316,26 +331,44 @@ export function RepCurveChart({
         </Svg>
 
         {/* Y-axis labels */}
-        <View style={{ position: 'absolute', left: 0, top: padding.top, width: padding.left - 4, alignItems: 'flex-end' }}>
+        <View
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: padding.top,
+            width: padding.left - 4,
+            alignItems: 'flex-end',
+          }}
+        >
           <Text style={{ fontSize: 9, color: t['text-disabled'] }}>
             {signal === 'velocity' ? maxVal.toFixed(1) : Math.round(maxVal)}
           </Text>
         </View>
-        <View style={{ position: 'absolute', left: 0, bottom: padding.bottom, width: padding.left - 4, alignItems: 'flex-end' }}>
+        <View
+          style={{
+            position: 'absolute',
+            left: 0,
+            bottom: padding.bottom,
+            width: padding.left - 4,
+            alignItems: 'flex-end',
+          }}
+        >
           <Text style={{ fontSize: 9, color: t['text-disabled'] }}>
             {signal === 'velocity' ? minVal.toFixed(1) : Math.round(minVal)}
           </Text>
         </View>
 
         {/* Time labels */}
-        <View style={{
-          position: 'absolute',
-          bottom: 1,
-          left: padding.left,
-          right: padding.right,
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-        }}>
+        <View
+          style={{
+            position: 'absolute',
+            bottom: 1,
+            left: padding.left,
+            right: padding.right,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+          }}
+        >
           <Text style={{ fontSize: 9, color: t['text-disabled'] }}>0s</Text>
           {elapsedMs > 0 && (
             <Text style={{ fontSize: 9, color: t['text-tertiary'] }}>

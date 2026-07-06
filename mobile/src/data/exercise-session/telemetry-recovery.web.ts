@@ -21,7 +21,7 @@ export async function flushActiveBuffer(): Promise<void> {}
 export async function finalizeSetBuffer(_sessionId: string, _setIndex: number): Promise<void> {}
 
 export async function recoverInterruptedSet(
-  _repository: ExerciseSessionRepository,
+  _repository: ExerciseSessionRepository
 ): Promise<RecoveredSet | null> {
   return null;
 }

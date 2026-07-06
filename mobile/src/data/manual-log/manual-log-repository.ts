@@ -60,8 +60,6 @@ class ManualLogRepositoryImpl implements ManualLogRepository {
   }
 }
 
-export function createManualLogRepository(
-  adapter: StorageAdapter,
-): ManualLogRepository {
+export function createManualLogRepository(adapter: StorageAdapter): ManualLogRepository {
   return new ManualLogRepositoryImpl(adapter);
 }

@@ -9,7 +9,10 @@ import { View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card, CardContent, getSemanticColors, alpha } from '@titan-design/react-ui';
 import type { StoredExerciseSession } from '@/data/exercise-session';
-import { computePRTimeline, type PRTimelineEntry } from '@/domain/history/services/cross-session-analytics';
+import {
+  computePRTimeline,
+  type PRTimelineEntry,
+} from '@/domain/history/services/cross-session-analytics';
 
 const t = getSemanticColors('dark');
 
@@ -76,9 +79,7 @@ function PRTimelineItem({ entry }: { entry: PRTimelineEntry }) {
         <Ionicons name={PR_ICONS[entry.type]} size={14} color={t['status-warning']} />
       </View>
       <View className="flex-1">
-        <Text className="text-sm font-semibold text-text-primary">
-          {formatPRValue(entry)}
-        </Text>
+        <Text className="text-sm font-semibold text-text-primary">{formatPRValue(entry)}</Text>
         <Text className="text-xs text-text-disabled">
           {PR_LABELS[entry.type]} - {entry.exerciseName}
         </Text>

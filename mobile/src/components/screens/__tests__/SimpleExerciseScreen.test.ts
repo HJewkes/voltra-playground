@@ -1,36 +1,35 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createStore } from 'zustand';
 
-
-vi.mock("react-native-reanimated", () => ({
+vi.mock('react-native-reanimated', () => ({
   default: { createAnimatedComponent: (c: unknown) => c },
   useSharedValue: () => ({ value: 0 }),
   useAnimatedStyle: (fn: () => unknown) => fn(),
   withSpring: (v: number) => v,
 }));
 
-vi.mock("../mock-rep-plan", () => ({
+vi.mock('../mock-rep-plan', () => ({
   generateMockRepPlan: vi.fn(() => []),
 }));
 
-vi.mock("@/utils/coach-console", () => ({
+vi.mock('@/utils/coach-console', () => ({
   registerCoachConsole: vi.fn(),
 }));
 
-vi.mock("@/utils/web-style", () => ({
+vi.mock('@/utils/web-style', () => ({
   webStyle: (s: Record<string, unknown>) => s,
 }));
 
-vi.mock("@/domain/workout/models/workout-plan", () => ({
+vi.mock('@/domain/workout/models/workout-plan', () => ({
   validateWorkoutPlan: vi.fn(),
 }));
 
-vi.mock("@/data/provider", () => ({
+vi.mock('@/data/provider', () => ({
   getWorkoutPlanRepository: () => ({ saveWorkoutPlan: vi.fn() }),
 }));
 
-vi.mock("expo-clipboard", () => ({
-  getStringAsync: vi.fn(async () => ""),
+vi.mock('expo-clipboard', () => ({
+  getStringAsync: vi.fn(async () => ''),
 }));
 vi.mock('expo-router', () => ({
   useRouter: () => ({
@@ -203,9 +202,38 @@ vi.mock('../exercise', () => ({
   useExerciseStores: () => ({
     recordingStore: mockRecordingStore,
     sessionStore: mockSessionStore,
-    device: { mode: 0x0001, setMode: vi.fn(), weight: 50, eccentric: 50, setEccentric: vi.fn(), chains: 0, inverseChains: 0, setChains: vi.fn(), setInverseChains: vi.fn() },
-    recording: { repCount: 0, rpe: 5, rir: 5, liveMessage: null, currentPhase: 0, phaseElapsedMs: 0, repPhaseDurations: [], liveSamples: [], meanVelocity: 0, velocityLoss: 0 },
-    session: { uiState: 'idle', setLog: [], restElapsedMs: 0, currentSetIndex: 0, currentPlannedSet: null, session: null, autoRegulation: null },
+    device: {
+      mode: 0x0001,
+      setMode: vi.fn(),
+      weight: 50,
+      eccentric: 50,
+      setEccentric: vi.fn(),
+      chains: 0,
+      inverseChains: 0,
+      setChains: vi.fn(),
+      setInverseChains: vi.fn(),
+    },
+    recording: {
+      repCount: 0,
+      rpe: 5,
+      rir: 5,
+      liveMessage: null,
+      currentPhase: 0,
+      phaseElapsedMs: 0,
+      repPhaseDurations: [],
+      liveSamples: [],
+      meanVelocity: 0,
+      velocityLoss: 0,
+    },
+    session: {
+      uiState: 'idle',
+      setLog: [],
+      restElapsedMs: 0,
+      currentSetIndex: 0,
+      currentPlannedSet: null,
+      session: null,
+      autoRegulation: null,
+    },
   }),
   useExerciseLifecycle: () => ({
     configRef: { current: null },
@@ -282,7 +310,15 @@ describe('SimpleExerciseScreen', () => {
   });
 
   it('exercise session state transitions follow session store lifecycle', () => {
-    type SessionUIState = 'idle' | 'preparing' | 'ready' | 'countdown' | 'recording' | 'processing' | 'resting' | 'results';
+    type SessionUIState =
+      | 'idle'
+      | 'preparing'
+      | 'ready'
+      | 'countdown'
+      | 'recording'
+      | 'processing'
+      | 'resting'
+      | 'results';
     const validTransitions: Record<SessionUIState, SessionUIState[]> = {
       idle: ['preparing'],
       preparing: ['ready'],
@@ -303,7 +339,8 @@ describe('SimpleExerciseScreen', () => {
   });
 
   it('WorkoutControls isActive reflects recording and countdown states', () => {
-    type SessionUIState = 'idle' | 'preparing' | 'ready' | 'countdown' | 'recording' | 'resting' | 'results';
+    type SessionUIState =
+      'idle' | 'preparing' | 'ready' | 'countdown' | 'recording' | 'resting' | 'results';
 
     function isControlsActive(state: SessionUIState): boolean {
       return state === 'recording' || state === 'countdown';
@@ -408,7 +445,9 @@ describe('buildPlanFromTargets', () => {
     };
 
     const targetReps = targets.enabledSections.effort
-      ? (targets.targetMode === 'reps' ? targets.targetReps : 0)
+      ? targets.targetMode === 'reps'
+        ? targets.targetReps
+        : 0
       : 0;
     expect(targetReps).toBe(10);
   });

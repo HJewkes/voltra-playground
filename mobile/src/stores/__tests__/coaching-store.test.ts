@@ -37,8 +37,12 @@ describe('coaching-store', () => {
 
     it('assigns unique IDs to each cue', () => {
       store.getState().setEnabled(true);
-      store.getState().enqueueCue({ type: 'informational', message: 'A', setNumber: 1, timestamp: 1000 });
-      store.getState().enqueueCue({ type: 'encouragement', message: 'B', setNumber: 1, timestamp: 1001 });
+      store
+        .getState()
+        .enqueueCue({ type: 'informational', message: 'A', setNumber: 1, timestamp: 1000 });
+      store
+        .getState()
+        .enqueueCue({ type: 'encouragement', message: 'B', setNumber: 1, timestamp: 1001 });
 
       const ids = store.getState().queuedCues.map((c) => c.id);
       expect(ids[0]).not.toBe(ids[1]);
@@ -48,8 +52,12 @@ describe('coaching-store', () => {
   describe('flushQueue', () => {
     it('moves first queued cue to activeCue', () => {
       store.getState().setEnabled(true);
-      store.getState().enqueueCue({ type: 'informational', message: 'First', setNumber: 1, timestamp: 1000 });
-      store.getState().enqueueCue({ type: 'encouragement', message: 'Second', setNumber: 1, timestamp: 1001 });
+      store
+        .getState()
+        .enqueueCue({ type: 'informational', message: 'First', setNumber: 1, timestamp: 1000 });
+      store
+        .getState()
+        .enqueueCue({ type: 'encouragement', message: 'Second', setNumber: 1, timestamp: 1001 });
 
       store.getState().flushQueue();
 
@@ -60,7 +68,9 @@ describe('coaching-store', () => {
 
     it('adds cue to session log', () => {
       store.getState().setEnabled(true);
-      store.getState().enqueueCue({ type: 'informational', message: 'Logged', setNumber: 1, timestamp: 1000 });
+      store
+        .getState()
+        .enqueueCue({ type: 'informational', message: 'Logged', setNumber: 1, timestamp: 1000 });
 
       store.getState().flushQueue();
 
@@ -78,7 +88,12 @@ describe('coaching-store', () => {
   describe('dismissActiveCue', () => {
     it('clears active cue and marks as dismissed in log', () => {
       store.getState().setEnabled(true);
-      store.getState().enqueueCue({ type: 'informational', message: 'Dismiss me', setNumber: 1, timestamp: 1000 });
+      store.getState().enqueueCue({
+        type: 'informational',
+        message: 'Dismiss me',
+        setNumber: 1,
+        timestamp: 1000,
+      });
       store.getState().flushQueue();
 
       store.getState().dismissActiveCue();
@@ -89,8 +104,12 @@ describe('coaching-store', () => {
 
     it('auto-flushes next queued cue after dismiss', () => {
       store.getState().setEnabled(true);
-      store.getState().enqueueCue({ type: 'informational', message: 'First', setNumber: 1, timestamp: 1000 });
-      store.getState().enqueueCue({ type: 'encouragement', message: 'Second', setNumber: 1, timestamp: 1001 });
+      store
+        .getState()
+        .enqueueCue({ type: 'informational', message: 'First', setNumber: 1, timestamp: 1000 });
+      store
+        .getState()
+        .enqueueCue({ type: 'encouragement', message: 'Second', setNumber: 1, timestamp: 1001 });
       store.getState().flushQueue();
 
       store.getState().dismissActiveCue();
@@ -102,7 +121,12 @@ describe('coaching-store', () => {
   describe('reactToCue', () => {
     it('updates reaction on active cue and session log', () => {
       store.getState().setEnabled(true);
-      store.getState().enqueueCue({ type: 'informational', message: 'React to me', setNumber: 1, timestamp: 1000 });
+      store.getState().enqueueCue({
+        type: 'informational',
+        message: 'React to me',
+        setNumber: 1,
+        timestamp: 1000,
+      });
       store.getState().flushQueue();
 
       const cueId = store.getState().activeCue!.id;
@@ -114,7 +138,9 @@ describe('coaching-store', () => {
 
     it('allows toggling reaction to null', () => {
       store.getState().setEnabled(true);
-      store.getState().enqueueCue({ type: 'informational', message: 'Toggle', setNumber: 1, timestamp: 1000 });
+      store
+        .getState()
+        .enqueueCue({ type: 'informational', message: 'Toggle', setNumber: 1, timestamp: 1000 });
       store.getState().flushQueue();
 
       const cueId = store.getState().activeCue!.id;
@@ -139,13 +165,20 @@ describe('coaching-store', () => {
     it('returns only cues with non-null reactions', () => {
       store.getState().setEnabled(true);
 
-      store.getState().enqueueCue({ type: 'informational', message: 'Reacted', setNumber: 1, timestamp: 1000 });
+      store
+        .getState()
+        .enqueueCue({ type: 'informational', message: 'Reacted', setNumber: 1, timestamp: 1000 });
       store.getState().flushQueue();
       const cueId = store.getState().activeCue!.id;
       store.getState().reactToCue(cueId, 'thumbs_up');
       store.getState().dismissActiveCue();
 
-      store.getState().enqueueCue({ type: 'encouragement', message: 'Not reacted', setNumber: 2, timestamp: 2000 });
+      store.getState().enqueueCue({
+        type: 'encouragement',
+        message: 'Not reacted',
+        setNumber: 2,
+        timestamp: 2000,
+      });
       store.getState().flushQueue();
       store.getState().dismissActiveCue();
 
@@ -168,7 +201,9 @@ describe('coaching-store', () => {
   describe('reset', () => {
     it('clears all coaching state except enabled flag', () => {
       store.getState().setEnabled(true);
-      store.getState().enqueueCue({ type: 'informational', message: 'A', setNumber: 1, timestamp: 1000 });
+      store
+        .getState()
+        .enqueueCue({ type: 'informational', message: 'A', setNumber: 1, timestamp: 1000 });
       store.getState().flushQueue();
       store.getState().addSetMarker(1);
       store.getState().toggleLog();
@@ -187,8 +222,19 @@ describe('coaching-store', () => {
     it('accumulates cues in queue without displaying', () => {
       store.getState().setEnabled(true);
 
-      store.getState().enqueueCue({ type: 'informational', message: 'During recording 1', setNumber: 1, timestamp: 1000 });
-      store.getState().enqueueCue({ type: 'load_adjustment', message: 'During recording 2', setNumber: 1, timestamp: 1001, suggestedWeight: 55 });
+      store.getState().enqueueCue({
+        type: 'informational',
+        message: 'During recording 1',
+        setNumber: 1,
+        timestamp: 1000,
+      });
+      store.getState().enqueueCue({
+        type: 'load_adjustment',
+        message: 'During recording 2',
+        setNumber: 1,
+        timestamp: 1001,
+        suggestedWeight: 55,
+      });
 
       expect(store.getState().activeCue).toBeNull();
       expect(store.getState().queuedCues).toHaveLength(2);

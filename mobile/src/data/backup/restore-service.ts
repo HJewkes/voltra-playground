@@ -41,9 +41,7 @@ export function parseBackup(json: string): BackupValidationResult & { data?: Bac
 /**
  * Validate a parsed backup object.
  */
-export function validateBackup(
-  data: unknown
-): BackupValidationResult & { data?: BackupData } {
+export function validateBackup(data: unknown): BackupValidationResult & { data?: BackupData } {
   const errors: string[] = [];
 
   if (typeof data !== 'object' || data === null) {

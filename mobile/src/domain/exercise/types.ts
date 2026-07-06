@@ -33,14 +33,7 @@ export enum MuscleGroup {
  * Movement pattern categories for exercise classification.
  */
 export type MovementPattern =
-  | 'push'
-  | 'pull'
-  | 'hinge'
-  | 'squat'
-  | 'lunge'
-  | 'carry'
-  | 'rotation'
-  | 'isolation';
+  'push' | 'pull' | 'hinge' | 'squat' | 'lunge' | 'carry' | 'rotation' | 'isolation';
 
 // =============================================================================
 // Exercise Types

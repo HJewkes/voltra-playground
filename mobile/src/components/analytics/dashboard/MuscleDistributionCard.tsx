@@ -19,10 +19,7 @@ export interface MuscleDistributionCardProps {
  * MuscleDistributionCard - muscle group distribution chart.
  */
 export function MuscleDistributionCard({ sessions }: MuscleDistributionCardProps) {
-  const distribution = useMemo(
-    () => computeMuscleGroupDistribution(sessions),
-    [sessions]
-  );
+  const distribution = useMemo(() => computeMuscleGroupDistribution(sessions), [sessions]);
 
   const data = useMemo(
     () =>

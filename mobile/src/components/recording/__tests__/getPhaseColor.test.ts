@@ -27,9 +27,7 @@ describe('getPhaseColor()', () => {
   });
 
   it('maps concentric to success token', () => {
-    expect(getPhaseColor(MovementPhase.CONCENTRIC)).toBe(
-      getPhaseColor(MovementPhase.CONCENTRIC)
-    );
+    expect(getPhaseColor(MovementPhase.CONCENTRIC)).toBe(getPhaseColor(MovementPhase.CONCENTRIC));
     // Concentric should differ from eccentric (not swapped)
     expect(getPhaseColor(MovementPhase.CONCENTRIC)).not.toBe(
       getPhaseColor(MovementPhase.ECCENTRIC)

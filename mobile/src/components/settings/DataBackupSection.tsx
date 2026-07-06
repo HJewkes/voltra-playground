@@ -142,7 +142,12 @@ export function DataBackupSection() {
             isLoading={isExporting}
             loadingText="Exporting..."
           >
-            <Ionicons name="download-outline" size={20} color={t['brand-primary']} style={{ marginRight: 8 }} />
+            <Ionicons
+              name="download-outline"
+              size={20}
+              color={t['brand-primary']}
+              style={{ marginRight: 8 }}
+            />
             <ButtonText className="text-brand-primary">Export Backup</ButtonText>
           </Button>
 
@@ -155,7 +160,12 @@ export function DataBackupSection() {
             isLoading={isImporting}
             loadingText="Importing..."
           >
-            <Ionicons name="push-outline" size={20} color={t['brand-primary']} style={{ marginRight: 8 }} />
+            <Ionicons
+              name="push-outline"
+              size={20}
+              color={t['brand-primary']}
+              style={{ marginRight: 8 }}
+            />
             <ButtonText className="text-brand-primary">Import Backup</ButtonText>
           </Button>
         </VStack>
@@ -168,7 +178,11 @@ function formatDate(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-function buildImportSummary(data: { sessions: unknown[]; exercises: unknown[]; recordings: unknown[] }): string {
+function buildImportSummary(data: {
+  sessions: unknown[];
+  exercises: unknown[];
+  recordings: unknown[];
+}): string {
   const parts: string[] = [];
   if (data.sessions.length > 0) parts.push(`${data.sessions.length} sessions`);
   if (data.exercises.length > 0) parts.push(`${data.exercises.length} exercises`);

@@ -63,9 +63,7 @@ export function LinkCard({
               <Ionicons name={icon} size={28} color={iconColor} />
             </View>
             <Text className="text-base font-semibold text-text-primary">{title}</Text>
-            {subtitle && (
-              <Text className="mt-1 text-sm text-text-tertiary">{subtitle}</Text>
-            )}
+            {subtitle && <Text className="mt-1 text-sm text-text-tertiary">{subtitle}</Text>}
           </CardContent>
         </Card>
       </TouchableOpacity>

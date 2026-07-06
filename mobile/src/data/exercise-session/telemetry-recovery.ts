@@ -97,7 +97,7 @@ export async function finalizeSetBuffer(sessionId: string, setIndex: number): Pr
  * when there is nothing to recover.
  */
 export async function recoverInterruptedSet(
-  repository: ExerciseSessionRepository,
+  repository: ExerciseSessionRepository
 ): Promise<RecoveredSet | null> {
   try {
     return await recoverInProgressSet(getDb(), repository);

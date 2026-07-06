@@ -11,10 +11,15 @@
  */
 
 import { useEffect } from 'react';
-import { useSharedValue, useAnimatedStyle, withTiming, interpolateColor } from 'react-native-reanimated';
+import {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  interpolateColor,
+} from 'react-native-reanimated';
 
 /** Opacity of the ambient tint at maximum loss */
-const MAX_TINT_OPACITY = 0.10;
+const MAX_TINT_OPACITY = 0.1;
 
 /** Transition speed in ms — smooth but not sluggish */
 const TRANSITION_MS = 600;
@@ -48,8 +53,8 @@ export function useAmbientColor(velocityLoss: number, active: boolean) {
   return useAnimatedStyle(() => ({
     backgroundColor: interpolateColor(
       progress.value,
-      [0, 0.57, 1],          // 0 → ~20% loss → 35%+ loss
-      ['#22c55e', '#eab308', '#ef4444'],
+      [0, 0.57, 1], // 0 → ~20% loss → 35%+ loss
+      ['#22c55e', '#eab308', '#ef4444']
     ),
     opacity: progress.value * MAX_TINT_OPACITY,
   }));

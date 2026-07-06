@@ -12,7 +12,10 @@
 import { describe, it, expect } from 'vitest';
 import { autoPlanWorkout, buildSuggestionPlan } from '../auto-plan-service';
 import type { StoredExerciseSession } from '@/data/exercise-session';
-import { generateStoredSession, generateStoredSet } from '@/__fixtures__/generators/session-generator';
+import {
+  generateStoredSession,
+  generateStoredSet,
+} from '@/__fixtures__/generators/session-generator';
 import { EXERCISE_CATALOG } from '@/domain/exercise/catalog';
 
 // =============================================================================
@@ -28,7 +31,7 @@ function daysAgo(days: number): number {
 function makeSession(
   exerciseId: string,
   daysAgoCount: number,
-  opts: { setCount?: number; weight?: number; repsPerSet?: number } = {},
+  opts: { setCount?: number; weight?: number; repsPerSet?: number } = {}
 ): StoredExerciseSession {
   const { setCount = 4, weight = 85, repsPerSet = 8 } = opts;
   const plan = {
@@ -54,7 +57,7 @@ function makeSession(
     startTime: daysAgo(daysAgoCount),
     plan,
     completedSets: Array.from({ length: setCount }, () =>
-      generateStoredSet({ weight, repCount: repsPerSet }),
+      generateStoredSet({ weight, repCount: repsPerSet })
     ),
   };
 }
@@ -83,9 +86,7 @@ describe('autoPlanWorkout', () => {
   });
 
   it('returns null when suggested exercise has no completed sessions', () => {
-    const sessions = [
-      { ...makeSession('cable_row', 3), status: 'abandoned' as const },
-    ];
+    const sessions = [{ ...makeSession('cable_row', 3), status: 'abandoned' as const }];
     expect(autoPlanWorkout(sessions, MINI_CATALOG)).toBeNull();
   });
 
@@ -106,9 +107,7 @@ describe('autoPlanWorkout', () => {
   });
 
   it('formats summary as "Name / weight lbs / sets x reps"', () => {
-    const sessions = [
-      makeSession('cable_row', 5, { weight: 85, setCount: 4, repsPerSet: 8 }),
-    ];
+    const sessions = [makeSession('cable_row', 5, { weight: 85, setCount: 4, repsPerSet: 8 })];
 
     const result = autoPlanWorkout(sessions, SINGLE_CATALOG);
 
@@ -161,9 +160,7 @@ describe('buildSuggestionPlan', () => {
   });
 
   it('pre-fills from last session when history exists', () => {
-    const sessions = [
-      makeSession('cable_row', 2, { weight: 95, setCount: 4, repsPerSet: 10 }),
-    ];
+    const sessions = [makeSession('cable_row', 2, { weight: 95, setCount: 4, repsPerSet: 10 })];
 
     const result = buildSuggestionPlan(sessions, 'cable_row', SINGLE_CATALOG);
 
@@ -191,9 +188,7 @@ describe('buildSuggestionPlan', () => {
   });
 
   it('ignores abandoned sessions and falls back to defaults', () => {
-    const sessions = [
-      { ...makeSession('cable_row', 2), status: 'abandoned' as const },
-    ];
+    const sessions = [{ ...makeSession('cable_row', 2), status: 'abandoned' as const }];
 
     const result = buildSuggestionPlan(sessions, 'cable_row', SINGLE_CATALOG);
 

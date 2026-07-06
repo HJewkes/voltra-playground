@@ -51,9 +51,7 @@ export function serializeBackup(data: BackupData): string {
   return JSON.stringify(data, null, 2);
 }
 
-async function collectSessions(
-  repo: ExerciseSessionRepository
-): Promise<BackupData['sessions']> {
+async function collectSessions(repo: ExerciseSessionRepository): Promise<BackupData['sessions']> {
   return repo.getRecent(10_000);
 }
 

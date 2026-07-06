@@ -7,14 +7,24 @@ vi.mock('@/domain/device', async (importOriginal) => {
   // We need @voltras/node-sdk mocked first to prevent BLE resolution
   return {
     TrainingMode: {
-      Idle: 0x0000, WeightTraining: 0x0001, ResistanceBand: 0x0002,
-      Rowing: 0x0003, Damper: 0x0004, CustomCurves: 0x0006,
-      Isokinetic: 0x0007, Isometric: 0x0008,
+      Idle: 0x0000,
+      WeightTraining: 0x0001,
+      ResistanceBand: 0x0002,
+      Rowing: 0x0003,
+      Damper: 0x0004,
+      CustomCurves: 0x0006,
+      Isokinetic: 0x0007,
+      Isometric: 0x0008,
     },
     TrainingModeNames: {
-      0x0000: 'Idle', 0x0001: 'Weight Training', 0x0002: 'Resistance Band',
-      0x0003: 'Rowing', 0x0004: 'Damper', 0x0006: 'Custom Curves',
-      0x0007: 'Isokinetic', 0x0008: 'Isometric',
+      0x0000: 'Idle',
+      0x0001: 'Weight Training',
+      0x0002: 'Resistance Band',
+      0x0003: 'Rowing',
+      0x0004: 'Damper',
+      0x0006: 'Custom Curves',
+      0x0007: 'Isokinetic',
+      0x0008: 'Isometric',
     },
     VoltraManager: vi.fn(),
     detectBLEEnvironment: vi.fn(),
@@ -34,8 +44,10 @@ vi.mock('@expo/vector-icons', () => ({
 }));
 
 vi.mock('@titan-design/react-ui', () => ({
-  Card: 'Card', CardContent: 'CardContent',
-  Section: 'Section', SectionContent: 'SectionContent',
+  Card: 'Card',
+  CardContent: 'CardContent',
+  Section: 'Section',
+  SectionContent: 'SectionContent',
   getSemanticColors: () => ({}),
 }));
 
@@ -44,7 +56,9 @@ vi.mock('@react-native-community/slider', () => ({
 }));
 
 const mockVoltraStore = createStore(() => ({
-  mode: 0x0001, weight: 50, eccentric: 0,
+  mode: 0x0001,
+  weight: 50,
+  eccentric: 0,
   setMode: vi.fn(async (_mode: number) => {}),
   setWeight: vi.fn(async () => {}),
   setEccentric: vi.fn(async () => {}),

@@ -68,24 +68,33 @@ export function WorkoutCuesSection() {
             <Text className="text-text-primary">Haptic Feedback</Text>
             <Text className="text-xs text-text-disabled">Vibration during rest countdown</Text>
           </View>
-          <Switch value={hapticEnabled} onValueChange={handleHapticToggle}
-            trackColor={{ false: t['background-subtle'], true: t['brand-primary'] }} />
+          <Switch
+            value={hapticEnabled}
+            onValueChange={handleHapticToggle}
+            trackColor={{ false: t['background-subtle'], true: t['brand-primary'] }}
+          />
         </View>
         <View className="flex-row items-center justify-between py-2">
           <View className="flex-1">
             <Text className="text-text-primary">Audio Cues</Text>
             <Text className="text-xs text-text-disabled">Beep sounds during rest countdown</Text>
           </View>
-          <Switch value={audioEnabled} onValueChange={handleAudioToggle}
-            trackColor={{ false: t['background-subtle'], true: t['brand-primary'] }} />
+          <Switch
+            value={audioEnabled}
+            onValueChange={handleAudioToggle}
+            trackColor={{ false: t['background-subtle'], true: t['brand-primary'] }}
+          />
         </View>
         <View className="flex-row items-center justify-between py-2">
           <View className="flex-1">
             <Text className="text-text-primary">Voice Coaching</Text>
             <Text className="text-xs text-text-disabled">Hear AI coaching cues spoken aloud</Text>
           </View>
-          <Switch value={voiceEnabled} onValueChange={handleVoiceToggle}
-            trackColor={{ false: t['background-subtle'], true: t['brand-primary'] }} />
+          <Switch
+            value={voiceEnabled}
+            onValueChange={handleVoiceToggle}
+            trackColor={{ false: t['background-subtle'], true: t['brand-primary'] }}
+          />
         </View>
       </View>
     </Surface>

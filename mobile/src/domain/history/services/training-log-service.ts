@@ -61,9 +61,7 @@ export function toDateKey(timestamp: number): string {
 /**
  * Group sessions by date, sorted most recent first.
  */
-export function groupSessionsByDate(
-  sessions: StoredExerciseSession[]
-): Map<string, WorkoutDay> {
+export function groupSessionsByDate(sessions: StoredExerciseSession[]): Map<string, WorkoutDay> {
   const dayMap = new Map<string, WorkoutDay>();
 
   for (const session of sessions) {
@@ -120,9 +118,7 @@ export function getWeekStart(date: Date): Date {
 /**
  * Compute volume per muscle group from a set of sessions.
  */
-export function computeMuscleGroupVolumes(
-  sessions: StoredExerciseSession[]
-): MuscleGroupVolume[] {
+export function computeMuscleGroupVolumes(sessions: StoredExerciseSession[]): MuscleGroupVolume[] {
   const volumeMap = new Map<MuscleGroup, { sets: number; reps: number; volume: number }>();
 
   for (const session of sessions) {
@@ -159,9 +155,7 @@ export function computeWeeklyVolume(
   const startTs = weekStart.getTime();
   const endTs = weekEnd.getTime();
 
-  const weekSessions = sessions.filter(
-    (s) => s.startTime >= startTs && s.startTime < endTs
-  );
+  const weekSessions = sessions.filter((s) => s.startTime >= startTs && s.startTime < endTs);
 
   const muscleVolumes = computeMuscleGroupVolumes(weekSessions);
   const totalSets = muscleVolumes.reduce((sum, mv) => sum + mv.sets, 0);

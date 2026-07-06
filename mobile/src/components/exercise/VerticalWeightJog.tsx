@@ -51,7 +51,12 @@ interface VerticalWeightJogProps {
   lastSessionWeight?: number;
 }
 
-export function VerticalWeightJog({ weight, onWeightChange, disabled = false, lastSessionWeight }: VerticalWeightJogProps) {
+export function VerticalWeightJog({
+  weight,
+  onWeightChange,
+  disabled = false,
+  lastSessionWeight,
+}: VerticalWeightJogProps) {
   const [localWeight, setLocalWeight] = useState(weight);
   const displacement = useRef(0);
   const tickTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -61,10 +66,15 @@ export function VerticalWeightJog({ weight, onWeightChange, disabled = false, la
   onWeightChangeRef.current = onWeightChange;
 
   // Sync external weight changes
-  useEffect(() => { setLocalWeight(weight); }, [weight]);
+  useEffect(() => {
+    setLocalWeight(weight);
+  }, [weight]);
 
   const stopTicking = useCallback(() => {
-    if (tickTimer.current) { clearTimeout(tickTimer.current); tickTimer.current = null; }
+    if (tickTimer.current) {
+      clearTimeout(tickTimer.current);
+      tickTimer.current = null;
+    }
   }, []);
 
   const startTicking = useCallback(() => {
@@ -93,36 +103,41 @@ export function VerticalWeightJog({ weight, onWeightChange, disabled = false, la
   const stopTickingRef = useRef(stopTicking);
   stopTickingRef.current = stopTicking;
 
-  const panResponder = useMemo(() =>
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => !disabled,
-      onMoveShouldSetPanResponder: (_, g) => !disabled && Math.abs(g.dy) > DEAD_ZONE,
-      onPanResponderGrant: () => {
-        displacement.current = 0;
-        pillStretch.value = 0;
-      },
-      onPanResponderMove: (_, g) => {
-        const wasActive = Math.abs(displacement.current) > DEAD_ZONE;
-        displacement.current = g.dy;
-        const clamped = Math.max(-MAX_STRETCH, Math.min(MAX_STRETCH, g.dy));
-        pillStretch.value = clamped / MAX_STRETCH;
-        if (!wasActive && Math.abs(g.dy) > DEAD_ZONE) startTickingRef.current();
-      },
-      onPanResponderRelease: () => {
-        displacement.current = 0;
-        stopTickingRef.current();
-        pillStretch.value = withSpring(0, { damping: 4, stiffness: 350, mass: 0.4 });
-        setLocalWeight((prev) => { onWeightChangeRef.current(prev); return prev; });
-      },
-    }),
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  [disabled]);
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => !disabled,
+        onMoveShouldSetPanResponder: (_, g) => !disabled && Math.abs(g.dy) > DEAD_ZONE,
+        onPanResponderGrant: () => {
+          displacement.current = 0;
+          pillStretch.value = 0;
+        },
+        onPanResponderMove: (_, g) => {
+          const wasActive = Math.abs(displacement.current) > DEAD_ZONE;
+          displacement.current = g.dy;
+          const clamped = Math.max(-MAX_STRETCH, Math.min(MAX_STRETCH, g.dy));
+          pillStretch.value = clamped / MAX_STRETCH;
+          if (!wasActive && Math.abs(g.dy) > DEAD_ZONE) startTickingRef.current();
+        },
+        onPanResponderRelease: () => {
+          displacement.current = 0;
+          stopTickingRef.current();
+          pillStretch.value = withSpring(0, { damping: 4, stiffness: 350, mass: 0.4 });
+          setLocalWeight((prev) => {
+            onWeightChangeRef.current(prev);
+            return prev;
+          });
+        },
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [disabled]
+  );
 
   // Web: pointer events for drag + wheel
   const pillRef = useRef<View>(null);
   useEffect(() => {
     if (Platform.OS !== 'web' || !pillRef.current) return;
-    const el = (pillRef.current as unknown as HTMLElement);
+    const el = pillRef.current as unknown as HTMLElement;
     let startY = 0;
     let active = false;
 
@@ -151,7 +166,10 @@ export function VerticalWeightJog({ weight, onWeightChange, disabled = false, la
       displacement.current = 0;
       stopTickingRef.current();
       pillStretch.value = withSpring(0, { damping: 4, stiffness: 350, mass: 0.4 });
-      setLocalWeight((prev) => { onWeightChangeRef.current(prev); return prev; });
+      setLocalWeight((prev) => {
+        onWeightChangeRef.current(prev);
+        return prev;
+      });
     };
 
     const onWheel = (e: WheelEvent) => {
@@ -199,7 +217,7 @@ export function VerticalWeightJog({ weight, onWeightChange, disabled = false, la
       paddingBottom: BASE_PAD_V + (s > 0 ? extra : 0),
       paddingLeft: BASE_PAD_H,
       paddingRight: BASE_PAD_H,
-      transform: [{ translateY: sign * extra / 2 }, { scaleX: 1 - visual * 0.1 }],
+      transform: [{ translateY: (sign * extra) / 2 }, { scaleX: 1 - visual * 0.1 }],
     };
   });
 
@@ -215,32 +233,35 @@ export function VerticalWeightJog({ weight, onWeightChange, disabled = false, la
         <Animated.View
           ref={pillRef}
           {...panResponder.panHandlers}
-          style={[{
-            backgroundColor: alpha(t['brand-primary'], 0.15),
-            alignItems: 'center',
-            justifyContent: 'center',
-            minWidth: 72,
-            minHeight: 60,
-            ...Platform.select({
-              web: webStyle({
-                boxShadow: [
-                  `0 3px 6px ${alpha('#000', 0.3)}`,
-                  `0 1px 2px ${alpha('#000', 0.2)}`,
-                  `inset 0 1px 0 ${alpha('#fff', 0.08)}`,
-                ].join(', '),
-                cursor: disabled ? 'default' : 'ns-resize',
-                touchAction: 'none',
-                userSelect: 'none',
+          style={[
+            {
+              backgroundColor: alpha(t['brand-primary'], 0.15),
+              alignItems: 'center',
+              justifyContent: 'center',
+              minWidth: 72,
+              minHeight: 60,
+              ...Platform.select({
+                web: webStyle({
+                  boxShadow: [
+                    `0 3px 6px ${alpha('#000', 0.3)}`,
+                    `0 1px 2px ${alpha('#000', 0.2)}`,
+                    `inset 0 1px 0 ${alpha('#fff', 0.08)}`,
+                  ].join(', '),
+                  cursor: disabled ? 'default' : 'ns-resize',
+                  touchAction: 'none',
+                  userSelect: 'none',
+                }),
+                default: {
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 3 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 6,
+                  elevation: 4,
+                },
               }),
-              default: {
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 3 },
-                shadowOpacity: 0.3,
-                shadowRadius: 6,
-                elevation: 4,
-              },
-            }),
-          }, pillStyle]}
+            },
+            pillStyle,
+          ]}
         >
           <Text
             style={{
@@ -279,7 +300,15 @@ export function VerticalWeightJog({ weight, onWeightChange, disabled = false, la
         lbs
       </Text>
       {lastSessionWeight !== undefined && (
-        <Text style={{ marginTop: 2, fontSize: 9, fontWeight: '500', color: t['text-tertiary'], textAlign: 'center' }}>
+        <Text
+          style={{
+            marginTop: 2,
+            fontSize: 9,
+            fontWeight: '500',
+            color: t['text-tertiary'],
+            textAlign: 'center',
+          }}
+        >
           {`Last: ${lastSessionWeight} lbs`}
         </Text>
       )}

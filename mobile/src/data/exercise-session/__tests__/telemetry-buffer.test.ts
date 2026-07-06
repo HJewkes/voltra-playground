@@ -109,7 +109,10 @@ describe('TelemetryBuffer batch-append', () => {
   });
 
   it('assigns monotonic, contiguous sample indices across multiple flushes', async () => {
-    const buffer = new TelemetryBuffer(db, 's', 0, { flushSampleCount: 2, flushIntervalMs: Number.MAX_SAFE_INTEGER });
+    const buffer = new TelemetryBuffer(db, 's', 0, {
+      flushSampleCount: 2,
+      flushIntervalMs: Number.MAX_SAFE_INTEGER,
+    });
 
     for (let i = 0; i < 6; i++) await buffer.append(sample(i, 1000 + i));
 

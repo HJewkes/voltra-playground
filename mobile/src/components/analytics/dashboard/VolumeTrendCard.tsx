@@ -8,7 +8,10 @@ import React, { useState, useMemo } from 'react';
 import { View, Text, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { Card, CardContent, getSemanticColors } from '@titan-design/react-ui';
 import type { StoredExerciseSession } from '@/data/exercise-session';
-import { computeVolumeBuckets, type TimeRange } from '@/domain/history/services/cross-session-analytics';
+import {
+  computeVolumeBuckets,
+  type TimeRange,
+} from '@/domain/history/services/cross-session-analytics';
 import { BarChart } from '../charts/BarChart';
 
 const t = getSemanticColors('dark');
@@ -44,9 +47,7 @@ export function VolumeTrendCard({ sessions }: VolumeTrendCardProps) {
         </View>
 
         {data.length === 0 ? (
-          <Text className="py-4 text-center text-sm text-text-disabled">
-            No volume data yet
-          </Text>
+          <Text className="py-4 text-center text-sm text-text-disabled">No volume data yet</Text>
         ) : (
           <BarChart
             data={data}
@@ -69,12 +70,13 @@ function RangeToggle({
   onChange: (range: TimeRange) => void;
 }) {
   return (
-    <View
-      className="flex-row rounded-md p-0.5"
-      style={{ backgroundColor: t['surface-elevated'] }}
-    >
+    <View className="flex-row rounded-md p-0.5" style={{ backgroundColor: t['surface-elevated'] }}>
       <ToggleButton label="Week" active={value === 'weekly'} onPress={() => onChange('weekly')} />
-      <ToggleButton label="Month" active={value === 'monthly'} onPress={() => onChange('monthly')} />
+      <ToggleButton
+        label="Month"
+        active={value === 'monthly'}
+        onPress={() => onChange('monthly')}
+      />
     </View>
   );
 }

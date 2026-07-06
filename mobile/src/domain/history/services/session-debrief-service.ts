@@ -7,11 +7,13 @@
 
 import type { StoredExerciseSession, TerminationReason } from '@/data/exercise-session';
 import type { Exercise } from '@/domain/exercise/catalog';
+import { computeExerciseProgression, type MetricComparison } from './progression-service';
 import {
-  computeExerciseProgression,
-  type MetricComparison,
-} from './progression-service';
-import { computeTrainingLoad, computePRTimeline, type TrainingLoad, type PRTimelineEntry } from './cross-session-analytics';
+  computeTrainingLoad,
+  computePRTimeline,
+  type TrainingLoad,
+  type PRTimelineEntry,
+} from './cross-session-analytics';
 import { suggestNextExercise, type ExerciseSuggestion } from './workout-suggestion-service';
 
 // =============================================================================
@@ -58,11 +60,9 @@ const FATIGUE_REASONS: Set<TerminationReason> = new Set([
   'failure',
 ]);
 
-function buildRecoveryNote(
-  currentSessions: StoredExerciseSession[],
-): RecoveryNote | null {
+function buildRecoveryNote(currentSessions: StoredExerciseSession[]): RecoveryNote | null {
   const fatigueEnded = currentSessions.some(
-    (s) => s.terminationReason && FATIGUE_REASONS.has(s.terminationReason),
+    (s) => s.terminationReason && FATIGUE_REASONS.has(s.terminationReason)
   );
 
   if (!fatigueEnded) return null;
@@ -108,7 +108,7 @@ function buildRecoveryNote(
 
 function detectSessionPRs(
   allHistory: StoredExerciseSession[],
-  currentSessionIds: Set<string>,
+  currentSessionIds: Set<string>
 ): PRBadge[] {
   const timeline = computePRTimeline(allHistory);
   const badges: PRBadge[] = [];
@@ -151,7 +151,7 @@ export function assembleSessionDebrief(
   currentSessions: StoredExerciseSession[],
   allHistory: StoredExerciseSession[],
   catalog: Record<string, Exercise>,
-  now: number = Date.now(),
+  now: number = Date.now()
 ): SessionDebriefData {
   const progressionArrows = buildProgressionArrows(currentSessions, allHistory);
   const trainingLoad = computeTrainingLoad(allHistory);
@@ -176,7 +176,7 @@ export function assembleSessionDebrief(
  */
 function buildProgressionArrows(
   currentSessions: StoredExerciseSession[],
-  allHistory: StoredExerciseSession[],
+  allHistory: StoredExerciseSession[]
 ): ProgressionArrow[] {
   const arrows: ProgressionArrow[] = [];
 
@@ -187,7 +187,7 @@ function buildProgressionArrows(
           s.exerciseId === current.exerciseId &&
           s.id !== current.id &&
           s.status === 'completed' &&
-          s.startTime < current.startTime,
+          s.startTime < current.startTime
       )
       .sort((a, b) => b.startTime - a.startTime);
 

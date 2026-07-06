@@ -4,11 +4,7 @@ import { DeviceConnection } from '@/components/device';
 
 export function ConnectionScreen() {
   return (
-    <DeviceConnection
-      variant="guard"
-      title="Voltra"
-      subtitle="Connect your device to get started"
-    >
+    <DeviceConnection variant="guard" title="Voltra" subtitle="Connect your device to get started">
       <Redirect href="/(tabs)/exercise" />
     </DeviceConnection>
   );

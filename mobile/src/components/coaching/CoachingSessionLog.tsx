@@ -45,10 +45,16 @@ export interface CoachingSessionLogProps {
 export function CoachingSessionLog({ visible, entries, onClose }: CoachingSessionLogProps) {
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
-      <SafeAreaView className="bg-background flex-1" edges={['top']}>
-        <View className="flex-row items-center justify-between border-b px-4 py-3" style={{ borderColor: t['border-subtle'] }}>
+      <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+        <View
+          className="flex-row items-center justify-between border-b px-4 py-3"
+          style={{ borderColor: t['border-subtle'] }}
+        >
           <Text className="text-lg font-bold text-text-primary">Coaching Log</Text>
-          <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+          <TouchableOpacity
+            onPress={onClose}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
             <Ionicons name="close" size={24} color={t['text-primary']} />
           </TouchableOpacity>
         </View>
@@ -110,7 +116,9 @@ function LogEntryRow({ entry }: { entry: CoachingLogEntry }) {
           />
           <Text
             className="ml-1 text-xs"
-            style={{ color: cue.reaction === 'thumbs_up' ? t['status-success'] : t['status-error'] }}
+            style={{
+              color: cue.reaction === 'thumbs_up' ? t['status-success'] : t['status-error'],
+            }}
           >
             {cue.reaction === 'thumbs_up' ? 'Helpful' : 'Not useful'}
           </Text>

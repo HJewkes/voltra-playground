@@ -22,10 +22,7 @@ export function JunkVolumeAlert({ alert, style }: JunkVolumeAlertProps) {
   const icon = alert.isJunkVolume ? 'stop-circle' : 'trending-down';
 
   return (
-    <View
-      className="rounded-xl px-4 py-3"
-      style={[{ backgroundColor: alpha(color, 0.08) }, style]}
-    >
+    <View className="rounded-xl px-4 py-3" style={[{ backgroundColor: alpha(color, 0.08) }, style]}>
       <HStack align="center" gap={10}>
         <Ionicons name={icon} size={22} color={color} />
         <View className="flex-1">

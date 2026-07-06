@@ -164,17 +164,12 @@ export function computeStoredPersonalRecords(
 /**
  * Group sessions by exercise for exercise-level history view.
  */
-export function groupSessionsByExercise(
-  sessions: StoredExerciseSession[]
-): ExerciseHistoryGroup[] {
+export function groupSessionsByExercise(sessions: StoredExerciseSession[]): ExerciseHistoryGroup[] {
   const groups = new Map<string, ExerciseHistoryGroup>();
 
   for (const session of sessions) {
     const existing = groups.get(session.exerciseId);
-    const totalReps = session.completedSets.reduce(
-      (sum, s) => sum + s.reps.length,
-      0
-    );
+    const totalReps = session.completedSets.reduce((sum, s) => sum + s.reps.length, 0);
 
     if (existing) {
       existing.sessionCount++;
@@ -195,9 +190,7 @@ export function groupSessionsByExercise(
     }
   }
 
-  return Array.from(groups.values()).sort(
-    (a, b) => b.lastSessionDate - a.lastSessionDate
-  );
+  return Array.from(groups.values()).sort((a, b) => b.lastSessionDate - a.lastSessionDate);
 }
 
 // =============================================================================
@@ -207,9 +200,7 @@ export function groupSessionsByExercise(
 /**
  * Get session summaries from stored sessions.
  */
-export function getSessionSummaries(
-  sessions: StoredExerciseSession[]
-): ExerciseSessionSummary[] {
+export function getSessionSummaries(sessions: StoredExerciseSession[]): ExerciseSessionSummary[] {
   return sessions.map(toExerciseSessionSummary);
 }
 
@@ -269,9 +260,7 @@ export interface VolumeTrendPoint {
 /**
  * Compute per-session volume trend data.
  */
-export function computeVolumeTrend(
-  sessions: StoredExerciseSession[]
-): VolumeTrendPoint[] {
+export function computeVolumeTrend(sessions: StoredExerciseSession[]): VolumeTrendPoint[] {
   const completed = sessions
     .filter((s) => s.status === 'completed')
     .sort((a, b) => a.startTime - b.startTime);

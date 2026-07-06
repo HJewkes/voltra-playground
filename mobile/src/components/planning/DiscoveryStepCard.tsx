@@ -53,12 +53,7 @@ const PHASE_CONFIG: Record<
 // Component
 // =============================================================================
 
-export function DiscoveryStepCard({
-  step,
-  phase,
-  completedCount,
-  style,
-}: DiscoveryStepCardProps) {
+export function DiscoveryStepCard({ step, phase, completedCount, style }: DiscoveryStepCardProps) {
   const phaseConfig = PHASE_CONFIG[phase];
 
   return (
@@ -97,17 +92,13 @@ export function DiscoveryStepCard({
             <View className="flex-1 items-center">
               <Ionicons name="repeat" size={20} color={t['text-disabled']} />
               <Text className="mt-1 text-sm text-text-disabled">Target Reps</Text>
-              <Text className="mt-1 text-xl font-bold text-text-primary">
-                {step.targetReps}
-              </Text>
+              <Text className="mt-1 text-xl font-bold text-text-primary">{step.targetReps}</Text>
             </View>
-            <View className="w-px bg-surface-100" />
+            <View className="bg-surface-100 w-px" />
             <View className="flex-1 items-center">
               <Ionicons name="layers" size={20} color={t['text-disabled']} />
               <Text className="mt-1 text-sm text-text-disabled">Sets Done</Text>
-              <Text className="mt-1 text-xl font-bold text-text-primary">
-                {completedCount}
-              </Text>
+              <Text className="mt-1 text-xl font-bold text-text-primary">{completedCount}</Text>
             </View>
           </HStack>
         </Surface>

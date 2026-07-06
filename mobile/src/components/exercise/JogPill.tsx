@@ -79,12 +79,17 @@ export function JogPill({
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
-  useEffect(() => { setLocalValue(value); }, [value]);
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
 
   const clamp = useCallback((v: number) => Math.max(min, Math.min(max, v)), [min, max]);
 
   const stopTicking = useCallback(() => {
-    if (tickTimer.current) { clearTimeout(tickTimer.current); tickTimer.current = null; }
+    if (tickTimer.current) {
+      clearTimeout(tickTimer.current);
+      tickTimer.current = null;
+    }
   }, []);
 
   const startTicking = useCallback(() => {
@@ -95,8 +100,12 @@ export function JogPill({
         if (tickStep > 0) {
           // For vertical: negative = up = increase. For horizontal: positive = right = increase.
           const direction = isHorizontal
-            ? (displacement.current > 0 ? 1 : -1)
-            : (displacement.current < 0 ? 1 : -1);
+            ? displacement.current > 0
+              ? 1
+              : -1
+            : displacement.current < 0
+              ? 1
+              : -1;
           setLocalValue((prev) => clamp(prev + direction * tickStep));
         }
         schedule();
@@ -105,8 +114,12 @@ export function JogPill({
     const [tickStep] = tickParams(displacement.current, step);
     if (tickStep > 0) {
       const direction = isHorizontal
-        ? (displacement.current > 0 ? 1 : -1)
-        : (displacement.current < 0 ? 1 : -1);
+        ? displacement.current > 0
+          ? 1
+          : -1
+        : displacement.current < 0
+          ? 1
+          : -1;
       setLocalValue((prev) => clamp(prev + direction * tickStep));
     }
     schedule();
@@ -117,40 +130,45 @@ export function JogPill({
   const stopTickingRef = useRef(stopTicking);
   stopTickingRef.current = stopTicking;
 
-  const panResponder = useMemo(() =>
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => !disabled,
-      onMoveShouldSetPanResponder: (_, g) => {
-        const d = isHorizontal ? Math.abs(g.dx) : Math.abs(g.dy);
-        return !disabled && d > DEAD_ZONE;
-      },
-      onPanResponderGrant: () => {
-        displacement.current = 0;
-        pillStretch.value = 0;
-      },
-      onPanResponderMove: (_, g) => {
-        const d = isHorizontal ? g.dx : g.dy;
-        const wasActive = Math.abs(displacement.current) > DEAD_ZONE;
-        displacement.current = d;
-        const clamped = Math.max(-MAX_STRETCH, Math.min(MAX_STRETCH, d));
-        pillStretch.value = clamped / MAX_STRETCH;
-        if (!wasActive && Math.abs(d) > DEAD_ZONE) startTickingRef.current();
-      },
-      onPanResponderRelease: () => {
-        displacement.current = 0;
-        stopTickingRef.current();
-        pillStretch.value = withSpring(0, { damping: 4, stiffness: 350, mass: 0.4 });
-        setLocalValue((prev) => { onChangeRef.current(prev); return prev; });
-      },
-    }),
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  [disabled, isHorizontal]);
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => !disabled,
+        onMoveShouldSetPanResponder: (_, g) => {
+          const d = isHorizontal ? Math.abs(g.dx) : Math.abs(g.dy);
+          return !disabled && d > DEAD_ZONE;
+        },
+        onPanResponderGrant: () => {
+          displacement.current = 0;
+          pillStretch.value = 0;
+        },
+        onPanResponderMove: (_, g) => {
+          const d = isHorizontal ? g.dx : g.dy;
+          const wasActive = Math.abs(displacement.current) > DEAD_ZONE;
+          displacement.current = d;
+          const clamped = Math.max(-MAX_STRETCH, Math.min(MAX_STRETCH, d));
+          pillStretch.value = clamped / MAX_STRETCH;
+          if (!wasActive && Math.abs(d) > DEAD_ZONE) startTickingRef.current();
+        },
+        onPanResponderRelease: () => {
+          displacement.current = 0;
+          stopTickingRef.current();
+          pillStretch.value = withSpring(0, { damping: 4, stiffness: 350, mass: 0.4 });
+          setLocalValue((prev) => {
+            onChangeRef.current(prev);
+            return prev;
+          });
+        },
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [disabled, isHorizontal]
+  );
 
   // Web pointer events
   const pillRef = useRef<View>(null);
   useEffect(() => {
     if (Platform.OS !== 'web' || !pillRef.current) return;
-    const el = (pillRef.current as unknown as HTMLElement);
+    const el = pillRef.current as unknown as HTMLElement;
     let startPos = 0;
     let active = false;
 
@@ -179,15 +197,26 @@ export function JogPill({
       displacement.current = 0;
       stopTickingRef.current();
       pillStretch.value = withSpring(0, { damping: 4, stiffness: 350, mass: 0.4 });
-      setLocalValue((prev) => { onChangeRef.current(prev); return prev; });
+      setLocalValue((prev) => {
+        onChangeRef.current(prev);
+        return prev;
+      });
     };
 
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       if (disabled) return;
       const delta = isHorizontal
-        ? (e.deltaX > 0 ? 1 : e.deltaX < 0 ? -1 : e.deltaY > 0 ? -1 : 1)
-        : (e.deltaY > 0 ? -1 : 1);
+        ? e.deltaX > 0
+          ? 1
+          : e.deltaX < 0
+            ? -1
+            : e.deltaY > 0
+              ? -1
+              : 1
+        : e.deltaY > 0
+          ? -1
+          : 1;
       setLocalValue((prev) => {
         const next = clamp(prev + delta * step);
         onChangeRef.current(next);
@@ -230,7 +259,7 @@ export function JogPill({
         paddingRight: 12 + (s > 0 ? extra : 0),
         paddingTop: 6,
         paddingBottom: 6,
-        transform: [{ translateX: sign * extra / 2 }, { scaleY: 1 - visual * 0.08 }],
+        transform: [{ translateX: (sign * extra) / 2 }, { scaleY: 1 - visual * 0.08 }],
       };
     }
     return {
@@ -242,7 +271,7 @@ export function JogPill({
       paddingBottom: 10 + (s > 0 ? extra : 0),
       paddingLeft: 14,
       paddingRight: 14,
-      transform: [{ translateY: sign * extra / 2 }, { scaleX: 1 - visual * 0.08 }],
+      transform: [{ translateY: (sign * extra) / 2 }, { scaleX: 1 - visual * 0.08 }],
     };
   });
 
@@ -253,32 +282,35 @@ export function JogPill({
       <Animated.View
         ref={pillRef}
         {...panResponder.panHandlers}
-        style={[{
-          backgroundColor: alpha(color, 0.15),
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexDirection: isHorizontal ? 'row' : 'column',
-          minWidth: pillWidth ?? (isHorizontal ? 80 : 60),
-          minHeight: pillHeight ?? (isHorizontal ? 28 : 48),
-          ...Platform.select({
-            web: webStyle({
-              boxShadow: [
-                `0 2px 4px ${alpha('#000', 0.3)}`,
-                `inset 0 1px 0 ${alpha('#fff', 0.08)}`,
-              ].join(', '),
-              cursor: disabled ? 'default' : cursor,
-              touchAction: 'none',
-              userSelect: 'none',
+        style={[
+          {
+            backgroundColor: alpha(color, 0.15),
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: isHorizontal ? 'row' : 'column',
+            minWidth: pillWidth ?? (isHorizontal ? 80 : 60),
+            minHeight: pillHeight ?? (isHorizontal ? 28 : 48),
+            ...Platform.select({
+              web: webStyle({
+                boxShadow: [
+                  `0 2px 4px ${alpha('#000', 0.3)}`,
+                  `inset 0 1px 0 ${alpha('#fff', 0.08)}`,
+                ].join(', '),
+                cursor: disabled ? 'default' : cursor,
+                touchAction: 'none',
+                userSelect: 'none',
+              }),
+              default: {
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.3,
+                shadowRadius: 4,
+                elevation: 3,
+              },
             }),
-            default: {
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.3,
-              shadowRadius: 4,
-              elevation: 3,
-            },
-          }),
-        }, pillStyle]}
+          },
+          pillStyle,
+        ]}
       >
         <Text
           style={{
@@ -293,14 +325,16 @@ export function JogPill({
         </Text>
       </Animated.View>
       {label && (
-        <Text style={{
-          marginTop: 3,
-          fontSize: 9,
-          fontWeight: '600',
-          color: t['text-disabled'],
-          textTransform: 'uppercase',
-          letterSpacing: 0.5,
-        }}>
+        <Text
+          style={{
+            marginTop: 3,
+            fontSize: 9,
+            fontWeight: '600',
+            color: t['text-disabled'],
+            textTransform: 'uppercase',
+            letterSpacing: 0.5,
+          }}
+        >
           {label}
         </Text>
       )}
