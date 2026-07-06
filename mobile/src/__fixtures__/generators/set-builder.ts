@@ -271,13 +271,11 @@ class SetBuilder {
         };
       }
 
-      // NOTE: composition reps are generated purely from `behavior`; the merged
-      // `repTargets` (velocity baseline + behavior presets) are NOT wired into
-      // repBuilder here — a latent fixture bug tracked in VLT (see PR). Removed the
-      // dead `finalTargets`/deepMerge that computed them without applying them.
+      // The behavior preset supplies the base profile; the merged `repTargets`
+      // (base rep targets + velocity baseline on the first rep) override it.
       const generated = repBuilder()
         .behavior(behavior)
-        .repNumber(i + 1)
+        .applyTargets(repTargets)
         .startTime(currentTime)
         .startSequence(currentSequence)
         .weight(this.targets.weight ?? 100)
@@ -299,19 +297,12 @@ class SetBuilder {
     for (let i = 0; i < repTargets.length; i++) {
       const targets = repTargets[i];
 
-      const builder = repBuilder()
-        .repNumber(i + 1)
+      const generated = repBuilder()
+        .applyTargets({ ...targets, repNumber: i + 1 })
         .startTime(currentTime)
         .startSequence(currentSequence)
-        .weight(this.targets.weight ?? 100);
-
-      if (targets.concentric) builder.concentric(targets.concentric);
-      if (targets.eccentric) builder.eccentric(targets.eccentric);
-      if (targets.hold) builder.hold(targets.hold);
-      if (targets.total) builder.total(targets.total);
-      if (targets.rangeOfMotion !== undefined) builder.rangeOfMotion(targets.rangeOfMotion);
-
-      const generated = builder.buildWithSamples();
+        .weight(this.targets.weight ?? 100)
+        .buildWithSamples();
       allSamples.push(...generated.samples);
       currentTime = generated.endTime + 500;
       currentSequence = generated.endSequence + 1;
