@@ -39,6 +39,7 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
       'react-native': path.resolve(__dirname, './test/react-native-mock.ts'),
+      nativewind: path.resolve(__dirname, './test/nativewind-mock.ts'),
       'react-native-svg': path.resolve(__dirname, './test/react-native-svg-mock.ts'),
       'react-native-mmkv': path.resolve(__dirname, './test/react-native-mmkv-mock.ts'),
       '@op-engineering/op-sqlite': path.resolve(__dirname, './test/op-sqlite-mock.ts'),

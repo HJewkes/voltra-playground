@@ -39,7 +39,7 @@
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/slider": "^5.1.2",
     "@react-navigation/native": "^7.1.8",
-    "@titan-design/react-ui": "^0.3.0",
+    "@titan-design/react-ui": "^0.4.0",
     "@voltras/node-sdk": "^0.3.0",
     "@voltras/workout-analytics": "^0.2.0",
     "expo": "~54.0.31",
