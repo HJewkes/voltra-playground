@@ -43,17 +43,29 @@ export function ContextualTooltip({ milestone, title, body, style }: ContextualT
   return (
     <View
       className="rounded-xl px-4 py-3"
-      style={[{ backgroundColor: alpha(t['brand-primary'], 0.1), borderWidth: 1, borderColor: alpha(t['brand-primary'], 0.2) }, style]}
+      style={[
+        {
+          backgroundColor: alpha(t['brand-primary'], 0.1),
+          borderWidth: 1,
+          borderColor: alpha(t['brand-primary'], 0.2),
+        },
+        style,
+      ]}
     >
       <HStack align="start" justify="between" gap={10}>
-        <Ionicons name="bulb-outline" size={18} color={t['brand-primary']} style={{ marginTop: 1 }} />
+        <Ionicons
+          name="bulb-outline"
+          size={18}
+          color={t['brand-primary']}
+          style={{ marginTop: 1 }}
+        />
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: t['text-primary'], marginBottom: 2 }}>
+          <Text
+            style={{ fontSize: 13, fontWeight: '600', color: t['text-primary'], marginBottom: 2 }}
+          >
             {title}
           </Text>
-          <Text style={{ fontSize: 12, color: t['text-secondary'], lineHeight: 17 }}>
-            {body}
-          </Text>
+          <Text style={{ fontSize: 12, color: t['text-secondary'], lineHeight: 17 }}>{body}</Text>
         </View>
         <Pressable
           onPress={handleDismiss}
@@ -61,9 +73,7 @@ export function ContextualTooltip({ milestone, title, body, style }: ContextualT
           accessibilityLabel="Got it"
           accessibilityRole="button"
         >
-          <Text style={{ fontSize: 12, fontWeight: '600', color: t['brand-primary'] }}>
-            Got it
-          </Text>
+          <Text style={{ fontSize: 12, fontWeight: '600', color: t['brand-primary'] }}>Got it</Text>
         </Pressable>
       </HStack>
     </View>

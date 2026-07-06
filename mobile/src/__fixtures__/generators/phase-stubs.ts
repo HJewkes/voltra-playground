@@ -62,14 +62,18 @@ export function createStubPhase(options: StubPhaseOptions = {}): Phase {
 /**
  * Create a stub concentric phase.
  */
-export function createStubConcentricPhase(options: Omit<StubPhaseOptions, 'startPosition' | 'endPosition'> = {}): Phase {
+export function createStubConcentricPhase(
+  options: Omit<StubPhaseOptions, 'startPosition' | 'endPosition'> = {}
+): Phase {
   return createStubPhase({ startPosition: 0, endPosition: 1, ...options });
 }
 
 /**
  * Create a stub eccentric phase.
  */
-export function createStubEccentricPhase(options: Omit<StubPhaseOptions, 'startPosition' | 'endPosition'> = {}): Phase {
+export function createStubEccentricPhase(
+  options: Omit<StubPhaseOptions, 'startPosition' | 'endPosition'> = {}
+): Phase {
   return createStubPhase({
     meanVelocity: 0.3,
     duration: 1.5,
@@ -145,7 +149,7 @@ export function createStubReps(
     startVelocity?: number;
     velocityDeclinePerRep?: number;
     baseForce?: number;
-  } = {},
+  } = {}
 ): Rep[] {
   const { startVelocity = 0.6, velocityDeclinePerRep = 0.03, baseForce = 80 } = options;
 

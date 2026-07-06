@@ -160,9 +160,7 @@ function ActiveRecordingDisplay({
           className="mt-8 rounded-2xl px-8 py-4"
           style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
         >
-          <Text className="text-xl font-bold text-white">
-            {lastRepPeakVelocity.toFixed(2)} m/s
-          </Text>
+          <Text className="text-xl font-bold text-white">{lastRepPeakVelocity.toFixed(2)} m/s</Text>
         </View>
       )}
     </View>
@@ -276,7 +274,7 @@ export function RecordingDisplay({
       uiState: s.uiState,
       repCount: s.repCount,
       lastRepPeakVelocity: s.lastRepPeakVelocity,
-    })),
+    }))
   );
 
   return (

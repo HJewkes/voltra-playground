@@ -229,12 +229,7 @@ export {
 } from './planning-fixtures';
 
 // Mock helpers for test fixtures
-export {
-  mockPhase,
-  mockRep,
-  mockAnalyticsSet,
-  mockCompletedSet,
-} from './mock-helpers';
+export { mockPhase, mockRep, mockAnalyticsSet, mockCompletedSet } from './mock-helpers';
 
 // Phase stubs (deprecated - use repBuilder instead)
 export {

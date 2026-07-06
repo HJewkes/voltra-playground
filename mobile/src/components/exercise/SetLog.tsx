@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, Alert, useWindowDimensions, type TextStyle, type ViewStyle } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  Alert,
+  useWindowDimensions,
+  type TextStyle,
+  type ViewStyle,
+} from 'react-native';
 import { Surface, getSemanticColors, alpha } from '@titan-design/react-ui';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -130,7 +138,7 @@ const rpeStyle: TextStyle = {
 
 /** Cable-specific velocity zones (m/s) — lower than barbell due to friction/pulley */
 const VELOCITY_GREEN = 0.55;
-const VELOCITY_WORKING = 0.40;
+const VELOCITY_WORKING = 0.4;
 // Cable-specific velocity loss threshold (higher than barbell 20%)
 const VELOCITY_LOSS_THRESHOLD = 0.25;
 const MIN_REPS_FOR_VEL_LOSS = 3;
@@ -141,24 +149,40 @@ interface CoachingCueData {
   icon: keyof typeof Ionicons.glyphMap;
 }
 
-function getVelocityCue(meanVelocity: number, velocityLoss: number, repCount: number): CoachingCueData {
+function getVelocityCue(
+  meanVelocity: number,
+  velocityLoss: number,
+  repCount: number
+): CoachingCueData {
   // Only flag velocity loss after enough reps for reliable data
   if (repCount >= MIN_REPS_FOR_VEL_LOSS && velocityLoss >= VELOCITY_LOSS_THRESHOLD) {
-    return { text: 'High velocity loss — nearing limit', color: '#f97316', icon: 'trending-down-outline' };
+    return {
+      text: 'High velocity loss — nearing limit',
+      color: '#f97316',
+      icon: 'trending-down-outline',
+    };
   }
   if (meanVelocity < VELOCITY_WORKING) {
-    return { text: 'Heavy load zone — control the eccentric', color: '#eab308', icon: 'barbell-outline' };
+    return {
+      text: 'Heavy load zone — control the eccentric',
+      color: '#eab308',
+      icon: 'barbell-outline',
+    };
   }
   if (meanVelocity <= VELOCITY_GREEN) {
     return { text: 'Good working pace', color: '#22c55e', icon: 'checkmark-circle-outline' };
   }
-  return { text: 'Light — increase load or slow tempo', color: t['text-tertiary'], icon: 'arrow-up-circle-outline' };
+  return {
+    text: 'Light — increase load or slow tempo',
+    color: t['text-tertiary'],
+    icon: 'arrow-up-circle-outline',
+  };
 }
 
 function getCoachingCue(
   repCount: number,
   telemetry: ActiveTelemetry | null | undefined,
-  setupNotes: string | undefined,
+  setupNotes: string | undefined
 ): CoachingCueData | null {
   if (repCount === 0 && setupNotes) {
     return { text: setupNotes, color: t['text-secondary'], icon: 'information-circle-outline' };
@@ -175,7 +199,15 @@ function getCoachingCue(
 
 function CoachingCueBar({ cue }: { cue: CoachingCueData }) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingTop: 4 }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: 12,
+        paddingTop: 4,
+      }}
+    >
       <Ionicons name={cue.icon} size={14} color={cue.color} />
       <Text
         numberOfLines={1}
@@ -209,7 +241,15 @@ function InfoIcon({ title, body }: { title: string; body: string }) {
 
 function PRBadgeRow({ badges }: { badges: PRBadge[] }) {
   return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, paddingHorizontal: 12, paddingTop: 4 }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 4,
+        paddingHorizontal: 12,
+        paddingTop: 4,
+      }}
+    >
       {badges.map((badge) => (
         <View
           key={badge.type}
@@ -220,9 +260,7 @@ function PRBadgeRow({ badges }: { badges: PRBadge[] }) {
             paddingVertical: 2,
           }}
         >
-          <Text style={{ fontSize: 11, fontWeight: '700', color: '#78350f' }}>
-            {badge.label}
-          </Text>
+          <Text style={{ fontSize: 11, fontWeight: '700', color: '#78350f' }}>{badge.label}</Text>
         </View>
       ))}
     </View>
@@ -304,35 +342,26 @@ function CompletedSetRow({
 
   return (
     <View>
-      {hasSamples ? (
-        <Pressable onPress={onToggle}>{mainRow}</Pressable>
-      ) : (
-        mainRow
-      )}
+      {hasSamples ? <Pressable onPress={onToggle}>{mainRow}</Pressable> : mainRow}
 
-      {hasClusters && clusters.map((cluster, i) => (
-        <React.Fragment key={i}>
-          <ClusterRow
-            cluster={cluster}
-            reps={set.data.reps}
-            isLast={i === clusters.length - 1}
-            rpe={i === clusters.length - 1 ? rpe : null}
-          />
-          {cluster.pauseAfterMs !== null && <PauseRow pauseMs={cluster.pauseAfterMs} />}
-        </React.Fragment>
-      ))}
+      {hasClusters &&
+        clusters.map((cluster, i) => (
+          <React.Fragment key={i}>
+            <ClusterRow
+              cluster={cluster}
+              reps={set.data.reps}
+              isLast={i === clusters.length - 1}
+              rpe={i === clusters.length - 1 ? rpe : null}
+            />
+            {cluster.pauseAfterMs !== null && <PauseRow pauseMs={cluster.pauseAfterMs} />}
+          </React.Fragment>
+        ))}
 
-      {entry.prBadges && entry.prBadges.length > 0 && (
-        <PRBadgeRow badges={entry.prBadges} />
-      )}
+      {entry.prBadges && entry.prBadges.length > 0 && <PRBadgeRow badges={entry.prBadges} />}
 
       {expanded && hasSamples && (
         <View style={{ paddingHorizontal: 4, paddingTop: 4, paddingBottom: 8 }}>
-          <SetCurveChart
-            samples={samples}
-            width={chartWidth}
-            height={120}
-          />
+          <SetCurveChart samples={samples} width={chartWidth} height={120} />
         </View>
       )}
     </View>
@@ -373,9 +402,7 @@ function ActiveSetRow({
         {hasMetrics ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-              <Text style={[rpeStyle, { color: rpeColor }]}>
-                RPE {telemetry.rpe.toFixed(1)}
-              </Text>
+              <Text style={[rpeStyle, { color: rpeColor }]}>RPE {telemetry.rpe.toFixed(1)}</Text>
               <InfoIcon
                 title="RPE — rate of perceived exertion"
                 body="Scale of 1–10 estimating how hard the set was. RPE 10 = maximum effort, RPE 7–8 = 2–3 reps left in the tank."
@@ -437,11 +464,7 @@ function ActiveSetRow({
       )}
 
       {chart && chart.samples.length > 0 && (
-        <ActiveSetChart
-          chart={chart}
-          telemetry={telemetry}
-          chartWidth={chartWidth}
-        />
+        <ActiveSetChart chart={chart} telemetry={telemetry} chartWidth={chartWidth} />
       )}
     </View>
   );
@@ -462,13 +485,26 @@ function ActiveSetChart({
   return (
     <View style={{ paddingHorizontal: 4, paddingTop: 4, paddingBottom: 8 }}>
       {/* Two toggles on one line: view left, signal right */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 6,
+        }}
+      >
         <CycleToggle options={VIEW_OPTIONS} value={view} onChange={setView} />
         <CycleToggle
           options={SIGNAL_OPTIONS}
           value={signal}
           onChange={setSignal}
-          activeColor={signal === 'velocity' ? t['status-success'] : signal === 'force' ? t['brand-primary'] : t['status-info']}
+          activeColor={
+            signal === 'velocity'
+              ? t['status-success']
+              : signal === 'force'
+                ? t['brand-primary']
+                : t['status-info']
+          }
         />
       </View>
       {view === 'set' ? (
@@ -498,8 +534,21 @@ function NoteRow({ note }: { note: SessionNote }) {
   const time = new Date(note.timestamp);
   const timeStr = `${time.getHours()}:${String(time.getMinutes()).padStart(2, '0')}`;
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6, paddingHorizontal: 12, paddingVertical: 4 }}>
-      <Ionicons name="create-outline" size={12} color={t['text-tertiary']} style={{ marginTop: 2 }} />
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 6,
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+      }}
+    >
+      <Ionicons
+        name="create-outline"
+        size={12}
+        color={t['text-tertiary']}
+        style={{ marginTop: 2 }}
+      />
       <Text style={{ fontSize: 12, color: t['text-secondary'], flex: 1 }} numberOfLines={3}>
         {note.text}
       </Text>
@@ -513,7 +562,8 @@ function PlannedSetRow({ planned }: { planned: PlannedSet }) {
     <View style={rowStyle}>
       <Text style={setLabelStyle}>Set {planned.setNumber}</Text>
       <Text style={detailStyle}>
-        {planned.targetReps > 0 ? `${planned.targetReps} reps · ` : ''}{planned.weight} lbs
+        {planned.targetReps > 0 ? `${planned.targetReps} reps · ` : ''}
+        {planned.weight} lbs
       </Text>
     </View>
   );
@@ -580,7 +630,7 @@ export function SetLog({
         const setNotes = sessionNotes.filter((n) => n.setIndex === i + 1);
         return (
           <React.Fragment key={entry.set.id}>
-            <Surface elevation={1} className="rounded-xl p-3 mt-2">
+            <Surface elevation={1} className="mt-2 rounded-xl p-3">
               <CompletedSetRow
                 entry={entry}
                 setNumber={i + 1}
@@ -614,11 +664,7 @@ export function SetLog({
       {/* Rest scrubber in resting mode — after last completed set, before next */}
       {isResting && (
         <View style={{ marginTop: 4, marginBottom: 4 }}>
-          <RestScrubber
-            mode="resting"
-            restSeconds={defaultRestSeconds}
-            elapsedMs={restElapsedMs}
-          />
+          <RestScrubber mode="resting" restSeconds={defaultRestSeconds} elapsedMs={restElapsedMs} />
         </View>
       )}
 
@@ -640,18 +686,15 @@ export function SetLog({
               <RestScrubber
                 mode="editing"
                 restSeconds={planned.restSeconds ?? defaultRestSeconds}
-                onRestChange={onPlannedRestChange
-                  ? (s) => onPlannedRestChange(planned.setNumber - 1, s)
-                  : undefined
+                onRestChange={
+                  onPlannedRestChange
+                    ? (s) => onPlannedRestChange(planned.setNumber - 1, s)
+                    : undefined
                 }
               />
             </View>
           ) : null}
-          <Surface
-            elevation={1}
-            className="rounded-xl p-3 mt-1"
-            style={{ opacity: 0.5 }}
-          >
+          <Surface elevation={1} className="mt-1 rounded-xl p-3" style={{ opacity: 0.5 }}>
             <PlannedSetRow planned={planned} />
           </Surface>
         </React.Fragment>

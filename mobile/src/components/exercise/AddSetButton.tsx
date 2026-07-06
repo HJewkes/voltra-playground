@@ -36,41 +36,39 @@ export function AddSetButton({ onPress, disabled, setCount }: AddSetButtonProps)
           borderRadius: 16,
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: disabled
-            ? alpha('#fff', 0.04)
-            : alpha(t['brand-primary'], 0.15),
+          backgroundColor: disabled ? alpha('#fff', 0.04) : alpha(t['brand-primary'], 0.15),
           borderWidth: 1,
-          borderColor: disabled
-            ? alpha('#fff', 0.06)
-            : alpha(t['brand-primary'], 0.3),
+          borderColor: disabled ? alpha('#fff', 0.06) : alpha(t['brand-primary'], 0.3),
           ...Platform.select({
-            web: disabled ? webStyle({
-              boxShadow: `inset 0 1px 3px ${alpha('#000', 0.4)}`,
-            }) : webStyle({
-              boxShadow: [
-                `0 2px 4px ${alpha('#000', 0.4)}`,
-                `inset 0 1px 0 ${alpha(t['brand-primary'], 0.15)}`,
-              ].join(', '),
-            }),
-            default: disabled ? {} : {
-              shadowColor: '#000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.3,
-              shadowRadius: 4,
-            },
+            web: disabled
+              ? webStyle({
+                  boxShadow: `inset 0 1px 3px ${alpha('#000', 0.4)}`,
+                })
+              : webStyle({
+                  boxShadow: [
+                    `0 2px 4px ${alpha('#000', 0.4)}`,
+                    `inset 0 1px 0 ${alpha(t['brand-primary'], 0.15)}`,
+                  ].join(', '),
+                }),
+            default: disabled
+              ? {}
+              : {
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 4,
+                },
           }),
         }}
       >
-        <Ionicons
-          name="add"
-          size={28}
-          color={disabled ? t['text-disabled'] : t['brand-primary']}
-        />
+        <Ionicons name="add" size={28} color={disabled ? t['text-disabled'] : t['brand-primary']} />
       </TouchableOpacity>
-      <Text style={{
-        fontSize: 9,
-        color: disabled ? t['text-disabled'] : t['text-tertiary'],
-      }}>
+      <Text
+        style={{
+          fontSize: 9,
+          color: disabled ? t['text-disabled'] : t['text-tertiary'],
+        }}
+      >
         {setCount && setCount > 0 ? `${setCount} set${setCount > 1 ? 's' : ''}` : 'Add Set'}
       </Text>
     </View>

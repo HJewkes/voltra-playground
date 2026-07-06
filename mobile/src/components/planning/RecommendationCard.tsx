@@ -17,7 +17,15 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { TrainingGoal, type DiscoveryRecommendation } from '@/domain/planning';
 import { getExerciseName } from '@/domain/exercise';
-import { Card, CardContent, HStack, VStack, Surface, getSemanticColors, alpha } from '@titan-design/react-ui';
+import {
+  Card,
+  CardContent,
+  HStack,
+  VStack,
+  Surface,
+  getSemanticColors,
+  alpha,
+} from '@titan-design/react-ui';
 
 const t = getSemanticColors('dark');
 
@@ -91,9 +99,7 @@ export function RecommendationCard({
         >
           <Ionicons name="checkmark" size={48} color="white" />
         </View>
-        <Text className="mb-2 text-2xl font-bold text-status-success">
-          Discovery Complete!
-        </Text>
+        <Text className="mb-2 text-2xl font-bold text-status-success">Discovery Complete!</Text>
         <Text className="text-center text-status-success-light">
           Your optimal working weight has been found.
         </Text>
@@ -121,7 +127,7 @@ export function RecommendationCard({
                   {recommendation.repRange[0]}-{recommendation.repRange[1]}
                 </Text>
               </View>
-              <View className="w-px bg-surface-100" />
+              <View className="bg-surface-100 w-px" />
               <View className="flex-1 items-center">
                 <Text className="text-sm text-text-disabled">Confidence</Text>
                 <Text
@@ -165,7 +171,7 @@ export function RecommendationCard({
               <View
                 key={i}
                 className={`flex-row items-center justify-between py-3 ${
-                  i < recommendation.warmupSets!.length - 1 ? 'border-b border-surface-100' : ''
+                  i < recommendation.warmupSets!.length - 1 ? 'border-surface-100 border-b' : ''
                 }`}
               >
                 <View className="flex-row items-center">

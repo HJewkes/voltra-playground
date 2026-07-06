@@ -127,10 +127,7 @@ export function computeVolumeBuckets(
   const bucketMap = new Map<string, VolumeBucket>();
 
   for (const session of completed) {
-    const key =
-      range === 'weekly'
-        ? getWeekKey(session.startTime)
-        : getMonthKey(session.startTime);
+    const key = range === 'weekly' ? getWeekKey(session.startTime) : getMonthKey(session.startTime);
 
     const { volume, reps, sets } = computeSessionVolume(session);
     const existing = bucketMap.get(key);
@@ -269,9 +266,7 @@ function computeWeekLoad(sessions: StoredExerciseSession[], weekStart: Date): nu
  * Compute training load using Acute:Chronic Workload Ratio.
  * Acute = last 1 week volume, Chronic = average of last 4 weeks.
  */
-export function computeTrainingLoad(
-  sessions: StoredExerciseSession[]
-): TrainingLoad {
+export function computeTrainingLoad(sessions: StoredExerciseSession[]): TrainingLoad {
   const completed = sessions.filter((s) => s.status === 'completed');
   const now = new Date();
   const currentWeekStart = getWeekStart(now);
@@ -310,9 +305,7 @@ export function computeTrainingLoad(
  * Compute a timeline of personal records being set over time.
  * Scans sessions chronologically and records when a new max is achieved.
  */
-export function computePRTimeline(
-  sessions: StoredExerciseSession[]
-): PRTimelineEntry[] {
+export function computePRTimeline(sessions: StoredExerciseSession[]): PRTimelineEntry[] {
   const completed = sessions
     .filter((s) => s.status === 'completed')
     .sort((a, b) => a.startTime - b.startTime);

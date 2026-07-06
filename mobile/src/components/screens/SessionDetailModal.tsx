@@ -8,7 +8,14 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, CardContent, Metric, MetricGroup, getSemanticColors, alpha } from '@titan-design/react-ui';
+import {
+  Card,
+  CardContent,
+  Metric,
+  MetricGroup,
+  getSemanticColors,
+  alpha,
+} from '@titan-design/react-ui';
 import type { StoredExerciseSession, StoredSessionSet } from '@/data/exercise-session';
 
 const t = getSemanticColors('dark');
@@ -53,10 +60,7 @@ export function SessionDetailModal({
   if (!session) return null;
 
   const totalReps = session.completedSets.reduce((sum, s) => sum + s.reps.length, 0);
-  const totalVolume = session.completedSets.reduce(
-    (sum, s) => sum + s.weight * s.reps.length,
-    0
-  );
+  const totalVolume = session.completedSets.reduce((sum, s) => sum + s.weight * s.reps.length, 0);
   const isDiscovery = session.plan.generatedBy === 'discovery';
 
   return (
@@ -111,9 +115,7 @@ export function SessionDetailModal({
               <Text className="mb-3 text-xs font-bold uppercase tracking-wider text-text-disabled">
                 Set Breakdown
               </Text>
-              <Text className="mb-4 text-xs text-text-disabled">
-                Tap a set to see rep details
-              </Text>
+              <Text className="mb-4 text-xs text-text-disabled">Tap a set to see rep details</Text>
               {session.completedSets.map((set, i) => (
                 <SetBreakdownItem
                   key={i}
@@ -179,7 +181,7 @@ function SetBreakdownItem({
         onPress={onToggle}
         activeOpacity={0.7}
         className={`flex-row items-center justify-between py-3 ${
-          !isLast && !isExpanded ? 'border-b border-surface-100' : ''
+          !isLast && !isExpanded ? 'border-surface-100 border-b' : ''
         }`}
       >
         <View className="flex-row items-center">
@@ -222,13 +224,11 @@ function SetBreakdownItem({
           style={{ backgroundColor: alpha(t['background-subtle'], 0.5) }}
         >
           <RepDataTable reps={set.reps} />
-          <View className="mt-3 flex-row justify-between border-t border-surface-100 pt-3">
+          <View className="border-surface-100 mt-3 flex-row justify-between border-t pt-3">
             <Text className="text-xs text-text-disabled">
               Vel. Loss: {set.velocityLossPercent.toFixed(0)}%
             </Text>
-            <Text className="text-xs text-text-disabled">
-              RIR: ~{Math.round(set.estimatedRIR)}
-            </Text>
+            <Text className="text-xs text-text-disabled">RIR: ~{Math.round(set.estimatedRIR)}</Text>
           </View>
         </View>
       )}
@@ -247,12 +247,10 @@ function RepDataTable({ reps }: { reps: StoredSessionSet['reps'] }) {
 
   return (
     <View>
-      <View className="mb-2 flex-row border-b border-surface-100 pb-2">
+      <View className="border-surface-100 mb-2 flex-row border-b pb-2">
         <Text className="w-8 text-xs font-medium text-text-disabled">#</Text>
         <Text className="flex-1 text-xs font-medium text-text-disabled">Con. Samples</Text>
-        <Text className="w-20 text-right text-xs font-medium text-text-disabled">
-          Ecc. Samples
-        </Text>
+        <Text className="w-20 text-right text-xs font-medium text-text-disabled">Ecc. Samples</Text>
       </View>
 
       {reps.map((rep) => (

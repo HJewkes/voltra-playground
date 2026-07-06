@@ -19,9 +19,7 @@ import type { WorkoutPlanRepository } from '@/data/workout-plan';
  * Result of parsing/loading a plan payload. Never throws for expected
  * failures (bad JSON, invalid shape) — callers branch on `ok`.
  */
-export type PlanLoadResult =
-  | { ok: true; plan: WorkoutPlan }
-  | { ok: false; error: string };
+export type PlanLoadResult = { ok: true; plan: WorkoutPlan } | { ok: false; error: string };
 
 /**
  * Parse and validate a plan payload without persisting it.
@@ -48,7 +46,7 @@ export function parseWorkoutPlanPayload(payload: unknown): PlanLoadResult {
  */
 export async function loadWorkoutPlan(
   payload: unknown,
-  repo: WorkoutPlanRepository = getWorkoutPlanRepository(),
+  repo: WorkoutPlanRepository = getWorkoutPlanRepository()
 ): Promise<PlanLoadResult> {
   const result = parseWorkoutPlanPayload(payload);
   if (!result.ok) return result;

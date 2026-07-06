@@ -118,16 +118,14 @@ function exportStoredSet(stored: StoredSessionSet, setIndex: number): ExportedSe
  */
 export function exportSession(
   session: StoredExerciseSession,
-  sessionNotes: SessionNote[] = [],
+  sessionNotes: SessionNote[] = []
 ): ExportedSession {
   const sets = session.completedSets.map((s, i) => exportStoredSet(s, i));
 
   const totalReps = sets.reduce((sum, s) => sum + s.reps, 0);
   const totalVolume = sets.reduce((sum, s) => sum + s.weight * s.reps, 0);
   const overallMeanVelocity =
-    sets.length > 0
-      ? round(sets.reduce((sum, s) => sum + s.meanVelocity, 0) / sets.length, 2)
-      : 0;
+    sets.length > 0 ? round(sets.reduce((sum, s) => sum + s.meanVelocity, 0) / sets.length, 2) : 0;
 
   const notes: ExportedNote[] = sessionNotes.map((n) => ({
     text: n.text,

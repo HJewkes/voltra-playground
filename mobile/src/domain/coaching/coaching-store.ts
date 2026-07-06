@@ -71,9 +71,7 @@ export function createCoachingStore(): CoachingStoreApi {
     reactToCue: (cueId: string, reaction: CueReaction) => {
       set((state) => ({
         cues: state.cues.map((c) =>
-          c.id === cueId
-            ? { ...c, reaction, reactedAt: Date.now() }
-            : c
+          c.id === cueId ? { ...c, reaction, reactedAt: Date.now() } : c
         ),
       }));
     },

@@ -6,7 +6,15 @@
 
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { Drawer, DrawerBody, DrawerFooter, HStack, Surface, Metric, getSemanticColors } from '@titan-design/react-ui';
+import {
+  Drawer,
+  DrawerBody,
+  DrawerFooter,
+  HStack,
+  Surface,
+  Metric,
+  getSemanticColors,
+} from '@titan-design/react-ui';
 import { getEffortLabel, getRIRDescription, getRPEColor } from '@/domain/workout';
 
 const t = getSemanticColors('dark');
@@ -57,25 +65,32 @@ export function SetSummaryModal({
             {/* Main Stats */}
             <HStack justify="around" style={{ marginBottom: 24 }}>
               <Metric value={String(repCount)} label="Reps" size="lg" />
-              <Metric
-                value={summary.rpe.toFixed(1)}
-                label="RPE"
-                size="lg"
-              />
+              <Metric value={summary.rpe.toFixed(1)} label="RPE" size="lg" />
               <Metric value={summary.rir.toFixed(0)} label="RIR" size="lg" />
             </HStack>
 
             {/* Effort Bar */}
-            <Surface elevation={0} className="rounded-xl bg-surface-input" style={{ marginBottom: 16 }}>
+            <Surface
+              elevation={0}
+              className="rounded-xl bg-surface-input"
+              style={{ marginBottom: 16 }}
+            >
               <View className="p-5">
                 <View className="mb-3 flex-row justify-between">
                   <Text className="font-bold text-text-secondary">Effort</Text>
-                  <Text className="font-bold text-text-primary">
-                    {getEffortLabel(summary.rpe)}
-                  </Text>
+                  <Text className="font-bold text-text-primary">{getEffortLabel(summary.rpe)}</Text>
                 </View>
-                <View className="overflow-hidden rounded-full" style={{ height: 6, backgroundColor: '#1C1C1C' }}>
-                  <View className="h-full rounded-full" style={{ width: `${summary.rpe * 10}%`, backgroundColor: getRPEColor(summary.rpe) }} />
+                <View
+                  className="overflow-hidden rounded-full"
+                  style={{ height: 6, backgroundColor: '#1C1C1C' }}
+                >
+                  <View
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${summary.rpe * 10}%`,
+                      backgroundColor: getRPEColor(summary.rpe),
+                    }}
+                  />
                 </View>
                 <Text className="mt-3 text-sm text-text-disabled">
                   {getRIRDescription(summary.rir)}
@@ -110,13 +125,15 @@ export function SetSummaryModal({
 
             {/* Tempo - only show if breakdown provided */}
             {tempoBreakdown && (
-              <Surface elevation={0} className="rounded-xl bg-surface-input" style={{ marginBottom: 24 }}>
+              <Surface
+                elevation={0}
+                className="rounded-xl bg-surface-input"
+                style={{ marginBottom: 24 }}
+              >
                 <View className="p-5">
                   <View className="mb-3 flex-row justify-between">
                     <Text className="font-bold text-text-secondary">Avg Tempo</Text>
-                    <Text className="font-bold text-text-primary">
-                      {avgTempo ?? '0-0-0-0'}
-                    </Text>
+                    <Text className="font-bold text-text-primary">{avgTempo ?? '0-0-0-0'}</Text>
                   </View>
                   <HStack gap={1}>
                     <View className="flex-1 items-center">

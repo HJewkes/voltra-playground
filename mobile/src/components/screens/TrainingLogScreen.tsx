@@ -55,7 +55,7 @@ export function TrainingLogScreen() {
   const dayMap = useMemo(() => groupSessionsByDate(sessions), [sessions]);
 
   const selectedDay = useMemo(
-    () => (selectedDate ? dayMap.get(selectedDate) ?? null : null),
+    () => (selectedDate ? (dayMap.get(selectedDate) ?? null) : null),
     [selectedDate, dayMap]
   );
 
@@ -70,9 +70,7 @@ export function TrainingLogScreen() {
   }, [selectedDate]);
 
   const weeklyVolume = useMemo(() => {
-    const targetDate = selectedDate
-      ? new Date(selectedDate)
-      : new Date(viewYear, viewMonth, 15);
+    const targetDate = selectedDate ? new Date(selectedDate) : new Date(viewYear, viewMonth, 15);
     return computeWeeklyVolume(sessions, targetDate);
   }, [sessions, selectedDate, viewYear, viewMonth]);
 
@@ -108,7 +106,7 @@ export function TrainingLogScreen() {
 
   return (
     <ScrollView
-      className="flex-1 bg-surface-400"
+      className="bg-surface-400 flex-1"
       refreshControl={
         <RefreshControl
           refreshing={isLoading}

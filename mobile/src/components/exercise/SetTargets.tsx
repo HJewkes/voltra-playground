@@ -57,17 +57,25 @@ interface SetTargetsProps {
 }
 
 export function SetTargets({ targets, onChange, disabled, weightSlot }: SetTargetsProps) {
-  const { targetMode, targetReps, rirTarget, targetTempo, targetSets, restBlocks, enabledSections } = targets;
+  const {
+    targetMode,
+    targetReps,
+    rirTarget,
+    targetTempo,
+    targetSets,
+    restBlocks,
+    enabledSections,
+  } = targets;
 
   const update = useCallback(
     (patch: Partial<SetTargetsState>) => onChange({ ...targets, ...patch }),
-    [targets, onChange],
+    [targets, onChange]
   );
 
   const toggleSection = useCallback(
     (section: keyof typeof enabledSections) =>
       update({ enabledSections: { ...enabledSections, [section]: !enabledSections[section] } }),
-    [enabledSections, update],
+    [enabledSections, update]
   );
 
   // Three-phase cycle: Off → Reps → RIR → Off
@@ -87,13 +95,12 @@ export function SetTargets({ targets, onChange, disabled, weightSlot }: SetTarge
 
   const setMainValue = useCallback(
     (v: number) => update(isReps ? { targetReps: v } : { rirTarget: v }),
-    [isReps, update],
+    [isReps, update]
   );
 
   const setTempo = useCallback(
-    (key: keyof TempoTarget, v: number) =>
-      update({ targetTempo: { ...targetTempo, [key]: v } }),
-    [targetTempo, update],
+    (key: keyof TempoTarget, v: number) => update({ targetTempo: { ...targetTempo, [key]: v } }),
+    [targetTempo, update]
   );
 
   const outerOpacity = disabled ? 0.4 : 1;
@@ -118,7 +125,11 @@ export function SetTargets({ targets, onChange, disabled, weightSlot }: SetTarge
                   max={mainMax}
                   onChange={setMainValue}
                   formatValue={dashZero}
-                  activeColor={enabledSections.effort && mainValue > 0 ? t['brand-primary'] : t['text-disabled']}
+                  activeColor={
+                    enabledSections.effort && mainValue > 0
+                      ? t['brand-primary']
+                      : t['text-disabled']
+                  }
                   disabled={!enabledSections.effort}
                 />
               </View>
@@ -139,7 +150,9 @@ export function SetTargets({ targets, onChange, disabled, weightSlot }: SetTarge
                   max={10}
                   onChange={(v) => update({ targetSets: v })}
                   formatValue={dashZero}
-                  activeColor={enabledSections.sets && targetSets > 0 ? t['brand-primary'] : t['text-disabled']}
+                  activeColor={
+                    enabledSections.sets && targetSets > 0 ? t['brand-primary'] : t['text-disabled']
+                  }
                   disabled={!enabledSections.sets}
                 />
               </View>
@@ -160,7 +173,11 @@ export function SetTargets({ targets, onChange, disabled, weightSlot }: SetTarge
                   max={20}
                   onChange={(v) => update({ restBlocks: v })}
                   formatValue={formatRest}
-                  activeColor={enabledSections.rest && restBlocks > 0 ? t['text-secondary'] : t['text-disabled']}
+                  activeColor={
+                    enabledSections.rest && restBlocks > 0
+                      ? t['text-secondary']
+                      : t['text-disabled']
+                  }
                   disabled={!enabledSections.rest}
                 />
               </View>
@@ -170,9 +187,7 @@ export function SetTargets({ targets, onChange, disabled, weightSlot }: SetTarge
 
         {/* Weight column (flex 2): centered jog shuttle */}
         {weightSlot && (
-          <View style={{ flex: 2, alignItems: 'center', paddingTop: 26 }}>
-            {weightSlot}
-          </View>
+          <View style={{ flex: 2, alignItems: 'center', paddingTop: 26 }}>{weightSlot}</View>
         )}
 
         {/* Tempo column (flex 3): just tempo dials */}
@@ -191,7 +206,11 @@ export function SetTargets({ targets, onChange, disabled, weightSlot }: SetTarge
               label="Con"
               width={32}
               formatValue={dashZero}
-              activeColor={enabledSections.tempo && targetTempo.concentric > 0 ? t['status-success'] : t['text-disabled']}
+              activeColor={
+                enabledSections.tempo && targetTempo.concentric > 0
+                  ? t['status-success']
+                  : t['text-disabled']
+              }
               disabled={!enabledSections.tempo}
             />
             <ScrollDial
@@ -202,7 +221,11 @@ export function SetTargets({ targets, onChange, disabled, weightSlot }: SetTarge
               label="Hold"
               width={32}
               formatValue={dashZero}
-              activeColor={enabledSections.tempo && targetTempo.pauseTop > 0 ? t['brand-primary'] : t['text-disabled']}
+              activeColor={
+                enabledSections.tempo && targetTempo.pauseTop > 0
+                  ? t['brand-primary']
+                  : t['text-disabled']
+              }
               disabled={!enabledSections.tempo}
             />
             <ScrollDial
@@ -213,7 +236,11 @@ export function SetTargets({ targets, onChange, disabled, weightSlot }: SetTarge
               label="Ecc"
               width={32}
               formatValue={dashZero}
-              activeColor={enabledSections.tempo && targetTempo.eccentric > 0 ? t['status-warning'] : t['text-disabled']}
+              activeColor={
+                enabledSections.tempo && targetTempo.eccentric > 0
+                  ? t['status-warning']
+                  : t['text-disabled']
+              }
               disabled={!enabledSections.tempo}
             />
             <ScrollDial
@@ -224,7 +251,11 @@ export function SetTargets({ targets, onChange, disabled, weightSlot }: SetTarge
               label="Pause"
               width={32}
               formatValue={dashZero}
-              activeColor={enabledSections.tempo && targetTempo.pauseBottom > 0 ? t['text-secondary'] : t['text-disabled']}
+              activeColor={
+                enabledSections.tempo && targetTempo.pauseBottom > 0
+                  ? t['text-secondary']
+                  : t['text-disabled']
+              }
               disabled={!enabledSections.tempo}
             />
           </View>
@@ -264,10 +295,9 @@ function EnablePill({
                   `0 1px 2px ${alpha('#000', 0.4)}`,
                   `inset 0 1px 0 ${alpha(t['brand-primary'], 0.15)}`,
                 ].join(', ')
-              : [
-                  `inset 0 1px 3px ${alpha('#000', 0.4)}`,
-                  `0 1px 0 ${alpha('#fff', 0.04)}`,
-                ].join(', '),
+              : [`inset 0 1px 3px ${alpha('#000', 0.4)}`, `0 1px 0 ${alpha('#fff', 0.04)}`].join(
+                  ', '
+                ),
           }),
           default: {
             shadowColor: '#000',
@@ -284,9 +314,11 @@ function EnablePill({
           fontWeight: active ? '700' : '500',
           color: active ? t['brand-primary'] : t['text-disabled'],
           ...Platform.select({
-            web: active ? webStyle({
-              textShadow: `0 0 8px ${alpha(t['brand-primary'], 0.4)}`,
-            }) : webStyle({}),
+            web: active
+              ? webStyle({
+                  textShadow: `0 0 8px ${alpha(t['brand-primary'], 0.4)}`,
+                })
+              : webStyle({}),
             default: {},
           }),
         }}
@@ -296,7 +328,6 @@ function EnablePill({
     </TouchableOpacity>
   );
 }
-
 
 function Divider() {
   return (

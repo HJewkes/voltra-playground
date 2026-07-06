@@ -76,9 +76,7 @@ export function LiveMetricsView({
 
         <View className="flex-row items-center">
           <Text className="text-xs text-zinc-400">VL</Text>
-          <Text className="ml-2 text-lg font-bold text-white">
-            {velocityLossPct.toFixed(0)}%
-          </Text>
+          <Text className="ml-2 text-lg font-bold text-white">{velocityLossPct.toFixed(0)}%</Text>
         </View>
       </View>
     );
@@ -150,19 +148,31 @@ export function LiveMetricsView({
 
         {/* Quick Stats Grid */}
         <HStack gap={2}>
-          <Surface elevation={0} className="rounded-xl bg-surface-input" style={{ flex: 1, padding: 16 }}>
+          <Surface
+            elevation={0}
+            className="rounded-xl bg-surface-input"
+            style={{ flex: 1, padding: 16 }}
+          >
             <Text className="mb-1 text-xs font-medium text-text-disabled">Force</Text>
             <Text className="text-2xl font-bold text-text-primary">
               {Math.round(currentSample?.force ?? 0)}
             </Text>
           </Surface>
-          <Surface elevation={0} className="rounded-xl bg-surface-input" style={{ flex: 1, padding: 16 }}>
+          <Surface
+            elevation={0}
+            className="rounded-xl bg-surface-input"
+            style={{ flex: 1, padding: 16 }}
+          >
             <Text className="mb-1 text-xs font-medium text-text-disabled">Velocity</Text>
             <Text className="text-2xl font-bold text-text-primary">
               {(currentSample?.velocity ?? 0).toFixed(2)}
             </Text>
           </Surface>
-          <Surface elevation={0} className="rounded-xl bg-surface-input" style={{ flex: 1, padding: 16 }}>
+          <Surface
+            elevation={0}
+            className="rounded-xl bg-surface-input"
+            style={{ flex: 1, padding: 16 }}
+          >
             <Text className="mb-1 text-xs font-medium text-text-disabled">Vel Loss</Text>
             <Text className="text-2xl font-bold" style={{ color: rpeColor }}>
               {velocityLossPct > 0 ? '-' : ''}
@@ -222,7 +232,7 @@ export function LiveMetrics({ store, currentSample, weight, compact, style }: Li
       rir: s.rir,
       velocityLoss: s.velocityLoss,
       liveMessage: s.liveMessage,
-    })),
+    }))
   );
 
   return (

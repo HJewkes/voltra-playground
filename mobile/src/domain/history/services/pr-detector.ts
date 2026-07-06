@@ -106,13 +106,21 @@ export function detectPRs(set: CompletedSet, snapshot: PRSnapshot): PRBadge[] {
   const volume = set.weight * reps;
 
   if (set.weight > snapshot.maxWeight) {
-    badges.push({ type: 'max_weight', label: formatPRLabel('max_weight', set.weight), value: set.weight });
+    badges.push({
+      type: 'max_weight',
+      label: formatPRLabel('max_weight', set.weight),
+      value: set.weight,
+    });
   }
   if (reps > snapshot.maxReps) {
     badges.push({ type: 'max_reps', label: formatPRLabel('max_reps', reps), value: reps });
   }
   if (velocity > snapshot.maxVelocity) {
-    badges.push({ type: 'max_velocity', label: formatPRLabel('max_velocity', velocity), value: velocity });
+    badges.push({
+      type: 'max_velocity',
+      label: formatPRLabel('max_velocity', velocity),
+      value: velocity,
+    });
   }
   if (volume > snapshot.maxVolume) {
     badges.push({ type: 'max_volume', label: formatPRLabel('max_volume', volume), value: volume });

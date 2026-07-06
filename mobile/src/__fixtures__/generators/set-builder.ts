@@ -19,12 +19,7 @@ import {
   type WorkoutSample,
 } from '@voltras/workout-analytics';
 import { createCompletedSet, type CompletedSet } from '@/domain/workout';
-import {
-  repBuilder,
-  type RepTargets,
-  RepBehavior,
-  BEHAVIOR_PRESETS,
-} from './rep-builder';
+import { repBuilder, type RepTargets, RepBehavior, BEHAVIOR_PRESETS } from './rep-builder';
 import { deepMerge, type PhysicsConfig } from './physics-engine';
 
 // =============================================================================
@@ -175,15 +170,42 @@ class SetBuilder {
     return this;
   }
 
-  warmupEasy(): this { this.preset = 'warmupEasy'; return this; }
-  warmupModerate(): this { this.preset = 'warmupModerate'; return this; }
-  productiveWorking(): this { this.preset = 'productiveWorking'; return this; }
-  toFailure(): this { this.preset = 'toFailure'; return this; }
-  strengthSet(): this { this.preset = 'strengthSet'; return this; }
-  shortWorking(): this { this.preset = 'shortWorking'; return this; }
-  junkVolume(): this { this.preset = 'junkVolume'; return this; }
-  tooHeavy(): this { this.preset = 'tooHeavy'; return this; }
-  tooLight(): this { this.preset = 'tooLight'; return this; }
+  warmupEasy(): this {
+    this.preset = 'warmupEasy';
+    return this;
+  }
+  warmupModerate(): this {
+    this.preset = 'warmupModerate';
+    return this;
+  }
+  productiveWorking(): this {
+    this.preset = 'productiveWorking';
+    return this;
+  }
+  toFailure(): this {
+    this.preset = 'toFailure';
+    return this;
+  }
+  strengthSet(): this {
+    this.preset = 'strengthSet';
+    return this;
+  }
+  shortWorking(): this {
+    this.preset = 'shortWorking';
+    return this;
+  }
+  junkVolume(): this {
+    this.preset = 'junkVolume';
+    return this;
+  }
+  tooHeavy(): this {
+    this.preset = 'tooHeavy';
+    return this;
+  }
+  tooLight(): this {
+    this.preset = 'tooLight';
+    return this;
+  }
 
   velocity(targets: SetTargets['velocity']): this {
     this.targets.velocity = targets;
@@ -226,7 +248,10 @@ class SetBuilder {
     return this.buildFromComposition(composition);
   }
 
-  private buildFromComposition(composition: RepBehavior[], baseRepTargets?: RepTargets): CompletedSet {
+  private buildFromComposition(
+    composition: RepBehavior[],
+    baseRepTargets?: RepTargets
+  ): CompletedSet {
     const allSamples: WorkoutSample[] = [];
     let currentTime = this.targets.timestamp?.start ?? Date.now();
     let currentSequence = 0;
@@ -303,8 +328,9 @@ class SetBuilder {
     }
     analyticsSet = completeSet(analyticsSet);
 
-    const startTime = this.targets.timestamp?.start ?? (samples[0]?.timestamp ?? Date.now());
-    const endTime = this.targets.timestamp?.end ?? (samples[samples.length - 1]?.timestamp ?? Date.now());
+    const startTime = this.targets.timestamp?.start ?? samples[0]?.timestamp ?? Date.now();
+    const endTime =
+      this.targets.timestamp?.end ?? samples[samples.length - 1]?.timestamp ?? Date.now();
 
     return createCompletedSet(analyticsSet, {
       exerciseId: this.targets.exerciseId ?? 'test_exercise',

@@ -117,123 +117,161 @@ export function LoadProfileChart({
   const eccHandleY = yScale(eccHandleMidLoad);
 
   const propsRef = useRef({
-    baseWeight, chains, inverseChains, eccentric,
-    loadHandleX, loadHandleY, chainsHandleX, chainsHandleY,
-    eccHandleX, eccHandleY,
-    eccBottom, eccTop, conBottom, conTop,
-    yScale, yInvert,
-    onBaseWeightChange, onBaseWeightCommit,
-    onChainsChange, onInverseChainsChange, onEccentricChange,
-    onChainsCommit, onInverseChainsCommit, onEccentricCommit,
+    baseWeight,
+    chains,
+    inverseChains,
+    eccentric,
+    loadHandleX,
+    loadHandleY,
+    chainsHandleX,
+    chainsHandleY,
+    eccHandleX,
+    eccHandleY,
+    eccBottom,
+    eccTop,
+    conBottom,
+    conTop,
+    yScale,
+    yInvert,
+    onBaseWeightChange,
+    onBaseWeightCommit,
+    onChainsChange,
+    onInverseChainsChange,
+    onEccentricChange,
+    onChainsCommit,
+    onInverseChainsCommit,
+    onEccentricCommit,
   });
   propsRef.current = {
-    baseWeight, chains, inverseChains, eccentric,
-    loadHandleX, loadHandleY, chainsHandleX, chainsHandleY,
-    eccHandleX, eccHandleY,
-    eccBottom, eccTop, conBottom, conTop,
-    yScale, yInvert,
-    onBaseWeightChange, onBaseWeightCommit,
-    onChainsChange, onInverseChainsChange, onEccentricChange,
-    onChainsCommit, onInverseChainsCommit, onEccentricCommit,
+    baseWeight,
+    chains,
+    inverseChains,
+    eccentric,
+    loadHandleX,
+    loadHandleY,
+    chainsHandleX,
+    chainsHandleY,
+    eccHandleX,
+    eccHandleY,
+    eccBottom,
+    eccTop,
+    conBottom,
+    conTop,
+    yScale,
+    yInvert,
+    onBaseWeightChange,
+    onBaseWeightCommit,
+    onChainsChange,
+    onInverseChainsChange,
+    onEccentricChange,
+    onChainsCommit,
+    onInverseChainsCommit,
+    onEccentricCommit,
   };
 
   const dragging = useRef<'load' | 'chains' | 'eccentric' | null>(null);
   const startHandleY = useRef(0);
 
-  const panResponder = useMemo(() => PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: () => true,
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
 
-    onPanResponderGrant: (e) => {
-      const { locationX, locationY } = e.nativeEvent;
-      const p = propsRef.current;
+        onPanResponderGrant: (e) => {
+          const { locationX, locationY } = e.nativeEvent;
+          const p = propsRef.current;
 
-      const distLoad = Math.sqrt((locationX - p.loadHandleX) ** 2 + (locationY - p.loadHandleY) ** 2);
-      const distChains = Math.sqrt((locationX - p.chainsHandleX) ** 2 + (locationY - p.chainsHandleY) ** 2);
-      const distEcc = Math.sqrt((locationX - p.eccHandleX) ** 2 + (locationY - p.eccHandleY) ** 2);
+          const distLoad = Math.sqrt(
+            (locationX - p.loadHandleX) ** 2 + (locationY - p.loadHandleY) ** 2
+          );
+          const distChains = Math.sqrt(
+            (locationX - p.chainsHandleX) ** 2 + (locationY - p.chainsHandleY) ** 2
+          );
+          const distEcc = Math.sqrt(
+            (locationX - p.eccHandleX) ** 2 + (locationY - p.eccHandleY) ** 2
+          );
 
-      const minDist = Math.min(distLoad, distChains, distEcc);
+          const minDist = Math.min(distLoad, distChains, distEcc);
 
-      if (minDist > HANDLE_HIT_SLOP) {
-        dragging.current = null;
-      } else if (minDist === distLoad) {
-        dragging.current = 'load';
-        startHandleY.current = p.loadHandleY;
-      } else if (minDist === distChains) {
-        dragging.current = 'chains';
-        startHandleY.current = p.chainsHandleY;
-      } else {
-        dragging.current = 'eccentric';
-        startHandleY.current = p.eccHandleY;
-      }
-    },
+          if (minDist > HANDLE_HIT_SLOP) {
+            dragging.current = null;
+          } else if (minDist === distLoad) {
+            dragging.current = 'load';
+            startHandleY.current = p.loadHandleY;
+          } else if (minDist === distChains) {
+            dragging.current = 'chains';
+            startHandleY.current = p.chainsHandleY;
+          } else {
+            dragging.current = 'eccentric';
+            startHandleY.current = p.eccHandleY;
+          }
+        },
 
-    onPanResponderMove: (_, gesture) => {
-      if (!dragging.current) return;
-      const p = propsRef.current;
-      const handleY = startHandleY.current + gesture.dy;
+        onPanResponderMove: (_, gesture) => {
+          if (!dragging.current) return;
+          const p = propsRef.current;
+          const handleY = startHandleY.current + gesture.dy;
 
-      if (dragging.current === 'load') {
-        const newLoad = p.yInvert(handleY);
-        const clamped = clamp(roundToStep(newLoad, 1), 5, 200);
-        p.onBaseWeightChange(clamped);
-      } else if (dragging.current === 'chains') {
-        const loadAtTop = p.yInvert(handleY);
-        const diff = loadAtTop - p.baseWeight;
+          if (dragging.current === 'load') {
+            const newLoad = p.yInvert(handleY);
+            const clamped = clamp(roundToStep(newLoad, 1), 5, 200);
+            p.onBaseWeightChange(clamped);
+          } else if (dragging.current === 'chains') {
+            const loadAtTop = p.yInvert(handleY);
+            const diff = loadAtTop - p.baseWeight;
 
-        if (diff >= 0) {
-          const clamped = clamp(roundToStep(diff, 1), 0, 100);
-          p.onInverseChainsChange(clamped);
-          if (p.chains > 0) p.onChainsChange(0);
-        } else {
-          const clamped = clamp(roundToStep(-diff, 1), 0, 100);
-          p.onChainsChange(clamped);
-          if (p.inverseChains > 0) p.onInverseChainsChange(0);
-        }
-      } else if (dragging.current === 'eccentric') {
-        const conMidLoad = (p.conBottom + p.conTop) / 2;
-        const eccLoadAtMid = p.yInvert(handleY);
+            if (diff >= 0) {
+              const clamped = clamp(roundToStep(diff, 1), 0, 100);
+              p.onInverseChainsChange(clamped);
+              if (p.chains > 0) p.onChainsChange(0);
+            } else {
+              const clamped = clamp(roundToStep(-diff, 1), 0, 100);
+              p.onChainsChange(clamped);
+              if (p.inverseChains > 0) p.onInverseChainsChange(0);
+            }
+          } else if (dragging.current === 'eccentric') {
+            const conMidLoad = (p.conBottom + p.conTop) / 2;
+            const eccLoadAtMid = p.yInvert(handleY);
 
-        if (conMidLoad > 0) {
-          const newEcc = ((eccLoadAtMid / conMidLoad) - 1) * 100;
-          const clamped = clamp(roundToStep(newEcc, 5), -195, 195);
-          p.onEccentricChange(clamped);
-        }
-      }
-    },
+            if (conMidLoad > 0) {
+              const newEcc = (eccLoadAtMid / conMidLoad - 1) * 100;
+              const clamped = clamp(roundToStep(newEcc, 5), -195, 195);
+              p.onEccentricChange(clamped);
+            }
+          }
+        },
 
-    onPanResponderRelease: () => {
-      const p = propsRef.current;
-      if (dragging.current === 'load') {
-        p.onBaseWeightCommit(p.baseWeight);
-      } else if (dragging.current === 'chains') {
-        if (p.inverseChains > 0) {
-          p.onInverseChainsCommit(p.inverseChains);
-        } else {
-          p.onChainsCommit(p.chains);
-        }
-      } else if (dragging.current === 'eccentric') {
-        p.onEccentricCommit(p.eccentric);
-      }
-      dragging.current = null;
-    },
+        onPanResponderRelease: () => {
+          const p = propsRef.current;
+          if (dragging.current === 'load') {
+            p.onBaseWeightCommit(p.baseWeight);
+          } else if (dragging.current === 'chains') {
+            if (p.inverseChains > 0) {
+              p.onInverseChainsCommit(p.inverseChains);
+            } else {
+              p.onChainsCommit(p.chains);
+            }
+          } else if (dragging.current === 'eccentric') {
+            p.onEccentricCommit(p.eccentric);
+          }
+          dragging.current = null;
+        },
 
-    onPanResponderTerminate: () => {
-      dragging.current = null;
-    },
-  }), []);
+        onPanResponderTerminate: () => {
+          dragging.current = null;
+        },
+      }),
+    []
+  );
 
   const yTicks = computeYTicks(yMin, yMax, 4);
 
   const loadLabel = `${baseWeight} lbs`;
 
-  const chainLabel = chainValue > 0
-    ? `${chainValue} lbs ${isInverse ? 'inv' : ''}`
-    : '';
+  const chainLabel = chainValue > 0 ? `${chainValue} lbs ${isInverse ? 'inv' : ''}` : '';
 
-  const eccLabel = eccentric !== 0
-    ? `${eccentric > 0 ? '+' : ''}${eccentric}%`
-    : '';
+  const eccLabel = eccentric !== 0 ? `${eccentric > 0 ? '+' : ''}${eccentric}%` : '';
 
   return (
     <View>
@@ -292,9 +330,7 @@ export function LoadProfileChart({
           />
 
           {/* Eccentric fill band */}
-          {hasEccentric && (
-            <Path d={fillPath} fill="url(#eccFill)" />
-          )}
+          {hasEccentric && <Path d={fillPath} fill="url(#eccFill)" />}
 
           {/* Concentric line (orange) — left half: bottom→top */}
           <Line
@@ -396,9 +432,7 @@ export function LoadProfileChart({
               alignItems: 'flex-end',
             }}
           >
-            <Text style={{ fontSize: 12, color: t['text-disabled'] }}>
-              {Math.round(tick)}
-            </Text>
+            <Text style={{ fontSize: 12, color: t['text-disabled'] }}>{Math.round(tick)}</Text>
           </View>
         ))}
 

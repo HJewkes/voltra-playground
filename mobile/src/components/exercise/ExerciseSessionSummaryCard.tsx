@@ -8,7 +8,15 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, CardContent, HStack, VStack, Surface, getSemanticColors, alpha } from '@titan-design/react-ui';
+import {
+  Card,
+  CardContent,
+  HStack,
+  VStack,
+  Surface,
+  getSemanticColors,
+  alpha,
+} from '@titan-design/react-ui';
 import type { ExerciseSession, TerminationReason } from '@/domain/workout';
 import { getSetMeanVelocity, estimateSetRIR } from '@voltras/workout-analytics';
 
@@ -100,7 +108,9 @@ export function ExerciseSessionSummaryCard({
       {/* Summary stats */}
       <Card elevation={1} className="mb-4">
         <CardContent className="p-6">
-          <Text className="mb-4 text-sm font-medium text-text-disabled">{session.exercise.name}</Text>
+          <Text className="mb-4 text-sm font-medium text-text-disabled">
+            {session.exercise.name}
+          </Text>
 
           <Surface elevation={0} className="rounded-xl bg-surface-input">
             <HStack justify="between" style={{ padding: 16 }}>
@@ -111,12 +121,12 @@ export function ExerciseSessionSummaryCard({
                 </Text>
                 <Text className="text-xs text-text-disabled">of {session.plan.sets.length}</Text>
               </View>
-              <View className="w-px bg-surface-100" />
+              <View className="bg-surface-100 w-px" />
               <View className="flex-1 items-center">
                 <Text className="text-sm text-text-disabled">Reps</Text>
                 <Text className="mt-1 text-2xl font-bold text-text-primary">{totalReps}</Text>
               </View>
-              <View className="w-px bg-surface-100" />
+              <View className="bg-surface-100 w-px" />
               <View className="flex-1 items-center">
                 <Text className="text-sm text-text-disabled">Volume</Text>
                 <Text className="mt-1 text-2xl font-bold text-text-primary">
@@ -145,7 +155,7 @@ export function ExerciseSessionSummaryCard({
               <View
                 key={i}
                 className={`flex-row items-center justify-between py-3 ${
-                  i < session.completedSets.length - 1 ? 'border-b border-surface-100' : ''
+                  i < session.completedSets.length - 1 ? 'border-surface-100 border-b' : ''
                 }`}
               >
                 <View className="flex-row items-center">

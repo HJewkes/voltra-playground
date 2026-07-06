@@ -53,7 +53,7 @@ function generatePhaseSamples(
   force: number,
   startTime: number,
   startSequence: number,
-  sampleCount: number = 10,
+  sampleCount: number = 10
 ): { samples: WorkoutSample[]; endSequence: number; endTime: number } {
   const samples: WorkoutSample[] = [];
   const sampleInterval = phase === MovementPhase.CONCENTRIC ? 80 : 150;
@@ -88,7 +88,7 @@ function generateStoredRep(
   velocity: number,
   weight: number,
   startTime: number,
-  startSequence: number,
+  startSequence: number
 ): { rep: StoredRep; endTime: number; endSequence: number } {
   const force = weight * 1.5;
 
@@ -97,7 +97,7 @@ function generateStoredRep(
     velocity,
     force,
     startTime,
-    startSequence,
+    startSequence
   );
 
   const ecc = generatePhaseSamples(
@@ -105,7 +105,7 @@ function generateStoredRep(
     velocity * 0.5,
     force * 0.8,
     conc.endTime,
-    conc.endSequence,
+    conc.endSequence
   );
 
   return {
@@ -229,7 +229,7 @@ export function generateStoredSession(options: GenerateSessionOptions = {}): Sto
         startingVelocity: 0.8 * setFatigueMultiplier,
         fatigueRate: 0.03,
         includeRawSamples,
-      }),
+      })
     );
   }
 

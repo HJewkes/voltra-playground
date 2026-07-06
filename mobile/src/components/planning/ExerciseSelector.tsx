@@ -15,11 +15,7 @@ import {
   EXERCISE_MUSCLE_GROUPS,
   MuscleGroup,
 } from '@/domain/exercise';
-import {
-  type ExercisePickerSummary,
-  buildPickerSummaryMap,
-  formatTimeAgo,
-} from '@/domain/history';
+import { type ExercisePickerSummary, buildPickerSummaryMap, formatTimeAgo } from '@/domain/history';
 import { getSessionRepository } from '@/data/provider';
 import { getSemanticColors, alpha } from '@titan-design/react-ui';
 
@@ -174,9 +170,7 @@ function ExerciseHistoryBadge({ summary }: { summary: ExercisePickerSummary }) {
       </View>
       <View className="flex-row items-center">
         <Ionicons name="barbell-outline" size={12} color={t['text-disabled']} />
-        <Text className="ml-1 text-xs text-text-disabled">
-          {summary.workingWeight} lbs
-        </Text>
+        <Text className="ml-1 text-xs text-text-disabled">{summary.workingWeight} lbs</Text>
       </View>
       <View className="flex-row items-center">
         <Ionicons name="speedometer-outline" size={12} color={t['text-disabled']} />

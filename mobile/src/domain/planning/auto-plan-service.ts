@@ -57,7 +57,7 @@ const DEFAULT_SUGGESTION_REPS = 8;
 export function buildSuggestionPlan(
   sessions: StoredExerciseSession[],
   exerciseId: string,
-  catalog: Record<string, Exercise>,
+  catalog: Record<string, Exercise>
 ): SuggestionPlan | null {
   const exercise = catalog[exerciseId];
   if (!exercise) return null;
@@ -102,7 +102,7 @@ export function buildSuggestionPlan(
  */
 export function autoPlanWorkout(
   sessions: StoredExerciseSession[],
-  catalog: Record<string, Exercise>,
+  catalog: Record<string, Exercise>
 ): AutoPlan | null {
   const suggestions = suggestNextExercise(sessions, catalog, 1);
   if (suggestions.length === 0) return null;

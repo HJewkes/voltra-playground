@@ -7,13 +7,7 @@
 
 import React from 'react';
 import { View, Text, type StyleProp, type ViewStyle } from 'react-native';
-import {
-  Card,
-  CardContent,
-  HStack,
-  Surface,
-  getSemanticColors,
-} from '@titan-design/react-ui';
+import { Card, CardContent, HStack, Surface, getSemanticColors } from '@titan-design/react-ui';
 import type { DiscoverySetResult } from '@/domain/planning';
 
 const t = getSemanticColors('dark');
@@ -83,22 +77,19 @@ export function DiscoveryProfileSummary({
               <HStack justify="between" style={{ padding: 16 }}>
                 <View className="flex-1 items-center">
                   <Text className="text-sm text-text-disabled">Est. 1RM</Text>
-                  <Text
-                    className="mt-1 text-2xl font-bold"
-                    style={{ color: t['brand-primary'] }}
-                  >
+                  <Text className="mt-1 text-2xl font-bold" style={{ color: t['brand-primary'] }}>
                     {Math.round(estimated1RM)}
                   </Text>
                   <Text className="text-xs text-text-disabled">lbs</Text>
                 </View>
-                <View className="w-px bg-surface-100" />
+                <View className="bg-surface-100 w-px" />
                 <View className="flex-1 items-center">
                   <Text className="text-sm text-text-disabled">Data Points</Text>
                   <Text className="mt-1 text-2xl font-bold text-text-primary">
                     {completedSets.length}
                   </Text>
                 </View>
-                <View className="w-px bg-surface-100" />
+                <View className="bg-surface-100 w-px" />
                 <View className="flex-1 items-center">
                   <Text className="text-sm text-text-disabled">Confidence</Text>
                   <Text
@@ -127,9 +118,7 @@ export function DiscoveryProfileSummary({
             return (
               <View key={i} className="mb-3">
                 <View className="mb-1 flex-row items-center justify-between">
-                  <Text className="text-sm font-medium text-text-secondary">
-                    {set.weight} lbs
-                  </Text>
+                  <Text className="text-sm font-medium text-text-secondary">{set.weight} lbs</Text>
                   <Text
                     className="text-sm font-bold"
                     style={{ color: getVelocityColor(set.meanVelocity) }}

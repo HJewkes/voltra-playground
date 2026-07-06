@@ -7,7 +7,13 @@
 import React from 'react';
 import { Text, TouchableOpacity } from 'react-native';
 import { WeightPicker } from '@/components/ui';
-import { Card, CardHeader, CardTitle, CardContent, getSemanticColors } from '@titan-design/react-ui';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  getSemanticColors,
+} from '@titan-design/react-ui';
 
 const t = getSemanticColors('dark');
 

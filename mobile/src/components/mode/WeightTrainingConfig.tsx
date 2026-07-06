@@ -10,7 +10,13 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, type LayoutChangeEvent } from 'react-native';
 import { useStore } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
-import { Surface, Section, SectionHeader, SectionContent, getSemanticColors } from '@titan-design/react-ui';
+import {
+  Surface,
+  Section,
+  SectionHeader,
+  SectionContent,
+  getSemanticColors,
+} from '@titan-design/react-ui';
 import { LoadProfileChart } from './LoadProfileChart';
 import type { VoltraStoreApi } from '@/stores/voltra-store';
 
@@ -28,7 +34,7 @@ export function WeightTrainingConfig({ voltraStore }: WeightTrainingConfigProps)
 
   const { chains, inverseChains } = useStore(
     voltraStore,
-    useShallow((s) => ({ chains: s.chains, inverseChains: s.inverseChains })),
+    useShallow((s) => ({ chains: s.chains, inverseChains: s.inverseChains }))
   );
   const setChains = useStore(voltraStore, (s) => s.setChains);
   const setInverseChains = useStore(voltraStore, (s) => s.setInverseChains);
@@ -61,10 +67,13 @@ export function WeightTrainingConfig({ voltraStore }: WeightTrainingConfigProps)
     setLocalWeight(v);
   }, []);
 
-  const handleBaseWeightCommit = useCallback(async (v: number) => {
-    setIsDragging(false);
-    await setWeight(v);
-  }, [setWeight]);
+  const handleBaseWeightCommit = useCallback(
+    async (v: number) => {
+      setIsDragging(false);
+      await setWeight(v);
+    },
+    [setWeight]
+  );
 
   const handleChainsChange = useCallback((v: number) => {
     setIsDragging(true);
@@ -84,39 +93,50 @@ export function WeightTrainingConfig({ voltraStore }: WeightTrainingConfigProps)
   }, []);
 
   // Commit callbacks (send to device)
-  const handleChainsCommit = useCallback(async (v: number) => {
-    setIsDragging(false);
-    if (inverseChains > 0) await setInverseChains(0);
-    await setChains(v);
-  }, [setChains, setInverseChains, inverseChains]);
+  const handleChainsCommit = useCallback(
+    async (v: number) => {
+      setIsDragging(false);
+      if (inverseChains > 0) await setInverseChains(0);
+      await setChains(v);
+    },
+    [setChains, setInverseChains, inverseChains]
+  );
 
-  const handleInverseChainsCommit = useCallback(async (v: number) => {
-    setIsDragging(false);
-    if (chains > 0) await setChains(0);
-    await setInverseChains(v);
-  }, [setChains, setInverseChains, chains]);
+  const handleInverseChainsCommit = useCallback(
+    async (v: number) => {
+      setIsDragging(false);
+      if (chains > 0) await setChains(0);
+      await setInverseChains(v);
+    },
+    [setChains, setInverseChains, chains]
+  );
 
-  const handleEccentricCommit = useCallback(async (v: number) => {
-    setIsDragging(false);
-    await setEccentric(v);
-  }, [setEccentric]);
+  const handleEccentricCommit = useCallback(
+    async (v: number) => {
+      setIsDragging(false);
+      await setEccentric(v);
+    },
+    [setEccentric]
+  );
 
   // Summary text
-  const chainDesc = effectiveInverseChains > 0
-    ? `${effectiveInverseChains} lbs inv. chains`
-    : effectiveChains > 0
-      ? `${effectiveChains} lbs chains`
-      : 'no chains';
+  const chainDesc =
+    effectiveInverseChains > 0
+      ? `${effectiveInverseChains} lbs inv. chains`
+      : effectiveChains > 0
+        ? `${effectiveChains} lbs chains`
+        : 'no chains';
 
-  const eccDesc = effectiveEccentric !== 0
-    ? `${effectiveEccentric > 0 ? '+' : ''}${effectiveEccentric}% eccentric`
-    : 'balanced eccentric';
+  const eccDesc =
+    effectiveEccentric !== 0
+      ? `${effectiveEccentric > 0 ? '+' : ''}${effectiveEccentric}% eccentric`
+      : 'balanced eccentric';
 
   return (
     <Section>
       <SectionHeader title="Load Profile" />
       <SectionContent>
-        <Surface elevation={1} className="rounded-xl overflow-hidden">
+        <Surface elevation={1} className="overflow-hidden rounded-xl">
           <View className="p-2" onLayout={onLayout}>
             {chartWidth > 0 && (
               <LoadProfileChart

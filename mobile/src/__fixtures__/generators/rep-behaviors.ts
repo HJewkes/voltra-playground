@@ -17,8 +17,12 @@
 import { type WorkoutSample, MovementPhase } from '@voltras/workout-analytics';
 
 function createSample(
-  sequence: number, timestamp: number, phase: MovementPhase,
-  position: number, velocity: number, force: number
+  sequence: number,
+  timestamp: number,
+  phase: MovementPhase,
+  position: number,
+  velocity: number,
+  force: number
 ): WorkoutSample {
   return { sequence, timestamp, phase, position, velocity, force };
 }

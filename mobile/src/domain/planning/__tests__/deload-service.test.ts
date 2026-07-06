@@ -32,7 +32,7 @@ function buildConsistentWeeks(weekCount: number): StoredExerciseSession[] {
       // Place sessions in the prior week bands (not current acute week)
       startTime: Date.now() - (weekIndex + 1) * 7 * 24 * 60 * 60 * 1000 - 24 * 60 * 60 * 1000,
       completedSets: [generateStoredSet({ weight: 100, repCount: 10 })],
-    }),
+    })
   );
 }
 
@@ -47,9 +47,7 @@ function buildProgressiveWeeks(weekCount: number): StoredExerciseSession[] {
     return createSession({
       status: 'completed',
       startTime: Date.now() - weeksFromNow * 7 * 24 * 60 * 60 * 1000 - 24 * 60 * 60 * 1000,
-      completedSets: [
-        generateStoredSet({ weight: 100, repCount: 5 + weekIndex * 2 }),
-      ],
+      completedSets: [generateStoredSet({ weight: 100, repCount: 5 + weekIndex * 2 })],
     });
   });
 }
@@ -71,7 +69,7 @@ function buildHighAcwrSessions(now: number): StoredExerciseSession[] {
       status: 'completed',
       startTime: now - (i + 1) * 7 * 24 * 60 * 60 * 1000 - 24 * 60 * 60 * 1000,
       completedSets: [generateStoredSet({ weight: 50, repCount: 3 })],
-    }),
+    })
   );
   return [thisWeekSession, ...chronicSessions];
 }
@@ -124,23 +122,19 @@ describe('shouldDeload', () => {
     // checked by lowering it well below the expected acwr.
     // The progressive streak with equal weekly volumes = 0 consecutive increases.
     expect(shouldDeload(sessions, { acwrThreshold: 1.3, progressiveWeeksThreshold: 100 })).toBe(
-      false,
+      false
     );
     // Raising threshold to test non-trigger
     expect(shouldDeload(sessions, { acwrThreshold: 99, progressiveWeeksThreshold: 100 })).toBe(
-      false,
+      false
     );
   });
 
   it('respects custom progressiveWeeksThreshold config', () => {
     // 5 weeks = 4 consecutive increases
     const sessions = buildProgressiveWeeks(5);
-    expect(
-      shouldDeload(sessions, { acwrThreshold: 10, progressiveWeeksThreshold: 4 }),
-    ).toBe(true);
-    expect(
-      shouldDeload(sessions, { acwrThreshold: 10, progressiveWeeksThreshold: 5 }),
-    ).toBe(false);
+    expect(shouldDeload(sessions, { acwrThreshold: 10, progressiveWeeksThreshold: 4 })).toBe(true);
+    expect(shouldDeload(sessions, { acwrThreshold: 10, progressiveWeeksThreshold: 5 })).toBe(false);
   });
 });
 

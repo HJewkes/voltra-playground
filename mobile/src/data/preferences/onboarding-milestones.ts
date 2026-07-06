@@ -9,10 +9,7 @@ import { getMMKVAdapter } from '@/data/provider';
 import { STORAGE_KEYS } from '@/data/adapters';
 
 export type OnboardingMilestone =
-  | 'velocity_explained'
-  | 'velocity_loss_explained'
-  | 'rpe_explained'
-  | 'readiness_explained';
+  'velocity_explained' | 'velocity_loss_explained' | 'rpe_explained' | 'readiness_explained';
 
 function milestoneKey(milestone: OnboardingMilestone): string {
   return `${STORAGE_KEYS.ONBOARDING_MILESTONE_PREFIX}${milestone}`;
@@ -21,9 +18,7 @@ function milestoneKey(milestone: OnboardingMilestone): string {
 /**
  * Returns true if the user has already dismissed this onboarding tip.
  */
-export async function isOnboardingMilestoneSeen(
-  milestone: OnboardingMilestone,
-): Promise<boolean> {
+export async function isOnboardingMilestoneSeen(milestone: OnboardingMilestone): Promise<boolean> {
   const seen = await getMMKVAdapter().get<boolean>(milestoneKey(milestone));
   return seen === true;
 }
@@ -31,8 +26,6 @@ export async function isOnboardingMilestoneSeen(
 /**
  * Marks an onboarding tip as seen so it is never shown again.
  */
-export async function markOnboardingMilestoneSeen(
-  milestone: OnboardingMilestone,
-): Promise<void> {
+export async function markOnboardingMilestoneSeen(milestone: OnboardingMilestone): Promise<void> {
   await getMMKVAdapter().set(milestoneKey(milestone), true);
 }

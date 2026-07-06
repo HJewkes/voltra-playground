@@ -85,7 +85,9 @@ function MetricRow({
       <View className="flex-row items-center">
         <Ionicons name={icon} size={18} color={color} />
         <Text className="ml-1 font-semibold" style={{ color }}>
-          {sign}{metric.delta} ({sign}{metric.deltaPercent}%)
+          {sign}
+          {metric.delta} ({sign}
+          {metric.deltaPercent}%)
         </Text>
       </View>
     </View>
@@ -104,18 +106,14 @@ export function ProgressionCard({ progression }: ProgressionCardProps) {
     <Card elevation={1} className="mb-3">
       <CardContent className="p-4">
         <View className="mb-2 flex-row items-center justify-between">
-          <Text className="font-bold text-text-secondary">
-            vs Last Session
-          </Text>
+          <Text className="font-bold text-text-secondary">vs Last Session</Text>
           <Text className="text-xs text-text-disabled">
             {formatTimeAgo(progression.previousSessionDate)}
           </Text>
         </View>
 
         {progression.weight > 0 && (
-          <Text className="mb-2 text-xs text-text-disabled">
-            @ {progression.weight} lbs
-          </Text>
+          <Text className="mb-2 text-xs text-text-disabled">@ {progression.weight} lbs</Text>
         )}
 
         <MetricRow metric={progression.velocity} isVelocity />

@@ -21,26 +21,16 @@ export interface ExercisePickerSummary {
  * Extract picker summary from the most recent completed session for an exercise.
  * Returns null if the session has no completed sets.
  */
-export function extractPickerSummary(
-  session: StoredExerciseSession,
-): ExercisePickerSummary | null {
+export function extractPickerSummary(session: StoredExerciseSession): ExercisePickerSummary | null {
   const completedSets = session.completedSets;
   if (completedSets.length === 0) return null;
 
-  const workingSets = completedSets.filter(
-    (_, i) => !session.plan.sets[i]?.isWarmup,
-  );
+  const workingSets = completedSets.filter((_, i) => !session.plan.sets[i]?.isWarmup);
   const setsForAnalysis = workingSets.length > 0 ? workingSets : completedSets;
 
-  const workingWeight = setsForAnalysis.reduce(
-    (max, s) => Math.max(max, s.weight),
-    0,
-  );
+  const workingWeight = setsForAnalysis.reduce((max, s) => Math.max(max, s.weight), 0);
 
-  const bestMeanVelocity = setsForAnalysis.reduce(
-    (max, s) => Math.max(max, s.meanVelocity),
-    0,
-  );
+  const bestMeanVelocity = setsForAnalysis.reduce((max, s) => Math.max(max, s.meanVelocity), 0);
 
   return {
     exerciseId: session.exerciseId,
@@ -55,7 +45,7 @@ export function extractPickerSummary(
  * Uses only the most recent completed session per exercise.
  */
 export function buildPickerSummaryMap(
-  sessions: StoredExerciseSession[],
+  sessions: StoredExerciseSession[]
 ): Map<string, ExercisePickerSummary> {
   const map = new Map<string, ExercisePickerSummary>();
 

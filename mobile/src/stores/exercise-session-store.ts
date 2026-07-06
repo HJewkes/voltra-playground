@@ -82,10 +82,7 @@ import {
 import type { RecoveredSet } from '@/data/exercise-session/telemetry-buffer';
 
 // Auto-regulation engine
-import {
-  computeAutoRegulation,
-  type AutoRegulationState,
-} from '@/domain/planning/auto-regulation';
+import { computeAutoRegulation, type AutoRegulationState } from '@/domain/planning/auto-regulation';
 import { TrainingGoal } from '@/domain/planning/types';
 
 // Coaching feedback loop
@@ -318,411 +315,412 @@ function createStoreInstance(): ExerciseSessionStoreApi {
   return createStore<ExerciseSessionState>()(
     devtools(
       (set, get) => ({
-      // Initial state
-      session: null,
-      uiState: 'idle',
-      isDisposed: false,
-      restCountdown: 0,
-      startCountdown: 0,
-      terminationReason: null,
-      terminationMessage: null,
-      velocityProfile: null,
-      recommendation: null,
-      autoRegulation: null,
-      idleSinceMs: null,
-      restElapsedMs: 0,
-      restStartTime: null,
-      currentClusterStart: 0,
-      pendingClusters: [],
-      setLog: [],
-      sessionNotes: [],
-      error: null,
+        // Initial state
+        session: null,
+        uiState: 'idle',
+        isDisposed: false,
+        restCountdown: 0,
+        startCountdown: 0,
+        terminationReason: null,
+        terminationMessage: null,
+        velocityProfile: null,
+        recommendation: null,
+        autoRegulation: null,
+        idleSinceMs: null,
+        restElapsedMs: 0,
+        restStartTime: null,
+        currentClusterStart: 0,
+        pendingClusters: [],
+        setLog: [],
+        sessionNotes: [],
+        error: null,
 
-      // Derived state
-      currentSetIndex: 0,
-      currentPlannedSet: null,
-      isComplete: false,
-      isDiscovery: false,
-      totalSets: 0,
-      completedSetsCount: 0,
+        // Derived state
+        currentSetIndex: 0,
+        currentPlannedSet: null,
+        isComplete: false,
+        isDiscovery: false,
+        totalSets: 0,
+        completedSetsCount: 0,
 
-      // Superset state
-      supersetConfig: null,
-      supersetState: null,
-      currentExercise: null,
-      nextExerciseName: null,
-      supersetRound: 0,
-      supersetSlotIndex: 0,
-      isSupersetActive: false,
+        // Superset state
+        supersetConfig: null,
+        supersetState: null,
+        currentExercise: null,
+        nextExerciseName: null,
+        supersetRound: 0,
+        supersetSlotIndex: 0,
+        isSupersetActive: false,
 
-      // Internal refs
-      _recordingStore: null,
-      _voltraStore: null,
-      _repository: null,
-      _coachingStore: null,
-      _claudeApiConfig: null,
-      _restTimerId: null,
-      _countdownTimerId: null,
-      _idleUnsubscribe: null,
+        // Internal refs
+        _recordingStore: null,
+        _voltraStore: null,
+        _repository: null,
+        _coachingStore: null,
+        _claudeApiConfig: null,
+        _restTimerId: null,
+        _countdownTimerId: null,
+        _idleUnsubscribe: null,
 
-      // =======================================================================
-      // Idle Detection & Cluster Tracking
-      // =======================================================================
+        // =======================================================================
+        // Idle Detection & Cluster Tracking
+        // =======================================================================
 
-      _onPhaseChange: (phase: MovementPhase, _repCount: number) => {
-        const state = get();
-        const isIdlePhase = phase === MovementPhase.IDLE || phase === MovementPhase.HOLD;
-        const isActivePhase = phase === MovementPhase.CONCENTRIC || phase === MovementPhase.ECCENTRIC;
+        _onPhaseChange: (phase: MovementPhase, _repCount: number) => {
+          const state = get();
+          const isIdlePhase = phase === MovementPhase.IDLE || phase === MovementPhase.HOLD;
+          const isActivePhase =
+            phase === MovementPhase.CONCENTRIC || phase === MovementPhase.ECCENTRIC;
 
-        if (state.uiState === 'recording') {
-          if (isIdlePhase && state.idleSinceMs === null) {
-            set({ idleSinceMs: Date.now() });
-            if (idleTimerId) clearTimeout(idleTimerId);
-            idleTimerId = setTimeout(() => {
-              idleTimerId = null;
-              if (get().uiState === 'recording' && get().idleSinceMs !== null) {
-                set({ idleSinceMs: null });
-                get()._autoTransitionToRest();
+          if (state.uiState === 'recording') {
+            if (isIdlePhase && state.idleSinceMs === null) {
+              set({ idleSinceMs: Date.now() });
+              if (idleTimerId) clearTimeout(idleTimerId);
+              idleTimerId = setTimeout(() => {
+                idleTimerId = null;
+                if (get().uiState === 'recording' && get().idleSinceMs !== null) {
+                  set({ idleSinceMs: null });
+                  get()._autoTransitionToRest();
+                }
+              }, SESSION_DEFAULTS.idleThreshold);
+            } else if (isActivePhase && state.idleSinceMs !== null) {
+              if (idleTimerId) {
+                clearTimeout(idleTimerId);
+                idleTimerId = null;
               }
-            }, SESSION_DEFAULTS.idleThreshold);
-          } else if (isActivePhase && state.idleSinceMs !== null) {
-            if (idleTimerId) {
-              clearTimeout(idleTimerId);
-              idleTimerId = null;
+              set({ idleSinceMs: null });
             }
-            set({ idleSinceMs: null });
+          } else if (state.uiState === 'resting' && isActivePhase) {
+            get()._onLiftingResumedFromRest();
           }
-        } else if (state.uiState === 'resting' && isActivePhase) {
-          get()._onLiftingResumedFromRest();
-        }
-      },
+        },
 
-      _autoTransitionToRest: () => {
-        if (!recordingStoreRef) return;
-        const state = get();
-        const weight = state.currentPlannedSet?.weight ?? 0;
-        const completedSet = recordingStoreRef.getState().stopRecording(weight);
-        if (completedSet) {
-          get().onSetCompleted(completedSet);
-        }
-      },
+        _autoTransitionToRest: () => {
+          if (!recordingStoreRef) return;
+          const state = get();
+          const weight = state.currentPlannedSet?.weight ?? 0;
+          const completedSet = recordingStoreRef.getState().stopRecording(weight);
+          if (completedSet) {
+            get().onSetCompleted(completedSet);
+          }
+        },
 
-      _onLiftingResumedFromRest: () => {
-        const { restStartTime } = get();
-        if (!restStartTime || !recordingStoreRef) return;
-        const elapsed = Date.now() - restStartTime;
+        _onLiftingResumedFromRest: () => {
+          const { restStartTime } = get();
+          if (!restStartTime || !recordingStoreRef) return;
+          const elapsed = Date.now() - restStartTime;
 
-        if (elapsed < SESSION_DEFAULTS.pauseSetThreshold) {
-          const repCount = recordingStoreRef.getState().repCount;
-          const clusters = get().pendingClusters;
+          if (elapsed < SESSION_DEFAULTS.pauseSetThreshold) {
+            const repCount = recordingStoreRef.getState().repCount;
+            const clusters = get().pendingClusters;
+            set({
+              pendingClusters: [
+                ...clusters,
+                {
+                  repStart: get().currentClusterStart,
+                  repEnd: repCount,
+                  pauseAfterMs: elapsed,
+                },
+              ],
+              currentClusterStart: repCount,
+              uiState: 'recording',
+              restElapsedMs: 0,
+              restStartTime: null,
+              restCountdown: 0,
+            });
+            clearTimers();
+          } else {
+            clearTimers();
+            set({
+              uiState: 'countdown',
+              startCountdown: COUNTDOWN_SECONDS,
+              restCountdown: 0,
+              restStartTime: null,
+            });
+            startCountdownTimer(get, set);
+          }
+        },
+
+        // =======================================================================
+        // Lifecycle Actions
+        // =======================================================================
+
+        startSession: (exercise: Exercise, plan: ExercisePlan) => {
+          const session = createExerciseSession(exercise, plan);
           set({
-            pendingClusters: [
-              ...clusters,
-              {
-                repStart: get().currentClusterStart,
-                repEnd: repCount,
-                pauseAfterMs: elapsed,
-              },
-            ],
-            currentClusterStart: repCount,
-            uiState: 'recording',
+            session,
+            uiState: 'idle',
+            isDisposed: false,
+            restCountdown: 0,
+            startCountdown: 0,
+            terminationReason: null,
+            terminationMessage: null,
+            velocityProfile: null,
+            recommendation: null,
+            autoRegulation: null,
+            idleSinceMs: null,
             restElapsedMs: 0,
             restStartTime: null,
-            restCountdown: 0,
+            currentClusterStart: 0,
+            pendingClusters: [],
+            setLog: [],
+            sessionNotes: [],
+            error: null,
+            supersetConfig: null,
+            supersetState: null,
+            ...computeDerivedState(session),
+            ...computeSupersetDerived(null, null),
           });
-          clearTimers();
-        } else {
-          clearTimers();
+          persistSession(get, 'in_progress');
+        },
+
+        startSupersetSession: (config: SupersetConfig) => {
+          const ssState = createSupersetState();
+          const firstSlot = getCurrentSlot(config, ssState);
+          const session = createExerciseSession(firstSlot.exercise, firstSlot.plan);
+
           set({
+            session,
+            uiState: 'idle',
+            isDisposed: false,
+            restCountdown: 0,
+            startCountdown: 0,
+            terminationReason: null,
+            terminationMessage: null,
+            velocityProfile: null,
+            recommendation: null,
+            autoRegulation: null,
+            idleSinceMs: null,
+            restElapsedMs: 0,
+            restStartTime: null,
+            currentClusterStart: 0,
+            pendingClusters: [],
+            setLog: [],
+            sessionNotes: [],
+            error: null,
+            supersetConfig: config,
+            supersetState: ssState,
+            ...computeDerivedState(session),
+            ...computeSupersetDerived(config, ssState),
+          });
+          persistSession(get, 'in_progress');
+        },
+
+        loadCurrentSession: async () => {
+          if (get().isDisposed) return;
+          await loadCurrentSessionAction(get, set);
+        },
+
+        recoverInterruptedSet: async () => {
+          if (!repositoryRef) return null;
+          return recoverInterruptedSetFromDb(repositoryRef);
+        },
+
+        stopSession: async () => {
+          if (get().isDisposed) return;
+          await stopSessionAction(get, set);
+        },
+
+        // =======================================================================
+        // Notes
+        // =======================================================================
+
+        addNote: (text: string) => {
+          const { session, sessionNotes } = get();
+          if (!session) return;
+
+          const note: SessionNote = {
+            text,
+            timestamp: Date.now(),
+            setIndex: session.completedSets.length,
+            exerciseId: session.exercise.id,
+          };
+          set({ sessionNotes: [...sessionNotes, note] });
+        },
+
+        // =======================================================================
+        // Dynamic Plan Building
+        // =======================================================================
+
+        addPlannedSet: (plannedSet: PlannedSet) => {
+          const { session } = get();
+          if (!session) return;
+
+          const updatedPlan = {
+            ...session.plan,
+            sets: [...session.plan.sets, plannedSet],
+          };
+          const updatedSession = { ...session, plan: updatedPlan };
+
+          set({
+            session: updatedSession,
+            ...computeDerivedState(updatedSession),
+          });
+        },
+
+        updatePlannedSetRest: (setIndex: number, restSeconds: number) => {
+          const { session } = get();
+          if (!session) return;
+
+          const sets = session.plan.sets.map((s, i) =>
+            i === setIndex ? { ...s, restSeconds } : s
+          );
+          const updatedSession = { ...session, plan: { ...session.plan, sets } };
+          set({ session: updatedSession });
+        },
+
+        // =======================================================================
+        // First Set Flow
+        // =======================================================================
+
+        prepareFirstSet: async () => {
+          if (get().isDisposed) return;
+          await prepareFirstSetAction(get, set);
+        },
+
+        startFirstSet: () => {
+          set({ uiState: 'countdown', startCountdown: COUNTDOWN_SECONDS });
+          startCountdownTimer(get, set);
+        },
+
+        // =======================================================================
+        // Recording
+        // =======================================================================
+
+        onSetCompleted: async (completedSet: CompletedSet) => {
+          if (get().isDisposed) return;
+          await onSetCompletedAction(get, set, completedSet);
+        },
+
+        manualStopRecording: () => {
+          manualStopRecordingAction(get, set);
+        },
+
+        // =======================================================================
+        // Rest Period
+        // =======================================================================
+
+        skipRest: () => {
+          const { session } = get();
+          if (!session) return;
+
+          clearTimers();
+          const clearedSession = clearRest(session);
+          set({
+            session: clearedSession,
             uiState: 'countdown',
             startCountdown: COUNTDOWN_SECONDS,
             restCountdown: 0,
-            restStartTime: null,
           });
           startCountdownTimer(get, set);
-        }
-      },
+        },
 
-      // =======================================================================
-      // Lifecycle Actions
-      // =======================================================================
+        dispose: () => {
+          const { uiState } = get();
+          const isActive =
+            uiState === 'recording' ||
+            uiState === 'countdown' ||
+            uiState === 'preparing' ||
+            uiState === 'resting';
 
-      startSession: (exercise: Exercise, plan: ExercisePlan) => {
-        const session = createExerciseSession(exercise, plan);
-        set({
-          session,
-          uiState: 'idle',
-          isDisposed: false,
-          restCountdown: 0,
-          startCountdown: 0,
-          terminationReason: null,
-          terminationMessage: null,
-          velocityProfile: null,
-          recommendation: null,
-          autoRegulation: null,
-          idleSinceMs: null,
-          restElapsedMs: 0,
-          restStartTime: null,
-          currentClusterStart: 0,
-          pendingClusters: [],
-          setLog: [],
-          sessionNotes: [],
-          error: null,
-          supersetConfig: null,
-          supersetState: null,
-          ...computeDerivedState(session),
-          ...computeSupersetDerived(null, null),
-        });
-        persistSession(get, 'in_progress');
-      },
-
-      startSupersetSession: (config: SupersetConfig) => {
-        const ssState = createSupersetState();
-        const firstSlot = getCurrentSlot(config, ssState);
-        const session = createExerciseSession(firstSlot.exercise, firstSlot.plan);
-
-        set({
-          session,
-          uiState: 'idle',
-          isDisposed: false,
-          restCountdown: 0,
-          startCountdown: 0,
-          terminationReason: null,
-          terminationMessage: null,
-          velocityProfile: null,
-          recommendation: null,
-          autoRegulation: null,
-          idleSinceMs: null,
-          restElapsedMs: 0,
-          restStartTime: null,
-          currentClusterStart: 0,
-          pendingClusters: [],
-          setLog: [],
-          sessionNotes: [],
-          error: null,
-          supersetConfig: config,
-          supersetState: ssState,
-          ...computeDerivedState(session),
-          ...computeSupersetDerived(config, ssState),
-        });
-        persistSession(get, 'in_progress');
-      },
-
-      loadCurrentSession: async () => {
-        if (get().isDisposed) return;
-        await loadCurrentSessionAction(get, set);
-      },
-
-      recoverInterruptedSet: async () => {
-        if (!repositoryRef) return null;
-        return recoverInterruptedSetFromDb(repositoryRef);
-      },
-
-      stopSession: async () => {
-        if (get().isDisposed) return;
-        await stopSessionAction(get, set);
-      },
-
-      // =======================================================================
-      // Notes
-      // =======================================================================
-
-      addNote: (text: string) => {
-        const { session, sessionNotes } = get();
-        if (!session) return;
-
-        const note: SessionNote = {
-          text,
-          timestamp: Date.now(),
-          setIndex: session.completedSets.length,
-          exerciseId: session.exercise.id,
-        };
-        set({ sessionNotes: [...sessionNotes, note] });
-      },
-
-      // =======================================================================
-      // Dynamic Plan Building
-      // =======================================================================
-
-      addPlannedSet: (plannedSet: PlannedSet) => {
-        const { session } = get();
-        if (!session) return;
-
-        const updatedPlan = {
-          ...session.plan,
-          sets: [...session.plan.sets, plannedSet],
-        };
-        const updatedSession = { ...session, plan: updatedPlan };
-
-        set({
-          session: updatedSession,
-          ...computeDerivedState(updatedSession),
-        });
-      },
-
-      updatePlannedSetRest: (setIndex: number, restSeconds: number) => {
-        const { session } = get();
-        if (!session) return;
-
-        const sets = session.plan.sets.map((s, i) =>
-          i === setIndex ? { ...s, restSeconds } : s,
-        );
-        const updatedSession = { ...session, plan: { ...session.plan, sets } };
-        set({ session: updatedSession });
-      },
-
-      // =======================================================================
-      // First Set Flow
-      // =======================================================================
-
-      prepareFirstSet: async () => {
-        if (get().isDisposed) return;
-        await prepareFirstSetAction(get, set);
-      },
-
-      startFirstSet: () => {
-        set({ uiState: 'countdown', startCountdown: COUNTDOWN_SECONDS });
-        startCountdownTimer(get, set);
-      },
-
-      // =======================================================================
-      // Recording
-      // =======================================================================
-
-      onSetCompleted: async (completedSet: CompletedSet) => {
-        if (get().isDisposed) return;
-        await onSetCompletedAction(get, set, completedSet);
-      },
-
-      manualStopRecording: () => {
-        manualStopRecordingAction(get, set);
-      },
-
-      // =======================================================================
-      // Rest Period
-      // =======================================================================
-
-      skipRest: () => {
-        const { session } = get();
-        if (!session) return;
-
-        clearTimers();
-        const clearedSession = clearRest(session);
-        set({
-          session: clearedSession,
-          uiState: 'countdown',
-          startCountdown: COUNTDOWN_SECONDS,
-          restCountdown: 0,
-        });
-        startCountdownTimer(get, set);
-      },
-
-      dispose: () => {
-        const { uiState } = get();
-        const isActive =
-          uiState === 'recording' ||
-          uiState === 'countdown' ||
-          uiState === 'preparing' ||
-          uiState === 'resting';
-
-        clearTimers();
-
-        if (isActive && voltraStoreRef) {
-          voltraStoreRef
-            .getState()
-            .stopRecording()
-            .catch((err: unknown) => {
-              console.warn('[ExerciseSessionStore] dispose: failed to stop device:', err);
-            });
-        }
-
-        if (recordingStoreRef) {
-          recordingStoreRef.setOnAutoStop(null);
-          recordingStoreRef.getState().reset();
-        }
-
-        set({
-          session: null,
-          uiState: 'idle',
-          isDisposed: true,
-          restCountdown: 0,
-          startCountdown: 0,
-          terminationReason: null,
-          terminationMessage: null,
-          velocityProfile: null,
-          recommendation: null,
-          autoRegulation: null,
-          idleSinceMs: null,
-          restElapsedMs: 0,
-          restStartTime: null,
-          currentClusterStart: 0,
-          pendingClusters: [],
-          setLog: [],
-          sessionNotes: [],
-          error: null,
-          supersetConfig: null,
-          supersetState: null,
-          ...computeDerivedState(null),
-          ...computeSupersetDerived(null, null),
-        });
-      },
-
-      adjustWeight: async (weight: number) => {
-        if (!voltraStoreRef) return;
-        try {
-          await voltraStoreRef.getState().setWeight(weight);
-        } catch (err) {
-          set({ error: `Failed to adjust weight: ${err}` });
-        }
-      },
-
-      // =======================================================================
-      // Timer Ticks
-      // =======================================================================
-
-      tickRestTimer: () => {
-        tickRestTimerAction(get, set);
-      },
-
-      tickCountdown: () => {
-        const { startCountdown } = get();
-        const newCountdown = startCountdown - 1;
-
-        if (newCountdown <= 0) {
           clearTimers();
-          transitionToRecording(get, set);
-        } else {
-          set({ startCountdown: newCountdown });
-        }
-      },
 
-      // =======================================================================
-      // Store Bindings
-      // =======================================================================
+          if (isActive && voltraStoreRef) {
+            voltraStoreRef
+              .getState()
+              .stopRecording()
+              .catch((err: unknown) => {
+                console.warn('[ExerciseSessionStore] dispose: failed to stop device:', err);
+              });
+          }
 
-      bindRecordingStore: (store: RecordingStoreApi) => {
-        recordingStoreRef = store;
-        set({ _recordingStore: store });
-      },
+          if (recordingStoreRef) {
+            recordingStoreRef.setOnAutoStop(null);
+            recordingStoreRef.getState().reset();
+          }
 
-      bindVoltraStore: (store: VoltraStoreApi) => {
-        voltraStoreRef = store;
-        set({ _voltraStore: store });
-      },
+          set({
+            session: null,
+            uiState: 'idle',
+            isDisposed: true,
+            restCountdown: 0,
+            startCountdown: 0,
+            terminationReason: null,
+            terminationMessage: null,
+            velocityProfile: null,
+            recommendation: null,
+            autoRegulation: null,
+            idleSinceMs: null,
+            restElapsedMs: 0,
+            restStartTime: null,
+            currentClusterStart: 0,
+            pendingClusters: [],
+            setLog: [],
+            sessionNotes: [],
+            error: null,
+            supersetConfig: null,
+            supersetState: null,
+            ...computeDerivedState(null),
+            ...computeSupersetDerived(null, null),
+          });
+        },
 
-      bindRepository: (repo: ExerciseSessionRepository) => {
-        repositoryRef = repo;
-        set({ _repository: repo });
-      },
+        adjustWeight: async (weight: number) => {
+          if (!voltraStoreRef) return;
+          try {
+            await voltraStoreRef.getState().setWeight(weight);
+          } catch (err) {
+            set({ error: `Failed to adjust weight: ${err}` });
+          }
+        },
 
-      bindCoachingStore: (store: CoachingStoreApi, config: ClaudeApiConfig) => {
-        coachingStoreRef = store;
-        claudeApiConfigRef = config;
-        set({ _coachingStore: store, _claudeApiConfig: config });
-      },
-    }),
-    { name: 'exercise-session-store' }
-  )
+        // =======================================================================
+        // Timer Ticks
+        // =======================================================================
+
+        tickRestTimer: () => {
+          tickRestTimerAction(get, set);
+        },
+
+        tickCountdown: () => {
+          const { startCountdown } = get();
+          const newCountdown = startCountdown - 1;
+
+          if (newCountdown <= 0) {
+            clearTimers();
+            transitionToRecording(get, set);
+          } else {
+            set({ startCountdown: newCountdown });
+          }
+        },
+
+        // =======================================================================
+        // Store Bindings
+        // =======================================================================
+
+        bindRecordingStore: (store: RecordingStoreApi) => {
+          recordingStoreRef = store;
+          set({ _recordingStore: store });
+        },
+
+        bindVoltraStore: (store: VoltraStoreApi) => {
+          voltraStoreRef = store;
+          set({ _voltraStore: store });
+        },
+
+        bindRepository: (repo: ExerciseSessionRepository) => {
+          repositoryRef = repo;
+          set({ _repository: repo });
+        },
+
+        bindCoachingStore: (store: CoachingStoreApi, config: ClaudeApiConfig) => {
+          coachingStoreRef = store;
+          claudeApiConfigRef = config;
+          set({ _coachingStore: store, _claudeApiConfig: config });
+        },
+      }),
+      { name: 'exercise-session-store' }
+    )
   );
 }
 
@@ -981,9 +979,10 @@ function handleContinueToRest(
   const arSets = updatedSession.plan.sets.filter((s) => !s.isWarmup).length;
   const autoReg = computeAutoRegulation(updatedSession, arGoal, arType, arSets);
 
-  const restSeconds = autoReg.restSeconds > 0
-    ? autoReg.restSeconds
-    : (originalSession.plan.defaultRestSeconds || DEFAULT_REST_SECONDS);
+  const restSeconds =
+    autoReg.restSeconds > 0
+      ? autoReg.restSeconds
+      : originalSession.plan.defaultRestSeconds || DEFAULT_REST_SECONDS;
   const sessionWithRest = startRest(updatedSession, restSeconds);
 
   set({
@@ -1131,11 +1130,7 @@ async function transitionToRecording(
       if (currentPlannedSet) {
         const currentWeight = voltraStoreRef.getState().weight;
         if (currentWeight !== currentPlannedSet.weight) {
-          console.log(
-            '[ExerciseSessionStore] Updating weight to',
-            currentPlannedSet.weight,
-            'lbs'
-          );
+          console.log('[ExerciseSessionStore] Updating weight to', currentPlannedSet.weight, 'lbs');
           await voltraStoreRef.getState().setWeight(currentPlannedSet.weight);
         }
       }
@@ -1165,7 +1160,7 @@ async function transitionToRecording(
 
 function configureAutoStop(
   get: () => ExerciseSessionState,
-  set: (state: Partial<ExerciseSessionState>) => void,
+  set: (state: Partial<ExerciseSessionState>) => void
 ): void {
   if (!recordingStoreRef) return;
 
@@ -1185,7 +1180,7 @@ function configureAutoStop(
 function handleAutoStop(
   get: () => ExerciseSessionState,
   set: (state: Partial<ExerciseSessionState>) => void,
-  velocityLossPct: number,
+  velocityLossPct: number
 ): void {
   if (!recordingStoreRef || get().uiState !== 'recording') return;
 

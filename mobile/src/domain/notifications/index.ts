@@ -16,9 +16,5 @@ export type { AudioCueType } from './audio-cue-service';
 export { speakCue, stopSpeaking, isTTSSupported } from './tts-service';
 
 // Rest timer cue orchestration
-export {
-  fireRestTimerCues,
-  getMatchingThreshold,
-  DEFAULT_CUE_THRESHOLDS,
-} from './rest-timer-cues';
+export { fireRestTimerCues, getMatchingThreshold, DEFAULT_CUE_THRESHOLDS } from './rest-timer-cues';
 export type { RestTimerCueSettings, CueThreshold } from './rest-timer-cues';

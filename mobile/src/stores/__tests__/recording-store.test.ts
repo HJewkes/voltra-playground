@@ -24,32 +24,16 @@ const mockIsDebugEnabled = vi.mocked(isDebugTelemetryEnabled);
 let sampleSeq = 0;
 let sampleTime = 1000;
 
-function createSample(
-  phase: MovementPhase,
-  overrides?: Partial<WorkoutSample>,
-): WorkoutSample {
+function createSample(phase: MovementPhase, overrides?: Partial<WorkoutSample>): WorkoutSample {
   return {
     sequence: sampleSeq++,
     timestamp: (sampleTime += 50),
     phase,
     position:
-      phase === MovementPhase.CONCENTRIC
-        ? 0.5
-        : phase === MovementPhase.ECCENTRIC
-          ? 0.3
-          : 0,
+      phase === MovementPhase.CONCENTRIC ? 0.5 : phase === MovementPhase.ECCENTRIC ? 0.3 : 0,
     velocity:
-      phase === MovementPhase.CONCENTRIC
-        ? 0.5
-        : phase === MovementPhase.ECCENTRIC
-          ? 0.3
-          : 0,
-    force:
-      phase === MovementPhase.CONCENTRIC
-        ? 100
-        : phase === MovementPhase.ECCENTRIC
-          ? 80
-          : 0,
+      phase === MovementPhase.CONCENTRIC ? 0.5 : phase === MovementPhase.ECCENTRIC ? 0.3 : 0,
+    force: phase === MovementPhase.CONCENTRIC ? 100 : phase === MovementPhase.ECCENTRIC ? 80 : 0,
     ...overrides,
   };
 }
@@ -58,7 +42,7 @@ function createSample(
 function feedPhases(
   process: (s: WorkoutSample) => void,
   phases: MovementPhase[],
-  samplesPerPhase = 3,
+  samplesPerPhase = 3
 ): void {
   for (const phase of phases) {
     for (let i = 0; i < samplesPerPhase; i++) {
@@ -263,9 +247,9 @@ describe('RecordingStore', () => {
       store.getState().processSample(createSample(MovementPhase.IDLE));
       const countBefore = store._getThrottleStats().setCallCount;
 
-      store.getState().processSample(
-        createSample(MovementPhase.CONCENTRIC, { timestamp: sampleTime + 1 }),
-      );
+      store
+        .getState()
+        .processSample(createSample(MovementPhase.CONCENTRIC, { timestamp: sampleTime + 1 }));
 
       expect(store._getThrottleStats().setCallCount).toBeGreaterThan(countBefore);
     });

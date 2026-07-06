@@ -9,7 +9,10 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createExerciseSessionStore, type ExerciseSessionStoreApi } from '../exercise-session-store';
+import {
+  createExerciseSessionStore,
+  type ExerciseSessionStoreApi,
+} from '../exercise-session-store';
 import { createRecordingStore, type RecordingStoreApi } from '../recording-store';
 import type { VoltraStoreApi } from '../voltra-store';
 import type { ExerciseSessionRepository } from '@/data/exercise-session';
@@ -116,7 +119,9 @@ describe('rest-timer cue wiring', () => {
 
   /** Complete a set so the store enters 'resting' and loads cue prefs, then clear cue spies. */
   async function enterRestWithLoadedCues(): Promise<void> {
-    store.getState().startSession(createTestExercise('bench'), planBuilder().workingSets(3).build());
+    store
+      .getState()
+      .startSession(createTestExercise('bench'), planBuilder().workingSets(3).build());
     await store.getState().onSetCompleted(mockCompletedSet({ weight: 135, repCount: 8 }));
     vi.mocked(triggerHaptic).mockClear();
     vi.mocked(triggerNotificationHaptic).mockClear();

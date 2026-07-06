@@ -73,11 +73,12 @@ export function ManualLogScreen() {
     void repo.getExerciseNames().then(setKnownNames);
   }, [repo]);
 
-  const canLog = exerciseName.trim().length > 0
-    && weight.length > 0
-    && reps.length > 0
-    && Number(weight) > 0
-    && Number(reps) > 0;
+  const canLog =
+    exerciseName.trim().length > 0 &&
+    weight.length > 0 &&
+    reps.length > 0 &&
+    Number(weight) > 0 &&
+    Number(reps) > 0;
 
   const handleLog = useCallback(async () => {
     if (!canLog) return;
@@ -112,9 +113,7 @@ export function ManualLogScreen() {
   const filteredSuggestions = useMemo(() => {
     if (!exerciseName.trim()) return knownNames.slice(0, 8);
     const lower = exerciseName.toLowerCase();
-    return knownNames
-      .filter((n) => n.toLowerCase().includes(lower))
-      .slice(0, 8);
+    return knownNames.filter((n) => n.toLowerCase().includes(lower)).slice(0, 8);
   }, [exerciseName, knownNames]);
 
   const grouped = useMemo(() => groupSetsByExercise(todaySets), [todaySets]);
@@ -126,9 +125,9 @@ export function ManualLogScreen() {
   }, []);
 
   return (
-    <SafeAreaView className="flex-1 bg-surface-400" edges={['top']}>
+    <SafeAreaView className="bg-surface-400 flex-1" edges={['top']}>
       {/* Header */}
-      <View className="flex-row items-center justify-center px-4 pt-2 pb-1 gap-2">
+      <View className="flex-row items-center justify-center gap-2 px-4 pb-1 pt-2">
         <Ionicons name="barbell-outline" size={18} color={t['brand-primary']} />
         <Text className="text-base font-bold text-text-primary">Log Free Weight Set</Text>
       </View>
@@ -140,7 +139,7 @@ export function ManualLogScreen() {
       >
         <View className="px-4 pb-4">
           {/* Entry form */}
-          <Surface elevation={1} className="mt-2 rounded-xl py-3 px-4">
+          <Surface elevation={1} className="mt-2 rounded-xl px-4 py-3">
             {/* Exercise name */}
             <View>
               <Label text="Exercise" />
@@ -172,7 +171,7 @@ export function ManualLogScreen() {
             </View>
 
             {/* Weight + Reps row */}
-            <View className="flex-row gap-3 mt-3">
+            <View className="mt-3 flex-row gap-3">
               <View className="flex-1">
                 <Label text="Weight (lbs)" />
                 <TextInput
@@ -204,12 +203,8 @@ export function ManualLogScreen() {
             </View>
 
             {/* Optional fields toggle row */}
-            <View className="flex-row gap-3 mt-3">
-              <ToggleChip
-                label="RPE"
-                active={showRpe}
-                onPress={() => setShowRpe((v) => !v)}
-              />
+            <View className="mt-3 flex-row gap-3">
+              <ToggleChip label="RPE" active={showRpe} onPress={() => setShowRpe((v) => !v)} />
               <ToggleChip
                 label="Notes"
                 active={showNotes}
@@ -256,33 +251,24 @@ export function ManualLogScreen() {
               accessibilityRole="button"
               accessibilityLabel="Log set"
             >
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>
-                Log Set
-              </Text>
+              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Log Set</Text>
             </TouchableOpacity>
           </Surface>
 
           {/* Today's logged sets */}
           {grouped.length > 0 && (
             <View className="mt-4">
-              <Text
-                className="text-sm font-semibold text-text-secondary mb-2 px-1"
-              >
+              <Text className="mb-2 px-1 text-sm font-semibold text-text-secondary">
                 Logged today
               </Text>
               {grouped.map((group) => (
                 <Surface
                   key={group.exerciseName}
                   elevation={1}
-                  className="rounded-xl py-2 px-3 mb-2"
+                  className="mb-2 rounded-xl px-3 py-2"
                 >
-                  <Text className="text-sm font-bold text-text-primary">
-                    {group.exerciseName}
-                  </Text>
-                  <Text
-                    className="text-xs text-text-secondary mt-0.5"
-                    numberOfLines={2}
-                  >
+                  <Text className="text-sm font-bold text-text-primary">{group.exerciseName}</Text>
+                  <Text className="mt-0.5 text-xs text-text-secondary" numberOfLines={2}>
                     {group.sets
                       .map((s) => {
                         let label = `${s.weight}x${s.reps}`;
@@ -306,11 +292,7 @@ export function ManualLogScreen() {
 // ---------------------------------------------------------------------------
 
 function Label({ text }: { text: string }) {
-  return (
-    <Text className="text-xs font-semibold text-text-secondary mb-1">
-      {text}
-    </Text>
-  );
+  return <Text className="mb-1 text-xs font-semibold text-text-secondary">{text}</Text>;
 }
 
 function SuggestionList({
@@ -350,9 +332,7 @@ function SuggestionList({
             activeOpacity={0.6}
             style={{ paddingVertical: 10, paddingHorizontal: 12 }}
           >
-            <Text style={{ color: t['text-primary'], fontSize: 14 }}>
-              {item}
-            </Text>
+            <Text style={{ color: t['text-primary'], fontSize: 14 }}>{item}</Text>
           </TouchableOpacity>
         )}
       />
@@ -380,9 +360,7 @@ function ToggleChip({
         paddingVertical: 6,
         paddingHorizontal: 12,
         borderRadius: 16,
-        backgroundColor: active
-          ? alpha(t['brand-primary'], 0.15)
-          : alpha('#fff', 0.06),
+        backgroundColor: active ? alpha(t['brand-primary'], 0.15) : alpha('#fff', 0.06),
         borderWidth: active ? 1 : 0,
         borderColor: active ? alpha(t['brand-primary'], 0.3) : 'transparent',
       }}
@@ -415,7 +393,7 @@ function RpeSelector({
   onChange: (v: number | null) => void;
 }) {
   return (
-    <View className="flex-row flex-wrap gap-2 mt-1">
+    <View className="mt-1 flex-row flex-wrap gap-2">
       {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
         const selected = value === n;
         return (
@@ -429,9 +407,7 @@ function RpeSelector({
               borderRadius: 18,
               alignItems: 'center',
               justifyContent: 'center',
-              backgroundColor: selected
-                ? t['brand-primary']
-                : alpha('#fff', 0.08),
+              backgroundColor: selected ? t['brand-primary'] : alpha('#fff', 0.08),
             }}
             accessibilityRole="button"
             accessibilityState={{ selected }}

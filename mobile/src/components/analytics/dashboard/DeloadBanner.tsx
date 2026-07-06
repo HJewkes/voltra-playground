@@ -32,28 +32,20 @@ export function DeloadBanner({ sessions, style }: DeloadBannerProps) {
   return (
     <Card elevation={1} style={[{ marginBottom: 16 }, style]}>
       <CardContent className="p-0">
-        <View
-          className="rounded-xl p-4"
-          style={{ backgroundColor: alpha(ACCENT, 0.06) }}
-        >
+        <View className="rounded-xl p-4" style={{ backgroundColor: alpha(ACCENT, 0.06) }}>
           <HStack align="center" gap={10}>
             <Ionicons name="bed-outline" size={24} color={ACCENT} />
             <View className="flex-1">
               <Text className="text-sm font-bold" style={{ color: ACCENT }}>
                 Deload Week Recommended
               </Text>
-              <Text className="mt-1 text-xs text-text-secondary">
-                {recommendation.message}
-              </Text>
+              <Text className="mt-1 text-xs text-text-secondary">{recommendation.message}</Text>
               <HStack gap={12} style={{ marginTop: 8 }}>
                 <StatPill
                   label="Volume"
                   value={`${Math.round((recommendation.volumeReduction ?? 0.65) * 100)}%`}
                 />
-                <StatPill
-                  label="Duration"
-                  value={`${recommendation.durationDays ?? 7}d`}
-                />
+                <StatPill label="Duration" value={`${recommendation.durationDays ?? 7}d`} />
               </HStack>
             </View>
           </HStack>

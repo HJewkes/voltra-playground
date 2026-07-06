@@ -72,11 +72,7 @@ export {
 export { autoPlanWorkout, type AutoPlan } from './auto-plan-service';
 
 // Programmatic plan loading (receive + validate + persist)
-export {
-  parseWorkoutPlanPayload,
-  loadWorkoutPlan,
-  type PlanLoadResult,
-} from './plan-load-service';
+export { parseWorkoutPlanPayload, loadWorkoutPlan, type PlanLoadResult } from './plan-load-service';
 
 // Strategies (for advanced usage)
 export * from './strategies';

@@ -23,7 +23,8 @@ export function detectBLEEnvironment(): BLEEnvironmentInfo {
     return {
       environment: 'web',
       bleSupported: forceMock || hasWebBluetooth,
-      warningMessage: !forceMock && !hasWebBluetooth ? 'Web Bluetooth is not supported in this browser' : null,
+      warningMessage:
+        !forceMock && !hasWebBluetooth ? 'Web Bluetooth is not supported in this browser' : null,
       isWeb: true,
       requiresUserGesture: !forceMock && hasWebBluetooth,
       forceMock,

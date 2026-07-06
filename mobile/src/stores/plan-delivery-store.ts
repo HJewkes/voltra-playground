@@ -49,7 +49,7 @@ export type PlanDeliveryStoreApi = StoreApi<PlanDeliveryState>;
  */
 export async function receiveWorkoutPlan(
   payload: unknown,
-  repo?: WorkoutPlanRepository,
+  repo?: WorkoutPlanRepository
 ): Promise<PlanLoadResult> {
   const result = await loadWorkoutPlan(payload, repo);
   if (result.ok) planDeliveryStore.getState().deliverPlan(result.plan);

@@ -74,7 +74,10 @@ describe('receiveWorkoutPlan', () => {
 
     expect(result.ok).toBe(true);
     expect(repo.saveWorkoutPlan).toHaveBeenCalledTimes(1);
-    expect(planDeliveryStore.getState().pendingPlan).toMatchObject({ id: 'plan-1', name: 'Push Day' });
+    expect(planDeliveryStore.getState().pendingPlan).toMatchObject({
+      id: 'plan-1',
+      name: 'Push Day',
+    });
   });
 
   it('accepts a valid plan delivered as a JSON string', async () => {

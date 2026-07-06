@@ -7,10 +7,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import {
-  parseWorkoutPlanPayload,
-  loadWorkoutPlan,
-} from '../plan-load-service';
+import { parseWorkoutPlanPayload, loadWorkoutPlan } from '../plan-load-service';
 import type { WorkoutPlan } from '@/domain/workout/models/workout-plan';
 import type { WorkoutPlanRepository } from '@/data/workout-plan';
 
@@ -104,7 +101,7 @@ describe('loadWorkoutPlan', () => {
     expect(result.ok).toBe(true);
     expect(repo.saveWorkoutPlan).toHaveBeenCalledTimes(1);
     expect(repo.saveWorkoutPlan).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'plan-1', name: 'Push Day' }),
+      expect.objectContaining({ id: 'plan-1', name: 'Push Day' })
     );
   });
 

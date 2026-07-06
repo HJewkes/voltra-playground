@@ -76,8 +76,6 @@ class WorkoutPlanRepositoryImpl implements WorkoutPlanRepository {
   }
 }
 
-export function createWorkoutPlanRepository(
-  adapter: StorageAdapter,
-): WorkoutPlanRepository {
+export function createWorkoutPlanRepository(adapter: StorageAdapter): WorkoutPlanRepository {
   return new WorkoutPlanRepositoryImpl(adapter);
 }

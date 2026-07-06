@@ -124,7 +124,7 @@ export function createCoachingStore(): CoachingStoreApi {
       set((s) => ({
         activeCue: null,
         sessionLog: s.sessionLog.map((e) =>
-          e.cue?.id === dismissed.id ? { ...e, cue: dismissed } : e,
+          e.cue?.id === dismissed.id ? { ...e, cue: dismissed } : e
         ),
       }));
 
@@ -136,7 +136,7 @@ export function createCoachingStore(): CoachingStoreApi {
     reactToCue: (cueId, reaction) => {
       set((s) => {
         const updatedLog = s.sessionLog.map((e) =>
-          e.cue?.id === cueId ? { ...e, cue: { ...e.cue!, reaction } } : e,
+          e.cue?.id === cueId ? { ...e, cue: { ...e.cue!, reaction } } : e
         );
         const updatedActive =
           s.activeCue?.id === cueId ? { ...s.activeCue, reaction } : s.activeCue;
@@ -158,8 +158,9 @@ export function createCoachingStore(): CoachingStoreApi {
 
     getReactedCues: () => {
       return get()
-        .sessionLog.filter((e): e is CoachingLogEntry & { cue: CoachingCue } =>
-          e.kind === 'cue' && e.cue != null && e.cue.reaction != null,
+        .sessionLog.filter(
+          (e): e is CoachingLogEntry & { cue: CoachingCue } =>
+            e.kind === 'cue' && e.cue != null && e.cue.reaction != null
         )
         .map((e) => e.cue);
     },

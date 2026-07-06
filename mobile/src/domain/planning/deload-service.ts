@@ -10,7 +10,10 @@
  */
 
 import type { StoredExerciseSession } from '@/data/exercise-session';
-import { computeTrainingLoad, computeVolumeBuckets } from '@/domain/history/services/cross-session-analytics';
+import {
+  computeTrainingLoad,
+  computeVolumeBuckets,
+} from '@/domain/history/services/cross-session-analytics';
 
 // =============================================================================
 // Types
@@ -64,7 +67,7 @@ const DELOAD_DURATION_DAYS = 7;
  */
 function countProgressiveOverloadStreak(
   sessions: StoredExerciseSession[],
-  maxWeeks: number = 6,
+  maxWeeks: number = 6
 ): number {
   const buckets = computeVolumeBuckets(sessions, 'weekly', maxWeeks);
   if (buckets.length < 2) return 0;
@@ -92,7 +95,7 @@ function countProgressiveOverloadStreak(
  */
 export function shouldDeload(
   sessions: StoredExerciseSession[],
-  config: DeloadConfig = DEFAULT_CONFIG,
+  config: DeloadConfig = DEFAULT_CONFIG
 ): boolean {
   const load = computeTrainingLoad(sessions);
   if (load.acwr > config.acwrThreshold) return true;
@@ -109,7 +112,7 @@ export function shouldDeload(
  */
 export function generateDeloadPlan(
   sessions: StoredExerciseSession[],
-  config: DeloadConfig = DEFAULT_CONFIG,
+  config: DeloadConfig = DEFAULT_CONFIG
 ): DeloadRecommendation {
   const load = computeTrainingLoad(sessions);
 

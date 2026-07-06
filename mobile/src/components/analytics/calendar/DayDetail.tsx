@@ -36,9 +36,7 @@ export function DayDetail({ day, dateLabel, onSessionPress }: DayDetailProps) {
     return (
       <View className="items-center py-8">
         <Ionicons name="calendar-outline" size={32} color={t['text-disabled']} />
-        <Text className="mt-2 text-sm text-text-disabled">
-          No workouts on {dateLabel}
-        </Text>
+        <Text className="mt-2 text-sm text-text-disabled">No workouts on {dateLabel}</Text>
       </View>
     );
   }
@@ -54,10 +52,7 @@ export function DayDetail({ day, dateLabel, onSessionPress }: DayDetailProps) {
 
       <VStack gap={2}>
         {day.sessions.map((session) => {
-          const totalReps = session.completedSets.reduce(
-            (sum, s) => sum + s.reps.length,
-            0
-          );
+          const totalReps = session.completedSets.reduce((sum, s) => sum + s.reps.length, 0);
           const isDiscovery = session.plan.generatedBy === 'discovery';
 
           return (
@@ -84,15 +79,11 @@ export function DayDetail({ day, dateLabel, onSessionPress }: DayDetailProps) {
                         {session.exerciseName ?? 'Exercise'}
                       </Text>
                       <Text className="text-xs text-text-disabled">
-                        {isDiscovery ? 'Discovery' : 'Training'} |{' '}
-                        {session.completedSets.length} sets | {totalReps} reps
+                        {isDiscovery ? 'Discovery' : 'Training'} | {session.completedSets.length}{' '}
+                        sets | {totalReps} reps
                       </Text>
                     </View>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={18}
-                      color={t['text-disabled']}
-                    />
+                    <Ionicons name="chevron-forward" size={18} color={t['text-disabled']} />
                   </View>
                 </CardContent>
               </Card>

@@ -5,7 +5,9 @@ import type { TextStyle, ViewStyle } from 'react-native';
  * Platform.select without `as any`. These properties (boxShadow, textShadow,
  * cursor, touchAction, etc.) are valid on React Native Web but not typed in RN.
  */
-export function webStyle(style: Record<string, string | number | undefined>): ViewStyle & TextStyle {
+export function webStyle(
+  style: Record<string, string | number | undefined>
+): ViewStyle & TextStyle {
   return style as unknown as ViewStyle & TextStyle;
 }
 

@@ -201,7 +201,10 @@ export function ExerciseScreen({
 
   const handleCancel = () => {
     // Stop any device activity and go back
-    voltraStore.getState().stopRecording().catch(() => {});
+    voltraStore
+      .getState()
+      .stopRecording()
+      .catch(() => {});
     onComplete?.();
   };
 
@@ -230,7 +233,7 @@ export function ExerciseScreen({
   // Results need scrolling, other states use flex layout
   if (uiState === 'results') {
     return (
-      <SafeAreaView className="bg-background flex-1" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-background" edges={['top']}>
         <ScrollView className="flex-1" contentContainerClassName="p-4">
           {session &&
             (isDiscovery && recommendation ? (
@@ -269,7 +272,7 @@ export function ExerciseScreen({
   }
 
   return (
-    <SafeAreaView className="bg-background flex-1" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <View className="flex-1 px-4 pt-2">
         {/* Progress indicator with exercise name + coaching log button */}
         {session && (
@@ -380,11 +383,7 @@ export function ExerciseScreen({
 
       {/* Coaching session log modal */}
       {coachingEnabled && (
-        <CoachingSessionLog
-          visible={logVisible}
-          entries={sessionLog}
-          onClose={handleToggleLog}
-        />
+        <CoachingSessionLog visible={logVisible} entries={sessionLog} onClose={handleToggleLog} />
       )}
     </SafeAreaView>
   );

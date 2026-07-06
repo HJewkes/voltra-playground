@@ -5,7 +5,14 @@
  */
 
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent, Metric, MetricGroup } from '@titan-design/react-ui';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  Metric,
+  MetricGroup,
+} from '@titan-design/react-ui';
 
 export interface AggregateStatsProps {
   totalWorkouts: number;

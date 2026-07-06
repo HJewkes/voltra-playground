@@ -49,7 +49,9 @@ export function InlineVariant({
         <Ionicons name="bluetooth" size={20} color={t['status-success']} />
         <View className="ml-3 flex-1">
           <Text className="text-sm font-semibold text-text-primary">{device.name}</Text>
-          <Text className="text-xs" style={{ color: t['status-success'] }}>Connected</Text>
+          <Text className="text-xs" style={{ color: t['status-success'] }}>
+            Connected
+          </Text>
         </View>
         <TouchableOpacity
           onPress={handleDisconnect}
@@ -79,7 +81,7 @@ export function InlineVariant({
             {isScanning || connectingDeviceId ? (
               <>
                 <ActivityIndicator size="small" color={t['brand-primary']} />
-                <Text className="ml-2 text-xs font-medium text-primary-500">
+                <Text className="text-primary-500 ml-2 text-xs font-medium">
                   {connectingDeviceId ? 'Connecting' : 'Scanning'}
                 </Text>
               </>
@@ -91,7 +93,9 @@ export function InlineVariant({
       </View>
       {error && (
         <View className="mt-2 flex-row items-center">
-          <Text className="flex-1 text-xs" style={{ color: t['status-error'] }}>{error}</Text>
+          <Text className="flex-1 text-xs" style={{ color: t['status-error'] }}>
+            {error}
+          </Text>
           <TouchableOpacity onPress={() => setError(null)}>
             <Ionicons name="close" size={14} color={t['text-disabled']} />
           </TouchableOpacity>

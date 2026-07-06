@@ -30,7 +30,14 @@ function freshDb(): SessionDatabase {
 }
 
 function sample(seq: number, phase: MovementPhase): WorkoutSample {
-  return { sequence: seq, timestamp: 1000 + seq, phase, position: seq * 0.1, velocity: 0.5, force: 100 };
+  return {
+    sequence: seq,
+    timestamp: 1000 + seq,
+    phase,
+    position: seq * 0.1,
+    velocity: 0.5,
+    force: 100,
+  };
 }
 
 function makeSet(setIndex: number, repCount = 2): StoredSessionSet {

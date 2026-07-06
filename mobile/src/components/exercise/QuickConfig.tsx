@@ -42,23 +42,14 @@ export function QuickConfig({
   disabled,
 }: QuickConfigProps) {
   const outerOpacity = disabled ? 0.4 : 1;
-  const pillLabel = effortEnabled
-    ? targetMode === 'reps' ? 'Reps' : 'RIR'
-    : 'Reps';
+  const pillLabel = effortEnabled ? (targetMode === 'reps' ? 'Reps' : 'RIR') : 'Reps';
 
   return (
-    <View
-      style={{ opacity: outerOpacity }}
-      pointerEvents={disabled ? 'none' : 'auto'}
-    >
+    <View style={{ opacity: outerOpacity }} pointerEvents={disabled ? 'none' : 'auto'}>
       <View className="flex-row items-center">
         {/* Left: Effort pill + ScrollDial */}
         <View style={{ flex: 1, alignItems: 'center' }}>
-          <EnablePill
-            label={pillLabel}
-            active={effortEnabled}
-            onPress={onCycleEffort}
-          />
+          <EnablePill label={pillLabel} active={effortEnabled} onPress={onCycleEffort} />
           <View className="mt-1.5">
             <ScrollDial
               value={targetValue}
@@ -67,9 +58,7 @@ export function QuickConfig({
               onChange={onTargetChange}
               formatValue={dashZero}
               activeColor={
-                effortEnabled && targetValue > 0
-                  ? t['brand-primary']
-                  : t['text-disabled']
+                effortEnabled && targetValue > 0 ? t['brand-primary'] : t['text-disabled']
               }
               disabled={!effortEnabled}
             />
@@ -77,17 +66,11 @@ export function QuickConfig({
         </View>
 
         {/* Center: Weight slot */}
-        <View style={{ flex: 1, alignItems: 'center', paddingTop: 26 }}>
-          {weightSlot}
-        </View>
+        <View style={{ flex: 1, alignItems: 'center', paddingTop: 26 }}>{weightSlot}</View>
 
         {/* Right: AddSetButton — paddingTop matches weight slot alignment */}
         <View style={{ flex: 1, alignItems: 'center', paddingTop: 26 }}>
-          <AddSetButton
-            onPress={onAddSet}
-            disabled={addSetDisabled}
-            setCount={setCount}
-          />
+          <AddSetButton onPress={onAddSet} disabled={addSetDisabled} setCount={setCount} />
         </View>
       </View>
     </View>
@@ -122,10 +105,9 @@ function EnablePill({
                   `0 1px 2px ${alpha('#000', 0.4)}`,
                   `inset 0 1px 0 ${alpha(t['brand-primary'], 0.15)}`,
                 ].join(', ')
-              : [
-                  `inset 0 1px 3px ${alpha('#000', 0.4)}`,
-                  `0 1px 0 ${alpha('#fff', 0.04)}`,
-                ].join(', '),
+              : [`inset 0 1px 3px ${alpha('#000', 0.4)}`, `0 1px 0 ${alpha('#fff', 0.04)}`].join(
+                  ', '
+                ),
           }),
           default: {
             shadowColor: '#000',
@@ -142,9 +124,11 @@ function EnablePill({
           fontWeight: active ? '700' : '500',
           color: active ? t['brand-primary'] : t['text-disabled'],
           ...Platform.select({
-            web: active ? webStyle({
-              textShadow: `0 0 8px ${alpha(t['brand-primary'], 0.4)}`,
-            }) : webStyle({}),
+            web: active
+              ? webStyle({
+                  textShadow: `0 0 8px ${alpha(t['brand-primary'], 0.4)}`,
+                })
+              : webStyle({}),
             default: {},
           }),
         }}

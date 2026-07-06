@@ -121,9 +121,7 @@ export function ModeDrawer({ currentMode, onSelect, onClose }: ModeDrawerProps) 
                   >
                     {TrainingModeNames[modeValue]}
                   </Text>
-                  <Text style={{ fontSize: 9, color: t['text-tertiary'] }}>
-                    {meta.desc}
-                  </Text>
+                  <Text style={{ fontSize: 9, color: t['text-tertiary'] }}>{meta.desc}</Text>
                 </View>
               </TouchableOpacity>
             );

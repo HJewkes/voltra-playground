@@ -44,8 +44,7 @@ export function interpolateVelocity(baseline: VelocityBaseline, weight: number):
 
   if (weight <= sorted[0].weight) {
     if (sorted.length < 2) return sorted[0].velocity;
-    const slope =
-      (sorted[1].velocity - sorted[0].velocity) / (sorted[1].weight - sorted[0].weight);
+    const slope = (sorted[1].velocity - sorted[0].velocity) / (sorted[1].weight - sorted[0].weight);
     return sorted[0].velocity + slope * (weight - sorted[0].weight);
   }
 

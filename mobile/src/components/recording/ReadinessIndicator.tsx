@@ -75,13 +75,8 @@ export function ReadinessIndicator({ assessment }: ReadinessIndicatorProps) {
           </Text>
         )}
       </View>
-      <View
-        className="px-6 py-4"
-        style={{ backgroundColor: 'rgba(0,0,0,0.15)' }}
-      >
-        <Text className="text-center text-sm font-medium text-white">
-          {adjustment.suggestion}
-        </Text>
+      <View className="px-6 py-4" style={{ backgroundColor: 'rgba(0,0,0,0.15)' }}>
+        <Text className="text-center text-sm font-medium text-white">{adjustment.suggestion}</Text>
       </View>
     </View>
   );

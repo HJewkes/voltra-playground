@@ -432,7 +432,11 @@ export function generateRepFromTargets(
   let currentTime = concentricResult.endTime;
   let currentSequence = concentricResult.endSequence;
 
-  let holdTopResult: GeneratedPhase = { samples: [], endTime: currentTime, endSequence: currentSequence };
+  let holdTopResult: GeneratedPhase = {
+    samples: [],
+    endTime: currentTime,
+    endSequence: currentSequence,
+  };
   if (resolved.hold.top > 0) {
     holdTopResult = generateHoldSamples(resolved.hold.top, resolved.rangeOfMotion, {
       ...fullConfig,
@@ -443,7 +447,11 @@ export function generateRepFromTargets(
     currentSequence = holdTopResult.endSequence;
   }
 
-  let eccentricResult: GeneratedPhase = { samples: [], endTime: currentTime, endSequence: currentSequence };
+  let eccentricResult: GeneratedPhase = {
+    samples: [],
+    endTime: currentTime,
+    endSequence: currentSequence,
+  };
   if (resolved.eccentric) {
     eccentricResult = generatePhaseSamples(MovementPhase.ECCENTRIC, resolved.eccentric, {
       ...fullConfig,
@@ -492,7 +500,10 @@ export function deepMerge<T extends object>(target: T, ...sources: Partial<T>[])
         targetValue !== null &&
         !Array.isArray(targetValue)
       ) {
-        target[key] = deepMerge({ ...targetValue }, sourceValue as Partial<typeof targetValue>) as T[keyof T];
+        target[key] = deepMerge(
+          { ...targetValue },
+          sourceValue as Partial<typeof targetValue>
+        ) as T[keyof T];
       } else if (sourceValue !== undefined) {
         target[key] = sourceValue as T[keyof T];
       }

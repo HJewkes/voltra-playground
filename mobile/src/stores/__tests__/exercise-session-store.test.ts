@@ -6,14 +6,13 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createExerciseSessionStore, type ExerciseSessionStoreApi } from '../exercise-session-store';
+import {
+  createExerciseSessionStore,
+  type ExerciseSessionStoreApi,
+} from '../exercise-session-store';
 import { createRecordingStore, type RecordingStoreApi } from '../recording-store';
 import type { VoltraStoreApi } from '../voltra-store';
-import {
-  planBuilder,
-  createTestExercise,
-  mockCompletedSet,
-} from '@/__fixtures__/generators';
+import { planBuilder, createTestExercise, mockCompletedSet } from '@/__fixtures__/generators';
 import type { ExerciseSessionRepository } from '@/data/exercise-session';
 
 // Mock @/domain/device to avoid react-native-ble-plx parse errors
@@ -467,5 +466,4 @@ describe('ExerciseSessionStore', () => {
       expect(store.getState().uiState).toBe('idle');
     });
   });
-
 });

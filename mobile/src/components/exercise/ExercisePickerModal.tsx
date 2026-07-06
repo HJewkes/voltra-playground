@@ -7,14 +7,7 @@
  */
 
 import React, { useMemo } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  ScrollView,
-  Modal,
-  Platform,
-} from 'react-native';
+import { View, Text, Pressable, ScrollView, Modal, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getSemanticColors, alpha } from '@titan-design/react-ui';
 import { webStyle } from '@/utils/web-style';
@@ -73,9 +66,7 @@ export function ExercisePickerModal({
   excludeIds = ['general'],
 }: ExercisePickerModalProps) {
   const grouped = useMemo(() => {
-    const exercises = Object.values(EXERCISE_CATALOG).filter(
-      (e) => !excludeIds.includes(e.id),
-    );
+    const exercises = Object.values(EXERCISE_CATALOG).filter((e) => !excludeIds.includes(e.id));
 
     const groups = new Map<MuscleGroup, Exercise[]>();
     for (const exercise of exercises) {
@@ -86,18 +77,15 @@ export function ExercisePickerModal({
       groups.set(primary, list);
     }
 
-    return GROUP_ORDER
-      .filter((g) => groups.has(g))
-      .map((g) => ({ group: g, label: MUSCLE_GROUP_LABELS[g], exercises: groups.get(g)! }));
+    return GROUP_ORDER.filter((g) => groups.has(g)).map((g) => ({
+      group: g,
+      label: MUSCLE_GROUP_LABELS[g],
+      exercises: groups.get(g)!,
+    }));
   }, [excludeIds]);
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <Pressable
         onPress={onClose}
         style={{
@@ -198,13 +186,7 @@ export function ExercisePickerModal({
   );
 }
 
-function ExerciseRow({
-  exercise,
-  onPress,
-}: {
-  exercise: Exercise;
-  onPress: () => void;
-}) {
+function ExerciseRow({ exercise, onPress }: { exercise: Exercise; onPress: () => void }) {
   const setup = exercise.equipmentSetup;
   const cableLabel = setup?.cablePath
     ? `${CABLE_ICON[setup.cablePath] ?? ''} ${setup.cablePath}`
@@ -232,15 +214,10 @@ function ExerciseRow({
         {setup && (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 }}>
             {cableLabel && (
-              <Text style={{ fontSize: 11, color: t['text-tertiary'] }}>
-                {cableLabel}
-              </Text>
+              <Text style={{ fontSize: 11, color: t['text-tertiary'] }}>{cableLabel}</Text>
             )}
             {setup.attachment && (
-              <Text
-                style={{ fontSize: 11, color: t['text-tertiary'], flex: 1 }}
-                numberOfLines={1}
-              >
+              <Text style={{ fontSize: 11, color: t['text-tertiary'], flex: 1 }} numberOfLines={1}>
                 {setup.attachment}
               </Text>
             )}

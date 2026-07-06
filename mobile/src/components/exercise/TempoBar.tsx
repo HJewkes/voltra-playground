@@ -17,7 +17,7 @@ const t = getSemanticColors('dark');
 
 export const TEMPO_PACING = {
   behindThresholdPct: 0.15,
-  aheadThresholdPct: 0.20,
+  aheadThresholdPct: 0.2,
   minPhaseDurationMs: 500,
   colorTransitionMs: 300,
 };
@@ -61,7 +61,12 @@ const PHASE_CONFIG: Record<number, { label: string; color: string; flex: number 
   [MovementPhase.ECCENTRIC]: { label: 'Ecc', color: t['status-warning'], flex: 3 },
 };
 
-export function TempoBar({ currentPhase, phaseElapsedMs, repPhaseDurations, targetTempo }: TempoBarProps) {
+export function TempoBar({
+  currentPhase,
+  phaseElapsedMs,
+  repPhaseDurations,
+  targetTempo,
+}: TempoBarProps) {
   const isIdle = currentPhase === MovementPhase.IDLE;
   const completedPhases = new Map(repPhaseDurations.map((d) => [d.phase, d.durationMs]));
 
@@ -106,11 +111,7 @@ export function TempoBar({ currentPhase, phaseElapsedMs, repPhaseDurations, targ
                   targetMs={targetMs}
                 />
               ) : isCompleted ? (
-                <CompletedSegment
-                  config={config}
-                  completedMs={completedMs!}
-                  targetMs={targetMs}
-                />
+                <CompletedSegment config={config} completedMs={completedMs!} targetMs={targetMs} />
               ) : null}
             </View>
           );
@@ -170,20 +171,21 @@ function CompletedSegment({
 }) {
   const pacing = getPacingState(completedMs, targetMs);
   const hitTarget = pacing !== 'behind';
-  const indicator = targetMs && targetMs >= TEMPO_PACING.minPhaseDurationMs
-    ? (hitTarget ? ' \u2713' : ' \u2717')
-    : '';
+  const indicator =
+    targetMs && targetMs >= TEMPO_PACING.minPhaseDurationMs
+      ? hitTarget
+        ? ' \u2713'
+        : ' \u2717'
+      : '';
 
   return (
     <View
       className="h-full flex-row items-center justify-center"
       style={{ backgroundColor: alpha(config.color, 0.15) }}
     >
-      <Text
-        className="text-xs font-medium"
-        style={{ color: alpha(config.color, 0.7) }}
-      >
-        {formatDuration(completedMs)}{indicator}
+      <Text className="text-xs font-medium" style={{ color: alpha(config.color, 0.7) }}>
+        {formatDuration(completedMs)}
+        {indicator}
       </Text>
     </View>
   );

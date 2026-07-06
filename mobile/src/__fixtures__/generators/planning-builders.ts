@@ -585,7 +585,8 @@ class PlanningContextBuilder {
         const t = this.targets.sessionMetrics as SessionMetricsTargets;
         if (t.fatigueLevel !== undefined) builder.fatigueLevel(t.fatigueLevel);
         if (t.isJunkVolume !== undefined) builder.isJunkVolume(t.isJunkVolume);
-        if (t.velocityRecoveryPercent !== undefined) builder.velocityRecoveryPercent(t.velocityRecoveryPercent);
+        if (t.velocityRecoveryPercent !== undefined)
+          builder.velocityRecoveryPercent(t.velocityRecoveryPercent);
         if (t.repDropPercent !== undefined) builder.repDropPercent(t.repDropPercent);
         if (t.estimated1RM !== undefined) builder.estimated1RM(t.estimated1RM);
         if (t.strengthConfidence !== undefined) builder.strengthConfidence(t.strengthConfidence);
@@ -599,7 +600,10 @@ class PlanningContextBuilder {
     // Resolve historical metrics
     let historicalMetrics: HistoricalMetrics | null = null;
     if (this.targets.historicalMetrics) {
-      if ('sessionCount' in this.targets.historicalMetrics && 'recentEstimated1RM' in this.targets.historicalMetrics) {
+      if (
+        'sessionCount' in this.targets.historicalMetrics &&
+        'recentEstimated1RM' in this.targets.historicalMetrics
+      ) {
         historicalMetrics = this.targets.historicalMetrics as HistoricalMetrics;
       } else {
         const builder = historicalMetricsBuilder();
@@ -609,7 +613,8 @@ class PlanningContextBuilder {
         if (t.lastWorkingWeight !== undefined) builder.lastWorkingWeight(t.lastWorkingWeight);
         if (t.avgRepsAtWeight !== undefined) builder.avgRepsAtWeight(t.avgRepsAtWeight);
         if (t.sessionCount !== undefined) builder.sessionCount(t.sessionCount);
-        if (t.daysSinceLastSession !== undefined) builder.daysSinceLastSession(t.daysSinceLastSession);
+        if (t.daysSinceLastSession !== undefined)
+          builder.daysSinceLastSession(t.daysSinceLastSession);
         if (t.velocityBaseline !== undefined) builder.velocityBaseline(t.velocityBaseline);
         historicalMetrics = builder.build();
       }
@@ -692,5 +697,10 @@ export function planningContextBuilder(): PlanningContextBuilder {
 // Export Types and Builders
 // =============================================================================
 
-export type { HistoricalMetricsBuilder, SessionMetricsBuilder, DiscoverySetResultBuilder, PlanningContextBuilder };
+export type {
+  HistoricalMetricsBuilder,
+  SessionMetricsBuilder,
+  DiscoverySetResultBuilder,
+  PlanningContextBuilder,
+};
 export { TrainingGoal, TrainingLevel };

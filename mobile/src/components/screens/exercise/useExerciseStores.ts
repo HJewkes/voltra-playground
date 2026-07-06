@@ -26,7 +26,7 @@ export function useExerciseStores(voltraStore: VoltraStoreApi) {
       inverseChains: s.inverseChains,
       setChains: s.setChains,
       setInverseChains: s.setInverseChains,
-    })),
+    }))
   );
 
   const recording = useStore(
@@ -42,7 +42,7 @@ export function useExerciseStores(voltraStore: VoltraStoreApi) {
       liveSamples: s.liveSamples,
       meanVelocity: s.meanVelocity,
       velocityLoss: s.velocityLoss,
-    })),
+    }))
   );
 
   const session = useStore(
@@ -55,7 +55,7 @@ export function useExerciseStores(voltraStore: VoltraStoreApi) {
       currentPlannedSet: s.currentPlannedSet,
       session: s.session,
       autoRegulation: s.autoRegulation,
-    })),
+    }))
   );
 
   return { recordingStore, sessionStore, device, recording, session } as const;

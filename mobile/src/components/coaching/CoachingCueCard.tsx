@@ -90,7 +90,7 @@ export function CoachingCueCard({ cue, onDismiss, onReact }: CoachingCueCardProp
     (reaction: AthleteReaction) => {
       onReact(cue.id, reaction);
     },
-    [cue.id, onReact],
+    [cue.id, onReact]
   );
 
   return (
@@ -106,11 +106,21 @@ export function CoachingCueCard({ cue, onDismiss, onReact }: CoachingCueCardProp
           <HStack align="center" gap={10}>
             <Ionicons name={colors.icon} size={24} color={colors.accent} />
             <View className="flex-1">
-              <Text className="text-xs font-semibold uppercase tracking-wider" style={{ color: colors.accent }}>
-                {cue.type === 'load_adjustment' ? 'Load Adjustment' : cue.type === 'encouragement' ? 'Coach' : 'Insight'}
+              <Text
+                className="text-xs font-semibold uppercase tracking-wider"
+                style={{ color: colors.accent }}
+              >
+                {cue.type === 'load_adjustment'
+                  ? 'Load Adjustment'
+                  : cue.type === 'encouragement'
+                    ? 'Coach'
+                    : 'Insight'}
               </Text>
             </View>
-            <TouchableOpacity onPress={onDismiss} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <TouchableOpacity
+              onPress={onDismiss}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
               <Ionicons name="close" size={20} color={t['text-disabled']} />
             </TouchableOpacity>
           </HStack>
@@ -136,7 +146,9 @@ export function CoachingCueCard({ cue, onDismiss, onReact }: CoachingCueCardProp
               className="flex-row items-center rounded-full px-3 py-1.5"
               style={{
                 backgroundColor:
-                  cue.reaction === 'thumbs_up' ? alpha(t['status-success'], 0.2) : alpha(t['text-disabled'], 0.1),
+                  cue.reaction === 'thumbs_up'
+                    ? alpha(t['status-success'], 0.2)
+                    : alpha(t['text-disabled'], 0.1),
               }}
               onPress={() => handleReact(cue.reaction === 'thumbs_up' ? null : 'thumbs_up')}
               activeOpacity={0.7}
@@ -148,7 +160,9 @@ export function CoachingCueCard({ cue, onDismiss, onReact }: CoachingCueCardProp
               />
               <Text
                 className="ml-1 text-xs font-medium"
-                style={{ color: cue.reaction === 'thumbs_up' ? t['status-success'] : t['text-disabled'] }}
+                style={{
+                  color: cue.reaction === 'thumbs_up' ? t['status-success'] : t['text-disabled'],
+                }}
               >
                 Helpful
               </Text>
@@ -158,7 +172,9 @@ export function CoachingCueCard({ cue, onDismiss, onReact }: CoachingCueCardProp
               className="flex-row items-center rounded-full px-3 py-1.5"
               style={{
                 backgroundColor:
-                  cue.reaction === 'thumbs_down' ? alpha(t['status-error'], 0.2) : alpha(t['text-disabled'], 0.1),
+                  cue.reaction === 'thumbs_down'
+                    ? alpha(t['status-error'], 0.2)
+                    : alpha(t['text-disabled'], 0.1),
               }}
               onPress={() => handleReact(cue.reaction === 'thumbs_down' ? null : 'thumbs_down')}
               activeOpacity={0.7}
@@ -170,7 +186,9 @@ export function CoachingCueCard({ cue, onDismiss, onReact }: CoachingCueCardProp
               />
               <Text
                 className="ml-1 text-xs font-medium"
-                style={{ color: cue.reaction === 'thumbs_down' ? t['status-error'] : t['text-disabled'] }}
+                style={{
+                  color: cue.reaction === 'thumbs_down' ? t['status-error'] : t['text-disabled'],
+                }}
               >
                 Not useful
               </Text>

@@ -2,13 +2,13 @@ import { describe, it, expect } from 'vitest';
 import { computeClusterMeanVelocity } from '../set-log-utils';
 import { getSetMeanVelocity, estimateSetRIR } from '@voltras/workout-analytics';
 
-import {
-  mockCompletedSet,
-  mockRep,
-} from '@/__fixtures__/generators/mock-helpers';
+import { mockCompletedSet, mockRep } from '@/__fixtures__/generators/mock-helpers';
 import type { SetLogEntry, ClusterBoundary, PlannedSet } from '@/domain/workout';
 
-function makeSetLogEntry(overrides: Parameters<typeof mockCompletedSet>[0] = {}, clusters: ClusterBoundary[] = []): SetLogEntry {
+function makeSetLogEntry(
+  overrides: Parameters<typeof mockCompletedSet>[0] = {},
+  clusters: ClusterBoundary[] = []
+): SetLogEntry {
   return {
     set: mockCompletedSet(overrides),
     clusters,
@@ -34,7 +34,7 @@ describe('computeClusterMeanVelocity', () => {
     const result = computeClusterMeanVelocity(reps, cluster);
 
     // getRepPeakVelocity returns concentric.peakVelocity = velocity * 1.3
-    const expected = ((0.6 * 1.3) + (0.5 * 1.3)) / 2;
+    const expected = (0.6 * 1.3 + 0.5 * 1.3) / 2;
     expect(result).toBeCloseTo(expected, 4);
   });
 
@@ -86,13 +86,13 @@ describe('SetLogEntry data access patterns', () => {
 
     const firstClusterReps = entry.set.data.reps.slice(
       entry.clusters[0].repStart,
-      entry.clusters[0].repEnd,
+      entry.clusters[0].repEnd
     );
     expect(firstClusterReps.length).toBe(3);
 
     const secondClusterReps = entry.set.data.reps.slice(
       entry.clusters[1].repStart,
-      entry.clusters[1].repEnd,
+      entry.clusters[1].repEnd
     );
     expect(secondClusterReps.length).toBe(2);
   });

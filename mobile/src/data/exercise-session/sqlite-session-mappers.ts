@@ -27,7 +27,10 @@ function nullToUndef<T>(value: T | null): T | undefined {
 }
 
 /** INSERT params for the exercise_sessions row. */
-export function sessionInsertParams(session: StoredExerciseSession, createdOrder: number): Scalar[] {
+export function sessionInsertParams(
+  session: StoredExerciseSession,
+  createdOrder: number
+): Scalar[] {
   return [
     session.id,
     session.exerciseId,
@@ -66,8 +69,22 @@ export function setInsertParams(sessionId: string, set: StoredSessionSet): Scala
 export function telemetrySampleParams(sessionId: string, set: StoredSessionSet): Scalar[][] {
   const rows: Scalar[][] = [];
   for (const rep of set.reps) {
-    pushSamples(rows, sessionId, set.setIndex, rep.repNumber, PHASE_CONCENTRIC, rep.concentric.samples);
-    pushSamples(rows, sessionId, set.setIndex, rep.repNumber, PHASE_ECCENTRIC, rep.eccentric.samples);
+    pushSamples(
+      rows,
+      sessionId,
+      set.setIndex,
+      rep.repNumber,
+      PHASE_CONCENTRIC,
+      rep.concentric.samples
+    );
+    pushSamples(
+      rows,
+      sessionId,
+      set.setIndex,
+      rep.repNumber,
+      PHASE_ECCENTRIC,
+      rep.eccentric.samples
+    );
   }
   if (set.rawSamples) {
     pushSamples(rows, sessionId, set.setIndex, RAW_REP_NUMBER, PHASE_RAW, set.rawSamples);
@@ -104,8 +121,7 @@ export function rowToSession(
     completedSets: setRows.map((setRow) => rowToSet(setRow, telemetryRows)),
     status: sessionRow.status as StoredExerciseSession['status'],
     terminationReason: nullToUndef(sessionRow.termination_reason) as
-      | StoredExerciseSession['terminationReason']
-      | undefined,
+      StoredExerciseSession['terminationReason'] | undefined,
     schemaVersion: nullToUndef(sessionRow.schema_version) as number | undefined,
     notes: nullToUndef(sessionRow.notes) as string | undefined,
   };

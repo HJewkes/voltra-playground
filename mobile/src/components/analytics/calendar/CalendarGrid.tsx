@@ -86,11 +86,14 @@ export function CalendarGrid({
                   className="h-9 w-9 items-center justify-center rounded-full"
                   style={[
                     isSelected && { backgroundColor: t['brand-primary'] },
-                    isToday && !isSelected && {
-                      borderWidth: 1,
-                      borderColor: t['brand-primary'],
-                    },
-                  ].filter(Boolean).reduce((acc, s) => ({ ...acc, ...s }), {})}
+                    isToday &&
+                      !isSelected && {
+                        borderWidth: 1,
+                        borderColor: t['brand-primary'],
+                      },
+                  ]
+                    .filter(Boolean)
+                    .reduce((acc, s) => ({ ...acc, ...s }), {})}
                 >
                   <Text
                     style={{

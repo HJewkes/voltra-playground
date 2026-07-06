@@ -11,7 +11,11 @@
  * - Requires 2+ consecutive reps exceeding threshold (filters single bad reps)
  */
 
-import { type Set as AnalyticsSet, getSetVelocityLossPct, getRepPeakVelocity } from '@voltras/workout-analytics';
+import {
+  type Set as AnalyticsSet,
+  getSetVelocityLossPct,
+  getRepPeakVelocity,
+} from '@voltras/workout-analytics';
 
 // =============================================================================
 // Types
@@ -59,7 +63,7 @@ export function evaluateAutoStop(
   analyticsSet: AnalyticsSet,
   tracker: VelocityAutoStopTracker,
   config: VelocityAutoStopConfig,
-  isWarmup: boolean,
+  isWarmup: boolean
 ): VelocityAutoStopResult {
   const repCount = analyticsSet.reps.length;
   const velocityLossPct = Math.abs(getSetVelocityLossPct(analyticsSet));

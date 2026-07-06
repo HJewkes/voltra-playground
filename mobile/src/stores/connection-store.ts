@@ -499,4 +499,3 @@ export const selectBleEnvironment = (): BLEEnvironmentInfo => {
 /** Whether a device is connected */
 export const selectIsConnected = (state: ConnectionStoreState) =>
   !!(state.primaryDeviceId && state.devices.has(state.primaryDeviceId));
-

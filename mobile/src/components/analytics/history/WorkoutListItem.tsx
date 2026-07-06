@@ -7,7 +7,15 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card, HStack, ListItem, ListItemContent, ListItemTrailing, getSemanticColors, alpha } from '@titan-design/react-ui';
+import {
+  Card,
+  HStack,
+  ListItem,
+  ListItemContent,
+  ListItemTrailing,
+  getSemanticColors,
+  alpha,
+} from '@titan-design/react-ui';
 import type { CompletedSet } from '@/domain/workout';
 import { estimateSetRIR } from '@voltras/workout-analytics';
 
@@ -52,9 +60,7 @@ export function WorkoutListItem({ workout, onPress, onLongPress }: WorkoutListIt
         <ListItemTrailing>
           <HStack gap={2} align="center">
             <View className="mr-2 items-end">
-              <Text className="text-base font-bold text-brand-primary">
-                {repCount} reps
-              </Text>
+              <Text className="text-base font-bold text-brand-primary">{repCount} reps</Text>
               <Text className="text-sm text-text-tertiary">{workout.weight} lbs</Text>
             </View>
             {avgRPE > 0 && (

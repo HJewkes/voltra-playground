@@ -267,11 +267,7 @@ export interface PlanResult {
 
   /** If stopping, why? */
   stopReason?:
-    | 'target_reached'
-    | 'fatigue_limit'
-    | 'junk_volume'
-    | 'velocity_grinding'
-    | 'user_requested';
+    'target_reached' | 'fatigue_limit' | 'junk_volume' | 'velocity_grinding' | 'user_requested';
 
   /** For discovery: next step instead of planned set */
   discoveryStep?: DiscoveryStep;

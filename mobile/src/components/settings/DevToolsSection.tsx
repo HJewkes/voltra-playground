@@ -118,7 +118,7 @@ export function DevToolsSection() {
 
   const renderRecordingItem = ({ item }: { item: SampleRecording }) => (
     <TouchableOpacity
-      className="border-border flex-row items-center justify-between border-b px-4 py-3"
+      className="flex-row items-center justify-between border-b border-border px-4 py-3"
       onPress={() => handleReplaySelect(item)}
     >
       <View className="flex-1">
@@ -142,7 +142,7 @@ export function DevToolsSection() {
 
         <VStack gap={4}>
           {/* Storage Stats */}
-          <View className="rounded-lg bg-surface-300 p-3">
+          <View className="bg-surface-300 rounded-lg p-3">
             <Text className="mb-2 text-xs uppercase text-text-disabled">Storage Stats</Text>
             <View className="flex-row justify-between">
               <Text className="text-text-secondary">Sessions</Text>
@@ -179,7 +179,12 @@ export function DevToolsSection() {
                 isLoading={isSeeding}
                 loadingText="Seeding..."
               >
-                <Ionicons name="cloud-download" size={20} color="#f97316" style={{ marginRight: 8 }} />
+                <Ionicons
+                  name="cloud-download"
+                  size={20}
+                  color="#f97316"
+                  style={{ marginRight: 8 }}
+                />
                 <ButtonText className="text-brand-primary">Seed Data</ButtonText>
               </Button>
             </View>
@@ -218,7 +223,7 @@ export function DevToolsSection() {
               </TouchableOpacity>
 
               {showRecordings && (
-                <View className="max-h-48 overflow-hidden rounded-lg bg-surface-300">
+                <View className="bg-surface-300 max-h-48 overflow-hidden rounded-lg">
                   <FlatList
                     data={recordings}
                     keyExtractor={(item) => item.id}

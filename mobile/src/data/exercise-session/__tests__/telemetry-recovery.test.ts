@@ -55,7 +55,9 @@ function inProgressSession(overrides: Partial<StoredExerciseSession> = {}): Stor
   };
 }
 
-async function seedInProgressSession(overrides: Partial<StoredExerciseSession> = {}): Promise<void> {
+async function seedInProgressSession(
+  overrides: Partial<StoredExerciseSession> = {}
+): Promise<void> {
   await repo.save(inProgressSession(overrides));
   await repo.setCurrent('live-session');
 }
@@ -114,7 +116,12 @@ describe('crash recovery round-trip', () => {
         },
       ],
     });
-    const stream = generateSampleStream({ repCount: 3, weight: 100, startingVelocity: 0.7, startTime: 3000 });
+    const stream = generateSampleStream({
+      repCount: 3,
+      weight: 100,
+      startingVelocity: 0.7,
+      startTime: 3000,
+    });
 
     startSetBuffer('live-session', 1);
     for (const s of stream) bufferSample(s);
@@ -130,7 +137,12 @@ describe('crash recovery round-trip', () => {
 describe('no double-count', () => {
   it('a normally-completed set leaves nothing to recover', async () => {
     await seedInProgressSession();
-    const stream = generateSampleStream({ repCount: 3, weight: 100, startingVelocity: 0.7, startTime: 1000 });
+    const stream = generateSampleStream({
+      repCount: 3,
+      weight: 100,
+      startingVelocity: 0.7,
+      startTime: 1000,
+    });
 
     startSetBuffer('live-session', 0);
     for (const s of stream) bufferSample(s);
@@ -160,7 +172,12 @@ describe('persistence-failure guard', () => {
     // None of these may throw even though every db op fails.
     expect(() => startSetBuffer('live-session', 0)).not.toThrow();
     expect(() => {
-      for (const s of generateSampleStream({ repCount: 2, weight: 100, startingVelocity: 0.7, startTime: 1000 })) {
+      for (const s of generateSampleStream({
+        repCount: 2,
+        weight: 100,
+        startingVelocity: 0.7,
+        startTime: 1000,
+      })) {
         bufferSample(s);
       }
     }).not.toThrow();
@@ -185,7 +202,7 @@ describe('persistence-failure guard', () => {
   it('bufferSample with no active set is a safe no-op', () => {
     _resetTelemetryRecovery(`recovery-${dbCounter}`);
     expect(() =>
-      bufferSample({ sequence: 0, timestamp: 0, phase: 0, position: 0, velocity: 0, force: 0 }),
+      bufferSample({ sequence: 0, timestamp: 0, phase: 0, position: 0, velocity: 0, force: 0 })
     ).not.toThrow();
   });
 });

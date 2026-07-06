@@ -36,7 +36,7 @@ describe('extractPickerSummary', () => {
     // First set has highest velocity (no fatigue multiplier)
     expect(summary!.bestMeanVelocity).toBeGreaterThan(0);
     expect(summary!.bestMeanVelocity).toBe(
-      Math.max(...session.completedSets.map((s) => s.meanVelocity)),
+      Math.max(...session.completedSets.map((s) => s.meanVelocity))
     );
   });
 

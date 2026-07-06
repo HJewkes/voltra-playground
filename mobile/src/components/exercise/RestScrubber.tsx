@@ -40,35 +40,40 @@ export function RestScrubber({
   mode,
   elapsedMs = 0,
 }: RestScrubberProps) {
-  const progress = mode === 'resting'
-    ? Math.min(1, elapsedMs / (restSeconds * 1000))
-    : mode === 'complete' ? 1 : 0;
+  const progress =
+    mode === 'resting'
+      ? Math.min(1, elapsedMs / (restSeconds * 1000))
+      : mode === 'complete'
+        ? 1
+        : 0;
 
   const elapsedS = Math.round(elapsedMs / 1000);
 
-  const trackColor = mode === 'resting'
-    ? alpha(t['brand-primary'], 0.2)
-    : alpha(t['text-disabled'], 0.08);
+  const trackColor =
+    mode === 'resting' ? alpha(t['brand-primary'], 0.2) : alpha(t['text-disabled'], 0.08);
 
-  const fillColor = mode === 'resting'
-    ? t['brand-primary']
-    : alpha(t['text-disabled'], 0.25);
+  const fillColor = mode === 'resting' ? t['brand-primary'] : alpha(t['text-disabled'], 0.25);
 
-  const label = mode === 'resting'
-    ? `${formatTime(elapsedS)} / ${formatTime(restSeconds)}`
-    : formatTime(restSeconds);
+  const label =
+    mode === 'resting'
+      ? `${formatTime(elapsedS)} / ${formatTime(restSeconds)}`
+      : formatTime(restSeconds);
 
   return (
     <View style={{ height: SCRUBBER_HEIGHT, justifyContent: 'center', paddingHorizontal: 12 }}>
       {/* Track — always visible */}
-      <View style={{ height: 3, borderRadius: 1.5, backgroundColor: trackColor, overflow: 'hidden' }}>
+      <View
+        style={{ height: 3, borderRadius: 1.5, backgroundColor: trackColor, overflow: 'hidden' }}
+      >
         {progress > 0 && (
-          <View style={{
-            height: '100%',
-            width: `${progress * 100}%`,
-            borderRadius: 1.5,
-            backgroundColor: fillColor,
-          }} />
+          <View
+            style={{
+              height: '100%',
+              width: `${progress * 100}%`,
+              borderRadius: 1.5,
+              backgroundColor: fillColor,
+            }}
+          />
         )}
       </View>
 
@@ -89,20 +94,23 @@ export function RestScrubber({
             fontSize={11}
           />
         ) : (
-          <View style={{
-            paddingHorizontal: 8,
-            paddingVertical: 2,
-            borderRadius: 8,
-            backgroundColor: mode === 'resting'
-              ? alpha(t['brand-primary'], 0.25)
-              : alpha('#000', 0.6),
-          }}>
-            <Text style={{
-              fontSize: 10,
-              fontWeight: '600',
-              color: mode === 'resting' ? t['brand-primary'] : t['text-secondary'],
-              fontVariant: ['tabular-nums'],
-            }}>
+          <View
+            style={{
+              paddingHorizontal: 8,
+              paddingVertical: 2,
+              borderRadius: 8,
+              backgroundColor:
+                mode === 'resting' ? alpha(t['brand-primary'], 0.25) : alpha('#000', 0.6),
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 10,
+                fontWeight: '600',
+                color: mode === 'resting' ? t['brand-primary'] : t['text-secondary'],
+                fontVariant: ['tabular-nums'],
+              }}
+            >
               {label}
             </Text>
           </View>

@@ -28,10 +28,7 @@ export function VelocityWarning({ warning, style }: VelocityWarningProps) {
   const color = t[config.colorKey];
 
   return (
-    <View
-      className="rounded-xl px-4 py-3"
-      style={[{ backgroundColor: alpha(color, 0.08) }, style]}
-    >
+    <View className="rounded-xl px-4 py-3" style={[{ backgroundColor: alpha(color, 0.08) }, style]}>
       <HStack align="center" gap={10}>
         <Ionicons name={config.icon} size={22} color={color} />
         <View className="flex-1">

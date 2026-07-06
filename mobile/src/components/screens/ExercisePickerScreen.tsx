@@ -24,7 +24,15 @@ import { type ExercisePlan, createStandardPlan, createDiscoveryPlan } from '@/do
 
 // Component imports
 import { WeightPicker } from '@/components/ui';
-import { Card, CardContent, HStack, Button, ButtonText, getSemanticColors, alpha } from '@titan-design/react-ui';
+import {
+  Card,
+  CardContent,
+  HStack,
+  Button,
+  ButtonText,
+  getSemanticColors,
+  alpha,
+} from '@titan-design/react-ui';
 import { ExerciseSelector, GoalPicker } from '@/components/planning';
 
 const t = getSemanticColors('dark');
@@ -117,9 +125,9 @@ export function ExercisePickerScreen({ onStartSession, onBack }: ExercisePickerS
   ]);
 
   return (
-    <SafeAreaView className="bg-background flex-1" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       {/* Header */}
-      <View className="flex-row items-center border-b border-surface-100 px-4 py-3">
+      <View className="border-surface-100 flex-row items-center border-b px-4 py-3">
         {onBack && (
           <TouchableOpacity
             onPress={onBack}

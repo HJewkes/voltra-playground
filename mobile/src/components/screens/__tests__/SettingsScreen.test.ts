@@ -3,8 +3,12 @@ import { describe, it, expect, vi } from 'vitest';
 vi.mock('@/domain/device', () => ({
   VoltraManager: vi.fn(),
   detectBLEEnvironment: () => ({
-    environment: 'node', bleSupported: true, warningMessage: null,
-    isWeb: false, requiresUserGesture: false, forceMock: false,
+    environment: 'node',
+    bleSupported: true,
+    warningMessage: null,
+    isWeb: false,
+    requiresUserGesture: false,
+    forceMock: false,
   }),
 }));
 
@@ -48,7 +52,7 @@ describe('SettingsScreen', () => {
     const path = await import('path');
     const indexPath = path.resolve(__dirname, '../index.ts');
     const content = fs.readFileSync(indexPath, 'utf-8');
-    expect(content).toContain("export { SettingsScreen }");
+    expect(content).toContain('export { SettingsScreen }');
   });
 
   it('selectBleEnvironment returns expected shape from real selector', async () => {

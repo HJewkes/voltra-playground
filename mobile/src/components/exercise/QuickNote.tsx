@@ -6,7 +6,15 @@
  */
 
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, Pressable, Keyboard, type ViewStyle, type TextStyle } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  Keyboard,
+  type ViewStyle,
+  type TextStyle,
+} from 'react-native';
 import { alpha, getSemanticColors } from '@titan-design/react-ui';
 import { Ionicons } from '@expo/vector-icons';
 

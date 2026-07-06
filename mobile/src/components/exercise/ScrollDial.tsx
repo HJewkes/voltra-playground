@@ -12,11 +12,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { View, Text, PanResponder, Platform } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSpring,
-} from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { alpha, getSemanticColors } from '@titan-design/react-ui';
 import { webStyle } from '@/utils/web-style';
 
@@ -76,10 +72,7 @@ export function ScrollDial({
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
-  const clamp = useCallback(
-    (v: number) => Math.max(min, Math.min(max, v)),
-    [min, max],
-  );
+  const clamp = useCallback((v: number) => Math.max(min, Math.min(max, v)), [min, max]);
 
   const nudge = useCallback(
     (delta: number) => {
@@ -91,7 +84,7 @@ export function ScrollDial({
         offsetY.value = withSpring(0, SPRING_CONFIG);
       }
     },
-    [clamp, offsetY, disabled],
+    [clamp, offsetY, disabled]
   );
 
   // ── Drag state ──
@@ -112,7 +105,7 @@ export function ScrollDial({
         offsetY.value = (dy - steps * DRAG_PER_STEP) * 0.5;
       }
     },
-    [clamp, offsetY, disabled],
+    [clamp, offsetY, disabled]
   );
 
   // Native PanResponder (non-web)
@@ -141,7 +134,7 @@ export function ScrollDial({
         },
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [applyDrag, nudge, disabled],
+    [applyDrag, nudge, disabled]
   );
 
   // Web: pointer-based drag + tap detection + wheel

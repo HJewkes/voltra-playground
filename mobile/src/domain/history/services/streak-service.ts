@@ -183,10 +183,7 @@ function daysBetween(a: Date, b: Date): number {
  * Compute weekly consistency as a 0–100 percentage.
  * Uses the current calendar week (Monday–Sunday).
  */
-function computeWeeklyConsistency(
-  sessions: StoredExerciseSession[],
-  weeklyTarget: number
-): number {
+function computeWeeklyConsistency(sessions: StoredExerciseSession[], weeklyTarget: number): number {
   if (weeklyTarget <= 0) return 0;
 
   const now = new Date();

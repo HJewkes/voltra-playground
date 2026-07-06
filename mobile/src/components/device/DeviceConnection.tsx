@@ -25,7 +25,7 @@ const t = getSemanticColors('dark');
  */
 function useWebTopPadding(): number | undefined {
   const { height } = useWindowDimensions();
-  if (Platform.OS !== "web") return undefined;
+  if (Platform.OS !== 'web') return undefined;
   return Math.min(height * 0.2, 160);
 }
 
@@ -85,7 +85,7 @@ export function DeviceConnection({
         setConnectingDeviceId(null);
       }
     },
-    [connectDevice],
+    [connectDevice]
   );
 
   const doScan = useCallback(async () => {
@@ -162,14 +162,17 @@ export function DeviceConnection({
   if (isRestoring) {
     if (variant === 'inline') {
       return (
-        <View className="flex-row items-center rounded-2xl p-4" style={{ backgroundColor: alpha(t['brand-primary'], 0.08) }}>
+        <View
+          className="flex-row items-center rounded-2xl p-4"
+          style={{ backgroundColor: alpha(t['brand-primary'], 0.08) }}
+        >
           <ActivityIndicator size="small" color={t['brand-primary']} />
           <Text className="ml-3 text-sm text-text-secondary">Restoring connection...</Text>
         </View>
       );
     }
     return (
-      <View className="flex-1 items-center justify-center bg-surface-400 p-6">
+      <View className="bg-surface-400 flex-1 items-center justify-center p-6">
         <ActivityIndicator size="large" color={t['brand-primary']} />
         <Text className="mt-4 text-text-secondary">Restoring connection...</Text>
       </View>
@@ -218,7 +221,7 @@ export function DeviceConnection({
   if (variant === 'guard') {
     return (
       <View
-        className={`flex-1 items-center bg-surface-400 p-6 ${webTopPadding === undefined ? 'justify-center' : 'pt-0'}`}
+        className={`bg-surface-400 flex-1 items-center p-6 ${webTopPadding === undefined ? 'justify-center' : 'pt-0'}`}
         style={webTopPadding !== undefined ? { paddingTop: webTopPadding } : undefined}
       >
         {connectionUI}

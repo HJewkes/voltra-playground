@@ -6,7 +6,10 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { generateStoredSession, generateStoredSet } from '@/__fixtures__/generators/session-generator';
+import {
+  generateStoredSession,
+  generateStoredSet,
+} from '@/__fixtures__/generators/session-generator';
 import type { StoredExerciseSession } from '@/data/exercise-session';
 import {
   computeStoredAggregateStats,
@@ -208,10 +211,7 @@ describe('groupSessionsByExercise', () => {
     const sessions = [
       createSession({
         exerciseId: 'bench',
-        completedSets: [
-          generateStoredSet({ repCount: 8 }),
-          generateStoredSet({ repCount: 6 }),
-        ],
+        completedSets: [generateStoredSet({ repCount: 8 }), generateStoredSet({ repCount: 6 })],
       }),
       createSession({
         exerciseId: 'bench',

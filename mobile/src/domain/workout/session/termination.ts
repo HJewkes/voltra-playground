@@ -125,7 +125,10 @@ function checkFailure(lastSet: CompletedSet): TerminationResult {
 /**
  * Check for velocity grinding (near max effort).
  */
-function checkVelocityGrinding(lastSet: CompletedSet, config: TerminationConfig): TerminationResult {
+function checkVelocityGrinding(
+  lastSet: CompletedSet,
+  config: TerminationConfig
+): TerminationResult {
   const meanVelocity = getSetMeanVelocity(lastSet.data);
 
   if (meanVelocity < config.velocityGrindingThreshold) {

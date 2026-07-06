@@ -33,7 +33,7 @@ export function RepHistoryTable({ reps }: RepHistoryTableProps) {
   return (
     <View>
       {/* Header */}
-      <View className="mb-2 flex-row border-b border-surface-100 pb-3">
+      <View className="border-surface-100 mb-2 flex-row border-b pb-3">
         <Text className="w-10 text-xs font-medium text-text-disabled">#</Text>
         <Text className="flex-1 text-xs font-medium text-text-disabled">Tempo</Text>
         <Text className="w-16 text-right text-xs font-medium text-text-disabled">Vel</Text>
@@ -53,7 +53,7 @@ export function RepHistoryTable({ reps }: RepHistoryTableProps) {
           <View
             key={rep.repNumber}
             className={`flex-row items-center py-3 ${
-              index < reps.length - 1 ? 'border-b border-surface-100/50' : ''
+              index < reps.length - 1 ? 'border-surface-100/50 border-b' : ''
             }`}
             style={
               isLatest

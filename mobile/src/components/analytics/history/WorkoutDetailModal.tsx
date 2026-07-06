@@ -16,7 +16,17 @@ import {
   getPhaseMovementDuration,
   getPhaseHoldDuration,
 } from '@voltras/workout-analytics';
-import { Drawer, DrawerBody, DrawerFooter, Button, ButtonText, DataRow, Metric, Surface, HStack } from '@titan-design/react-ui';
+import {
+  Drawer,
+  DrawerBody,
+  DrawerFooter,
+  Button,
+  ButtonText,
+  DataRow,
+  Metric,
+  Surface,
+  HStack,
+} from '@titan-design/react-ui';
 
 export interface WorkoutDetailModalProps {
   workout: CompletedSet | null;
@@ -46,21 +56,17 @@ export function WorkoutDetailModal({ workout, visible, onClose }: WorkoutDetailM
             </Text>
 
             {/* Summary Stats */}
-            <Surface elevation={0} className="rounded-xl bg-surface-input" style={{ marginBottom: 20 }}>
+            <Surface
+              elevation={0}
+              className="rounded-xl bg-surface-input"
+              style={{ marginBottom: 20 }}
+            >
               <HStack justify="around" style={{ padding: 20 }}>
-                <Metric
-                  value={String(workout.data.reps.length)}
-                  label="Reps"
-                  size="sm"
-                />
-                <View className="w-px bg-surface-100" />
+                <Metric value={String(workout.data.reps.length)} label="Reps" size="sm" />
+                <View className="bg-surface-100 w-px" />
                 <Metric value={String(workout.weight)} label="lbs" size="sm" />
-                <View className="w-px bg-surface-100" />
-                <Metric
-                  value={String(rpe || '\u2014')}
-                  label="RPE"
-                  size="sm"
-                />
+                <View className="bg-surface-100 w-px" />
+                <Metric value={String(rpe || '\u2014')} label="RPE" size="sm" />
               </HStack>
             </Surface>
 
@@ -73,12 +79,12 @@ export function WorkoutDetailModal({ workout, visible, onClose }: WorkoutDetailM
                     <DataRow
                       label="Effort"
                       value={getEffortLabel(rirEstimate?.rpe ?? 5)}
-                      className="border-b border-surface-200 pb-3 mb-3"
+                      className="border-surface-200 mb-3 border-b pb-3"
                     />
                     <DataRow
                       label="Velocity Loss"
                       value={`${Math.abs(getSetVelocityLossPct(workout.data)).toFixed(0)}%`}
-                      className="border-b border-surface-200 pb-3 mb-3"
+                      className="border-surface-200 mb-3 border-b pb-3"
                     />
                     <DataRow
                       label="Avg Velocity"
@@ -106,12 +112,10 @@ export function WorkoutDetailModal({ workout, visible, onClose }: WorkoutDetailM
                       return (
                         <View
                           key={index}
-                          className={`py-3 ${index < workout.data.reps.length - 1 ? 'border-b border-surface-100' : ''}`}
+                          className={`py-3 ${index < workout.data.reps.length - 1 ? 'border-surface-100 border-b' : ''}`}
                         >
                           <View className="mb-1 flex-row justify-between">
-                            <Text className="font-bold text-text-primary">
-                              Rep {rep.repNumber}
-                            </Text>
+                            <Text className="font-bold text-text-primary">Rep {rep.repNumber}</Text>
                             <Text className="text-sm text-text-tertiary">{tempo}</Text>
                           </View>
                           <View className="flex-row justify-between">

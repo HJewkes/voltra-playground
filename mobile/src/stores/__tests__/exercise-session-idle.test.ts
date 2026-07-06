@@ -10,10 +10,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { MovementPhase } from '@voltras/workout-analytics';
-import {
-  createExerciseSessionStore,
-  SESSION_DEFAULTS,
-} from '../exercise-session-store';
+import { createExerciseSessionStore, SESSION_DEFAULTS } from '../exercise-session-store';
 import type { RecordingStoreApi } from '../recording-store';
 import { createTestExercise, planBuilder } from '@/__fixtures__/generators';
 import { mockCompletedSet } from '@/__fixtures__/generators/mock-helpers';
@@ -30,16 +27,14 @@ interface MockRecordingStore extends RecordingStoreApi {
 /**
  * Create a minimal mock recording store for testing idle detection.
  */
-function createMockRecordingStore(overrides: {
-  currentPhase?: MovementPhase;
-  repCount?: number;
-  stopRecordingResult?: ReturnType<typeof mockCompletedSet> | null;
-} = {}): MockRecordingStore {
-  const {
-    currentPhase = MovementPhase.IDLE,
-    repCount = 0,
-    stopRecordingResult = null,
-  } = overrides;
+function createMockRecordingStore(
+  overrides: {
+    currentPhase?: MovementPhase;
+    repCount?: number;
+    stopRecordingResult?: ReturnType<typeof mockCompletedSet> | null;
+  } = {}
+): MockRecordingStore {
+  const { currentPhase = MovementPhase.IDLE, repCount = 0, stopRecordingResult = null } = overrides;
 
   let phase = currentPhase;
   let reps = repCount;

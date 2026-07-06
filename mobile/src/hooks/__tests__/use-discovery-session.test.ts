@@ -123,16 +123,11 @@ describe('Discovery session flow', () => {
 
   describe('completion via failure', () => {
     it('generates recommendation when set fails', () => {
-      const flow = runDiscoveryFlow(
-        'bench_press',
-        'compound',
-        TrainingGoal.HYPERTROPHY,
-        [
-          discoverySetResultBuilder().weight(60).meanVelocity(0.9).build(),
-          discoverySetResultBuilder().weight(100).meanVelocity(0.5).build(),
-          discoverySetResultBuilder().weight(120).meanVelocity(0.15).failed().build(),
-        ]
-      );
+      const flow = runDiscoveryFlow('bench_press', 'compound', TrainingGoal.HYPERTROPHY, [
+        discoverySetResultBuilder().weight(60).meanVelocity(0.9).build(),
+        discoverySetResultBuilder().weight(100).meanVelocity(0.5).build(),
+        discoverySetResultBuilder().weight(120).meanVelocity(0.15).failed().build(),
+      ]);
 
       expect(flow.recommendation).not.toBeNull();
       expect(flow.finalState.phase).toBe('complete');
@@ -143,16 +138,11 @@ describe('Discovery session flow', () => {
 
   describe('completion via grinding', () => {
     it('generates recommendation when velocity is grinding with enough data', () => {
-      const flow = runDiscoveryFlow(
-        'bench_press',
-        'compound',
-        TrainingGoal.HYPERTROPHY,
-        [
-          discoverySetResultBuilder().weight(60).meanVelocity(0.9).build(),
-          discoverySetResultBuilder().weight(100).meanVelocity(0.5).build(),
-          discoverySetResultBuilder().weight(120).meanVelocity(0.22).build(),
-        ]
-      );
+      const flow = runDiscoveryFlow('bench_press', 'compound', TrainingGoal.HYPERTROPHY, [
+        discoverySetResultBuilder().weight(60).meanVelocity(0.9).build(),
+        discoverySetResultBuilder().weight(100).meanVelocity(0.5).build(),
+        discoverySetResultBuilder().weight(120).meanVelocity(0.22).build(),
+      ]);
 
       expect(flow.recommendation).not.toBeNull();
       expect(flow.finalState.phase).toBe('complete');
@@ -161,16 +151,11 @@ describe('Discovery session flow', () => {
 
   describe('recommendation properties', () => {
     it('includes warmup sets, rep range, and explanation', () => {
-      const flow = runDiscoveryFlow(
-        'bench_press',
-        'compound',
-        TrainingGoal.HYPERTROPHY,
-        [
-          discoverySetResultBuilder().weight(60).meanVelocity(0.9).build(),
-          discoverySetResultBuilder().weight(100).meanVelocity(0.5).build(),
-          discoverySetResultBuilder().weight(120).meanVelocity(0.15).failed().build(),
-        ]
-      );
+      const flow = runDiscoveryFlow('bench_press', 'compound', TrainingGoal.HYPERTROPHY, [
+        discoverySetResultBuilder().weight(60).meanVelocity(0.9).build(),
+        discoverySetResultBuilder().weight(100).meanVelocity(0.5).build(),
+        discoverySetResultBuilder().weight(120).meanVelocity(0.15).failed().build(),
+      ]);
 
       const rec = flow.recommendation!;
       expect(rec.warmupSets.length).toBeGreaterThan(0);
@@ -181,27 +166,17 @@ describe('Discovery session flow', () => {
     });
 
     it('adjusts working weight for different goals', () => {
-      const strengthFlow = runDiscoveryFlow(
-        'bench_press',
-        'compound',
-        TrainingGoal.STRENGTH,
-        [
-          discoverySetResultBuilder().weight(60).meanVelocity(0.9).build(),
-          discoverySetResultBuilder().weight(100).meanVelocity(0.5).build(),
-          discoverySetResultBuilder().weight(120).meanVelocity(0.15).failed().build(),
-        ]
-      );
+      const strengthFlow = runDiscoveryFlow('bench_press', 'compound', TrainingGoal.STRENGTH, [
+        discoverySetResultBuilder().weight(60).meanVelocity(0.9).build(),
+        discoverySetResultBuilder().weight(100).meanVelocity(0.5).build(),
+        discoverySetResultBuilder().weight(120).meanVelocity(0.15).failed().build(),
+      ]);
 
-      const enduranceFlow = runDiscoveryFlow(
-        'bench_press',
-        'compound',
-        TrainingGoal.ENDURANCE,
-        [
-          discoverySetResultBuilder().weight(60).meanVelocity(0.9).build(),
-          discoverySetResultBuilder().weight(100).meanVelocity(0.5).build(),
-          discoverySetResultBuilder().weight(120).meanVelocity(0.15).failed().build(),
-        ]
-      );
+      const enduranceFlow = runDiscoveryFlow('bench_press', 'compound', TrainingGoal.ENDURANCE, [
+        discoverySetResultBuilder().weight(60).meanVelocity(0.9).build(),
+        discoverySetResultBuilder().weight(100).meanVelocity(0.5).build(),
+        discoverySetResultBuilder().weight(120).meanVelocity(0.15).failed().build(),
+      ]);
 
       expect(strengthFlow.recommendation!.workingWeight).toBeGreaterThan(
         enduranceFlow.recommendation!.workingWeight
@@ -211,16 +186,11 @@ describe('Discovery session flow', () => {
 
   describe('phase transitions', () => {
     it('tracks completed results count', () => {
-      const flow = runDiscoveryFlow(
-        'bench_press',
-        'compound',
-        TrainingGoal.HYPERTROPHY,
-        [
-          discoverySetResultBuilder().weight(60).meanVelocity(0.9).build(),
-          discoverySetResultBuilder().weight(100).meanVelocity(0.5).build(),
-          discoverySetResultBuilder().weight(120).meanVelocity(0.15).failed().build(),
-        ]
-      );
+      const flow = runDiscoveryFlow('bench_press', 'compound', TrainingGoal.HYPERTROPHY, [
+        discoverySetResultBuilder().weight(60).meanVelocity(0.9).build(),
+        discoverySetResultBuilder().weight(100).meanVelocity(0.5).build(),
+        discoverySetResultBuilder().weight(120).meanVelocity(0.15).failed().build(),
+      ]);
 
       // May complete after 2 sets if profile confidence is sufficient
       expect(flow.completedResults.length).toBeGreaterThanOrEqual(2);

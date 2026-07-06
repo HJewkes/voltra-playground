@@ -86,9 +86,7 @@ function computeEstimated1RM(session: StoredExerciseSession): number {
   for (const set of workingSets) {
     const reps = set.reps.length;
     if (reps === 0) continue;
-    const e1rm = reps === 1
-      ? set.weight
-      : set.weight * (36 / (37 - reps));
+    const e1rm = reps === 1 ? set.weight : set.weight * (36 / (37 - reps));
     if (e1rm > best1RM) best1RM = e1rm;
   }
   return round2(best1RM);
@@ -106,21 +104,17 @@ function computeSessionVolume(session: StoredExerciseSession): number {
 
 /** Get working sets (non-warmup). */
 function getWorkingSets(session: StoredExerciseSession): StoredSessionSet[] {
-  return session.completedSets.filter(
-    (_, i) => !session.plan.sets[i]?.isWarmup,
-  );
+  return session.completedSets.filter((_, i) => !session.plan.sets[i]?.isWarmup);
 }
 
 function buildMetricComparison(
   label: string,
   unit: string,
   current: number,
-  previous: number,
+  previous: number
 ): MetricComparison {
   const delta = round2(current - previous);
-  const deltaPercent = previous !== 0
-    ? round2((delta / previous) * 100)
-    : 0;
+  const deltaPercent = previous !== 0 ? round2((delta / previous) * 100) : 0;
 
   return {
     label,
@@ -145,12 +139,9 @@ function buildMetricComparison(
  */
 export function computeExerciseProgression(
   currentSession: StoredExerciseSession,
-  previousSession: StoredExerciseSession,
+  previousSession: StoredExerciseSession
 ): ExerciseProgression | null {
-  if (
-    currentSession.completedSets.length === 0 ||
-    previousSession.completedSets.length === 0
-  ) {
+  if (currentSession.completedSets.length === 0 || previousSession.completedSets.length === 0) {
     return null;
   }
 
@@ -181,7 +172,7 @@ export function computeExerciseProgression(
  */
 export function buildLastSessionBanner(
   sessions: StoredExerciseSession[],
-  exerciseId: string,
+  exerciseId: string
 ): LastSessionBanner | null {
   const completed = sessions
     .filter((s) => s.exerciseId === exerciseId && s.status === 'completed')
@@ -216,7 +207,7 @@ export function buildLastSessionBanner(
  */
 export function computeProgressionFromHistory(
   sessions: StoredExerciseSession[],
-  exerciseId: string,
+  exerciseId: string
 ): ExerciseProgression | null {
   const completed = sessions
     .filter((s) => s.exerciseId === exerciseId && s.status === 'completed')
@@ -234,9 +225,7 @@ export function computeProgressionFromHistory(
  * weight and distributing the total rep count evenly across all sets.
  */
 export function buildRepeatLastSessionPlan(banner: LastSessionBanner): ExercisePlan {
-  const repsPerSet = banner.sets > 0
-    ? Math.round(banner.reps / banner.sets)
-    : 0;
+  const repsPerSet = banner.sets > 0 ? Math.round(banner.reps / banner.sets) : 0;
 
   const sets: PlannedSet[] = Array.from({ length: banner.sets }, (_, i) => ({
     setNumber: i + 1,

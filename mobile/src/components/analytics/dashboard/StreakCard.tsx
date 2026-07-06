@@ -39,24 +39,11 @@ export function StreakCard({ sessions }: StreakCardProps) {
           </Text>
         ) : (
           <View className="flex-row justify-between">
-            <StatBlock
-              value={streak.currentStreak}
-              label="Current"
-              unit="days"
-              highlighted
-            />
+            <StatBlock value={streak.currentStreak} label="Current" unit="days" highlighted />
             <Divider />
-            <StatBlock
-              value={streak.longestStreak}
-              label="Longest"
-              unit="days"
-            />
+            <StatBlock value={streak.longestStreak} label="Longest" unit="days" />
             <Divider />
-            <StatBlock
-              value={streak.weeklyConsistency}
-              label="This Week"
-              unit="%"
-            />
+            <StatBlock value={streak.weeklyConsistency} label="This Week" unit="%" />
           </View>
         )}
       </CardContent>
@@ -102,9 +89,6 @@ function StatBlock({ value, label, unit, highlighted = false }: StatBlockProps) 
 
 function Divider() {
   return (
-    <View
-      className="mx-1 self-stretch"
-      style={{ width: 1, backgroundColor: t['border-subtle'] }}
-    />
+    <View className="mx-1 self-stretch" style={{ width: 1, backgroundColor: t['border-subtle'] }} />
   );
 }

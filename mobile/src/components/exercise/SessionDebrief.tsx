@@ -10,7 +10,12 @@ import { View, Text } from 'react-native';
 import { Surface, getSemanticColors, alpha } from '@titan-design/react-ui';
 import { Ionicons } from '@expo/vector-icons';
 import type { TrendDirection } from '@/domain/history/services/progression-service';
-import type { SessionDebriefData, ProgressionArrow, PRBadge, RecoveryNote } from '@/domain/history/services/session-debrief-service';
+import type {
+  SessionDebriefData,
+  ProgressionArrow,
+  PRBadge,
+  RecoveryNote,
+} from '@/domain/history/services/session-debrief-service';
 import type { TrainingLoad } from '@/domain/history/services/cross-session-analytics';
 import type { ExerciseSuggestion } from '@/domain/history/services/workout-suggestion-service';
 
@@ -30,17 +35,23 @@ export interface SessionDebriefProps {
 
 function getTrendIcon(direction: TrendDirection): keyof typeof Ionicons.glyphMap {
   switch (direction) {
-    case 'up': return 'trending-up';
-    case 'down': return 'trending-down';
-    case 'flat': return 'remove-outline';
+    case 'up':
+      return 'trending-up';
+    case 'down':
+      return 'trending-down';
+    case 'flat':
+      return 'remove-outline';
   }
 }
 
 function getTrendColor(direction: TrendDirection): string {
   switch (direction) {
-    case 'up': return t['status-success'];
-    case 'down': return t['status-error'];
-    case 'flat': return t['text-tertiary'];
+    case 'up':
+      return t['status-success'];
+    case 'down':
+      return t['status-error'];
+    case 'flat':
+      return t['text-tertiary'];
   }
 }
 
@@ -51,37 +62,53 @@ function formatDeltaPercent(value: number): string {
 
 function getLoadStatusColor(status: TrainingLoad['status']): string {
   switch (status) {
-    case 'optimal': return t['status-success'];
-    case 'undertraining': return t['status-warning'];
-    case 'caution': return t['status-warning'];
-    case 'danger': return t['status-error'];
+    case 'optimal':
+      return t['status-success'];
+    case 'undertraining':
+      return t['status-warning'];
+    case 'caution':
+      return t['status-warning'];
+    case 'danger':
+      return t['status-error'];
   }
 }
 
 function getLoadStatusLabel(status: TrainingLoad['status']): string {
   switch (status) {
-    case 'optimal': return 'Optimal';
-    case 'undertraining': return 'Undertraining';
-    case 'caution': return 'Caution';
-    case 'danger': return 'High Risk';
+    case 'optimal':
+      return 'Optimal';
+    case 'undertraining':
+      return 'Undertraining';
+    case 'caution':
+      return 'Caution';
+    case 'danger':
+      return 'High Risk';
   }
 }
 
 function getPRLabel(type: PRBadge['type']): string {
   switch (type) {
-    case 'max_weight': return 'Max Weight';
-    case 'max_reps': return 'Max Reps';
-    case 'max_velocity': return 'Max Velocity';
-    case 'max_volume': return 'Max Volume';
+    case 'max_weight':
+      return 'Max Weight';
+    case 'max_reps':
+      return 'Max Reps';
+    case 'max_velocity':
+      return 'Max Velocity';
+    case 'max_volume':
+      return 'Max Volume';
   }
 }
 
 function getPRUnit(type: PRBadge['type']): string {
   switch (type) {
-    case 'max_weight': return 'lbs';
-    case 'max_reps': return 'reps';
-    case 'max_velocity': return 'm/s';
-    case 'max_volume': return 'lbs';
+    case 'max_weight':
+      return 'lbs';
+    case 'max_reps':
+      return 'reps';
+    case 'max_velocity':
+      return 'm/s';
+    case 'max_volume':
+      return 'lbs';
   }
 }
 
@@ -102,13 +129,27 @@ function ProgressionSection({ arrows }: { arrows: ProgressionArrow[] }) {
       <SectionHeader icon="trending-up" title="Progression" />
       {arrows.map((arrow, i) => (
         <View key={i} style={{ marginTop: i > 0 ? 8 : 4 }}>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: t['text-primary'], marginBottom: 2 }}>
+          <Text
+            style={{ fontSize: 13, fontWeight: '600', color: t['text-primary'], marginBottom: 2 }}
+          >
             {arrow.exerciseName}
           </Text>
           <View style={{ flexDirection: 'row', gap: 12, paddingLeft: 4 }}>
-            <MetricPill label="Velocity" direction={arrow.velocity.direction} delta={arrow.velocity.deltaPercent} />
-            <MetricPill label="e1RM" direction={arrow.e1RM.direction} delta={arrow.e1RM.deltaPercent} />
-            <MetricPill label="Volume" direction={arrow.volume.direction} delta={arrow.volume.deltaPercent} />
+            <MetricPill
+              label="Velocity"
+              direction={arrow.velocity.direction}
+              delta={arrow.velocity.deltaPercent}
+            />
+            <MetricPill
+              label="e1RM"
+              direction={arrow.e1RM.direction}
+              delta={arrow.e1RM.deltaPercent}
+            />
+            <MetricPill
+              label="Volume"
+              direction={arrow.volume.direction}
+              delta={arrow.volume.deltaPercent}
+            />
           </View>
         </View>
       ))}
@@ -116,7 +157,15 @@ function ProgressionSection({ arrows }: { arrows: ProgressionArrow[] }) {
   );
 }
 
-function MetricPill({ label, direction, delta }: { label: string; direction: TrendDirection; delta: number }) {
+function MetricPill({
+  label,
+  direction,
+  delta,
+}: {
+  label: string;
+  direction: TrendDirection;
+  delta: number;
+}) {
   const color = getTrendColor(direction);
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
@@ -136,14 +185,12 @@ function TrainingLoadSection({ load }: { load: TrainingLoad }) {
   return (
     <View>
       <SectionHeader icon="fitness-outline" title="Training Load" />
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 4, marginTop: 4 }}>
+      <View
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 4, marginTop: 4 }}
+      >
         <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: statusColor }} />
-        <Text style={{ fontSize: 13, color: t['text-primary'] }}>
-          ACWR {load.acwr.toFixed(2)}
-        </Text>
-        <Text style={{ fontSize: 12, fontWeight: '600', color: statusColor }}>
-          {statusLabel}
-        </Text>
+        <Text style={{ fontSize: 13, color: t['text-primary'] }}>ACWR {load.acwr.toFixed(2)}</Text>
+        <Text style={{ fontSize: 12, fontWeight: '600', color: statusColor }}>{statusLabel}</Text>
       </View>
     </View>
   );
@@ -156,7 +203,16 @@ function SuggestionsSection({ suggestions }: { suggestions: ExerciseSuggestion[]
     <View>
       <SectionHeader icon="bulb-outline" title="Next Session" />
       {suggestions.map((s, i) => (
-        <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 4, marginTop: 4 }}>
+        <View
+          key={i}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 6,
+            paddingLeft: 4,
+            marginTop: 4,
+          }}
+        >
           <Ionicons name="arrow-forward" size={12} color={t['brand-primary']} />
           <Text style={{ fontSize: 13, color: t['text-primary'] }}>{s.exerciseName}</Text>
           <Text style={{ fontSize: 11, color: t['text-tertiary'] }}>{s.reason}</Text>
@@ -172,7 +228,9 @@ function PRBadgesSection({ badges }: { badges: PRBadge[] }) {
   return (
     <View>
       <SectionHeader icon="trophy-outline" title="Personal Records" />
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingLeft: 4, marginTop: 4 }}>
+      <View
+        style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingLeft: 4, marginTop: 4 }}
+      >
         {badges.map((badge, i) => (
           <View
             key={i}
@@ -209,9 +267,7 @@ function RecoverySection({ note }: { note: RecoveryNote }) {
     <View style={{ backgroundColor: bgColor, borderRadius: 8, padding: 10, marginTop: 4 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
         <Ionicons name="bed-outline" size={14} color={iconColor} />
-        <Text style={{ fontSize: 12, color: t['text-secondary'], flex: 1 }}>
-          {note.message}
-        </Text>
+        <Text style={{ fontSize: 12, color: t['text-secondary'], flex: 1 }}>{note.message}</Text>
       </View>
     </View>
   );
@@ -221,7 +277,15 @@ function SectionHeader({ icon, title }: { icon: keyof typeof Ionicons.glyphMap; 
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
       <Ionicons name={icon} size={14} color={t['text-tertiary']} />
-      <Text style={{ fontSize: 12, fontWeight: '700', color: t['text-tertiary'], textTransform: 'uppercase', letterSpacing: 0.5 }}>
+      <Text
+        style={{
+          fontSize: 12,
+          fontWeight: '700',
+          color: t['text-tertiary'],
+          textTransform: 'uppercase',
+          letterSpacing: 0.5,
+        }}
+      >
         {title}
       </Text>
     </View>
@@ -234,18 +298,22 @@ function SectionHeader({ icon, title }: { icon: keyof typeof Ionicons.glyphMap; 
 
 export function SessionDebrief({ debrief }: SessionDebriefProps) {
   const { progressionArrows, trainingLoad, suggestions, prBadges, recoveryNote } = debrief;
-  const hasContent = progressionArrows.length > 0 || suggestions.length > 0 || prBadges.length > 0 || recoveryNote !== null;
+  const hasContent =
+    progressionArrows.length > 0 ||
+    suggestions.length > 0 ||
+    prBadges.length > 0 ||
+    recoveryNote !== null;
 
   if (!hasContent) {
     return (
-      <Surface elevation={1} className="rounded-xl p-4 mt-3">
+      <Surface elevation={1} className="mt-3 rounded-xl p-4">
         <TrainingLoadSection load={trainingLoad} />
       </Surface>
     );
   }
 
   return (
-    <Surface elevation={1} className="rounded-xl p-4 mt-3">
+    <Surface elevation={1} className="mt-3 rounded-xl p-4">
       <View style={{ gap: 14 }}>
         {prBadges.length > 0 && <PRBadgesSection badges={prBadges} />}
         {progressionArrows.length > 0 && <ProgressionSection arrows={progressionArrows} />}
