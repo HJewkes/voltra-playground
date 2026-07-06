@@ -13,13 +13,11 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   getSetMeanVelocity,
   estimateSetRIR,
-  getRepPeakVelocity,
   MovementPhase,
   type Rep,
   type WorkoutSample,
 } from '@voltras/workout-analytics';
 import { computeClusterMeanVelocity } from './set-log-utils';
-export { computeClusterMeanVelocity } from './set-log-utils';
 import type { SetLogEntry, ClusterBoundary, PlannedSet, TempoTarget } from '@/domain/workout';
 import type { PRBadge } from '@/domain/history/services/pr-detector';
 import { getRPEColor } from '@/domain/workout';
@@ -30,6 +28,8 @@ import { RestScrubber } from './RestScrubber';
 import { TempoBar } from './TempoBar';
 import { CycleToggle, type CycleToggleOption } from './CycleToggle';
 import { QuickNote } from './QuickNote';
+
+export { computeClusterMeanVelocity } from './set-log-utils';
 
 type ChartView = 'set' | 'rep';
 const VIEW_OPTIONS: readonly CycleToggleOption<ChartView>[] = [

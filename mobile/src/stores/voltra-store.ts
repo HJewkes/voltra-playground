@@ -21,10 +21,7 @@ import type {
   VoltraConnectionState,
   VoltraRecordingState,
 } from '@/domain/device';
-import { TrainingMode } from '@/domain/device';
-
-// Domain imports - Device adapter
-import { toWorkoutSample } from '@/domain/device';
+import { TrainingMode, toWorkoutSample } from '@/domain/device';
 
 // Domain imports - Workout (hardware-agnostic)
 import type { WorkoutSample } from '@/domain/workout';

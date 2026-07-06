@@ -19,8 +19,8 @@ import {
   type WorkoutSample,
 } from '@voltras/workout-analytics';
 import { createCompletedSet, type CompletedSet } from '@/domain/workout';
-import { repBuilder, type RepTargets, RepBehavior, BEHAVIOR_PRESETS } from './rep-builder';
-import { deepMerge, type PhysicsConfig } from './physics-engine';
+import { repBuilder, type RepTargets, RepBehavior } from './rep-builder';
+import { type PhysicsConfig } from './physics-engine';
 
 // =============================================================================
 // Set-Level Types
@@ -271,11 +271,10 @@ class SetBuilder {
         };
       }
 
-      let finalTargets = repTargets;
-      if (baseRepTargets) {
-        finalTargets = deepMerge({}, BEHAVIOR_PRESETS[behavior], repTargets) as RepTargets;
-      }
-
+      // NOTE: composition reps are generated purely from `behavior`; the merged
+      // `repTargets` (velocity baseline + behavior presets) are NOT wired into
+      // repBuilder here — a latent fixture bug tracked in VLT (see PR). Removed the
+      // dead `finalTargets`/deepMerge that computed them without applying them.
       const generated = repBuilder()
         .behavior(behavior)
         .repNumber(i + 1)

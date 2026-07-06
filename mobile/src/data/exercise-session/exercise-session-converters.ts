@@ -14,7 +14,6 @@ import {
   createCompletedSet,
 } from '@/domain/workout';
 import {
-  type Set as AnalyticsSet,
   type WorkoutSample,
   type Rep as AnalyticsRep,
   createSet,
@@ -23,7 +22,6 @@ import {
   getSetMeanVelocity,
   getSetVelocityLossPct,
   estimateSetRIR,
-  getRepSamples,
 } from '@voltras/workout-analytics';
 import { EXERCISE_CATALOG, createExercise } from '@/domain/exercise';
 import { isDebugTelemetryEnabled } from '@/data/debug-config';
@@ -34,7 +32,6 @@ import type {
   StoredRep,
   ExerciseSessionSummary,
   TerminationReason,
-  LegacyStoredRep,
   LegacyStoredSessionSet,
 } from './exercise-session-schema';
 
