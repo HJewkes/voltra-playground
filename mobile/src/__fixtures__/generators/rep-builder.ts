@@ -239,6 +239,22 @@ class RepBuilder {
     return this;
   }
 
+  /**
+   * Apply a whole RepTargets object at once — phase targets, hold, ROM, and rep
+   * number. Each present field merges via its dedicated setter, so explicit
+   * targets override the behavior preset (if any) at build time, matching the
+   * documented "behavior with override" semantics.
+   */
+  applyTargets(t: RepTargets): this {
+    if (t.concentric) this.concentric(t.concentric);
+    if (t.eccentric) this.eccentric(t.eccentric);
+    if (t.hold) this.hold(t.hold);
+    if (t.total) this.total(t.total);
+    if (t.rangeOfMotion !== undefined) this.rangeOfMotion(t.rangeOfMotion);
+    if (t.repNumber !== undefined) this.repNumber(t.repNumber);
+    return this;
+  }
+
   // ===========================================================================
   // Physics Config
   // ===========================================================================
