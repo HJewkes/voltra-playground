@@ -8,7 +8,7 @@ import {
   type TextStyle,
   type ViewStyle,
 } from 'react-native';
-import { Surface, getSemanticColors, alpha } from '@titan-design/react-ui';
+import { Surface, SetRow, getSemanticColors } from '@titan-design/react-ui';
 import { Ionicons } from '@expo/vector-icons';
 import {
   getSetMeanVelocity,
@@ -106,13 +106,6 @@ const rowStyle: ViewStyle = {
   gap: 8,
 };
 
-const setLabelStyle: TextStyle = {
-  fontSize: 13,
-  fontWeight: '600',
-  color: t['text-primary'],
-  width: 44,
-};
-
 const detailStyle: TextStyle = {
   fontSize: 13,
   color: t['text-secondary'],
@@ -130,6 +123,16 @@ const rpeStyle: TextStyle = {
   color: t['text-secondary'],
   minWidth: 48,
   textAlign: 'right',
+};
+
+// Sibling meta row under a titan SetRow (mean velocity / expand chevron / RIR).
+const completedMetaStyle: ViewStyle = {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'flex-end',
+  gap: 8,
+  paddingHorizontal: 12,
+  paddingTop: 2,
 };
 
 // =============================================================================
@@ -326,18 +329,30 @@ function CompletedSetRow({
 
   const chevron = hasSamples ? (expanded ? '▲' : '▼') : null;
 
+  // titan SetRow renders the canonical set# / reps / weight / RPE columns.
+  // RPE stays off the row when clusters exist (shown per-cluster below instead).
   const mainRow = (
-    <View style={rowStyle}>
-      <Text style={setLabelStyle}>Set {setNumber}</Text>
-      <Text style={detailStyle}>
-        {repCount} reps · {set.weight} lbs
-      </Text>
-      {!hasClusters && <Text style={metricStyle}>{avgVel.toFixed(2)} m/s</Text>}
-      {!hasClusters && rpe > 0 && <Text style={rpeStyle}>RPE {rpe.toFixed(1)}</Text>}
-      {chevron && (
-        <Text style={{ fontSize: 10, color: t['text-disabled'], marginLeft: 4 }}>{chevron}</Text>
+    <>
+      <SetRow
+        mode="completed"
+        setNumber={setNumber}
+        previous={null}
+        reps={repCount}
+        weight={set.weight}
+        rpe={!hasClusters && rpe > 0 ? rpe : null}
+        unit="lbs"
+        isNextSet={false}
+      />
+      {/* Mean velocity + expand chevron — SetRow has no slot for either.
+          Velocity kept as a sibling (titan VelocityStrip zones are barbell-tuned;
+          cable work needs its own thresholds — VLT-09.33 velocities option a). */}
+      {(!hasClusters || chevron) && (
+        <View style={completedMetaStyle}>
+          {!hasClusters && <Text style={metricStyle}>{avgVel.toFixed(2)} m/s</Text>}
+          {chevron && <Text style={{ fontSize: 10, color: t['text-disabled'] }}>{chevron}</Text>}
+        </View>
       )}
-    </View>
+    </>
   );
 
   return (
@@ -390,34 +405,34 @@ function ActiveSetRow({
 
   const hasMetrics = telemetry && repCount > 0;
   const rpeColor = hasMetrics ? getRPEColor(telemetry.rpe) : t['text-disabled'];
-  const repText = targetReps ? `${repCount}/${targetReps} reps` : `${repCount} reps`;
 
   return (
     <View>
-      <View style={[rowStyle, { backgroundColor: alpha(t['brand-primary'], 0.06) }]}>
-        <Text style={setLabelStyle}>Set {setIndex + 1}</Text>
-        <Text style={[detailStyle, { color: t['brand-primary'] }]}>
-          {repText} · {weight} lbs
-        </Text>
-        {hasMetrics ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-              <Text style={[rpeStyle, { color: rpeColor }]}>RPE {telemetry.rpe.toFixed(1)}</Text>
-              <InfoIcon
-                title="RPE — rate of perceived exertion"
-                body="Scale of 1–10 estimating how hard the set was. RPE 10 = maximum effort, RPE 7–8 = 2–3 reps left in the tank."
-              />
-            </View>
-            <Text style={rpeStyle}>
-              RIR {telemetry.rir >= 5 ? '5+' : `~${Math.round(telemetry.rir)}`}
-            </Text>
-          </View>
-        ) : (
-          <Text style={{ fontSize: 11, color: t['brand-primary'], fontStyle: 'italic' }}>
-            (active)
+      {/* Active set as a titan SetRow: orange next-set highlight, live reps/RPE,
+          italic target reps pre-first-rep. Weight is always the configured load. */}
+      <SetRow
+        mode="active"
+        setNumber={setIndex + 1}
+        previous={null}
+        reps={repCount > 0 ? repCount : null}
+        weight={weight}
+        rpe={hasMetrics ? telemetry.rpe : null}
+        unit="lbs"
+        isNextSet
+        targets={targetReps != null ? { reps: targetReps, weight } : undefined}
+      />
+      {/* RIR + the RPE explainer — SetRow shows the RPE number itself. */}
+      {hasMetrics && (
+        <View style={completedMetaStyle}>
+          <Text style={rpeStyle}>
+            RIR {telemetry.rir >= 5 ? '5+' : `~${Math.round(telemetry.rir)}`}
           </Text>
-        )}
-      </View>
+          <InfoIcon
+            title="RPE — rate of perceived exertion"
+            body="Scale of 1–10 estimating how hard the set was. RPE 10 = maximum effort, RPE 7–8 = 2–3 reps left in the tank."
+          />
+        </View>
+      )}
 
       {telemetry && (
         <View style={{ paddingHorizontal: 12, paddingTop: 4 }}>
@@ -558,14 +573,19 @@ function NoteRow({ note }: { note: SessionNote }) {
 }
 
 function PlannedSetRow({ planned }: { planned: PlannedSet }) {
+  // Rendered as an active SetRow WITHOUT the next-set highlight, so titan shows the
+  // planned reps/weight as italic targets. The parent Surface dims it (opacity 0.5).
   return (
-    <View style={rowStyle}>
-      <Text style={setLabelStyle}>Set {planned.setNumber}</Text>
-      <Text style={detailStyle}>
-        {planned.targetReps > 0 ? `${planned.targetReps} reps · ` : ''}
-        {planned.weight} lbs
-      </Text>
-    </View>
+    <SetRow
+      mode="active"
+      setNumber={planned.setNumber}
+      previous={null}
+      reps={null}
+      weight={null}
+      unit="lbs"
+      isNextSet={false}
+      targets={{ reps: planned.targetReps, weight: planned.weight }}
+    />
   );
 }
 

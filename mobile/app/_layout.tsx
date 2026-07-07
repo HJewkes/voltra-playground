@@ -1,5 +1,6 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
+import { ThemeProvider as TitanThemeProvider } from '@titan-design/react-ui';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -46,16 +47,22 @@ function RootLayoutNav() {
     };
   }, []);
 
+  // TitanThemeProvider registers titan's semantic color tokens as native CSS
+  // variables so descendant titan organisms (e.g. SetRow) resolve their
+  // `--color-*` className tokens on-device instead of falling back to black.
+  // Mobile is dark-only today. Harmless on web (global.css already defines them).
   return (
-    <ThemeProvider value={DarkTheme}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen
-          name="settings"
-          options={{ presentation: 'modal', headerShown: true, title: 'Settings' }}
-        />
-      </Stack>
-    </ThemeProvider>
+    <TitanThemeProvider mode="dark">
+      <ThemeProvider value={DarkTheme}>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen
+            name="settings"
+            options={{ presentation: 'modal', headerShown: true, title: 'Settings' }}
+          />
+        </Stack>
+      </ThemeProvider>
+    </TitanThemeProvider>
   );
 }
