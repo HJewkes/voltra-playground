@@ -113,9 +113,9 @@ describe('getEffortBar()', () => {
 // =============================================================================
 
 describe('getRPEColor()', () => {
-  it('returns success (teal) for RPE 6 and below', () => {
-    expect(getRPEColor(5)).toBe('#14B8A6');
-    expect(getRPEColor(6)).toBe('#14B8A6');
+  it('returns success (green) for RPE 6 and below', () => {
+    expect(getRPEColor(5)).toBe('#2ED573');
+    expect(getRPEColor(6)).toBe('#2ED573');
   });
 
   it('returns improve (green) for RPE 7', () => {
@@ -123,7 +123,7 @@ describe('getRPEColor()', () => {
   });
 
   it('returns warning (amber) for RPE 8', () => {
-    expect(getRPEColor(8)).toBe('#FFB020');
+    expect(getRPEColor(8)).toBe('#F9B415');
   });
 
   it('returns brand-primary (orange) for RPE 9', () => {
