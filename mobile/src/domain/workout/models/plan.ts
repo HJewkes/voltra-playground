@@ -16,12 +16,16 @@ export { TrainingGoal } from '@/domain/planning/types';
 
 /**
  * Tempo target for a set - time in seconds for each phase.
+ *
+ * Fields are declared in the canonical tempo order shared with
+ * `@voltras/workout-analytics` `getSetTempoSeconds`:
+ * `[eccentric, pauseBottom, concentric, pauseTop]`.
  */
 export interface TempoTarget {
-  concentric: number;
   eccentric: number;
-  pauseTop: number;
   pauseBottom: number;
+  concentric: number;
+  pauseTop: number;
 }
 
 /**

@@ -33,10 +33,10 @@ export interface WorkoutSet {
   type: 'warmup' | 'ramp' | 'working' | 'backoff';
   rirTarget?: number;
   tempoTarget?: {
-    concentric: number;
     eccentric: number;
-    pauseTop: number;
     pauseBottom: number;
+    concentric: number;
+    pauseTop: number;
   };
   note?: string;
 }
