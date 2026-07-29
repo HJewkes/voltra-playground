@@ -1,0 +1,10 @@
+{
+  "//": "Node-only dev scripts (npx tsx). They target NODE, not React Native, so they must NOT resolve the SDK's `react-native` export condition — that entry deliberately has no forNode()/forWeb(). Dropping customConditions lets them resolve the SDK's full root entry, which is what they actually run against. Excluded from tsconfig.json for the same reason; still typechecked, just under the right platform.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "customConditions": [],
+    "types": ["node"]
+  },
+  "include": ["scripts/**/*.ts"],
+  "exclude": []
+}

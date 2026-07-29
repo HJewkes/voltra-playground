@@ -13,8 +13,9 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { AppState, type AppStateStatus } from 'react-native';
 import {
-  VoltraManager,
+  createManager,
   detectBLEEnvironment,
+  type VoltraManager,
   type BLEEnvironmentInfo,
   type DiscoveredDevice,
 } from '@/domain/device';
@@ -137,15 +138,11 @@ export const useConnectionStore = create<ConnectionStoreState>()(
         if (!manager) {
           const env = detectBLEEnvironment();
 
-          if (env.forceMock) {
-            manager = VoltraManager.forMock();
-          } else if (env.environment === 'native') {
-            manager = VoltraManager.forNative();
-          } else if (env.environment === 'web') {
-            manager = VoltraManager.forWeb();
-          } else {
-            manager = VoltraManager.forNode();
-          }
+          // Platform branch lives in manager-factory, which Metro resolves by
+          // platform extension: the SDK's native and web entries expose
+          // DIFFERENT factory methods (0.12.2), so a single call site naming
+          // all of them cannot typecheck against either.
+          manager = createManager(env);
 
           // Subscribe to manager events
           manager.subscribe((event) => {

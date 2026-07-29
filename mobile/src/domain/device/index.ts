@@ -35,3 +35,8 @@ export {
 
 // Environment detection
 export { detectBLEEnvironment, type BLEEnvironmentInfo } from './environment';
+
+// Metro resolves this by platform extension (`.web.ts` on web, the base file
+// otherwise) — the SDK's native and web entries expose different factory
+// methods, so the branch cannot live at the call site. See manager-factory.ts.
+export { createManager } from './manager-factory';
