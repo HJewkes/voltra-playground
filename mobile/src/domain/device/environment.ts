@@ -16,6 +16,24 @@ export interface BLEEnvironmentInfo {
  * Append ?mock to the URL to force the mock adapter (useful for Playwright / visual dev).
  */
 export function detectBLEEnvironment(): BLEEnvironmentInfo {
+  // React Native MUST be checked first: it defines both `window` and
+  // `navigator`, so the browser check below matches on a real device and
+  // wrongly selects the Web Bluetooth adapter. RN sets
+  // `navigator.product === 'ReactNative'`; browsers report 'Gecko'.
+  if (
+    typeof navigator !== 'undefined' &&
+    (navigator as Navigator & { product?: string }).product === 'ReactNative'
+  ) {
+    return {
+      environment: 'native',
+      bleSupported: true,
+      warningMessage: null,
+      isWeb: false,
+      requiresUserGesture: false,
+      forceMock: false,
+    };
+  }
+
   // Check for browser environment
   if (typeof window !== 'undefined' && typeof navigator !== 'undefined') {
     const forceMock = new URLSearchParams(window.location?.search).has('mock');

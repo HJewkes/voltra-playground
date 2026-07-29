@@ -308,12 +308,17 @@ export function AdvancedAccordion({
   const rotation = useSharedValue(0);
   const hasTempo = onTempoChange != null;
 
+  // Drive the shared value from an effect, never from inside the setState
+  // updater — React can invoke that updater during its render/reconciliation
+  // pass, so a `.value` write there risks tripping Reanimated's
+  // read/write-during-render guard.
+  useEffect(() => {
+    rotation.value = withTiming(expanded ? 1 : 0, { duration: 200 });
+  }, [expanded, rotation]);
+
   const toggle = useCallback(() => {
-    setExpanded((prev) => {
-      rotation.value = withTiming(prev ? 0 : 1, { duration: 200 });
-      return !prev;
-    });
-  }, [rotation]);
+    setExpanded((prev) => !prev);
+  }, []);
 
   const chevronStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${rotation.value * 180}deg` }],

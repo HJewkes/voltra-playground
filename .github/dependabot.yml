@@ -11,7 +11,7 @@ updates:
     # coordinated set per SDK (upgraded via `expo install --fix`, not piecemeal).
     # Individual Dependabot bumps of these break the SDK's version matching, so
     # ignore them here and let the staged Expo SDK upgrade own them. See
-    # coordination/integration-plans/expo-sdk-54-to-57-upgrade-2026-07-02.md.
+    # sources/integration-plans/expo-sdk-54-to-57-upgrade-2026-07-02.md.
     ignore:
       - dependency-name: "expo"
       - dependency-name: "expo-*"

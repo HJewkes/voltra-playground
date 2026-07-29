@@ -16,6 +16,46 @@ describe('detectBLEEnvironment', () => {
     Object.defineProperty(globalThis, 'process', { value: originalProcess, configurable: true });
   });
 
+  /**
+   * Regression (2026-07-28, found on a physical iPhone): React Native
+   * defines BOTH `window` and `navigator`, so the browser check matched on
+   * device and the app selected the Web Bluetooth adapter — surfacing as
+   * "Web Bluetooth not supported in this browser" with no BLE prompt and a
+   * scan that never started. RN must be detected before the browser branch.
+   */
+  describe('react native environment', () => {
+    function setupReactNativeGlobals() {
+      // RN provides window and navigator, and navigator.product is 'ReactNative'.
+      Object.defineProperty(globalThis, 'window', { value: {}, configurable: true });
+      Object.defineProperty(globalThis, 'navigator', {
+        value: { product: 'ReactNative' },
+        configurable: true,
+      });
+    }
+
+    it('detects native even though window and navigator are defined', () => {
+      setupReactNativeGlobals();
+
+      const env = detectBLEEnvironment();
+      expect(env.environment).toBe('native');
+      expect(env.isWeb).toBe(false);
+      expect(env.bleSupported).toBe(true);
+      expect(env.warningMessage).toBeNull();
+      expect(env.requiresUserGesture).toBe(false);
+    });
+
+    it('takes precedence over the node check', () => {
+      // A RN bundle can still expose a `process` shim; native must win.
+      setupReactNativeGlobals();
+      Object.defineProperty(globalThis, 'process', {
+        value: { versions: { node: '20.0.0' } },
+        configurable: true,
+      });
+
+      expect(detectBLEEnvironment().environment).toBe('native');
+    });
+  });
+
   describe('node environment', () => {
     it('detects node when process.versions.node is defined', () => {
       // Vitest runs in Node, so default detection should work

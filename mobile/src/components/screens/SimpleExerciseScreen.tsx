@@ -199,21 +199,26 @@ function ExerciseInner({ voltraStore }: { voltraStore: VoltraStoreApi }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerProgress = useSharedValue(0);
 
+  // Drive the shared value from an effect, never from inside the setState
+  // updater or alongside another setState call — React can invoke a setState
+  // updater during its render/reconciliation pass, so writing `.value` there
+  // (or racing it against a sibling setState) risks tripping Reanimated's
+  // read/write-during-render guard.
+  useEffect(() => {
+    drawerProgress.value = withSpring(drawerOpen ? 1 : 0, { damping: 20, stiffness: 200 });
+  }, [drawerOpen, drawerProgress]);
+
   const toggleDrawer = useCallback(() => {
     if (isRecording) return;
-    setDrawerOpen((prev) => {
-      drawerProgress.value = withSpring(!prev ? 1 : 0, { damping: 20, stiffness: 200 });
-      return !prev;
-    });
-  }, [isRecording, drawerProgress]);
+    setDrawerOpen((prev) => !prev);
+  }, [isRecording]);
 
   const handleSelectMode = useCallback(
     (m: TrainingMode) => {
       setMode(m);
       setDrawerOpen(false);
-      drawerProgress.value = withSpring(0, { damping: 20, stiffness: 200 });
     },
-    [setMode, drawerProgress]
+    [setMode]
   );
 
   const chevronStyle = useAnimatedStyle(() => ({
