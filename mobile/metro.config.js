@@ -35,8 +35,19 @@ const isVoltraSdkPath = (filePath) =>
   filePath.includes(`@voltras${path.sep}node-sdk${path.sep}`) ||
   filePath.includes(`${path.sep}voltra-node-sdk${path.sep}`);
 
+// The SDK's platform switch uses literal `require()` calls for every
+// backend, so Metro statically resolves the Node-only ones even though a
+// native build never executes them. `@stoprocent/noble` then drags in
+// `os`/`fs` and the bundle fails. Both are optionalDependencies that do not
+// exist on a phone, so stub them out on native platforms.
+const NODE_ONLY_MODULES = new Set(["@stoprocent/noble", "webbluetooth"]);
+
 const originalResolveRequest = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (platform !== "web" && NODE_ONLY_MODULES.has(moduleName)) {
+    return { type: "empty" };
+  }
+
   const resolution = (originalResolveRequest ?? context.resolveRequest)(
     context,
     moduleName,
