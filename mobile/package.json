@@ -43,7 +43,7 @@
     "@titan-design/react-ui": "^0.6.0",
     "@voltras/node-sdk": "^0.12.0",
     "@voltras/workout-analytics": "^0.2.0",
-    "expo": "~54.0.31",
+    "expo": "~57.0.8",
     "expo-av": "~16.0.8",
     "expo-clipboard": "~8.0.8",
     "expo-constants": "~18.0.13",
