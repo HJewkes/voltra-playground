@@ -69,3 +69,4 @@ Thumbs.db
 
 coverage/
 .nyc_output/
+.agent-notes/
