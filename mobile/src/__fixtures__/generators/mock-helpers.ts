@@ -72,6 +72,10 @@ export function mockPhase(
     peakVelocity,
     peakForce,
     peakLoad: 0,
+    // Peak mid-phase, decaying back to mean by the end: a plausible curve
+    // rather than a flat one, so drop-pct getters return a non-zero value.
+    _peakVelocityTime: startTime + (duration * 1000) / 2,
+    _lastMovementVelocity: meanVelocity,
   };
 }
 

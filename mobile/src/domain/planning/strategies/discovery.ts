@@ -194,19 +194,20 @@ function getExplorationStep(
   let message: string;
 
   switch (trend) {
-    case 'fast':
+    case 'speed':
+    case 'power':
       // Way too light - big jump
       increment = state.exerciseType === 'compound' ? 20 : 10;
       message = 'That was very light - making a bigger jump';
       break;
 
-    case 'moderate':
+    case 'strengthSpeed':
       // Getting closer - moderate jump
       increment = state.exerciseType === 'compound' ? 10 : 5;
       message = "Good pace - let's go a bit heavier";
       break;
 
-    case 'slow':
+    case 'maximalStrength':
       // Getting heavy - small jump or switch to dialing in
       if (canEstimate) {
         return getDialingInStep({ ...state, phase: 'dialing_in' });
@@ -227,7 +228,7 @@ function getExplorationStep(
   }
 
   const newWeight = Math.max(5, Math.round((state.currentWeight + increment) / 5) * 5);
-  const targetReps = trend === 'slow' || trend === 'grinding' ? 3 : 5;
+  const targetReps = trend === 'maximalStrength' || trend === 'grinding' ? 3 : 5;
 
   const step: DiscoveryStep = {
     stepNumber,
@@ -346,11 +347,12 @@ function generateRecommendation(
  */
 export function getVelocityExpectation(trend: VelocityTrend): string {
   switch (trend) {
-    case 'fast':
+    case 'speed':
+    case 'power':
       return 'Expect velocity to slow as weight increases';
-    case 'moderate':
+    case 'strengthSpeed':
       return 'Getting into working territory';
-    case 'slow':
+    case 'maximalStrength':
       return 'This is challenging weight - good data point';
     case 'grinding':
       return 'Near your limit - be careful';

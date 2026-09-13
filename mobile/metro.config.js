@@ -35,10 +35,30 @@ const isVoltraSdkPath = (filePath) =>
   filePath.includes(`@voltras${path.sep}node-sdk${path.sep}`) ||
   filePath.includes(`${path.sep}voltra-node-sdk${path.sep}`);
 
+// @voltras/workout-analytics is ESM-only since 1.0.0 and publishes an `import`
+// condition alone, so the CJS-leaning `unstable_conditionNames` above resolves
+// nothing for it. Add `import` for that package only, leaving every other
+// package on the CJS-first order the zustand/node-sdk notes above depend on.
+const ESM_ONLY_PACKAGES = ["@voltras/workout-analytics"];
+const isEsmOnlyPackage = (moduleName) =>
+  ESM_ONLY_PACKAGES.some(
+    (pkg) => moduleName === pkg || moduleName.startsWith(`${pkg}/`),
+  );
+
 const originalResolveRequest = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
+  const resolveContext = isEsmOnlyPackage(moduleName)
+    ? {
+        ...context,
+        unstable_conditionNames: [
+          ...context.unstable_conditionNames,
+          "import",
+        ],
+      }
+    : context;
+
   const resolution = (originalResolveRequest ?? context.resolveRequest)(
-    context,
+    resolveContext,
     moduleName,
     platform,
   );

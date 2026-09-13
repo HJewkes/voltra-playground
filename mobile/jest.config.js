@@ -15,6 +15,8 @@ const EXTRA_TRANSFORM = [
   'react-native-svg',
   '@expo/vector-icons',
   'react-native-worklets',
+  // ESM-only since 1.0.0, so babel has to down-level it for the CJS runner.
+  '@voltras/workout-analytics',
 ]
 const transformIgnorePatterns = expoPreset.transformIgnorePatterns.map((pattern) =>
   pattern.includes('native-base')
@@ -27,4 +29,5 @@ module.exports = {
   testMatch: ['**/*.render.test.tsx'],
   setupFilesAfterEnv: ['<rootDir>/test/render-setup.ts'],
   transformIgnorePatterns,
+  resolver: '<rootDir>/test/esm-only-resolver.js',
 }

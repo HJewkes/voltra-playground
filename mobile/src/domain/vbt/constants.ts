@@ -21,7 +21,7 @@ import {
   DEFAULT_MVT,
   estimatePercent1RMFromVelocity as libEstimatePercent1RM,
   categorizeVelocity as libCategorizeVelocity,
-  type VelocityZone,
+  type VelocityZoneId,
 } from '@voltras/workout-analytics';
 
 // =============================================================================
@@ -37,11 +37,17 @@ export const MINIMUM_VELOCITY_THRESHOLD = DEFAULT_MVT;
 /** Estimate %1RM from mean concentric velocity (from library). */
 export const estimatePercent1RMFromVelocity = libEstimatePercent1RM;
 
-/** Categorize velocity into qualitative zones (from library). */
+/**
+ * Categorize mean concentric velocity into a zone (from library).
+ *
+ * Called with one argument, so the library's global-default compound bands
+ * apply: grinding <0.35, maximalStrength <0.50, strengthSpeed <0.75,
+ * power <1.00, speed >=1.00 m/s.
+ */
 export const categorizeVelocity = libCategorizeVelocity;
 
 /** Velocity zone type -- re-exported as VelocityTrend for app compatibility. */
-export type VelocityTrend = VelocityZone;
+export type VelocityTrend = VelocityZoneId;
 
 // =============================================================================
 // App-Specific Training Zones
