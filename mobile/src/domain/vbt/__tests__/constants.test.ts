@@ -258,32 +258,43 @@ describe('getTargetVelocityForGoal()', () => {
 // =============================================================================
 
 describe('categorizeVelocity()', () => {
-  it('categorizes > 0.75 as fast', () => {
-    expect(categorizeVelocity(0.95)).toBe('fast');
-    expect(categorizeVelocity(1.1)).toBe('fast');
-    expect(categorizeVelocity(0.8)).toBe('fast');
+  it('categorizes >= 1.0 as speed', () => {
+    expect(categorizeVelocity(1.1)).toBe('speed');
+    expect(categorizeVelocity(2.0)).toBe('speed');
   });
 
-  it('categorizes ~0.5-0.75 as moderate', () => {
-    expect(categorizeVelocity(0.6)).toBe('moderate');
-    expect(categorizeVelocity(0.55)).toBe('moderate');
+  it('categorizes ~0.75-1.0 as power', () => {
+    expect(categorizeVelocity(0.8)).toBe('power');
+    expect(categorizeVelocity(0.95)).toBe('power');
   });
 
-  it('categorizes ~0.31-0.49 as slow', () => {
-    expect(categorizeVelocity(0.35)).toBe('slow');
-    expect(categorizeVelocity(0.45)).toBe('slow');
+  it('categorizes ~0.5-0.75 as strengthSpeed', () => {
+    expect(categorizeVelocity(0.55)).toBe('strengthSpeed');
+    expect(categorizeVelocity(0.6)).toBe('strengthSpeed');
   });
 
-  it('categorizes <= 0.3 as grinding', () => {
+  it('categorizes ~0.35-0.5 as maximalStrength', () => {
+    expect(categorizeVelocity(0.35)).toBe('maximalStrength');
+    expect(categorizeVelocity(0.45)).toBe('maximalStrength');
+  });
+
+  it('categorizes < 0.35 as grinding', () => {
     expect(categorizeVelocity(0.2)).toBe('grinding');
     expect(categorizeVelocity(0.15)).toBe('grinding');
   });
 
-  it('handles boundary values correctly', () => {
-    expect(categorizeVelocity(0.76)).toBe('fast');
-    expect(categorizeVelocity(0.75)).toBe('moderate');
-    expect(categorizeVelocity(0.5)).toBe('slow');
-    expect(categorizeVelocity(0.3)).toBe('grinding');
+  it('places each boundary value in the upper band', () => {
+    expect(categorizeVelocity(1.0)).toBe('speed');
+    expect(categorizeVelocity(0.75)).toBe('power');
+    expect(categorizeVelocity(0.5)).toBe('strengthSpeed');
+    expect(categorizeVelocity(0.35)).toBe('maximalStrength');
+  });
+
+  it('keeps bands contiguous with no gap just below each boundary', () => {
+    expect(categorizeVelocity(0.99)).toBe('power');
+    expect(categorizeVelocity(0.74)).toBe('strengthSpeed');
+    expect(categorizeVelocity(0.49)).toBe('maximalStrength');
+    expect(categorizeVelocity(0.34)).toBe('grinding');
   });
 });
 

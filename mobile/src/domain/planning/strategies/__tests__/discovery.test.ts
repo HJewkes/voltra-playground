@@ -277,6 +277,47 @@ describe('getNextDiscoveryStep()', () => {
       expect('step' in response || 'recommendation' in response).toBe(true);
     });
 
+    // WA 3.0.0 moved the grinding boundary from 0.30 to 0.35 m/s, so 0.32 m/s
+    // flipped from "slow" (small increase) to "grinding" (back the weight off).
+    it('backs off weight at 0.32 m/s, now inside the grinding band', () => {
+      const state = createTestDiscoveryState({
+        phase: 'exploring',
+        currentWeight: 100,
+        exerciseType: 'compound',
+        sets: [],
+      });
+      const result = discoverySetResultBuilder().weight(100).meanVelocity(0.32).build();
+
+      const response = getNextDiscoveryStep(state, result);
+
+      expect('step' in response).toBe(true);
+      if ('step' in response) {
+        expect(response.step.weight).toBe(90);
+        expect(response.step.targetReps).toBe(3);
+      }
+    });
+
+    // WA 3.0.0 split the old 'fast' band (> 0.75) into 'power' (0.75-1.0) and
+    // 'speed' (>= 1.0). Both halves must keep taking the original big jump.
+    it('takes the big jump across both the power and speed bands', () => {
+      const state = createTestDiscoveryState({
+        phase: 'exploring',
+        currentWeight: 50,
+        exerciseType: 'compound',
+      });
+
+      for (const meanVelocity of [0.8, 1.2]) {
+        const result = discoverySetResultBuilder().weight(50).meanVelocity(meanVelocity).build();
+
+        const response = getNextDiscoveryStep(state, result);
+
+        expect('step' in response).toBe(true);
+        if ('step' in response) {
+          expect(response.step.weight).toBe(70);
+        }
+      }
+    });
+
     it('increments step number correctly', () => {
       const state = createTestDiscoveryState({
         phase: 'exploring',
@@ -404,20 +445,26 @@ describe('getNextDiscoveryStep()', () => {
 // =============================================================================
 
 describe('getVelocityExpectation()', () => {
-  it('returns message for fast velocity', () => {
-    const message = getVelocityExpectation('fast');
+  it('returns message for speed velocity', () => {
+    const message = getVelocityExpectation('speed');
 
     expect(message).toContain('slow');
   });
 
-  it('returns message for moderate velocity', () => {
-    const message = getVelocityExpectation('moderate');
+  it('returns message for power velocity', () => {
+    const message = getVelocityExpectation('power');
+
+    expect(message).toContain('slow');
+  });
+
+  it('returns message for strengthSpeed velocity', () => {
+    const message = getVelocityExpectation('strengthSpeed');
 
     expect(message).toContain('working');
   });
 
-  it('returns message for slow velocity', () => {
-    const message = getVelocityExpectation('slow');
+  it('returns message for maximalStrength velocity', () => {
+    const message = getVelocityExpectation('maximalStrength');
 
     expect(message.toLowerCase()).toContain('challeng');
   });

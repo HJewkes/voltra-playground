@@ -10,6 +10,13 @@
  * routing to appropriate strategies based on context.
  */
 
+import {
+  getSetFatigueIndex,
+  estimateSetRIR,
+  getSetFirstRepVelocity,
+  getSetMeanVelocity,
+} from '@voltras/workout-analytics';
+
 import type { PlannedSet } from '@/domain/workout/models/plan';
 // FatigueEstimate removed - not currently used
 import {
@@ -183,16 +190,10 @@ function handleAdaptation(context: PlanningContext): PlanResult {
   };
 
   // Convert to SetPerformance for strategy functions using library analytics
-  const {
-    getSetFatigueIndex,
-    estimateSetRIR: estimateRIR,
-    getSetFirstRepVelocity: getFirstVel,
-    getSetMeanVelocity: getMeanVel,
-  } = require('@voltras/workout-analytics');
   const fatigueIdx = getSetFatigueIndex(lastSet.data);
-  const rirEstimate = estimateRIR(lastSet.data);
-  const firstRepVelocity = getFirstVel(lastSet.data);
-  const avgVelocity = getMeanVel(lastSet.data);
+  const rirEstimate = estimateSetRIR(lastSet.data);
+  const firstRepVelocity = getSetFirstRepVelocity(lastSet.data);
+  const avgVelocity = getSetMeanVelocity(lastSet.data);
 
   const lastSetPerformance: SetPerformance = {
     setNumber: completedSets.length,
