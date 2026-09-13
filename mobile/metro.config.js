@@ -1,4 +1,5 @@
 const path = require("path");
+const fs = require("fs");
 const { getDefaultConfig } = require("expo/metro-config");
 const { withNativeWind } = require("nativewind/metro");
 
@@ -12,9 +13,14 @@ config.resolver.unstable_conditionNames = [
   'react-native',
 ];
 
-// Support local symlinked @voltras/node-sdk
+// Support local symlinked @voltras/node-sdk when developing against a sibling
+// checkout. Worktree checkouts live under .worktrees/<name>/mobile, so this
+// resolves outside the repo entirely there; skip watching it rather than
+// crash Metro with ENOENT when the sibling isn't present.
 const sdkPath = path.resolve(__dirname, "../../voltra-node-sdk");
-config.watchFolders = [sdkPath];
+if (fs.existsSync(sdkPath)) {
+  config.watchFolders = [sdkPath];
+}
 config.resolver.nodeModulesPaths = [
   path.resolve(__dirname, "node_modules"),
 ];
