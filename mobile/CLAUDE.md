@@ -37,3 +37,8 @@ Each store owns a distinct slice of responsibility. Route actions to the correct
 | `flushQueue` | coaching-store | Moves queued cues to display (called on rest) |
 | `reactToCue` | coaching-store | Records athlete thumbs-up/down reaction |
 | `dismissActiveCue` | coaching-store | Clears the currently displayed cue |
+
+## Gotchas
+
+- Rendering real React Native components needs the separate `jest-expo` runner (`npm run test:render`, files named `*.render.test.tsx`); vitest cannot load react-native's Flow source. In `jest.config.js`, extend the preset's `transformIgnorePatterns`, never replace them.
+- Metro constant-folds a `const` specifier (`const p = '../x'; require(p)`) like a literal; only a parameter-keyed lookup hides a module from the bundle, and under the default `throwAtRuntime` that silently drops the module and its dependencies.
